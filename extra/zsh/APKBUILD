@@ -1,13 +1,13 @@
 pkgname=zsh
 pkgver=5.9
-pkgrel=4
+pkgrel=5
 pkgdesc="Very advanced and programmable command interpreter (shell)"
 url="https://www.zsh.org/"
 arch="all"
 # GPL-2.0-only: license of Completion/Linux/Command/_qdbus
 license="MIT-Modern-Variant AND GPL-2.0-only"
 depends="ncurses qnx-io-sock"
-makedepends="ncurses-dev qnx-io-sock-dev"
+makedepends="ncurses-dev qnx-io-sock-dev qnx-microkernel-dev"
 options="!check"
 subpackages="
     $pkgname-doc
@@ -52,6 +52,7 @@ prepare() {
 
 build() {
     LDFLAGS="-lregex" \
+    CXXFLAGS="-D_QNX_SOURCE" \
     ./configure \
         --build=$CBUILD \
         --host=$CHOST \
