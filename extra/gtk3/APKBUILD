@@ -76,7 +76,10 @@ source="
 builddir="$srcdir/gtk-$pkgver"
 
 build() {
+    CC=clang \
     CXX="clang++" \
+    CFLAGS="$CFLAGS -O2 -Qunused-arguments" \
+    CXXFLAGS="$CXXFLAGS -O2 -Qunused-arguments" \
     abuild-meson \
         -Db_lto=false \
         -Dintrospection=true \
