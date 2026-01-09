@@ -731,3 +731,22 @@ index 41234c053bf..689089dd9b7 100644
  			location (_buildDir .. "projects/" .. _subDir .. "/".. _ACTION .. "-nto-aarch64-le")
  		end
  
+diff --git a/src/osd/modules/render/drawsdl.cpp b/src/osd/modules/render/drawsdl.cpp
+index b1a9e93f42e..b6e3b75cc31 100644
+--- a/src/osd/modules/render/drawsdl.cpp
++++ b/src/osd/modules/render/drawsdl.cpp
+@@ -717,7 +717,13 @@ public:
+ 	virtual std::unique_ptr<osd_renderer> create(osd_window &window) override;
+ 
+ protected:
+-	virtual unsigned flags() const override { return FLAG_INTERACTIVE; }
++	virtual unsigned flags() const override {
++#ifndef __QNX__
++		return FLAG_INTERACTIVE;
++#else
++		return FLAG_INTERACTIVE | FLAG_SDL_NEEDS_OPENGL;
++#endif
++	}
+ 
+ private:
+ 	static int get_scale_mode(char const *modestr);
