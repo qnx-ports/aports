@@ -10,7 +10,6 @@ arch="all"
 license="GPL-2.0-or-later"
 depends="
     $pkgname-common
-    sdl3
     sdl2-compat
     sdl2-ttf
     fontconfig
@@ -35,14 +34,14 @@ makedepends="
     sdl2-compat-dev
     sdl2-ttf-dev
     zlib-dev
-    qnx-egl
-    qnx-gles
+    qnx-screen-dev
     egl-headers
     gles-headers
     ncurses-dev
     qnx-io-sock-dev
     qnx-fs-core-dev
     qnx-fs-gpt-dev
+    libc++-dev
     python3
     clang
     grep
