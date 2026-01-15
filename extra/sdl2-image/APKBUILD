@@ -8,19 +8,15 @@ pkgdesc="A simple library to load images of various formats as SDL surfaces"
 url="https://github.com/libsdl-org/SDL_image"
 arch="all"
 license="Zlib"
-depense="
-    sdl3
+depends="
     sdl2-compat
     "
 makedepends="
     cmake
     clang
     libjpeg-turbo-dev
-    libjpeg-turbo-static
     libpng-dev
-    libpng-static
     libwebp-dev
-    libwebp-static
     ninja
     sdl3-dev
     sdl3-static
@@ -28,7 +24,6 @@ makedepends="
     sdl2-compat-static
     tiff-dev
     zlib-dev
-    zlib-static
     "
 subpackages="$pkgname-dev $pkgname-doc $pkgname-dbg $pkgname-static"
 source="$pkgname-$pkgver.tar.gz::https://github.com/libsdl-org/SDL_image/archive/refs/tags/release-$pkgver.tar.gz"
@@ -38,25 +33,12 @@ build() {
     export CPPFLAGS="${CPPFLAGS} -D_QNX_SOURCE"
     cmake -B build-shared -G Ninja \
         -DCMAKE_C_COMPILER=clang \
-        -DCMAKE_CXX_COMPILER=clang++ \
-        -DCMAKE_ASM_COMPILER=clang \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_INSTALL_PREFIX=/usr \
         -DCMAKE_SKIP_INSTALL_RPATH=ON \
         -DBUILD_SHARED_LIBS=ON \
         -DSDL2IMAGE_TESTS=ON
     cmake --build build-shared
-
-    cmake -B build-static -G Ninja \
-        -DCMAKE_C_COMPILER=clang \
-        -DCMAKE_CXX_COMPILER=clang++ \
-        -DCMAKE_ASM_COMPILER=clang \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DCMAKE_INSTALL_PREFIX=/usr \
-        -DCMAKE_SKIP_INSTALL_RPATH=ON \
-        -DBUILD_SHARED_LIBS=OFF \
-        -DSDL2IMAGE_TESTS=OFF
-    cmake --build build-static
 }
 
 check() {
@@ -65,7 +47,6 @@ check() {
 
 package() {
     DESTDIR="$pkgdir" cmake --install build-shared
-    DESTDIR="$pkgdir" cmake --install build-static
 }
 
 sha512sums="
