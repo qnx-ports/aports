@@ -3,7 +3,7 @@
 pkgname=sdl3
 _pkgname=SDL
 pkgver=3.2.28
-pkgrel=0
+pkgrel=1
 pkgdesc="Simple Directmedia Layer"
 url="https://libsdl.org/"
 arch="all"
@@ -31,7 +31,7 @@ makedepends="
      cmake
      ninja"
 subpackages="$pkgname-static $pkgname-dev $pkgname-dbg $pkgname-doc"
-_git_rev=7
+_git_rev=9
 source="$pkgname-$pkgver-r$_git_rev.tar.gz::https://www.github.com/qnx-ports/$_pkgname/archive/refs/tags/qnx-release-$pkgver-r$_git_rev.tar.gz"
 builddir="$srcdir/$_pkgname-qnx-release-$pkgver-r$_git_rev"
 
@@ -78,5 +78,5 @@ check() {
 }
 
 sha512sums="
-e8bc70de130b9644870853221c432128f4830ed5aafd9b658914ae02d040dcab956ddcd600ff585d6212080d55e163ce144eaf1f5d417c01cb0e700e0df49ae0  sdl3-3.2.28-r7.tar.gz
+737027d0045b842fea11010fd9c493c0cad2d8cf7f36495146ebaa58c2f689bf7ba8e12d52b4ef085ab4c9407dc67039c1ec6ccacfe03759735d6399fea91a6d  sdl3-3.2.28-r9.tar.gz
 "
