@@ -70,11 +70,7 @@ build() {
         --enable-multibyte \
         --enable-function-subdirs \
         --enable-zsh-secure-free \
-<<<<<<< Updated upstream
         --enable-dynamic \
-=======
-	--enable-dynamic \
->>>>>>> Stashed changes
         --with-tcsetpgrp
     make
 }
