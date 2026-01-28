@@ -4,7 +4,7 @@
 # Revised by: Felix Xing <fxing@qnx.com>
 pkgname=gtk4
 pkgver=4.13.6
-pkgrel=4
+pkgrel=5
 pkgdesc="The GTK Toolkit (v4)"
 url="https://www.gtk.org/"
 arch="all"
@@ -76,6 +76,8 @@ source="https://github.com/qnx-ports/gtk/archive/refs/heads/$_qnx_branch.zip
     fix-qnxscreen-segfaults.patch
     qnx-disable-broken-vulkan-renderer.patch
     input-event-codes.h
+    005-fix-wayland-geometry-crash.patch
+    006-fix-gtk4-window-management.patch
     "
 
 builddir="$srcdir/gtk-$_qnx_branch"
@@ -254,10 +256,12 @@ lang() {
 
 
 sha512sums="
-535959a06fcd483391e6403d78762d46342cd6d76dcee6cc7f119e09d3b34e6e7afbca36d97166e71fbd67192a9392d7036baebd7a5db268968c22dafec078af  qnx_4.8.3.zip
+435bf4edabfca136812acf0bbe9e5fcd39a78945061509e16d7ceee3873b5dde982060e198b13e69dc2c85314557ded848ce49229123af504fe1993973fab54e  qnx_4.8.3.zip
 8584d15dcf839a0d42ca155b0daa3717cadd04d86932f16b89f04d22fab074d42d6c91bfde5f241aedbbf35e73e4734028e642ef893dcc2afe79c205fe209a42  qnx-wayland-support.patch
 7565e6b6dad4976e044348f013b61312767071ddcf0fbbd56fac4cb04f59d4df4e3f0a9f8a12e8d6e25e7480aa54cf7d3b03bb0031acfce4995e44d502e5bdeb  qnx-screen-library-paths.patch
 2f2adf4338be84b58ac459f98d8b4b4983d1f21c285065541ba7461aa4645e708db190182c373548aa89b24f220a0bc5938db48bfffd1c239f64033815dee71c  fix-qnxscreen-segfaults.patch
 60d7c7986bedbefd196258541936cdd49ecdc48cc5db01619a5d5841063412bc71f660ad1143164a5b5a27f43343084ec6b31c72e536f02c9e9660beb64cecca  qnx-disable-broken-vulkan-renderer.patch
 9c15657ca0b121a8c5128a066ba631782e1b22f51257d69e623181c806d3d883d27722c15850867ad546d6725d72b4c4612372a72e7111f94f04337a3ab38b60  input-event-codes.h
+559ff17b2402716bf84c5a02f4227a8695ed66a4cae2268c1fb9d5765c4250090678fb33f8fa3403da4dc219e6b775a180dbb42f6f5d2f8a6f1f6e5798d26f82  005-fix-wayland-geometry-crash.patch
+11a183d74d4ac162093cefcbe2e848291b969ce0e2342b09d29c8b58929a2d23d8ff63dde3dfc25adaefe8065d4d00f6e7161df707bf9da31078c9779767c5d2  006-fix-gtk4-window-management.patch
 "
