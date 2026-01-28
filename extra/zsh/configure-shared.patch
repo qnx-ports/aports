@@ -1,0 +1,11 @@
+--- zsh-5.9/configure.ac
++++ a/configure.ac
+@@ -2841,7 +2841,7 @@
+   fi
+   case "$host_os" in
+     osf*) DLLDFLAGS="${DLLDFLAGS=-shared -expect_unresolved '*'}" ;;
+-    *freebsd*|*netbsd*|linux*|irix*|gnu*|interix*|dragonfly*) DLLDFLAGS="${DLLDFLAGS=-shared}" ;;
++    *freebsd*|*netbsd*|linux*|irix*|gnu*|interix*|dragonfly*|*qnx*) DLLDFLAGS="${DLLDFLAGS=-shared}" ;;
+     sunos*)       DLLDFLAGS="${DLLDFLAGS=-assert nodefinitions}" ;;
+     sysv4*|esix*) DLLDFLAGS="${DLLDFLAGS=-G $ldflags}" ;;
+     aix*)         DLLDFLAGS="${DLLDFLAGS=-G -bexpall -lc}" ;;
