@@ -1,0 +1,51 @@
+diff -Naur ruby-3.4.7.orig/ext/socket/ancdata.c ruby-3.4.7/ext/socket/ancdata.c
+--- ruby-3.4.7.orig/ext/socket/ancdata.c	2025-10-07 16:42:48.000000000 +0000
++++ ruby-3.4.7/ext/socket/ancdata.c	2026-01-21 17:47:45.000000000 +0000
+@@ -2,6 +2,13 @@
+ 
+ #include <time.h>
+ 
++#ifdef __QNX__
++struct bintime {
++       time_t  sec;
++       uint64_t frac;
++};
++#endif
++
+ static VALUE sym_wait_readable, sym_wait_writable;
+ 
+ #if defined(HAVE_STRUCT_MSGHDR_MSG_CONTROL)
+--- ruby-3.4.7.orig/io.c	2025-10-07 16:42:48.000000000 +0000
++++ ruby-3.4.7/io.c	2026-01-21 17:41:57.000000000 +0000
+@@ -58,6 +58,7 @@
+ 
+ #ifdef __QNXNTO__
+ #include <unix.h>
++#define setmode(a, b)
+ #endif
+ 
+ #include <sys/types.h>
+--- ruby-3.4.7.orig/thread.c	2025-10-07 16:42:48.000000000 +0000
++++ ruby-3.4.7/thread.c	2026-01-21 17:42:42.000000000 +0000
+@@ -104,6 +104,10 @@
+ #include <sys/wait.h>
+ #endif
+ 
++#ifdef __QNX__
++#define howmany(A, B)  ((A)/(B) + 1)
++#endif
++
+ #ifndef USE_NATIVE_THREAD_PRIORITY
+ #define USE_NATIVE_THREAD_PRIORITY 0
+ #define RUBY_THREAD_PRIORITY_MAX 3
+--- ruby-3.4.7.orig/vm_core.h	2025-10-07 16:42:48.000000000 +0000
++++ ruby-3.4.7/vm_core.h	2026-01-21 17:46:39.000000000 +0000
+@@ -145,8 +145,6 @@
+ #elif defined(_SIG_MAXSIG)      /* FreeBSD */
+ # undef NSIG
+ # define NSIG _SIG_MAXSIG
+-#elif defined(_SIGMAX)          /* QNX */
+-# define NSIG (_SIGMAX + 1)
+ #elif defined(NSIG)             /* 99% of everything else */
+ # /* take it */
+ #else                           /* Last resort */

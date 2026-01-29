@@ -5,7 +5,7 @@
 pkgname=ruby
 pkgver=3.4.7
 _abiver="${pkgver%.*}.0"
-pkgrel=2
+pkgrel=3
 pkgdesc="An object-oriented language for quick and easy programming"
 url="https://www.ruby-lang.org/"
 arch="all"
@@ -30,8 +30,8 @@ makedepends="$depends_dev
     clang
     libc++-dev
     "
-subpackages="$pkgname-dbg $pkgname-doc
-    $pkgname-rdoc::noarch $pkgname-libs $pkgname-dev
+subpackages="$pkgname-dbg $pkgname-doc $pkgname-dev
+    $pkgname-rdoc::noarch $pkgname-libs
     "
 source="https://cache.ruby-lang.org/pub/ruby/${pkgver%.*}/ruby-$pkgver.tar.gz
         make-compatible-with-qnx8.patch
@@ -147,13 +147,6 @@ libs() {
             libxcrypt"
 
     amove usr/lib
-}
-
-dev() {
-    default_dev
-
-    mkdir $subpkgdir/usr/lib
-    mv $pkgdir/../$pkgname-libs/usr/lib/pkgconfig $subpkgdir/usr/lib
 }
 
 sha512sums="
