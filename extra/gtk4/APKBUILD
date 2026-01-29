@@ -17,7 +17,7 @@ depends_dev="
     graphene-dev
     pango-dev
     wayland-dev
-    wayland-protocols-dev
+    wayland-protocols
     qnx-screen-dev
     qnx-hid
     "
