@@ -1,0 +1,33 @@
+--- webkitgtk-2.51.1.orig/Source/JavaScriptCore/assembler/ARM64Assembler.h	2025-08-20 08:43:29.000000000 +0000
++++ webkitgtk-2.51.1/Source/JavaScriptCore/assembler/ARM64Assembler.h	2026-01-22 17:21:08.000000000 +0000
+@@ -3750,7 +3750,7 @@
+     
+     unsigned debugOffset() { return m_buffer.debugOffset(); }
+ 
+-#if OS(LINUX)
++#if OS(LINUX) | OS(QNX)
+     static inline void linuxPageFlush(uintptr_t begin, uintptr_t end)
+     {
+         __builtin___clear_cache(reinterpret_cast<char*>(begin), reinterpret_cast<char*>(end));
+@@ -3763,7 +3763,7 @@
+         sys_icache_invalidate(code, size);
+ #elif OS(FUCHSIA)
+         zx_cache_flush(code, size, ZX_CACHE_FLUSH_INSN);
+-#elif OS(LINUX)
++#elif OS(LINUX) | OS(QNX)
+         size_t page = pageSize();
+         uintptr_t current = reinterpret_cast<uintptr_t>(code);
+         uintptr_t end = current + size;
+--- webkitgtk-2.51.1.orig/Source/JavaScriptCore/offlineasm/arm64.rb	2025-09-22 12:00:15.000000000 +0000
++++ webkitgtk-2.51.1/Source/JavaScriptCore/offlineasm/arm64.rb	2026-01-22 17:22:57.000000000 +0000
+@@ -1421,8 +1421,8 @@
+             $asm.puts "ldr #{operands[1].arm64Operand(:quad)}, [#{operands[1].arm64Operand(:quad)}, #{operands[0].asmLabel}@GOTPAGEOFF]"
+             $asm.putStr("#endif")
+ 
+-            # On Linux, use ELF GOT relocation specifiers.
+-            $asm.putStr("#elif OS(LINUX)")
++            # On Linux & QNX, use ELF GOT relocation specifiers.
++            $asm.putStr("#elif OS(LINUX) | OS(QNX)")
+ 
+             $asm.puts "adrp #{operands[1].arm64Operand(:quad)}, :got:#{operands[0].asmLabel}"
+             $asm.putStr("#if CPU(ADDRESS32)")

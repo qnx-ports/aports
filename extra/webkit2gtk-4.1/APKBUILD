@@ -108,6 +108,7 @@ source="https://webkitgtk.org/releases/webkitgtk-$pkgver.tar.xz
         008-fix-platform-codes.patch
         009-add-qnx-to-angle-gtk.patch
         010-disable-view-transiton-webgl.patch
+	011-add-aarch64-support.patch
     "
 builddir="$srcdir/webkitgtk-$pkgver"
 
@@ -208,4 +209,5 @@ a1c6e6b20ba1838e54def8eb56c6b567c7862d45d5e488da4c747201c58d29edbc427d9eab4416c7
 27db2f0072535a1b6219db87a69550a0b56964295457e7bfd8bf78fb090a1d41d1ad7f3e399c40fc16430167341a55add0c7f37c8dd1bfd39893b77058000913  008-fix-platform-codes.patch
 9da00ef79ec57149ec2c3ecf58a469bb3e8d5f1e32ce6f30d106b4e46c14beacb5bae73626430dd3de1804f2e6ef6f09c6f1a46109387e596861d87f5036bbf9  009-add-qnx-to-angle-gtk.patch
 b604280dea8f3e43ddad54a3b97e90dc275d7e573fa1c4331b1b7603ac80d1f5e8b706b8ac9a66c064b42308f4081f6d09399940e3630b3383d3ffaa06748fa7  010-disable-view-transiton-webgl.patch
+9fa10fff5d55d8894f771cf205627ea027c73ae8ee79e4ed518714c26a3409d41a80249d71809d20e380a1be779194990574f91e7f4f15fdcd4f075e082e518b  011-add-aarch64-support.patch
 "
