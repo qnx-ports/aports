@@ -13,6 +13,7 @@ makedepends="
     cmake
     ninja
     zlib-ng-dev
+    libc++-dev
     "
 subpackages="$pkgname-dev $pkgname-libs"
 source="https://github.com/assimp/assimp/archive/v$pkgver/assimp-v$pkgver.tar.gz"
