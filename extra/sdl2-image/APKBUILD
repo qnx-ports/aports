@@ -25,7 +25,7 @@ makedepends="
     tiff-dev
     zlib-dev
     "
-subpackages="$pkgname-dev $pkgname-doc $pkgname-dbg $pkgname-static"
+subpackages="$pkgname-dev $pkgname-doc $pkgname-dbg"
 source="$pkgname-$pkgver.tar.gz::https://github.com/libsdl-org/SDL_image/archive/refs/tags/release-$pkgver.tar.gz"
 builddir="$srcdir/SDL_image-release-$pkgver"
 
