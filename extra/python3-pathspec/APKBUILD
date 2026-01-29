@@ -11,7 +11,6 @@ license="MPL-2.0"
 arch="noarch"
 depends="python3"
 makedepends="python3-flit-core python3-gpep517"
-subpackages="$pkgname-pyc"
 source="$pkgname-$pkgver.tar.gz::https://files.pythonhosted.org/packages/source/p/pathspec/pathspec-$pkgver.tar.gz"
 builddir="$srcdir/$_pyname-$pkgver"
 
