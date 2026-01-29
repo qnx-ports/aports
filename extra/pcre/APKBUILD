@@ -7,7 +7,7 @@ pkgrel=0
 pkgdesc="Perl-compatible regular expression library"
 url="https://www.pcre.org/"
 arch="all"
-makedepends="m4 libtool autoconf automake"
+makedepends="m4 libtool autoconf automake libc++-dev"
 license="BSD-3-Clause"
 subpackages="$pkgname-static $pkgname-dev $pkgname-doc $pkgname-tools
     libpcrecpp libpcre16 libpcre32"
