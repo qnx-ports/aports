@@ -7,7 +7,7 @@ arch="all"
 # GPL-2.0-only: license of Completion/Linux/Command/_qdbus
 license="MIT-Modern-Variant AND GPL-2.0-only"
 depends="ncurses qnx-io-sock pcre"
-makedepends="ncurses-dev qnx-io-sock-dev pcre-dev make clang"
+makedepends="ncurses-dev qnx-io-sock-dev pcre-dev make clang autoconf"
 options="!check"
 subpackages="
     $pkgname-doc
