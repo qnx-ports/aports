@@ -13,6 +13,8 @@ makedepends="
     sdl3-static
     qnx-alsa-dev
     qnx-screen-dev
+    egl-headers
+    gles-headers
     wayland-dev
     qnx-usb-dev
     qnx-usb-static
@@ -20,7 +22,10 @@ makedepends="
     libxkbcommon-static
     clang
     cmake
-    ninja"
+    ninja
+    qnx-screen-dev
+    libc++-dev
+    "
 subpackages="$pkgname-static $pkgname-dev $pkgname-dbg $pkgname-doc"
 _git_rev=3
 source="$pkgname-$pkgver-r$_git_rev.tar.gz::https://www.github.com/qnx-ports/$pkgname/archive/refs/tags/qnx-release-$pkgver-r$_git_rev.tar.gz"
