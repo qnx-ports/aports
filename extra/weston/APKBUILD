@@ -85,7 +85,7 @@ prepare() {
 
 build() {
 	abuild-meson \
-		-Dc_args="-I/usr/include/libdrm -D_QNX_SOURCE" \
+		-Dc_args="-I/usr/include/libdrm -D_QNX_SOURCE -Wno-int-conversion" \
 		-Dc_link_args="-Wl,-lepoll,-leventfd,-ltimerfd,-lsignalfd,-lmemstream,-lsocket,-lgcc_s,-lm" \
 		-Dbackend-drm=false \
 		-Dbackend-vnc=false \
