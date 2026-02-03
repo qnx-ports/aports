@@ -21,7 +21,6 @@ prepare() {
 }
 
 build() {
-    CFLAGS="$CFLAGS" \
     LDFLAGS="$LDFLAGS -lsocket" \
     ./configure \
         --build=$CBUILD \
