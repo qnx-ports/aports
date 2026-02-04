@@ -1,9 +1,10 @@
 # Alpine-Contributor: Rasmus Thomsen <oss@cogitri.dev>
 # Alpine-Maintainer: Rasmus Thomsen <oss@cogitri.dev>
 # Maintainer: Yongxin Dai <yodai@qnx.com>
+# Revised by: Elliott Mazzuca <emazzuca@qnx.com>
 pkgname=epiphany
 pkgver=43.1 # Looking at gtk4 build very soon
-pkgrel=0
+pkgrel=1
 pkgdesc="A simple, clean, beautiful view of the web"
 url="https://wiki.gnome.org/Apps/Web"
 arch="all"
@@ -13,6 +14,10 @@ depends="
     icu-libs
     gcr
     gsettings-desktop-schemas
+    gst-plugins-base
+    gst-plugins-good
+    gst-plugins-bad
+    gst-libav
     gtk3
     json-glib
     libarchive
@@ -25,6 +30,7 @@ depends="
     libsoup3
     libxml2
     nettle
+    openh264
     sqlite-libs
     webkit2gtk-4.1
     "
@@ -48,6 +54,7 @@ makedepends="
     libxml2-dev
     meson
     nettle-dev
+    openh264-dev
     sqlite-dev
     webkit2gtk-4.1-dev
     clang
@@ -69,7 +76,7 @@ build() {
     abuild-meson \
         --buildtype=release \
         -Db_lto=false \
-        -Dc_link_args='-lm -lsocket -llocale' \
+        -Dc_link_args='-lm -lsocket -llocale -lz' \
     . output
     meson compile -C output
 }
