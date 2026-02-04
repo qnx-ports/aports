@@ -1,6 +1,6 @@
 pkgname=cmake
-pkgver=4.1.1
-pkgrel=1
+pkgver=4.2.3
+pkgrel=0
 pkgdesc="Cross-platform, open-source make system"
 url="https://www.cmake.org/"
 arch="all"
@@ -64,5 +64,5 @@ EOF
 }
 
 sha512sums="
-40f16fbe66562aec574e08758c7b8a09536b8c7086fe7f6f9123e5255a9fc1aa638b0f88b3812ed5c8e6bc4550d0ee0be304dc71be6c980dbc44d1899d238e30  cmake-4.1.1.tar.gz
+56cac755277bc3fcf190d6c947c99a718ee555b0524132427989a5d2d51d030c76c07f198ddeea0d9c7e57b24488d352e9b29bb106c1ad15397b92fb4487a88f  cmake-4.2.3.tar.gz
 "
