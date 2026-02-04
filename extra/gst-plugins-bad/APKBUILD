@@ -1,5 +1,5 @@
 # Alpine-Maintainer: Krassy Boykinov <kboykinov@teamcentrixx.com>
-# Maintainer: Felix Xing <fxing@qnx.com>
+# Maintainer: Elliott Mazzuca <emazzuca@qnx.com>
 pkgname=gst-plugins-bad
 pkgver=1.26.8
 pkgrel=0
@@ -31,6 +31,7 @@ depends="
     opus
     orc
     pango
+    qnx-hid
     qnx-io-sock
     qnx-vulkan
     wayland
@@ -59,6 +60,7 @@ makedepends="$depends_dev
     openexr-dev
     openjpeg-dev
     openssl-dev>3
+    openh264-dev
     opus-dev
     orc-dev
     pango-dev
@@ -82,7 +84,7 @@ build() {
 
     CC=clang \
     CXX=clang++ \
-    LDFLAGS="-lsocket" \
+    LDFLAGS="-lsocket -lz" \
     CFLAGS="$CFLAGS -O2" \
     CXXFLAGS="$CXXFLAGS -O2" \
     CPPFLAGS="$CPPFLAGS -O2" \
@@ -92,6 +94,7 @@ build() {
         -Dpackage-name="GStreamer bad plug-ins (QNX)" \
         -Dintrospection=enabled \
         -Dtests="$(want_check && echo enabled || echo disabled)" \
+        -Dopenh264=enabled \
         . output
     meson compile -C output
 }
