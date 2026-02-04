@@ -3,12 +3,13 @@
 # Maintainer: Felix Xing <fxing@qnx.com>
 pkgname=mpg123
 pkgver=1.33.3
-pkgrel=0
+pkgrel=1
 pkgdesc="Console-based MPEG Audio Player for Layers 1, 2 and 3"
 options="libtool"
 url="https://www.mpg123.org/"
 arch="all"
 license="LGPL-2.1-only"
+depends="$pkgname-libs=$pkgver-r$pkgrel"
 subpackages="$pkgname-libs $pkgname-dev $pkgname-doc"
 depends="qnx-alsa qnx-io-sock $pkgname-libs=$pkgver-r$pkgrel"
 makedepends="libtool qnx-alsa-dev ncurses-dev clang libc++-dev"
