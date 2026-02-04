@@ -1,0 +1,47 @@
+# Alpine-Contributor: Martin Schmidt <martin.schmidt13@gmx.de>
+# Alpine-Maintainer: Patrycja Rosa <alpine@ptrcnull.me>
+# Maintainer: Elliott Mazzuca <emazzuca@qnx.com>
+pkgname=openh264
+pkgver=2.6.0
+pkgrel=0
+options="!check" # FIXME run tests
+pkgdesc="OpenH264 is a codec library which supports H.264 encoding and decoding"
+url="https://github.com/cisco/openh264"
+arch="all"
+license="BSD-2-Clause"
+makedepends="nasm
+    tar"
+subpackages="$pkgname-dev"
+source="$pkgname-$pkgver.tar.gz::https://github.com/cisco/openh264/archive/v$pkgver.tar.gz"
+
+# secfixes:
+#   2.6.0-r0:
+#     - CVE-2025-27091
+
+build() {
+	# This is a codec, don't override opt level.
+	export CFLAGS=${CFLAGS/-Os/}
+	export CXXFLAGS=${CXXFLAGS/-Os/}
+	case "$CARCH" in
+	x86*|aarch64|armv7)
+		local asm="Yes"
+		;;
+	*)
+		local asm="No"
+		;;
+	esac
+	make ARCH="$CARCH" \
+		BUILDTYPE=Release \
+		USE_ASM=$asm \
+		ENABLEPIC=Yes \
+		HAVE_AVX2=No \
+		libraries
+}
+
+package() {
+	make DESTDIR="$pkgdir" PREFIX="/usr" install-shared install-headers
+}
+
+sha512sums="
+26a03acde7153a6b40b99f00641772433a244c72a3cc4bca6d903cf3b770174d028369a2fb73b2f0774e1124db0e269758eed6d88975347a815e0366c820d247  openh264-2.6.0.tar.gz
+"
