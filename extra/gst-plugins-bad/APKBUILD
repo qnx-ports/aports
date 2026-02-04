@@ -2,7 +2,7 @@
 # Maintainer: Elliott Mazzuca <emazzuca@qnx.com>
 pkgname=gst-plugins-bad
 pkgver=1.26.8
-pkgrel=0
+pkgrel=1
 pkgdesc="GStreamer streaming media framework bad plug-ins"
 url="https://gstreamer.freedesktop.org/"
 arch="all"
