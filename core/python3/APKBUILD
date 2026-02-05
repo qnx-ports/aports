@@ -35,13 +35,15 @@ build() {
         --enable-loadable-sqlite-extensions \
         --without-ensurepip \
         --with-system-expat \
+        --enable-shared \
         CFLAGS="-D_QNX_SOURCE -O2 -fPIC -DTHREAD_STACK_SIZE=8388608" \
         LDFLAGS="-lsocket -lm -lgcc_s -lregex"
+
     make
 }
 
 package() {
-    make DESTDIR="$pkgdir/" install
+    make DESTDIR="$pkgdir" install 
     msg "Python basever $_basever"
     ln -s python3 "$pkgdir"/usr/bin/python
     install -Dm644 "$srcdir"/EXTERNALLY-MANAGED \
@@ -56,6 +58,6 @@ tests() {
 
 sha512sums="
 46e9e205c3a084cba68bf7f267ab2fd0862a05430165e0eb713f2d6b3a1a4452f72f563de5de55caea824be9df56f66dd568f4814941667a9bb0954229772c53  Python-3.14.0.tar.xz
-723cce2e7392db766ffb486eee0b90fbdd953eb51f7bd9986131935bb521177c0e543029a28832bb32cbf61f5442e7b184354a4958db46b7f4ddadbfcb695f97  fix-qnx-python.patch
+403f8b275ab658bbc3f75c8e51754efda416d5c944aaab5ee8d19d3b8a8da1e29865aaa0e5e61e1709cb1298bc20aa1971ce986bce3179b8e1e167ad4742f203  fix-qnx-python.patch
 48c2b2c42c8cd8f1071f75149556648a6bdf756a9946a6760de0eadeee9ae53c08b5a2dc9d131a8f7b734128386fd4ae7d71cdbdb53dadbd00443bfafd33639b  EXTERNALLY-MANAGED
 "
