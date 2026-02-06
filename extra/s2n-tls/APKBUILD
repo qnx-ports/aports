@@ -22,7 +22,7 @@ source="$pkgname-$pkgver.tar.gz::https://github.com/aws/s2n-tls/archive/refs/tag
 
 build() {
   CC=clang \
-  CFLAGS="-Wno-unused-command-line-argument" \
+  CFLAGS="-Wno-unused-command-line-argument -DMAX=max -DMIN=min" \
   cmake -B build -G Ninja \
     -DCMAKE_SHARED_LINKER_FLAGS="-lsocket" \
     -DCMAKE_EXE_LINKER_FLAGS="-lsocket" \
@@ -48,5 +48,5 @@ dev() {
 
 sha512sums="
 f9c8a8c472ae99939972e0f610411bf696119ec5fff0685093fb9ebd442479703e84e156989e5963e003087b0771a185975fce4398ead5b8ea997888bf766c75  s2n-tls-1.5.25.tar.gz
-500f68af1a430546b70e3e9df80440f8193e02707c07c77ad391cee72c5e2cc269ac45db7195dcf2ec1ca917b5ac9448a0c2e021c9418bc40522e4d4bb19f48b  0001-add-qnx-build.patch
+b8870d5f39ce9299de782da518391cab5b1ff964407bbc23eb5676a6f6dae0d6fe31d04fbe217123d0c3554b6e9cebbde7350d74ec35e408d03c5a385f76a993  0001-add-qnx-build.patch
 "
