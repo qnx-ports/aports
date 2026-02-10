@@ -4,7 +4,7 @@
 # Maintainer: J. Scaffidi <jscaffidi@qnx.com>
 pkgname=chrony
 pkgver=4.8
-pkgrel=0
+pkgrel=1
 pkgdesc="Advanced NTP client and server"
 url="https://gitlab.com/chrony/chrony/"
 arch="all"
@@ -15,6 +15,8 @@ tag="$pkgver"
 builddir="$srcdir"/$pkgname
 #TODO add docs subpkg when we get an asciidoctor port
 subpackages="$pkgname-openrc $pkgname-dbg"
+depends="qnx-io-sock nettle gnutls"
+makedepends="bison make clang qnx-io-sock-dev nettle-dev gnutls-dev"
 source="
 $pkgname-$pkgver.tar.gz::https://gitlab.com/chrony/chrony/-/archive/$tag/chrony-$tag.tar.gz?ref_type=tags
 00-build-patches.patch
@@ -31,12 +33,9 @@ chronyd.confd
 chronyd.initd
 "
 
-makedepends="bison make clang qnx-io-sock-dev nettle-dev"
-
-depends="qnx-io-sock nettle"
 
 unpack() {
-	default_unpack
+    default_unpack
     # Makes tests pass because QNX saddr_un.sun_path contains absolute paths, and when it gets capped at 104 chars, doesn't nul-terminate it so it breaks a bunch of stuff yay
     # This makes the path shorter by removing the long commit sha. This might bite us later if we have a build system with a long path.
     mv "$srcdir/$pkgname-$tag" "$srcdir/$pkgname"
@@ -44,19 +43,20 @@ unpack() {
 
 prepare() {
     default_prepare
-	cp $srcdir/sys_qnx.c $srcdir/sys_qnx.h $srcdir/adjtime_qnx.h .
+    cp $srcdir/sys_qnx.c $srcdir/sys_qnx.h $srcdir/adjtime_qnx.h .
 }
 
 build() {
     export CC=clang
     export CFLAGS=" -Wno-deprecated-non-prototype"
     ./configure \
-		--prefix=/usr \
+        --prefix=/usr \
         --sbindir=/usr/bin \
         --sysconfdir=/etc/$pkgname \
         --chronyrundir=/run/$pkgname \
         --with-pidfile=/run/$pkgname/chronyd.pid \
-		--with-user=$pkgname
+        --with-user=$pkgname \
+        --enable-ntp-signd
     make 
 }
 
@@ -67,14 +67,14 @@ check() {
 package() {
     make DESTDIR="$pkgdir" install
 
-	install -dm2750 -g wheel "$pkgdir"/var/log/chrony
+    install -dm2750 -g wheel "$pkgdir"/var/log/chrony
     install -Dm755 "$srcdir"/chronyd.initd "$pkgdir"/etc/init.d/chronyd
-	install -Dm644 "$srcdir"/chronyd.confd "$pkgdir"/etc/conf.d/chronyd
+    install -Dm644 "$srcdir"/chronyd.confd "$pkgdir"/etc/conf.d/chronyd
 
-	mkdir -p "$pkgdir"/var/lib/chrony \
-		"$pkgdir"/etc/chrony
+    mkdir -p "$pkgdir"/var/lib/chrony \
+        "$pkgdir"/etc/chrony
 
-	install -m644 "$srcdir"/chrony.conf "$pkgdir"/etc/chrony/chrony.conf
+    install -m644 "$srcdir"/chrony.conf "$pkgdir"/etc/chrony/chrony.conf
 }
 
 sha512sums="
