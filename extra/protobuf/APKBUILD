@@ -3,7 +3,7 @@
 # Maintainer: Elliott Mazzuca <emazzuca@qnx.com>
 pkgname=protobuf
 pkgver=31.1
-pkgrel=1
+pkgrel=0
 pkgdesc="Library for extensible, efficient structure packing"
 url="https://github.com/protocolbuffers/protobuf"
 arch="all"
@@ -22,7 +22,7 @@ makedepends="
 	$depends_dev
 	abseil-cpp-dev
 	cmake
-        samurai
+        ninja
 	"
 checkdepends="gtest-dev"
 subpackages="
@@ -38,11 +38,6 @@ source="$pkgname-$pkgver.tar.gz::https://github.com/protocolbuffers/protobuf/arc
         soversion.patch
         fix-protoc-abs-path.patch
 	"
-
-# fails some
-case "$CARCH" in
-armhf) options="$options !check" ;;
-esac
 
 build() {
 	export CFLAGS="$CFLAGS -DNDEBUG -O2"
