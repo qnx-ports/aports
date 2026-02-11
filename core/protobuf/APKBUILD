@@ -22,20 +22,20 @@ makedepends="
 	$depends_dev
 	abseil-cpp-dev
 	cmake
-	samurai
+        samurai
 	"
 checkdepends="gtest-dev"
 subpackages="
-	$pkgname-dev
-	$pkgname-vim::noarch
-	protoc
-	libprotoc
-	libprotobuf
-	libprotobuf-lite
+        $pkgname-dev
+        $pkgname-vim::noarch
+        protoc
+        libprotoc
+        libprotobuf
+        libprotobuf-lite
 	"
 source="$pkgname-$pkgver.tar.gz::https://github.com/protocolbuffers/protobuf/archive/refs/tags/v$pkgver.tar.gz
-	fix-tests.patch
-	soversion.patch
+        fix-tests.patch
+        soversion.patch
         fix-protoc-abs-path.patch
 	"
 
