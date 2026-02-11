@@ -1,9 +1,10 @@
 # Alpine-Contributor: Rasmus Thomsen <oss@cogitri.dev>
 # Alpine-Maintainer: Rasmus Thomsen <oss@cogitri.dev>
 # Maintainer: Yongxin Dai <yodai@qnx.com>
+# Revised by: Elliott Mazzuca <emazzuca@qnx.com>
 pkgname=epiphany
 pkgver=43.1 # Looking at gtk4 build very soon
-pkgrel=0
+pkgrel=1
 pkgdesc="A simple, clean, beautiful view of the web"
 url="https://wiki.gnome.org/Apps/Web"
 arch="all"
@@ -58,6 +59,7 @@ subpackages="$pkgname-lang $pkgname-doc $pkgname-dbg"
 source="
     https://download.gnome.org/sources/epiphany/${pkgver%.*}/epiphany-$pkgver.tar.xz
     fix-missing-function-getrandom.patch
+    fix-navigation-button-timeout-crash.patch
 "
 options="!strip !check"
 
@@ -86,4 +88,5 @@ package() {
 sha512sums="
 1f54864c35f988b009b739e996dca1735f5222bf9fc5594eed3aa07d673db6f8f8870536b17985c318f39dfac79bce236118d863f9963944bc16cdaec469ca7a  epiphany-43.1.tar.xz
 aea6d380e34ce8d4d21df3fe9bbdd2d17944111a767e6c1811a630e8e55925224cf2d848e9b781c6ff3dd040c593968b694ab74ecc2413bc9d8add68f0ce2c90  fix-missing-function-getrandom.patch
+e9de6e9d0c5f0ac796b3e73e7999eb54b1e33932aa702e6f791ca6f9e378acadd73e4eaba01aab653afb8b4ecf221f09254bee00fdd816a18685f6c93b9cf912  fix-navigation-button-timeout-crash.patch
 "
