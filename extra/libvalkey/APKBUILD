@@ -8,7 +8,8 @@ pkgdesc="Valkey client library in C"
 url="https://github.com/valkey-io/libvalkey"
 arch="all"
 license="BSD-3-Clause"
-makedepends="openssl-dev"
+depends="libssl3 libcrypto3"
+makedepends="openssl-dev qnx-io-sock-dev"
 checkdepends="
 	libevent-dev
 	valkey
