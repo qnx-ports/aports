@@ -1,0 +1,19 @@
+diff --git a/src/google/protobuf/compiler/command_line_interface.cc b/src/google/protobuf/compiler/command_line_interface.cc
+index 03b970640..592f275e8 100644
+--- a/src/google/protobuf/compiler/command_line_interface.cc
++++ b/src/google/protobuf/compiler/command_line_interface.cc
+@@ -222,6 +222,14 @@ bool GetProtocAbsolutePath(std::string* path) {
+   if (sysctl(mib, 4, &buffer, &len, nullptr, 0) != 0) {
+     len = 0;
+   }
++#elif defined(__QNX__)
++  char buffer[PATH_MAX];
++  int len = 0;
++  int path_fd = open("/proc/self/exefile", O_RDONLY); 
++  if (path_fd > 0) {
++      len = read(path_fd, buffer, PATH_MAX); 
++      close(path_fd);
++  }
+ #else
+   char buffer[PATH_MAX];
+   int len = readlink("/proc/self/exe", buffer, PATH_MAX);

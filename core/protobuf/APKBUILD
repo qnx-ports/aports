@@ -36,6 +36,7 @@ subpackages="
 source="$pkgname-$pkgver.tar.gz::https://github.com/protocolbuffers/protobuf/archive/refs/tags/v$pkgver.tar.gz
 	fix-tests.patch
 	soversion.patch
+        fix-protoc-abs-path.patch
 	"
 
 # fails some
@@ -116,4 +117,5 @@ sha512sums="
 30561e92ff791b1c8c0f30cad833b2189e7f907fccc630a5090aaae00bf565d2f534db1126137a0ae4af85b49dfc16fdae82dc78c00e6db389c04e777705e289  protobuf-31.1.tar.gz
 c183709ce2d2c96cbcc5f64e66b1f9991916e2043bbd4ddbd14f0f606072c7f1eecacb37d70295e9b95d742e19c86c19e083636c7ca610c17e91f9caae02f3fe  fix-tests.patch
 a932fdb61d8bf1ad150176dd74362313c1e7fe2862b0899caea22c4a4921c25ff05136d0e14d0528f111af73ff223e5f697a772d8fb31a630479137736110060  soversion.patch
+1a5e231f4da8f925062acbc35861755e339fb3410222b4852f74de2ac7eae2e761960b8da6f09264a7758f5d16f6a435b0e8320d02cf5199730b3a05fc33ca23  fix-protoc-abs-path.patch
 "
