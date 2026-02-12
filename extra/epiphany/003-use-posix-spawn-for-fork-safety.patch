@@ -1,0 +1,329 @@
+--- a/lib/ephy-file-helpers.c
++++ b/lib/ephy-file-helpers.c
+@@ -76,6 +76,149 @@
+ 
+ static XdpPortal *global_portal;
+ 
++#ifdef __QNX__
++#include <spawn.h>
++#include <sys/wait.h>
++#include <fcntl.h>
++
++extern char **environ;
++
++/**
++ * qnx_safe_launch_uri:
++ * Fork-safe application launcher for QNX using posix_spawn().
++ */
++static gboolean
++qnx_safe_launch_uri (const char *uri,
++                     GAppInfo   *app_info,
++                     GError    **error)
++{
++  const char *commandline;
++  char *cmd_expanded = NULL;
++  char **argv = NULL;
++  char *executable_path = NULL;
++  pid_t pid;
++  int status;
++  posix_spawn_file_actions_t actions;
++  gboolean result = FALSE;
++  char *placeholder;
++
++  g_return_val_if_fail (uri != NULL, FALSE);
++  g_return_val_if_fail (G_IS_APP_INFO (app_info), FALSE);
++
++  if (!app_info || !G_IS_APP_INFO (app_info)) {
++    g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED,
++                 "No application handler available");
++    return FALSE;
++  }
++
++  g_debug ("[QNX] qnx_safe_launch_uri called for URI: %s", uri);
++
++  commandline = g_app_info_get_commandline (app_info);
++  if (!commandline) {
++    g_warning ("[QNX] No command line available for application");
++    g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED,
++                 "No command line available");
++    return FALSE;
++  }
++
++  g_debug ("[QNX] Command line: %s", commandline);
++
++  /* Expand command with URI (handle %f, %u, %F, %U) */
++  cmd_expanded = g_strdup (commandline);
++  
++  if ((placeholder = strstr (cmd_expanded, "%f")) != NULL ||
++      (placeholder = strstr (cmd_expanded, "%F")) != NULL ||
++      (placeholder = strstr (cmd_expanded, "%u")) != NULL ||
++      (placeholder = strstr (cmd_expanded, "%U")) != NULL) {
++    GString *new_cmd = g_string_new ("");
++    g_string_append_len (new_cmd, cmd_expanded, placeholder - cmd_expanded);
++    g_string_append (new_cmd, uri);
++    g_string_append (new_cmd, placeholder + 2);
++    g_free (cmd_expanded);
++    cmd_expanded = g_string_free (new_cmd, FALSE);
++  } else {
++    char *tmp = g_strdup_printf ("%s %s", cmd_expanded, uri);
++    g_free (cmd_expanded);
++    cmd_expanded = tmp;
++  }
++
++  g_debug ("[QNX] Expanded command: %s", cmd_expanded);
++
++  /* Parse into argv */
++  if (!g_shell_parse_argv (cmd_expanded, NULL, &argv, error)) {
++    g_warning ("[QNX] Failed to parse command: %s", 
++               error && *error ? (*error)->message : "unknown");
++    g_free (cmd_expanded);
++    return FALSE;
++  }
++  g_free (cmd_expanded);
++
++  g_debug ("[QNX] Parsed argv[0]: %s", argv[0]);
++
++  /* Resolve executable path if it's not absolute */
++  if (!g_path_is_absolute (argv[0])) {
++    executable_path = g_find_program_in_path (argv[0]);
++    if (!executable_path) {
++      g_warning ("[QNX] Could not find '%s' in PATH", argv[0]);
++      g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
++                   "Could not find '%s' in PATH", argv[0]);
++      g_strfreev (argv);
++      return FALSE;
++    }
++    g_debug ("[QNX] Resolved executable path: %s", executable_path);
++  } else {
++    executable_path = g_strdup (argv[0]);
++  }
++
++  /* Verify executable exists and is executable */
++  if (!g_file_test (executable_path, G_FILE_TEST_IS_EXECUTABLE)) {
++    g_warning ("[QNX] '%s' is not executable or does not exist", executable_path);
++    g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
++                 "'%s' is not executable or does not exist", executable_path);
++    g_free (executable_path);
++    g_strfreev (argv);
++    return FALSE;
++  }
++
++  /* Initialize posix_spawn file actions */
++  if (posix_spawn_file_actions_init (&actions) != 0) {
++    g_warning ("[QNX] posix_spawn_file_actions_init failed: %s", g_strerror (errno));
++    g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED,
++                 "spawn init failed: %s", g_strerror (errno));
++    g_free (executable_path);
++    g_strfreev (argv);
++    return FALSE;
++  }
++
++  /* Redirect stdout/stderr to /dev/null */
++  posix_spawn_file_actions_addopen (&actions, STDOUT_FILENO,
++                                    "/dev/null", O_WRONLY, 0);
++  posix_spawn_file_actions_addopen (&actions, STDERR_FILENO,
++                                    "/dev/null", O_WRONLY, 0);
++
++  g_debug ("[QNX] Calling posix_spawn for: %s", executable_path);
++
++  /* Spawn the process */
++  status = posix_spawn (&pid, executable_path, &actions, NULL, argv, environ);
++
++  posix_spawn_file_actions_destroy (&actions);
++
++  if (status == 0) {
++    g_debug ("[QNX] posix_spawn succeeded, PID: %d", pid);
++    result = TRUE;
++  } else {
++    g_warning ("[QNX] posix_spawn failed: %s", g_strerror (status));
++    g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED,
++                 "spawn failed: %s", g_strerror (status));
++    result = FALSE;
++  }
++
++  g_free (executable_path);
++  g_strfreev (argv);
++  return result;
++}
++#endif /* __QNX__ */
++
+ GQuark ephy_file_helpers_error_quark;
+ 
+ /**
+@@ -577,39 +720,114 @@
+ launch_application (GAppInfo *app,
+                     GList    *files)
+ {
++#ifdef __QNX__
++  g_autoptr (GError) error = NULL;
++  GList *l;
++#else
+   g_autoptr (GdkAppLaunchContext) context = NULL;
+   g_autoptr (GError) error = NULL;
+   GdkDisplay *display;
+   GdkScreen *screen;
+   gboolean res;
++#endif
+ 
++  if (!app) {
++    g_warning ("No application handler available");
++    return FALSE;
++  }
++
++#ifdef __QNX__
++  /* QNX: Use fork-safe posix_spawn for each file */
++  for (l = files; l != NULL; l = l->next) {
++    GFile *file = G_FILE (l->data);
++    char *uri = g_file_get_uri (file);
++    
++    if (!qnx_safe_launch_uri (uri, app, &error)) {
++      g_warning ("Failed to launch %s: %s", 
++                 g_app_info_get_display_name (app), 
++                 error ? error->message : "unknown");
++      g_free (uri);
++      if (error)
++        g_clear_error (&error);
++      return FALSE;
++    }
++    g_free (uri);
++  }
++  return TRUE;
++#else
++  /* Standard GLib implementation using fork */
+   display = gdk_display_get_default ();
+   screen = gdk_screen_get_default ();
+-
+   context = gdk_display_get_app_launch_context (display);
+   gdk_app_launch_context_set_screen (context, screen);
+ 
+   res = g_app_info_launch (app, files,
+                            G_APP_LAUNCH_CONTEXT (context), &error);
+   if (!res)
+-    g_warning ("Failed to launch %s: %s", g_app_info_get_display_name (app), error->message);
++    g_warning ("Failed to launch %s: %s", 
++               g_app_info_get_display_name (app), error->message);
+ 
+   return res;
++#endif
+ }
+ 
+ static gboolean
+ launch_via_uri_handler (GFile *file)
+ {
+   const char *uri;
++  g_autoptr (GError) error = NULL;
++#ifdef __QNX__
++  g_autoptr (GFileInfo) info = NULL;
++  const char *content_type;
++  GAppInfo *app_info;
++  gboolean result;
++#else
+   GdkDisplay *display;
+   GdkAppLaunchContext *context;
+-  g_autoptr (GError) error = NULL;
++#endif
++  
++  uri = g_file_get_uri (file);
+ 
++#ifdef __QNX__
++  /* QNX: Query MIME type and use fork-safe launcher */
++  info = g_file_query_info (file,
++                            G_FILE_ATTRIBUTE_STANDARD_CONTENT_TYPE,
++                            G_FILE_QUERY_INFO_NONE,
++                            NULL,
++                            &error);
++  if (!info) {
++    g_warning ("Failed to query file info for %s: %s", 
++               uri, error ? error->message : "unknown");
++    return FALSE;
++  }
++  
++  content_type = g_file_info_get_content_type (info);
++  if (!content_type) {
++    g_warning ("No content type found for %s", uri);
++    return FALSE;
++  }
++  
++  app_info = g_app_info_get_default_for_type (content_type, FALSE);
++  if (!app_info) {
++    g_warning ("No application handler available for content type %s", 
++               content_type);
++    return FALSE;
++  }
++  
++  result = qnx_safe_launch_uri (uri, app_info, &error);
++  g_object_unref (app_info);
++  
++  if (error) {
++    g_warning ("Failed to launch handler for URI %s: %s", uri, error->message);
++    return FALSE;
++  }
++  
++  return result;
++#else
++  /* Standard GLib implementation using fork */
+   display = gdk_display_get_default ();
+   context = gdk_display_get_app_launch_context (display);
+ 
+-  uri = g_file_get_uri (file);
+-
+   g_app_info_launch_default_for_uri (uri, G_APP_LAUNCH_CONTEXT (context), &error);
+   if (error) {
+     g_warning ("Failed to launch handler for URI %s: %s", uri, error->message);
+@@ -617,6 +835,7 @@
+   }
+ 
+   return TRUE;
++#endif
+ }
+ 
+ /**
+@@ -663,20 +882,36 @@
+                          const char *mime_type,
+                          GdkScreen  *screen)
+ {
+-  g_autoptr (GdkAppLaunchContext) context = NULL;
+   g_autoptr (GAppInfo) appinfo = NULL;
+   g_autoptr (GError) error = NULL;
++#ifdef __QNX__
++  gboolean result;
++#else
++  g_autoptr (GdkAppLaunchContext) context = NULL;
+   GList uris;
++#endif
+ 
+-  context = gdk_display_get_app_launch_context (screen ? gdk_screen_get_display (screen) : gdk_display_get_default ());
+-  gdk_app_launch_context_set_screen (context, screen);
+-
+   appinfo = g_app_info_get_default_for_type (mime_type, TRUE);
+   if (!appinfo) {
+     g_warning ("Failed to get default app for MIME type: %s", mime_type);
+     return FALSE;
+   }
+ 
++#ifdef __QNX__
++  /* QNX: Use fork-safe posix_spawn */
++  result = qnx_safe_launch_uri (uri, appinfo, &error);
++  
++  if (error) {
++    g_warning ("Failed to launch %s: %s", uri, error->message);
++    return FALSE;
++  }
++  
++  return result;
++#else
++  /* Standard GLib implementation using fork */
++  context = gdk_display_get_app_launch_context (screen ? gdk_screen_get_display (screen) : gdk_display_get_default ());
++  gdk_app_launch_context_set_screen (context, screen);
++
+   uris.data = (gpointer)uri;
+   uris.next = uris.prev = NULL;
+ 
+@@ -686,6 +921,7 @@
+   }
+ 
+   return TRUE;
++#endif
+ }
+ 
+ gboolean
