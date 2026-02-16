@@ -8,8 +8,6 @@ pkgdesc="An implementation of the TLS/SSL protocols"
 url="https://aws.github.io/s2n-tls/usage-guide/"
 arch="all"
 license="Apache-2.0"
-options="!check"
-depends="qnx-gcc-libs libcrypto3 qnx-microkernel"
 makedepends="
     cmake
     ninja
@@ -35,15 +33,12 @@ build() {
 }
 
 check() {
-  ctest --test-dir build
+  test_exclude="s2n_override_openssl_random_test|s2n_self_talk_broken_pipe_test"
+  ctest --test-dir build -E $test_exclude
 }
 
 package() {
   DESTDIR="$pkgdir" cmake --install build
-}
-
-dev() {
-  default_dev
 }
 
 sha512sums="
