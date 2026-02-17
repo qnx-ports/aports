@@ -1,0 +1,57 @@
+# Contributor: Francesco Colista <fcolista@alpinelinux.org>
+# Maintainer: Francesco Colista <fcolista@alpinelinux.org>
+pkgname=lldpd
+pkgver=1.0.19
+pkgrel=0
+pkgdesc="Implementation of IEEE 802.1ab"
+url="https://lldpd.github.io/"
+arch="all"
+license="ISC"
+makedepends="autoconf automake libtool 
+	libevent-dev libxml2-dev jansson-dev
+	perl-dev readline-dev"
+subpackages="
+	$pkgname-dev
+	$pkgname-doc
+	$pkgname-bash-completion
+	"
+pkgusers="lldpd"
+pkggroups="lldpd"
+source="$pkgname-$pkgver.tar.gz::https://github.com/qnx-ports/lldpd/archive/refs/tags/qnx-$pkgver-001.tar.gz"
+builddir="$srcdir/$pkgname-qnx-$pkgver-001"
+
+prepare() {
+	# this should be shipped with the release tarball
+	echo $pkgver > .dist-version
+	"$builddir"/autogen.sh
+	default_prepare
+}
+
+build() {
+
+	export LDFLAGS="$LDFLAGS -lsocket -lregex"
+	./configure \
+		--host=x86_64-x86pc-nto-qnx8.0.0 \
+		--build=x86_64-x86pc-nto-qnx8.0.0 \
+		--prefix=/usr \
+		--localstatedir=/var \
+		--sysconfdir=/etc \
+		--enable-static=no \
+		--enable-min-macro
+	make
+}
+
+#check() {
+	#make check
+#}
+
+package() {
+	install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+	make DESTDIR="$pkgdir" install
+}
+
+
+sha512sums="
+94e2867cda134de3e4999d80f10ed701a1f9010637241a308530bb1aa5ef8cc47dc4f219802096d71a138a1bcaba8171f59b574068255698f8bc7a99d62020f5  lldpd-1.0.19.tar.gz
+"
+
