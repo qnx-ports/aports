@@ -4,7 +4,7 @@
 # Revised by: Felix Xing <fxing@qnx.com>
 pkgname=gtk4
 pkgver=4.13.6
-pkgrel=5
+pkgrel=6
 pkgdesc="The GTK Toolkit (v4)"
 url="https://www.gtk.org/"
 arch="all"
@@ -78,6 +78,7 @@ source="https://github.com/qnx-ports/gtk/archive/refs/heads/$_qnx_branch.zip
     input-event-codes.h
     005-fix-wayland-geometry-crash.patch
     006-fix-gtk4-window-management.patch
+    007-fix-themostat-gdk-monitor-null-surface.patch
     "
 
 builddir="$srcdir/gtk-$_qnx_branch"
@@ -264,4 +265,5 @@ sha512sums="
 9c15657ca0b121a8c5128a066ba631782e1b22f51257d69e623181c806d3d883d27722c15850867ad546d6725d72b4c4612372a72e7111f94f04337a3ab38b60  input-event-codes.h
 559ff17b2402716bf84c5a02f4227a8695ed66a4cae2268c1fb9d5765c4250090678fb33f8fa3403da4dc219e6b775a180dbb42f6f5d2f8a6f1f6e5798d26f82  005-fix-wayland-geometry-crash.patch
 11a183d74d4ac162093cefcbe2e848291b969ce0e2342b09d29c8b58929a2d23d8ff63dde3dfc25adaefe8065d4d00f6e7161df707bf9da31078c9779767c5d2  006-fix-gtk4-window-management.patch
+4134f5078047b6bc5d23ae14cf4e729fe5a2cc989397257ca4025927304b858ee130f9718eb8426b0692eb163f4debba16e5f26a6d123181064d9afb3c06cbd4  007-fix-themostat-gdk-monitor-null-surface.patch
 "

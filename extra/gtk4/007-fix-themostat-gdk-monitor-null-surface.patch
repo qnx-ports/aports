@@ -1,0 +1,19 @@
+--- a/qnx_examples/gtk4_thermostat_A4/src/gtk4_thermostat_A4.c
++++ b/qnx_examples/gtk4_thermostat_A4/src/gtk4_thermostat_A4.c
+@@ -154,10 +154,12 @@
+ 	GtkWidget* status_btn = NULL;
+ 	GtkWidget* status_img = NULL;
+ 
+-	GdkDisplay *display = gdk_display_get_default();
+-	GdkMonitor *monitor = gdk_display_get_monitor_at_surface(display, NULL);
+-	GdkRectangle geometry;
+-	gdk_monitor_get_geometry(monitor, &geometry);
++        GdkDisplay *display = gdk_display_get_default();
++        GListModel *monitors = gdk_display_get_monitors(display);
++        GdkMonitor *monitor = g_list_model_get_item(monitors, 0);
++        GdkRectangle geometry;
++        gdk_monitor_get_geometry(monitor, &geometry);
++        g_object_unref(monitor);  // g_list_model_get_item gives us a ref
+ 	g_print("Fulscreen size: %d x %d \n", geometry.width, geometry.height);
+ 	screen_width = geometry.width;
+ 	screen_height = geometry.height;
