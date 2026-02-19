@@ -1,0 +1,40 @@
+# Alpine-Contributor: wener <wenermail@gmail.com>
+# Alpine-Maintainer: wener <wenermail@gmail.com>
+# Maintainer: Leo Shen <yishen@qnx.com>
+pkgname=fio
+pkgver=3.41
+pkgrel=0
+pkgdesc="Flexible I/O Tester"
+url="https://github.com/axboe/fio"
+arch="all"
+license="GPL-2.0-only"
+depends="zlib-ng"
+makedepends="zlib-ng-dev"
+subpackages="$pkgname-doc"
+source="$pkgname-$pkgver.tar.gz::https://github.com/axboe/fio/archive/fio-$pkgver.tar.gz
+    fix-qnx.patch
+"
+builddir="$srcdir/fio-$pkgname-$pkgver"
+
+build() {
+    ./configure \
+        --prefix=/usr \
+        --disable-native
+    make
+}
+
+check() {
+    make test
+}
+
+package() {
+    make mandir=/usr/share/man DESTDIR="$pkgdir" install
+    install -Dm644 README.rst REPORTING-BUGS MORAL-LICENSE \
+        -t "$pkgdir"/usr/share/doc/$pkgname/
+}
+
+
+sha512sums="
+723864bda30e4971fd3a58dab96b3937dfe19068c60da6923e636890989e32c8d5a8cadf3678180abd8ba88f2f7be520e90b0f7a3c76a5b48ae7aaace775bb2f  fio-3.41.tar.gz
+6140cd786aab0d706a8671496e3905a29c1b63df7427ef3eafe365ee156fce0d24242a0aa2bfd30df5f3e67edccdc2caac0674af79017c75fce509cbe1544cf5  fix-qnx.patch
+"
