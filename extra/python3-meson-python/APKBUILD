@@ -27,6 +27,7 @@ subpackages=""
 source="$pkgname-$pkgver.tar.gz::https://github.com/mesonbuild/meson-python/archive/refs/tags/$pkgver.tar.gz"
 builddir="$srcdir/meson-python-$pkgver"
 
+# We don't ship patchelf
 options="!check"
 
 build() {
