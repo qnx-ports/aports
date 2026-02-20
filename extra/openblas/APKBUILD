@@ -1,0 +1,74 @@
+# Alpine-Contributor: Isaac Dunham <ibid.ag@gmail.com>
+# Alpine-Contributor: Jakub Jirutka <jakub@jirutka.cz>
+# Contributor: Ethan Leir <eleir@qnx.com>
+pkgname=openblas
+_pkgname=OpenBLAS
+pkgver=0.3.28
+pkgrel=0
+pkgdesc="fast BSD-licensed BLAS based on gotoBLAS2, with LAPACK"
+url="https://www.openblas.net/"
+arch="all"
+license="BSD-3-Clause"
+depends_dev=""
+makedepends="$depends_dev perl"
+subpackages="
+    $pkgname-dev
+    $pkgname-doc
+    "
+_git_rev=3
+source="
+    ${pkgname}-${pkgver}-r${_git_rev}.tar.gz::https://github.com/qnx-ports/${_pkgname}/archive/refs/tags/qnx-${pkgver}-r${_git_rev}.tar.gz
+    "
+builddir="$srcdir/$_pkgname-qnx-$pkgver-r${_git_rev}"
+
+build() {
+    # OpenBLAS library is huge and it's heavily optimized for performance.
+    # It doesn't make sense to compile it with -Os.
+    export CFLAGS=${CFLAGS/-Os/-O2}
+
+    cmake3.5 -B build -G Ninja \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DBUILD_SHARED_LIBS=ON \
+        -DC_LAPACK=ON \
+        -DUSE_OPENMP=ON \
+        -DBUILD_TESTING=ON \
+        -DCPP_THREAD_SAFETY_TEST=ON \
+        -DNOFORTRAN=ON
+    cmake3.5 --build build
+}
+
+dev() {
+    provides="blas-dev lapack-dev"
+    replaces="$provides"
+
+    default_dev
+}
+
+check() {
+    ctest3.5 --test-dir build
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake3.5 --install build
+
+    install -Dm 0644 Changelog.txt TargetList.txt USAGE.md \
+        -t "$pkgdir"/usr/share/doc/$pkgname/
+}
+
+#liblapack() {
+#    pkgdesc="$pkgdesc (LAPACK library)"
+#    # provides the same library
+#    depends="!lapack"
+#    amove usr/lib/liblapack.so.*
+#}
+
+#liblapacke() {
+#    pkgdesc="$pkgdesc (LAPACKE library)"
+#    # provides the same library
+#    depends="!lapack"
+#    amove usr/lib/liblapacke.so.*
+#}
+
+sha512sums="
+65cb29f0455af325508310f102fc67d836972244ee0b2bd295d2db64766475866ed922d21d9ba678dd4a02d0e3d8a29841b37307bb80fc9bb3bd7f0c149e1776  openblas-0.3.28-r3.tar.gz
+"
