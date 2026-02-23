@@ -1,0 +1,60 @@
+# Contributor: Holger Jaekel <holger.jaekel@gmx.de>
+# Maintainer: Holger Jaekel <holger.jaekel@gmx.de>
+pkgname=libaec
+pkgver=1.1.4
+pkgrel=0
+pkgdesc="Adaptive Entropy Coding library"
+url="https://gitlab.dkrz.de/k202009/libaec"
+arch="all"
+license="BSD-2-Clause"
+makedepends="
+	cmake
+	ninja
+	"
+subpackages="
+	$pkgname-dev
+	libsz
+	"
+source="
+	libaec-$pkgver.tar.gz::https://gitlab.dkrz.de/k202009/libaec/-/archive/v$pkgver/libaec-v$pkgver.tar.gz
+	"
+builddir=$srcdir/$pkgname-v$pkgver
+
+build() {
+	# work around bug in gcc 15.2 which generates bad assembly on armv7
+	CFLAGS="${CFLAGS//-Os/-O2}"
+
+	cmake -B build -G Ninja \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DCMAKE_INSTALL_LIBDIR=lib \
+		-DBUILD_SHARED_LIBS=True \
+		-DBUILD_STATIC_LIBS=False \
+		-DCMAKE_BUILD_TYPE=None \
+		$crossopts
+	cmake --build build
+}
+
+check() {
+	cd build
+	ctest
+}
+
+package() {
+	DESTDIR="$pkgdir" cmake --install build
+}
+
+tools() {
+	pkgdesc="$pkgdesc (command line utilities)"
+
+	amove usr/bin/*
+}
+
+libsz() {
+	pkgdesc="Free drop-in replacement for the SZIP compression library"
+
+	amove usr/lib/libsz*
+}
+
+sha512sums="
+320060f59f29d0f2124c79e60ab6205fed31d96101b654393e4ba3154c55903247ef844e1d4f658094b76e19fe950437e9ecbbcd04dfe53a8b570fe9a17b5f87  libaec-1.1.4.tar.gz
+"
