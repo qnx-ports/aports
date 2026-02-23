@@ -1,5 +1,6 @@
-# Contributor: Holger Jaekel <holger.jaekel@gmx.de>
-# Maintainer: Holger Jaekel <holger.jaekel@gmx.de>
+# Alpine-Contributor: Holger Jaekel <holger.jaekel@gmx.de>
+# Alpine-Maintainer: Holger Jaekel <holger.jaekel@gmx.de>
+# Maintainer: Ethan Leir <eleir@qnx.com>
 pkgname=libaec
 pkgver=1.1.4
 pkgrel=0
@@ -8,51 +9,52 @@ url="https://gitlab.dkrz.de/k202009/libaec"
 arch="all"
 license="BSD-2-Clause"
 makedepends="
-	cmake
-	ninja
-	"
+    cmake
+    clang
+    ninja
+    "
 subpackages="
-	$pkgname-dev
-	libsz
-	"
+    $pkgname-dev
+    libsz
+    "
 source="
-	libaec-$pkgver.tar.gz::https://gitlab.dkrz.de/k202009/libaec/-/archive/v$pkgver/libaec-v$pkgver.tar.gz
-	"
+    libaec-$pkgver.tar.gz::https://gitlab.dkrz.de/k202009/libaec/-/archive/v$pkgver/libaec-v$pkgver.tar.gz
+    "
 builddir=$srcdir/$pkgname-v$pkgver
 
 build() {
-	# work around bug in gcc 15.2 which generates bad assembly on armv7
-	CFLAGS="${CFLAGS//-Os/-O2}"
+    # work around bug in gcc 15.2 which generates bad assembly on armv7
+    CFLAGS="${CFLAGS//-Os/-O2}"
 
-	cmake -B build -G Ninja \
-		-DCMAKE_INSTALL_PREFIX=/usr \
-		-DCMAKE_INSTALL_LIBDIR=lib \
-		-DBUILD_SHARED_LIBS=True \
-		-DBUILD_STATIC_LIBS=False \
-		-DCMAKE_BUILD_TYPE=None \
-		$crossopts
-	cmake --build build
+    cmake -B build -G Ninja \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DCMAKE_INSTALL_LIBDIR=lib \
+        -DBUILD_SHARED_LIBS=True \
+        -DBUILD_STATIC_LIBS=False \
+        -DCMAKE_BUILD_TYPE=None \
+        $crossopts
+    cmake --build build
 }
 
 check() {
-	cd build
-	ctest
+    cd build
+    ctest
 }
 
 package() {
-	DESTDIR="$pkgdir" cmake --install build
+    DESTDIR="$pkgdir" cmake --install build
 }
 
 tools() {
-	pkgdesc="$pkgdesc (command line utilities)"
+    pkgdesc="$pkgdesc (command line utilities)"
 
-	amove usr/bin/*
+    amove usr/bin/*
 }
 
 libsz() {
-	pkgdesc="Free drop-in replacement for the SZIP compression library"
+    pkgdesc="Free drop-in replacement for the SZIP compression library"
 
-	amove usr/lib/libsz*
+    amove usr/lib/libsz*
 }
 
 sha512sums="
