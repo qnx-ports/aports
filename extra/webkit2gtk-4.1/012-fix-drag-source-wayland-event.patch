@@ -1,0 +1,161 @@
+--- a/Source/WebKit/UIProcess/API/gtk/DragSource.h
++++ b/Source/WebKit/UIProcess/API/gtk/DragSource.h
+@@ -57,7 +57,11 @@
+     explicit DragSource(GtkWidget*);
+     ~DragSource();
+ 
+-    void begin(WebCore::SelectionData&&, OptionSet<WebCore::DragOperation>, RefPtr<WebCore::ShareableBitmap>&&, WebCore::IntPoint&& imageHotspot);
++#if !USE(GTK4)
++    void begin(WebCore::SelectionData&&, OptionSet<WebCore::DragOperation>, RefPtr<WebCore::ShareableBitmap>&&, WebCore::IntPoint&&, GdkEvent*);
++#else
++    void begin(WebCore::SelectionData&&, OptionSet<WebCore::DragOperation>, RefPtr<WebCore::ShareableBitmap>&&, WebCore::IntPoint&&);
++#endif
+ 
+ private:
+     GRefPtr<GdkPixbuf> selectionImage() const;
+--- a/Source/WebKit/UIProcess/API/gtk/DragSourceGtk3.cpp
++++ b/Source/WebKit/UIProcess/API/gtk/DragSourceGtk3.cpp
+@@ -112,7 +112,7 @@
+     g_signal_handlers_disconnect_by_data(m_webView, this);
+ }
+ 
+-void DragSource::begin(SelectionData&& selectionData, OptionSet<DragOperation> operationMask, RefPtr<ShareableBitmap>&& image, IntPoint&& imageHotspot)
++void DragSource::begin(SelectionData&& selectionData, OptionSet<DragOperation> operationMask, RefPtr<ShareableBitmap>&& image, IntPoint&& imageHotspot, GdkEvent* event)
+ {
+     if (m_drag) {
+         gtk_drag_cancel(m_drag.get());
+--- a/Source/WebKit/UIProcess/API/gtk/WebKitWebViewBase.cpp
++++ b/Source/WebKit/UIProcess/API/gtk/WebKitWebViewBase.cpp
+@@ -328,6 +328,7 @@
+     GRefPtr<GdkEvent> contextMenuEvent;
+ #else
+     GUniquePtr<GdkEvent> contextMenuEvent;
++    GUniquePtr<GdkEvent> lastButtonPressEvent;
+ #endif
+     WebContextMenuProxyGtk* activeContextMenuProxy { nullptr };
+ #endif // ENABLE(CONTEXT_MENUS)
+@@ -1368,7 +1369,7 @@
+         return GTK_WIDGET_CLASS(webkit_web_view_base_parent_class)->button_press_event(widget, event);
+ 
+     webkitWebViewBaseHandleMouseEvent(webViewBase, reinterpret_cast<GdkEvent*>(event));
+-
++    priv->lastButtonPressEvent.reset(gdk_event_copy(reinterpret_cast<GdkEvent*>(event)));
+     return GDK_EVENT_STOP;
+ }
+ 
+@@ -1676,6 +1677,8 @@
+ 
+     if (priv->dialog)
+         return GDK_EVENT_PROPAGATE;
++    if (crossingEvent->type == GDK_LEAVE_NOTIFY)
++        priv->lastButtonPressEvent.reset();
+ 
+ #if ENABLE(DEVELOPER_MODE)
+     // Do not send mouse move events to the WebProcess for crossing events during testing.
+@@ -1767,6 +1770,8 @@
+     WebKitWebViewBasePrivate* priv = webViewBase->priv;
+     if (priv->dialog)
+         return;
++    if (crossingEvent->type == GDK_LEAVE_NOTIFY)
++        priv->lastButtonPressEvent.reset();
+ 
+ #if ENABLE(DEVELOPER_MODE)
+     // Do not send mouse move events to the WebProcess for crossing events during testing.
+@@ -2583,10 +2588,12 @@
+ void webkitWebViewBaseStartDrag(WebKitWebViewBase* webViewBase, SelectionData&& selectionData, OptionSet<DragOperation> dragOperationMask, RefPtr<ShareableBitmap>&& image, IntPoint&& dragImageHotspot)
+ {
+     WebKitWebViewBasePrivate* priv = webViewBase->priv;
++    if (!priv->lastButtonPressEvent)
++        return;
+     if (!priv->dragSource)
+         priv->dragSource = makeUnique<DragSource>(GTK_WIDGET(webViewBase));
+ 
+-    priv->dragSource->begin(WTFMove(selectionData), dragOperationMask, WTFMove(image), WTFMove(dragImageHotspot));
++    priv->dragSource->begin(WTFMove(selectionData), dragOperationMask, WTFMove(image), WTFMove(dragImageHotspot), priv->lastButtonPressEvent.get());
+ 
+ #if !USE(GTK4)
+     // A drag starting should prevent a double-click from happening. This might
+--- a/Source/JavaScriptCore/jit/JITInlineCacheGenerator.h
++++ b/Source/JavaScriptCore/jit/JITInlineCacheGenerator.h
+@@ -53,7 +53,11 @@
+ enum class CacheType : int8_t;
+ enum class JITType : uint8_t;
+ 
++#if ENABLE(DFG_JIT)
+ using CompileTimeStructureStubInfo = Variant<StructureStubInfo*, BaselineUnlinkedStructureStubInfo*, DFG::UnlinkedStructureStubInfo*>;
++#else
++using CompileTimeStructureStubInfo = Variant<StructureStubInfo*, BaselineUnlinkedStructureStubInfo*>;
++#endif
+ 
+ class JITInlineCacheGenerator {
+ protected:
+--- a/Source/JavaScriptCore/wasm/WasmIPIntSlowPaths.cpp
++++ b/Source/JavaScriptCore/wasm/WasmIPIntSlowPaths.cpp
+@@ -176,6 +176,7 @@
+ 
+ WASM_IPINT_EXTERN_CPP_DECL(prologue_osr, CallFrame* callFrame)
+ {
++#if ENABLE(DFG_JIT)
+     Wasm::IPIntCallee* callee = IPINT_CALLEE(callFrame);
+ 
+     if (!shouldJIT(callee)) {
+@@ -193,6 +194,10 @@
+         WASM_RETURN_TWO(replacement->entrypoint().taggedPtr(), nullptr);
+     }
+     WASM_RETURN_TWO(nullptr, nullptr);
++#else
++    UNUSED_PARAM(callFrame);
++    WASM_RETURN_TWO(nullptr, nullptr);
++#endif
+ }
+ 
+ template<SavedFPWidth savedFPWidth>
+@@ -248,6 +253,7 @@
+ 
+ WASM_IPINT_EXTERN_CPP_DECL(loop_osr, CallFrame* callFrame, uint8_t* pc, IPIntLocal* pl)
+ {
++#if ENABLE(DFG_JIT)
+     Wasm::IPIntCallee* callee = IPINT_CALLEE(callFrame);
+     Wasm::IPIntTierUpCounter& tierUpCounter = callee->tierUpCounter();
+ 
+@@ -289,10 +295,15 @@
+ 
+     instance->ensureBaselineData(callee->functionIndex());
+     WASM_RETURN_TWO(buffer, sharedLoopEntrypoint->taggedPtr());
++#else
++    UNUSED_PARAM(callFrame);
++    WASM_RETURN_TWO(nullptr, nullptr);
++#endif
+ }
+ 
+ WASM_IPINT_EXTERN_CPP_DECL(epilogue_osr, CallFrame* callFrame)
+ {
++#if ENABLE(DFG_JIT)
+     Wasm::IPIntCallee* callee = IPINT_CALLEE(callFrame);
+ 
+     if (!shouldJIT(callee)) {
+@@ -306,6 +317,24 @@
+ 
+     jitCompileAndSetHeuristics(*callee, instance, OSRFor::Epilogue);
+     WASM_RETURN_TWO(nullptr, nullptr);
++#else
++    UNUSED_PARAM(callFrame);
++    WASM_RETURN_TWO(nullptr, nullptr);
++#endif
++}
++#endif
++#if !ENABLE(WEBASSEMBLY_BBQJIT)
++extern "C" UGPRPair SYSV_ABI ipint_extern_prologue_osr(JSWebAssemblyInstance*, CallFrame*)
++{
++    return UGPRPair { 0, 0 };
++}
++extern "C" UGPRPair SYSV_ABI ipint_extern_loop_osr(JSWebAssemblyInstance*, CallFrame*, uint8_t*, IPIntLocal*)
++{
++    return UGPRPair { 0, 0 };
++}
++extern "C" UGPRPair SYSV_ABI ipint_extern_epilogue_osr(JSWebAssemblyInstance*, CallFrame*)
++{
++    return UGPRPair { 0, 0 };
+ }
+ #endif
+ 
