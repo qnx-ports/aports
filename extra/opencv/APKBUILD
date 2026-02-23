@@ -1,0 +1,200 @@
+# Alpine-Contributor: Marian Buschsieweke <marian.buschsieweke@posteo.net>
+# Alpine-Maintainer: Meng Zhuo <mengzhuo@iscas.ac.cn>
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=opencv
+pkgver=4.9.0
+pkgrel=0
+pkgdesc="Open source computer vision and machine learning library"
+url="https://opencv.org/"
+# s390x blocked by vtk -> netcdf
+arch="all !s390x"
+license="Apache-2.0"
+depends_dev="
+    zlib-dev
+    eigen-dev
+    ffmpeg-dev
+    freetype-dev
+    gst-plugins-base-dev
+    gstreamer-dev
+    harfbuzz-dev
+    egl-headers
+    gles-headers
+    opencl-headers
+    qnx-screen-dev
+    qnx-opencl
+    onetbb-dev
+    openblas-dev
+    openexr-dev
+    openjpeg-dev
+    openjpeg-tools
+    python3-setuptools
+    "
+makedepends="
+    $depends_dev
+    clang
+    cmake
+    python3-dev
+    python3-gpep517
+    python3-numpy-dev
+    python3-setuptools
+    python3-wheel
+    "
+subpackages="
+    $pkgname-dbg
+    $pkgname-dev
+    $pkgname-doc
+    python3-$pkgname:_py3
+    libopencv_aruco:_lib
+    libopencv_calib3d:_lib
+    libopencv_core:_lib
+    libopencv_dnn:_lib
+    libopencv_face:_lib
+    libopencv_features2d:_lib
+    libopencv_flann:_lib
+    libopencv_highgui:_lib
+    libopencv_imgcodecs:_lib
+    libopencv_imgproc:_lib
+    libopencv_ml:_lib
+    libopencv_objdetect:_lib
+    libopencv_optflow:_lib
+    libopencv_photo:_lib
+    libopencv_plot:_lib
+    libopencv_shape:_lib
+    libopencv_stitching:_lib
+    libopencv_superres:_lib
+    libopencv_tracking:_lib
+    libopencv_video:_lib
+    libopencv_videoio:_lib
+    libopencv_videostab:_lib
+    libopencv_ximgproc:_lib
+    "
+_git_rev=2
+source="${pkgname}-${pkgver}-r${_git_rev}.tar.gz::https://github.com/qnx-ports/opencv/archive/refs/tags/qnx-$pkgver-r$_git_rev.tar.gz
+    https://github.com/opencv/opencv_contrib/archive/$pkgver/opencv_contrib-$pkgver.tar.gz
+    "
+builddir="$srcdir/$pkgname-qnx-$pkgver-r${_git_rev}"
+# Tests require human interaction
+# net required to download a data file (face_landmark_model.dat)
+options="net !check"
+
+prepare() {
+    default_prepare
+
+    cd "$srcdir/opencv_contrib-$pkgver"/modules
+    # Only use modules that we care about
+    mv \
+        aruco \
+        face \
+        tracking \
+        optflow \
+        plot \
+        shape \
+        superres \
+        videostab \
+        ximgproc \
+        "$builddir"/modules/
+}
+
+build() {
+    case "$CARCH" in
+    x86_64)
+        local extra_cmake_flags="-DCPU_BASELINE_DISABLE=SSE3 -DCPU_BASELINE_REQUIRE=SSE2"
+        ;;
+    esac
+
+    # reduce size of debug syms
+    CFLAGS="$CFLAGS -g1" CXXFLAGS="$CXXFLAGS -g1" \
+    LDFLAGS="$LDFLAGS -lz" \
+    CC=clang CXX=clang++ \
+    cmake3.5 -B build -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DCMAKE_INSTALL_LIBDIR=lib \
+        -DENABLE_BUILD_HARDENING=OFF \
+        -DENABLE_THIN_LTO=$lto \
+        -DWITH_OPENCL=ON \
+        -DWITH_OPENGL=ON \
+        -DWITH_TBB=ON \
+        -DWITH_VULKAN=OFF \
+        -DWITH_QT=OFF \
+        -DWITH_ADE=OFF \
+        -DWITH_opencv_gapi=OFF \
+        -DWITH_IPP=OFF \
+        -DBUILD_WITH_DEBUG_INFO=ON \
+        -DBUILD_TESTS=OFF \
+        -DBUILD_PERF_TESTS=OFF \
+        -DBUILD_EXAMPLES=OFF \
+        -DINSTALL_C_EXAMPLES=OFF \
+        -DINSTALL_PYTHON_EXAMPLES=OFF \
+        -DOPENCV_SKIP_PYTHON_LOADER=OFF \
+        -DOPENCV_GENERATE_PKGCONFIG=ON \
+        -DOPENCV_ENABLE_NONFREE=OFF \
+        -DOPENCV_GENERATE_SETUPVARS=OFF \
+        -DEIGEN_INCLUDE_PATH=/usr/include/eigen3 \
+        -DCMAKE_SKIP_INSTALL_RPATH=ON \
+        -DPYTHON_EXECUTABLE=/usr/bin/python3 \
+        $extra_cmake_flags
+    cmake3.5 --build build
+
+    cd modules/python/package
+    gpep517 build-wheel \
+        --wheel-dir "$builddir"/.dist \
+        --output-fd 3 3>&1 >&2
+}
+
+check() {
+    export CMAKE_POLICY_VERSION_MINIMUM=3.5
+
+    cd build
+    ctest
+}
+
+package() {
+    export CMAKE_POLICY_VERSION_MINIMUM=3.5
+
+    python3 -m installer -d "$pkgdir" \
+        .dist/*.whl
+    DESTDIR="$pkgdir" cmake3.5 --install build
+    python3 -m compileall -fq "$pkgdir"/usr/lib/python*
+
+    # opencv's python metainfo names it "opencv", as expected.
+    # however, people usually don't use this, they use
+    # https://github.com/opencv/opencv-python
+    # which is installed with "pip install opencv-python", is
+    # exactly the same thing, and is named differently.
+    # so, to be satisfied with a system dependency, it has to follow
+    # that same name.
+    # we can trick pip into thinking both are installed by just copying the
+    # dist-info and changing the name.
+    # the name of the .dist-info must be normalized according to the python packaging spec:
+    # https://packaging.python.org/en/latest/specifications/recording-installed-packages/#the-dist-info-directory
+    cd "$pkgdir"/usr/lib/python*/site-packages
+    cp -r opencv-*.dist-info opencv_python-$pkgver.dist-info
+    sed -i \
+        -e "s|Name: opencv|Name: opencv-python|" \
+        opencv_python-$pkgver.dist-info/METADATA
+}
+
+samples() {
+    pkgdesc="OpenCV Samples"
+    depends="$pkgname=$pkgver-r$pkgrel"
+    amove usr/share/opencv4/samples
+}
+
+_py3() {
+    pkgdesc="$pkgdesc (python modules)"
+    depends="py3-numpy"
+
+    amove usr/lib/python3.*
+}
+
+_lib() {
+    pkgdesc="$pkgdesc ($subpkgname library)"
+
+    amove usr/lib/$subpkgname.so.*
+}
+
+sha512sums="
+3ac0b3aa0bd85586564e2e478d1e018e49522f46fa9d0ed8207596a59b16e91de74dd832d8d04c5b9fded9da25a232c381eb4fa28954855d7ff3eb63d5931164  opencv-4.9.0-r2.tar.gz
+ebaee3b88bd7ae246727e65a98d9fbc1d9772a4181a1926f3af742410b78dc87d2386bcd96ac67d7fb1a3020c3717a2cdebdcf9304d6dfd9ea494004791cf043  opencv_contrib-4.9.0.tar.gz
+"
