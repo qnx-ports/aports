@@ -6,8 +6,7 @@ pkgver=4.9.0
 pkgrel=0
 pkgdesc="Open source computer vision and machine learning library"
 url="https://opencv.org/"
-# s390x blocked by vtk -> netcdf
-arch="all !s390x"
+arch="all"
 license="Apache-2.0"
 depends_dev="
     zlib-dev
@@ -183,7 +182,7 @@ samples() {
 
 _py3() {
     pkgdesc="$pkgdesc (python modules)"
-    depends="py3-numpy"
+    depends="python3-numpy"
 
     amove usr/lib/python3.*
 }
