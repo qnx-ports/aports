@@ -74,6 +74,10 @@ source="${pkgname}-${pkgver}-r${_git_rev}.tar.gz::https://github.com/qnx-ports/o
 builddir="$srcdir/$pkgname-qnx-$pkgver-r${_git_rev}"
 # Tests require human interaction
 # net required to download a data file (face_landmark_model.dat)
+#
+# There are also a number of known strtod conversion issues,
+# issues due to an unsupported highgui module and a few issues
+# that may have been solved with the switch to clang.
 options="net !check"
 
 prepare() {
@@ -131,7 +135,9 @@ build() {
         -DOPENCV_GENERATE_SETUPVARS=OFF \
         -DEIGEN_INCLUDE_PATH=/usr/include/eigen3 \
         -DCMAKE_SKIP_INSTALL_RPATH=ON \
-        -DPYTHON_EXECUTABLE=/usr/bin/python3 \
+        -DPYTHON3_INCLUDE_PATH=/usr/include/python3.14 \
+        -DOPENCV_PYTHON3_INSTALL_PATH=lib/python3.14/site-packages \
+        -DOPENCV_PYTHON3_VERSION=3.14 \
         $extra_cmake_flags
     cmake3.5 --build build
 
@@ -142,15 +148,11 @@ build() {
 }
 
 check() {
-    export CMAKE_POLICY_VERSION_MINIMUM=3.5
-
     cd build
-    ctest
+    ctest3.5
 }
 
 package() {
-    export CMAKE_POLICY_VERSION_MINIMUM=3.5
-
     python3 -m installer -d "$pkgdir" \
         .dist/*.whl
     DESTDIR="$pkgdir" cmake3.5 --install build
