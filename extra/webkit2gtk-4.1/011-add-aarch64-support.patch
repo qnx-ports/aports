@@ -22,3 +22,20 @@
          # FORCE_32BIT is set in the build script when --32-bit is passed
          # on a Linux/intel 64bit host. This allows us to produce 32bit
          # binaries without setting the build up as a crosscompilation,
+--- a/Source/WebKit/NetworkProcess/soup/NetworkProcessSoup.cpp	2026-02-06 14:50:34.000000000 +0000
++++ b/Source/WebKit/NetworkProcess/soup/NetworkProcessSoup.cpp	2026-02-06 14:51:26.000000000 +0000
+@@ -125,6 +125,7 @@
+void NetworkProcess::platformInitializeNetworkProcess(const NetworkProcessCreationParameters& parameters)
+{
++#ifndef __QNX__
+     GRefPtr<GResolver> cachedResolver = adoptGRef(webkitCachedResolverNew(adoptGRef(g_resolver_get_default())));
+     g_resolver_set_default(cachedResolver.get());
+@@ -132,7 +133,7 @@
+         auto overridingResolver = adoptGRef(webkitOverridingResolverNew(cachedResolver.get(), parameters.localhostAliasesForTesting));
+         g_resolver_set_default(overridingResolver.get());
+     }
+-
++#endif
+     m_cacheOptions = { NetworkCache::CacheOption::RegisterNotify };
+     // FIXME: NetworkProcess probably does not have session at this point.
+     forEachNetworkSession([&](NetworkSession& session) {
