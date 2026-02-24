@@ -1,0 +1,78 @@
+--- ./src/appfinder-window.c.orig	2026-02-24 17:58:48.000000000 +0000
++++ ./src/appfinder-window.c	2026-02-24 17:59:30.000000000 +0000
+@@ -504,8 +504,48 @@
+   return (*GTK_WIDGET_CLASS (xfce_appfinder_window_parent_class)->unmap) (widget);
+ }
+ 
++typedef struct {
++  const gchar *text;
++  GtkTreeIter  iter;
++  gboolean     found;
++} CommandLookupData;
+ 
++static gboolean
++xfce_appfinder_window_find_command (GtkTreeModel *model,
++                                    GtkTreePath  *path,
++                                    GtkTreeIter  *iter,
++                                    gpointer      user_data)
++{
++  CommandLookupData *data = user_data;
++  gchar *command = NULL;
++  gboolean match = FALSE;
++  gtk_tree_model_get (model, iter,
++                      XFCE_APPFINDER_MODEL_COLUMN_COMMAND, &command, -1);
+ 
++  if (command != NULL)
++    {
++      gchar *base = g_strdup (command);
++      gchar *space = strchr (base, ' ');
++      if (space) *space = '\0';
++      if (g_strcmp0 (base, data->text) == 0)
++        {
++          /* only match .desktop entries, not command history */
++          gchar *uri = NULL;
++          gtk_tree_model_get (model, iter,
++                              XFCE_APPFINDER_MODEL_COLUMN_URI, &uri, -1);
++          if (uri != NULL)
++            {
++              data->iter = *iter;
++              data->found = TRUE;
++              match = TRUE;
++            }
++          g_free (uri);
++        }
++      g_free (base);
++    }
++  return match;
++}
++
+ static gboolean
+ xfce_appfinder_window_key_press_event (GtkWidget   *widget,
+                                        GdkEventKey *event)
+@@ -2061,6 +2101,26 @@
+   appfinder_return_val_if_fail (error != NULL && *error == NULL, FALSE);
+   appfinder_return_val_if_fail (GDK_IS_SCREEN (screen), FALSE);
+ 
++  /* check if typed command matches a known .desktop entry requiring a terminal */
++  if (window != NULL && window->model != NULL)
++    {
++      CommandLookupData lookup;
++      lookup.text  = text;
++      lookup.found = FALSE;
++      gtk_tree_model_foreach (GTK_TREE_MODEL (window->model),
++                              xfce_appfinder_window_find_command, &lookup);
++      if (lookup.found)
++        {
++          gboolean is_regular = FALSE;
++          gboolean result;
++          result = xfce_appfinder_model_execute (window->model, &lookup.iter,
++                                                 screen, &is_regular,
++                                                 NULL, error);
++          g_free (action_cmd);
++          return result;
++        }
++    }
++
+   if (!IS_STRING (text))
+     return TRUE;
+ 

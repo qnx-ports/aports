@@ -2,7 +2,7 @@
 # Maintainer: Felix Lionardo <flionardo@qnx.com>
 pkgname=xfce4-appfinder
 pkgver=4.21.0
-pkgrel=0
+pkgrel=1
 pkgdesc="Xfce application finder"
 url="https://xfce.org/"
 arch="all"
@@ -11,7 +11,8 @@ depends="hicolor-icon-theme gtk3 libxfce4ui garcon"
 makedepends="thunar-dev gtk3-dev libxfce4ui-dev garcon-dev intltool"
 subpackages="$pkgname-lang"
 replaces="xfce-utils"
-source="https://archive.xfce.org/src/xfce/xfce4-appfinder/${pkgver%.*}/xfce4-appfinder-$pkgver.tar.xz"
+source="https://archive.xfce.org/src/xfce/xfce4-appfinder/${pkgver%.*}/xfce4-appfinder-$pkgver.tar.xz
+        001-fix-terminal-apps-bypass-desktop-entry-lookup.patch"
 
 build() {
 	abuild-meson \
@@ -27,4 +28,5 @@ package() {
 
 sha512sums="
 8b8029ee32568f00712013e18e1a35e1d1d78cc75ce78ff9f18d3b03f3a5ce537000b3e122730220d082e6c810ab42a12fb67a0cf6b7b8eff0dfde17edaa5fc7  xfce4-appfinder-4.21.0.tar.xz
+e9ca887dae52d2ba34362c434be3fb86f48d7010fef085701878412a64d1da1effdaf7cc20fb5e6eae56d2a3510f4de5e1c3ca6db6641d95af1a6c64206e1535  001-fix-terminal-apps-bypass-desktop-entry-lookup.patch
 "
