@@ -35,8 +35,6 @@ source="https://github.com/numpy/numpy/releases/download/v$pkgver/numpy-$pkgver.
 "
 builddir="$srcdir/numpy-$pkgver"
 
-options="!check"
-
 export Atlas=None
 # numpy is a huge library (~26 MiB) optimized for performance, so compiling
 # with -Os to sacrifice performance for ~1 MiB doesn't make sense.
