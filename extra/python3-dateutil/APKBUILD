@@ -1,0 +1,33 @@
+# Alpine-Maintainer: Will Sinatra <wpsinatra@gmail.com>
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=python3-dateutil
+_pkgname=python-dateutil
+pkgver=2.9.0
+pkgrel=0
+pkgdesc="Python3 extensions for datetime module"
+options="!check" # Requires python3-freezegun for testsuite and vice-versa
+url="https://dateutil.readthedocs.io"
+arch="noarch"
+license="Apache-2.0 AND BSD-3-Clause"
+depends="python3 python3-six"
+makedepends="python3-gpep517 python3-setuptools python3-setuptools_scm"
+subpackages=""
+source="https://files.pythonhosted.org/packages/source/${_pkgname:0:1}/$_pkgname/$_pkgname-$pkgver.tar.gz
+"
+builddir="$srcdir/$_pkgname-$pkgver"
+
+build() {
+    export SETUPTOOLS_SCM_PRETEND_VERSION=$pkgver
+    gpep517 build-wheel \
+        --wheel-dir .dist \
+        --output-fd 3 3>&1 >&2
+}
+
+package() {
+    python3 -m installer -d "$pkgdir" \
+        .dist/*.whl
+}
+
+sha512sums="
+7dd550d646477c8c3953a42aabe4c0aa3f4d1f74f6fed018a1a429270f41aa2c6832df264e67510d380d149eaa436c1b613544c8026c180c2241f15205ca6d36  python-dateutil-2.9.0.tar.gz
+"
