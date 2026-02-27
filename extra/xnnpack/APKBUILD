@@ -1,0 +1,67 @@
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=xnnpack
+_pkgname=XNNPACK
+pkgver=1.0.0_git20240116
+_pkgver=dcbfffb80fb4f6fcfcfb5b3723854ec8797fa546
+pkgrel=0
+pkgdesc="Efficient neural network inference accelerator for ARM, x86, WebAssembly, and RISC-V platforms"
+url="https://github.com/google/XNNPACK"
+arch="all"
+license="BSD-3-Clause"
+depends=""
+makedepends="
+    cmake
+    ninja
+    clang
+    libc++-dev
+    "
+subpackages="$pkgname-dev"
+source="${pkgname}-${pkgver}.zip::https://github.com/google/${_pkgname}/archive/${_pkgver}.zip
+    001-system-name.patch
+    "
+builddir="${srcdir}/${_pkgname}-${_pkgver}"
+
+options="!check" # Enabling tests stalls cmake.
+
+unpack() {
+    # Workaround for busybox bug.
+    cd $srcdir
+    for u in $source; do
+        local s
+        if is_remote "$u"; then
+            s="$SRCDEST/$(filename_from_uri $u)"
+        else
+            s="$startdir/$u"
+        fi
+        case "$s" in
+            *.zip)
+                msg "Unpacking $s..."
+				unzip -n -q "$s";;
+        esac
+    done
+}
+
+build() {
+    CC=clang \
+    CXX=clang++ \
+    cmake3.5 -B build -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DBUILD_SHARED_LIBS=ON \
+        -DXNNPACK_BUILD_TESTS=OFF \
+        -DXNNPACK_BUILD_BENCHMARKS=OFF
+    cmake3.5 --build build
+}
+
+check() {
+    ctest3.5 --test-dir build
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake3.5 --install build
+}
+
+sha512sums="
+f6c7547cf0ad2fabb0a98e75e06fc256b8428600bcd5621f7a8d64e729fe8f8f49c159a6cc17ac089ce8d1a1a906d3923a3472eabfac37fc9e2339d362f5561c  xnnpack-1.0.0_git20240116.zip
+7fba02bc7b0429b09261d45605d7a68486e24593c4fb54fb6fbef0603dd01ab15d133a9542d8857514dbb37b92f89b15b07d206141214acae19718a1ae207e05  001-system-name.patch
+"
