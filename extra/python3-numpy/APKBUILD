@@ -21,9 +21,7 @@ makedepends="
     python3-meson-python
     python3-pyproject-metadata
     qnx-libqh-dev
-    clang
     libc++-dev
-    qnx-gcc
     "
 depends_dev="$pkgname=$pkgver-r$pkgrel"
 subpackages="
