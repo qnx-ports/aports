@@ -53,7 +53,7 @@ package() {
 
 f2py() {
     pkgdesc="f2py for numpy (for python3)"
-    depends="py3-numpy=$pkgver-r$pkgrel python3-dev"
+    depends="python3-numpy=$pkgver-r$pkgrel python3-dev"
 
     amove usr/bin/f2py*
 }
