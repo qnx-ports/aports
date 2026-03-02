@@ -20,11 +20,9 @@ makedepends="
     python3-dev
     ninja
     python3-pytest
-    catch2=2.13.10-r0
     "
 checkdepends="
     python3-pytest
-    catch2=2.13.10-r0
     "
 subpackages="$pkgname-dev"
 source="$pkgname-$pkgver.tar.gz::https://github.com/pybind/pybind11/archive/v$pkgver.tar.gz"
@@ -40,6 +38,7 @@ build() {
         -DPYTHON_EXECUTABLE=/usr/bin/python3 \
         -DCMAKE_INSTALL_PREFIX=/usr \
         -DUSE_PYTHON_INCLUDE_DIR=FALSE \
+        -DDOWNLOAD_CATCH=ON \
         -DPYBIND11_TEST="$(want_check && echo ON || echo OFF)" \
         -DPYBIND11_PYTEST_ARGS='-k not test_cross_module_exception_translator'
     cmake --build build
