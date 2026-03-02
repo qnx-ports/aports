@@ -1,0 +1,29 @@
+# Alpine-Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+# Maintainer: Aaron Bassett <abassett@qnx.com>
+pkgname=xcb-proto
+pkgver=1.17.0
+pkgrel=0
+pkgdesc="XML-XCB protocol descriptions"
+options="!check" # no testsuite
+url="https://xcb.freedesktop.org"
+arch="noarch"
+license="MIT"
+makedepends="python3"
+source="https://xorg.freedesktop.org/archive/individual/proto/xcb-proto-$pkgver.tar.xz"
+
+build() {
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr
+	make
+}
+
+package() {
+	make DESTDIR=$pkgdir install
+}
+
+sha512sums="
+34c3795e5a48a66d89b72ee1777fb0bede489d5ec07018e6c9ef3c13bdd60b0358fc2c04a1f0ed0acb5b681aeeb92033db579036e4f5edd967fe56714c03acdf  xcb-proto-1.17.0.tar.xz
+"
+
