@@ -8,7 +8,7 @@ pkgrel=0
 pkgdesc="A platform independent file lock for Python3"
 url="https://github.com/tox-dev/py-filelock"
 arch="noarch"
-license="Unlicense"
+license="Unlicense" # Versions 3.23 and up use MIT license.
 depends="python3"
 makedepends="
     python3-gpep517
