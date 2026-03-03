@@ -4,7 +4,7 @@
 # Maintainer: abdulahmoda <abahmoda@qnx.com>
 pkgname=lzo
 pkgver=2.10
-pkgrel=5
+pkgrel=0
 pkgdesc="LZO -- a real-time data compression library"
 url="https://www.oberhumer.com/opensource/lzo"
 arch="all"
