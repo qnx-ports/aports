@@ -3,6 +3,7 @@
 pkgname=nspr
 pkgver=4.38.2
 pkgrel=0
+_gitrel=1
 pkgdesc="Netscape Portable Runtime"
 url="https://www.mozilla.org/projects/nspr/"
 arch="all"
@@ -11,10 +12,10 @@ depends="qnx-io-sock"
 depends_dev="$pkgname=$pkgver-r$pkgrel"
 makedepends="autoconf automake qnx-io-sock-dev"
 subpackages="$pkgname-dev"
-source="https://github.com/qnx-ports/nspr/archive/refs/tags/qnx-v$pkgver.tar.gz
+source="https://github.com/qnx-ports/nspr/archive/refs/tags/qnx-v$pkgver-r$_gitrel.tar.gz
 	"
 options="!check"
-_nspr_dir="$pkgname-qnx-v$pkgver"
+_nspr_dir="$pkgname-qnx-v$pkgver-r$_gitrel"
 prepare() {
 	mkdir "$srcdir/$pkgname-$pkgver"
 	mv "$_nspr_dir" "$builddir"/nspr
@@ -56,5 +57,5 @@ package() {
 
 
 sha512sums="
-4bb0c9704ecd391a4fbdcaf296331e2c90746f5d8ff8a723c23b399903fd6c49cf8033b8d88432ea901d73dd042906b93d4479ce358f4ab82b3c10cb9767dac5  qnx-v4.38.2.tar.gz
+e72b9699a9810ad26a8b46a4d15c25badfbd4ba14dbbc4bd9323fd54ce9499c268eeb1e0dedf6591b2955f7f1669a6f774750fa58033f5c9341ac82a9be6dd80  qnx-v4.38.2-r1.tar.gz
 "
