@@ -1,0 +1,45 @@
+# Alpine-maintainer="Achill Gilgenast <achill@achill.org>"
+maintainer="Elliott Mazzuca <emazzuca@qnx.com>"
+pkgname=adwaita-fonts
+pkgver=49.0
+pkgrel=1
+pkgdesc="The typefaces for GNOME"
+url="https://gitlab.gnome.org/GNOME/adwaita-fonts"
+arch="noarch"
+license="GPL-3.0-or-later"
+makedepends="meson"
+subpackages="$pkgname-sans $pkgname-mono"
+depends="$subpackages"
+provides="font-adwaita"
+source="https://download.gnome.org/sources/adwaita-fonts/${pkgver%%.*}/adwaita-fonts-$pkgver.tar.xz"
+options="!check" # no tests
+
+build() {
+	abuild-meson \
+		. output
+	meson compile -C output
+}
+
+check() {
+	meson test --print-errorlogs -C output
+}
+
+package() {
+	DESTDIR="$pkgdir" meson install --no-rebuild -C output
+}
+
+sans() {
+	pkgdesc="$pkgdesc (Sans)"
+	depends=
+	amove usr/share/fonts/Adwaita/AdwaitaSans-*.ttf
+}
+
+mono() {
+	pkgdesc="$pkgdesc (Mono)"
+	depends=
+	amove usr/share/fonts/Adwaita/AdwaitaMono-*.ttf
+}
+
+sha512sums="
+38c991817ad0e737bfa901d62d6366f132a77cf452d210bbf33691dc3c6c396a7ec50f75b6655bf2d16a05bc3c3d0b648057dd58b9cc65ab93234661bd547fef  adwaita-fonts-49.0.tar.xz
+"
