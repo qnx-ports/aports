@@ -10,7 +10,7 @@ arch="noarch"
 license="Apache-2.0"
 depends="cmake python3-packaging python3-pathspec python3-typing-extensions ninja"
 makedepends="python3-gpep517 python3-hatchling python3-hatch-vcs python3-wheel"
-checkdepends="python3-build python3-cattrs python3-numpy-dev python3-pytest python3-virtualenv"
+checkdepends="python3-build python3-cattrs python3-numpy-dev python3-pytest python3-virtualenv python3-dev clang libc++-dev"
 subpackages=""
 source="$pkgname-$pkgver.tar.gz::https://github.com/scikit-build/scikit-build-core/archive/refs/tags/v$pkgver.tar.gz"
 builddir="$srcdir/scikit-build-core-$pkgver"
@@ -22,6 +22,9 @@ build() {
 }
 
 check() {
+    export CC=clang
+    export CXX=clang++
+
     python3 -m venv --clear --without-pip --system-site-packages .testenv
     .testenv/bin/python3 -m installer .dist/*.whl
     .testenv/bin/python3 -m pytest \
