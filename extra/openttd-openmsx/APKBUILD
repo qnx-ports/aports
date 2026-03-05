@@ -1,0 +1,34 @@
+# Alpine Contributor: TBK <alpine@jjtc.eu>
+# Alpine Maintainer: Thomas Kienlen <kommander@laposte.net>
+# Maintainer: abdulahmoda <abahmoda@qnx.com>
+pkgname=openttd-openmsx
+pkgver=0.4.2
+pkgrel=0
+pkgdesc="Music Base Set for OpenTTD"
+url="https://www.openttd.org/"
+arch="noarch"
+license="GPL-2.0-or-later"
+options="!check" # No test suite
+source="https://cdn.openttd.org/openmsx-releases/$pkgver/openmsx-$pkgver-all.zip"
+builddir="$srcdir/openmsx-$pkgver"
+install_if="openttd"
+
+prepare() {
+	default_prepare
+
+	cd "$srcdir"
+	unzip "openmsx-$pkgver-all.zip"
+	tar xf openmsx-$pkgver.tar
+}
+
+package() {
+	local file
+	for file in *.mid openmsx.obm; do
+		install -D -m644  "$file" \
+			"$pkgdir"/usr/share/games/openttd/gm/"$file"
+	done
+}
+
+sha512sums="
+6fdcec91ffcfa68ef367ff1733011a472caeb53f26fe07623ac510db80890789475919192317e6d5cddd6f3acea5bd58d8b174c23d506efcbd868392e418ed2f  openmsx-0.4.2-all.zip
+"

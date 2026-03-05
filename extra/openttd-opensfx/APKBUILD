@@ -1,0 +1,30 @@
+# Alpine Contributor: Adrian Siekierka <kontakt@asie.pl>
+# Alpine Maintainer: Thomas Kienlen <kommander@laposte.net>
+# Maintainer: abdulahmoda <abahmoda@qnx.com>
+pkgname=openttd-opensfx
+pkgver=1.0.3
+pkgrel=0
+pkgdesc="Free sound effect set for OpenTTD"
+url="https://www.openttd.org/"
+arch="noarch"
+license="CC-BY-SA-3.0 GPL-2.0-or-later CDDL-1.1"
+options="!check" # No test suite
+source="https://cdn.openttd.org/opensfx-releases/$pkgver/opensfx-$pkgver-all.zip"
+builddir="$srcdir/opensfx-$pkgver"
+install_if="openttd"
+
+prepare() {
+	default_prepare
+
+	cd "$srcdir"
+	unzip "opensfx-$pkgver-all.zip"
+	tar xf opensfx-$pkgver.tar
+}
+
+package() {
+	install -Dm644 ./*.cat ./*.obs -t "$pkgdir"/usr/share/games/openttd/data
+}
+
+sha512sums="
+4a3f0d19efe97729a1918101b8cb59a01a84aae43e432d697c9ca9af38296e1de0665b705dba0b3a29b8b04df6629c98eb8690534c7e70566f573ce72cab30b0  opensfx-1.0.3-all.zip
+"

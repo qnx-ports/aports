@@ -1,0 +1,30 @@
+# Alpine Contributor: Adrian Siekierka <kontakt@asie.pl>
+# Apline Maintainer: Thomas Kienlen <kommander@laposte.net>
+# Maintainer: abdulahmoda <abahmoda@qnx.com>
+pkgname=openttd-opengfx
+pkgver=8.0
+pkgrel=0
+pkgdesc="Free graphics set for OpenTTD"
+url="https://www.openttd.org/"
+arch="noarch"
+license="GPL-2.0-or-later"
+options="!check" # No test suite
+source="https://cdn.openttd.org/opengfx-releases/$pkgver/opengfx-$pkgver-all.zip"
+builddir="$srcdir/opengfx-$pkgver"
+install_if="openttd"
+
+prepare() {
+	default_prepare
+
+	cd "$srcdir"
+	unzip "opengfx-$pkgver-all.zip"
+	tar xf opengfx-$pkgver.tar
+}
+
+package() {
+	install -Dm644 ./*.grf ./*.obg -t "$pkgdir"/usr/share/games/openttd/data
+}
+
+sha512sums="
+93808f243ec527aebaf37df4cfb286879a981cc07e54d2b9790f2e9c4162a961a5a0cc2802af8deb0cbf3aab2713608ab93dae23f407e05cd2df9f3509a88253  opengfx-8.0-all.zip
+"
