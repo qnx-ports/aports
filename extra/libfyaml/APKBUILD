@@ -12,7 +12,8 @@ makedepends="
 	bash
 	libtool
 	m4
-        qnx-memstream-dev
+	qnx-memstream-dev
+	qnx-io-sock-dev
 	"
 depends="qnx-memstream"
 checkdepends="check git"
@@ -22,6 +23,8 @@ source="https://github.com/pantoniou/libfyaml/releases/download/v$pkgver/libfyam
 options="!check" # assumes bash
 
 build() {
+	CFLAGS="${CFLAGS} -fPIC"
+	CXXFLAGS="${CXXFLAGS} -fPIC"
 	./configure \
 		--build=$CBUILD \
 		--host=$CHOST \
@@ -31,7 +34,7 @@ build() {
 		--mandir=/usr/share/man \
 		--infodir=/usr/share/info \
 		--disable-static \
-                LDFLAGS="$LDFLAGS -lmemstream"
+		LDFLAGS="$LDFLAGS -lmemstream"
 	make
 }
 
