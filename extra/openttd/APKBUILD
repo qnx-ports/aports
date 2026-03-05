@@ -14,11 +14,11 @@ depends="
 	libpng
 	lzo
 	sdl2-compat
+	sdl2-compat-static
 	"
 makedepends="
 	cmake
 	ninja
-	sdl3-dev
 	sdl2-compat-dev
 	curl-dev
 	fontconfig-dev
