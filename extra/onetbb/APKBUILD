@@ -42,8 +42,12 @@ prepare() {
 }
 
 build() {
-    CFLAGS="$CFLAGS -O2 -DNDEBUG" \
-    CXXFLAGS="$CXXFLAGS -U_FORTIFY_SOURCE -O2 -DNDEBUG" \
+    if [[ $CARCH == "x86_64" ]]; then
+        _arch_flags="-mrtm -mwaitpkg"
+    fi
+
+    CFLAGS="$CFLAGS -O2 -DNDEBUG $_arch_flags" \
+    CXXFLAGS="$CXXFLAGS -U_FORTIFY_SOURCE -O2 -DNDEBUG $_arch_flags" \
     cmake -B build -G Ninja \
         -DCMAKE_BUILD_TYPE=None \
         -DCMAKE_C_COMPILER=clang \
