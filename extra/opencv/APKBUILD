@@ -22,10 +22,10 @@ depends_dev="
     qnx-screen-dev
     qnx-opencl
     onetbb-dev
-    openblas-dev
     openexr-dev
     openjpeg-dev
     openjpeg-tools
+    openblas-dev
     python3-setuptools
     "
 makedepends="
@@ -67,7 +67,7 @@ subpackages="
     libopencv_videostab:_lib
     libopencv_ximgproc:_lib
     "
-_git_rev=0
+_git_rev=1
 source="${pkgname}-${pkgver}-r${_git_rev}.tar.gz::https://github.com/qnx-ports/opencv/archive/refs/tags/qnx-$pkgver-r$_git_rev.tar.gz
     https://github.com/opencv/opencv_contrib/archive/$pkgver/opencv_contrib-$pkgver.tar.gz
     "
@@ -109,7 +109,7 @@ build() {
     CFLAGS="$CFLAGS -g1" CXXFLAGS="$CXXFLAGS -g1" \
     LDFLAGS="$LDFLAGS -lz" \
     CC=clang CXX=clang++ \
-    cmake3.5 -B build -G Ninja \
+    cmake3.5 -B build \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_INSTALL_PREFIX=/usr \
         -DCMAKE_INSTALL_LIBDIR=lib \
@@ -134,10 +134,16 @@ build() {
         -DOPENCV_ENABLE_NONFREE=OFF \
         -DOPENCV_GENERATE_SETUPVARS=OFF \
         -DEIGEN_INCLUDE_PATH=/usr/include/eigen3 \
+        -DEIGEN_WORLD_VERSION=3 \
+        -DEIGEN_MAJOR_VERSION=5 \
+        -DEIGEN_MINOR_VERSION=0 \
+        -DEIGEN_PATCH_VERSION=1 \
         -DCMAKE_SKIP_INSTALL_RPATH=ON \
         -DPYTHON3_INCLUDE_PATH=/usr/include/python3.14 \
         -DOPENCV_PYTHON3_INSTALL_PATH=lib/python3.14/site-packages \
         -DOPENCV_PYTHON3_VERSION=3.14 \
+        -DOPENBLAS_LIBRARIES=/usr/lib/libopenblas.so \
+        -DLAPACK_LIBRARIES=/usr/lib/libopenblas.so \
         $extra_cmake_flags
     cmake3.5 --build build
 
@@ -196,6 +202,6 @@ _lib() {
 }
 
 sha512sums="
-3ac0b3aa0bd85586564e2e478d1e018e49522f46fa9d0ed8207596a59b16e91de74dd832d8d04c5b9fded9da25a232c381eb4fa28954855d7ff3eb63d5931164  opencv-4.9.0-r2.tar.gz
-ebaee3b88bd7ae246727e65a98d9fbc1d9772a4181a1926f3af742410b78dc87d2386bcd96ac67d7fb1a3020c3717a2cdebdcf9304d6dfd9ea494004791cf043  opencv_contrib-4.9.0.tar.gz
+17103ce884b562c1d46796b3e45a41b506c676398e3c57091ce0e102de19432f60b4a6092dfebccad10198c097c773c0d765be63ae61087a27be7ec7ba2cad51  opencv-4.12.0-r1.tar.gz
+574121ca57328671741413df91fbf600cc04bb9a9beeacfb7bc20c15b2b4e8c9e031df30aafbcc34f82d85edfb098e5d008a744f4e6d833d6e47537a042045c6  opencv_contrib-4.12.0.tar.gz
 "
