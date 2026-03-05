@@ -4,7 +4,6 @@ _pkgname=XNNPACK
 pkgver=1.0.0_git20240116
 _pkgver=dcbfffb80fb4f6fcfcfb5b3723854ec8797fa546
 pkgrel=0
-_cpuinfo_ver=8a9210069b5a37dd89ed118a783945502a30a4ae
 _pthreadpool_ver=0e6ca13779b57d397a5ba6bfdcaa8a275bc8ea2e
 pkgdesc="Efficient neural network inference accelerator for ARM, x86, WebAssembly, and RISC-V platforms"
 url="https://github.com/google/XNNPACK"
@@ -18,20 +17,23 @@ makedepends="
     libc++-dev
     "
 subpackages="$pkgname-dev"
+_cpuinfo_git_rev=0
 source="${pkgname}-${pkgver}.zip::https://github.com/google/${_pkgname}/archive/${_pkgver}.zip
-    https://github.com/qnx-ports/cpuinfo/archive/refs/heads/qnx-$_cpuinfo_ver.zip
+    https://github.com/qnx-ports/cpuinfo/archive/refs/tags/qnx-tflite-r$_cpuinfo_git_rev.tar.gz
     https://github.com/google/pthreadpool/archive/$_pthreadpool_ver.zip
     001-system-name.patch
     cpuinfo_patch
     pthreadpool_patch
     "
 builddir="${srcdir}/${_pkgname}-${_pkgver}"
-_cpuinfo_builddir="${srcdir}/cpuinfo-qnx-$_cpuinfo_ver"
-_pthreadpool_builddir="${srcdir}/pthreadpool-$_pthreadpool_ver"
+_cpuinfo_builddir="${srcdir}/cpuinfo-qnx-tflite-r${_cpuinfo_git_rev}"
+_pthreadpool_builddir="${srcdir}/pthreadpool-${_pthreadpool_ver}"
 
 options="!check" # Enabling check stalls cmake.
 
 unpack() {
+    default_unpack
+
     # Workaround for busybox bug.
     cd $srcdir
     for u in $source; do
@@ -81,7 +83,7 @@ package() {
 
 sha512sums="
 f6c7547cf0ad2fabb0a98e75e06fc256b8428600bcd5621f7a8d64e729fe8f8f49c159a6cc17ac089ce8d1a1a906d3923a3472eabfac37fc9e2339d362f5561c  xnnpack-1.0.0_git20240116.zip
-96a9830ff40dd942480624eff1b0e224a5ffe4d6f180c801fe9b10790b0e129adb33df895a18ab2fc80c6a740fb1247851b5637c57e8e4dbff6b266a9e96e82d  qnx-8a9210069b5a37dd89ed118a783945502a30a4ae.zip
+ba8d913a97c7c31a2778b110ebc147a1da74e4d57babcbef206178572459d25c34f808c04dc7fc163cb050117ea1a5512ae5003ae719f837bc5499f70ff46429  qnx-tflite-r0.tar.gz
 db93e3fb726a2fe7a50e3f019e432c317958c9ccc0ef4a5cfdccd412e6ea6433b73cae3c0a511007524533f0ff795f84812fc86648957770c4d33fd77f378e0a  0e6ca13779b57d397a5ba6bfdcaa8a275bc8ea2e.zip
 7fba02bc7b0429b09261d45605d7a68486e24593c4fb54fb6fbef0603dd01ab15d133a9542d8857514dbb37b92f89b15b07d206141214acae19718a1ae207e05  001-system-name.patch
 8bf1a384d89dbdd1de5aa672c57395044e0391015267146d5cb9dede4601ae4550baba4c66f509ee632dcfd717401993a4fbd2b9c40f40d5e46e51b8e10276ae  cpuinfo_patch
