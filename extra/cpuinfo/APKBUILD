@@ -1,0 +1,50 @@
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=cpuinfo
+pkgver=1.0.0_git20250808
+pkgrel=0
+pkgdesc="A tool for detecting host CPU performance information"
+url="https://github.com/pytorch/cpuinfo"
+arch="all"
+license="BSD-2-Clause"
+depends=""
+makedepends="
+    cmake
+    ninja
+    clang
+    libc++-dev
+    "
+subpackages="$pkgname-dev"
+_git_rev=0
+source="${pkgname}-${pkgver}-r${_git_rev}.tar.gz::https://github.com/qnx-ports/cpuinfo/archive/refs/tags/qnx-tflite-r$_git_rev.tar.gz
+    "
+builddir="${srcdir}/${pkgname}-qnx-tflite-r$_git_rev"
+
+options="!check"
+
+build() {
+    CC=clang \
+    CXX=clang++ \
+    CPPFLAGS="${CPPFLAGS} -Wno-error" \
+    cmake3.5 -B build -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DBUILD_SHARED_LIBS=ON \
+        -DCPUINFO_BUILD_PKG_CONFIG=ON \
+        -DCPUINFO_BUILD_TOOLS=OFF \
+        -DCPUINFO_BUILD_MOCK_TESTS=OFF \
+        -DCPUINFO_BUILD_UNIT_TESTS=OFF \
+        -DCPUINFO_BUILD_BENCHMARKS=OFF
+    cmake3.5 --build build
+}
+
+check() {
+    ctest3.5 --test-dir build
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake3.5 --install build
+}
+
+sha512sums="
+ba8d913a97c7c31a2778b110ebc147a1da74e4d57babcbef206178572459d25c34f808c04dc7fc163cb050117ea1a5512ae5003ae719f837bc5499f70ff46429  cpuinfo-1.0.0_git20250808-r0.tar.gz
+"
