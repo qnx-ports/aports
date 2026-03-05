@@ -1,0 +1,104 @@
+# Alpine-Maintainer: Achill Gilgenast <achill@achill.org>
+# Maintainer: Aaron Bassett <abassett@qnx.com>
+pkgname=poppler
+pkgver=25.12.0
+pkgrel=0
+pkgdesc="PDF rendering library based on xpdf 3.0"
+url="https://poppler.freedesktop.org/"
+arch="all"
+license="GPL-2.0-or-later"
+depends="libc++ fontconfig libjpeg-turbo libpng libxml2 nss openjpeg tiff zlib-ng"
+depends_dev="cairo-dev glib-dev"
+makedepends="
+	$depends_dev
+	boost-dev
+	cmake
+	fontconfig-dev
+	gobject-introspection-dev
+	lcms2-dev
+	libjpeg-turbo-dev
+	libpng-dev
+	libxml2-dev
+	nss-dev
+	openjpeg-dev
+	openjpeg-tools
+	ninja
+	tiff-dev
+	zlib-ng-dev
+	"
+subpackages="$pkgname-dev $pkgname-doc $pkgname-glib $pkgname-utils"
+source="https://poppler.freedesktop.org/poppler-$pkgver.tar.xz"
+options="!check" # Requires dl of testfiles and only checks qt5 libs
+
+prepare() {
+	default_prepare
+
+	local _linked_pkg=poppler-qt5
+	local _linked_apkbuild="$startdir"/../../community/$_linked_pkg/APKBUILD
+	mkdir -p "$builddir"
+	if  [ -f "$_linked_apkbuild" ]; then
+		local _linked_ver=$( . "$_linked_apkbuild"; echo "$pkgver")
+		if [ "$_linked_ver" != "$pkgver" ]; then
+			error "pkgver needs to be identical with $_linked_pkg ($_linked_ver)"
+			return 1
+		fi
+	fi
+}
+
+build() {
+	if [ "$CBUILD" != "$CHOST" ]; then
+		CMAKE_CROSSOPTS="-DCMAKE_SYSTEM_NAME=Linux -DCMAKE_HOST_SYSTEM_NAME=Linux"
+	fi
+	cmake -B build -G Ninja \
+		-DBUILD_CPP_TESTS="$(want_check && echo ON || echo OFF)" \
+		-DBUILD_GTK_TESTS="$(want_check && echo ON || echo OFF)" \
+		-DBUILD_MANUAL_TESTS="$(want_check && echo ON || echo OFF)" \
+		-DBUILD_QT5_TESTS="$(want_check && echo ON || echo OFF)" \
+		-DBUILD_QT6_TESTS="$(want_check && echo ON || echo OFF)" \
+		-DCMAKE_BUILD_TYPE=RelWithDebInfo \
+		-DCMAKE_INSTALL_LIBDIR=lib \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DENABLE_BOOST=ON \
+		-DENABLE_GPGME=OFF \
+		-DENABLE_LIBCURL=OFF \
+		-DENABLE_QT5=OFF \
+		-DENABLE_QT6=OFF \
+		-DENABLE_UNSTABLE_API_ABI_HEADERS=ON \
+		$CMAKE_CROSSOPTS
+	cmake --build build
+}
+
+check() {
+	cd build
+	ctest
+}
+
+package() {
+	DESTDIR="$pkgdir" cmake --install build
+}
+
+utils() {
+	pkgdesc="Poppler's xpdf-workalike command line utilities"
+	depends="$pkgname=$pkgver-r$pkgrel"
+
+	amove usr/bin
+}
+
+glib() {
+	pkgdesc="Glib wrapper for poppler"
+	depends="$pkgname=$pkgver-r$pkgrel glib"
+
+	amove usr/lib/libpoppler-glib.so.*
+	amove usr/lib/girepository*
+}
+
+_cpp() {
+	pkgdesc="Pure C++ wrapper for poppler"
+
+	amove usr/lib/libpoppler-cpp.so.*
+}
+
+sha512sums="
+4f68713d7efa5003a60773749d3bcff4041b165dfb65104a56cec576559c15164fc4a021244cc91f4ed76aab709757637396d7c5b6fbcf3eed23e3469072e4f3  poppler-25.12.0.tar.xz
+"
+
