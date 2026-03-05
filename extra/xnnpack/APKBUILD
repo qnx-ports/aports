@@ -10,7 +10,7 @@ pkgdesc="Efficient neural network inference accelerator for ARM, x86, WebAssembl
 url="https://github.com/google/XNNPACK"
 arch="all"
 license="BSD-3-Clause"
-depends=""
+depends="cpuinfo pthreadpool"
 makedepends="
     cmake
     ninja
@@ -66,9 +66,7 @@ build() {
         -DBUILD_SHARED_LIBS=ON \
         -DXNNPACK_BUILD_TESTS=OFF \
         -DXNNPACK_BUILD_BENCHMARKS=OFF \
-        -Dcpuinfo_SOURCE_DIR=$_cpuinfo_builddir \
         -DCPUINFO_SOURCE_DIR=$_cpuinfo_builddir \
-        -Dpthreadpool_SOURCE_DIR=$_pthreadpool_builddir \
         -DPTHREADPOOL_SOURCE_DIR=$_pthreadpool_builddir
     cmake3.5 --build build
 }
