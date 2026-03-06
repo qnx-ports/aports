@@ -1,0 +1,29 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 36912bcde..78c7f6121 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -222,24 +222,6 @@ set_target_properties (eigen PROPERTIES EXPORT_NAME Eigen)
+ # Install Rule Configuration.
+ #==============================================================================
+ 
+-install(FILES
+-  signature_of_eigen3_matrix_library
+-  DESTINATION ${INCLUDE_INSTALL_DIR} COMPONENT Devel
+-  )
+-
+-if(EIGEN_BUILD_PKGCONFIG)
+-    configure_file(eigen3.pc.in eigen3.pc @ONLY)
+-    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/eigen3.pc
+-        DESTINATION ${PKGCONFIG_INSTALL_DIR})
+-endif()
+-
+-install(DIRECTORY Eigen DESTINATION ${INCLUDE_INSTALL_DIR} COMPONENT Devel)
+-# Replace the "Version" header file with the generated one.
+-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/include/Eigen/Version
+-    DESTINATION ${INCLUDE_INSTALL_DIR}/Eigen/ COMPONENT Devel)
+-
+-install(TARGETS eigen EXPORT Eigen3Targets)
+-
+ if(EIGEN_BUILD_CMAKE_PACKAGE)
+   include (CMakePackageConfigHelpers)
+   configure_package_config_file (
