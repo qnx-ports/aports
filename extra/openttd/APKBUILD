@@ -28,6 +28,7 @@ makedepends="
 	xz-dev
 	zlib-dev
 	qnx-io-sock-dev
+	libc++-dev
 	"
 subpackages="$pkgname-doc $pkgname-lang::noarch"
 source="
