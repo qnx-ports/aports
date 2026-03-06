@@ -11,7 +11,10 @@ pkgdesc="TensorFlow Lite - High-performance ML & GenAI deployment on edge platfo
 url="https://ai.google.dev/edge/litert"
 arch="all"
 license="Apache-2.0"
+# Currently we need abseil-cpp-dev as a workaround for abseil-cpp-<abseillib>
+# not installing libabsl-*.so which gets used for linking.
 depends="
+    abseil-cpp-dev
     abseil-cpp-status
     abseil-cpp-raw-hash-set
     abseil-cpp-synchronization
@@ -130,7 +133,7 @@ build() {
         -DTFLITE_ENABLE_INSTALL=ON \
         -DABSL_ENABLE_INSTALL=OFF \
         -DRUY_ENABLE_INSTALL=OFF \
-        -DRUY_MINIMAL_BUILD=OFF \
+        -DRUY_MINIMAL_BUILD=ON \
         -DCPUINFO_BUILD_PKG_CONFIG=OFF \
         -DTFLITE_ENABLE_XNNPACK=ON \
         -DXNNPACK_ENABLE_ASSEMBLY=ON \
@@ -139,10 +142,11 @@ build() {
         -DTFLITE_KERNEL_TEST="$(want_check && echo ON || echo OFF)" \
         -DQNX_PATCH_DIR=$_patch_dir \
         -DTENSORFLOW_SOURCE_DIR=$builddir \
-        -DCPUINFO_SOURCE_DIR=$_cpuinfo_builddir \
         -DPTHREADPOOL_SOURCE_DIR=$_pthreadpool_builddir \
-        -DRUY_SOURCE_DIR=$_ruy_builddir \
-        -DXNNPACK_SOURCE_DIR=$_xnnpack_builddir \
+        -DOVERRIDABLE_FETCH_CONTENT_cpuinfo_URL=$_cpuinfo_builddir \
+        -DOVERRIDABLE_FETCH_CONTENT_pthreadpool_URL=$_pthreadpool_builddir \
+        -DOVERRIDABLE_FETCH_CONTENT_ruy_URL=$_ruy_builddir \
+        -DOVERRIDABLE_FETCH_CONTENT_xnnpack_URL=$_xnnpack_builddir \
         -DOVERRIDABLE_FETCH_CONTENT_abseil-cpp_GIT_REPOSITORY=https://github.com/qnx-ports/abseil-cpp.git \
         -DOVERRIDABLE_FETCH_CONTENT_abseil-cpp_GIT_TAG=qnx_20250814.1-r0 \
         -DOVERRIDABLE_FETCH_CONTENT_farmhash_GIT_REPOSITORY=https://github.com/qnx-ports/farmhash.git \
