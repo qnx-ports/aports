@@ -1,0 +1,18 @@
+diff --git a/cmake/ruy_cc_library.cmake b/cmake/ruy_cc_library.cmake
+index 3f3a062..ab0655f 100644
+--- a/cmake/ruy_cc_library.cmake
++++ b/cmake/ruy_cc_library.cmake
+@@ -84,13 +84,4 @@ function(ruy_cc_library)
+   endif()
+ 
+   add_library(${PROJECT_NAME}::${_NAME} ALIAS ${_NAME})
+-
+-  if(NOT _RULE_TESTONLY)
+-    install(
+-      TARGETS ${_NAME}
+-      EXPORT ruyTargets
+-      LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+-      PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${_SUBDIR}
+-    )
+-  endif()
+ endfunction()
