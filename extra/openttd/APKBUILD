@@ -31,9 +31,9 @@ makedepends="
 	"
 subpackages="$pkgname-doc $pkgname-lang::noarch"
 source="
-	https://github.com/qnx-ports/OpenTTD/archive/refs/heads/qnx-release-15.2.tar.gz
+	$pkgname-$pkgver.tar.gz::https://github.com/qnx-ports/OpenTTD/archive/refs/tags/15.2.tar.gz
 	"
-builddir="$srcdir/OpenTTD-qnx-release-$pkgver"
+builddir="$srcdir/OpenTTD-$pkgver"
 
 build() {
 	CFLAGS="$CFLAGS -D_FORTIFY_SOURCE=0" \
@@ -68,5 +68,5 @@ lang() {
 }
 
 sha512sums="
-fe2e3ed647a1873aea47188a2c931fd9cea9a1e9e4c2211280a5874fecdd889d49cbc7849cb75dffdd14a59c7f8c4acf6c8d5e82397dfa06145045a1e0aed723  qnx-release-15.2.tar.gz
+877cb818a41a0fab3adc1fe0e59a32f994d645081c98d2a90c452baed99652be2aaf131e775978c1622b77bcb10ceebba080bf1c1e6b47be7eacddb4fd97608a  openttd-15.2.tar.gz
 "
