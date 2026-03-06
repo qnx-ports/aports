@@ -27,3 +27,73 @@ index 36912bcde..78c7f6121 100644
  if(EIGEN_BUILD_CMAKE_PACKAGE)
    include (CMakePackageConfigHelpers)
    configure_package_config_file (
+diff --git a/blas/CMakeLists.txt b/blas/CMakeLists.txt
+index 45488d73d..af4d7fef5 100644
+--- a/blas/CMakeLists.txt
++++ b/blas/CMakeLists.txt
+@@ -31,10 +31,6 @@ foreach(target IN LISTS EIGEN_BLAS_TARGETS)
+   endif()
+ 
+   add_dependencies(blas ${target})
+-  install(TARGETS ${target}
+-          RUNTIME DESTINATION bin
+-          LIBRARY DESTINATION lib
+-          ARCHIVE DESTINATION lib)
+ endforeach()
+ 
+ if(EIGEN_BUILD_TESTING)
+diff --git a/lapack/CMakeLists.txt b/lapack/CMakeLists.txt
+index d837fff96..e47704210 100644
+--- a/lapack/CMakeLists.txt
++++ b/lapack/CMakeLists.txt
+@@ -120,10 +120,6 @@ foreach(target IN LISTS EIGEN_LAPACK_TARGETS)
+   endif()
+   target_link_libraries(${target} Eigen3::Eigen)
+   add_dependencies(lapack ${target})
+-  install(TARGETS ${target}
+-          RUNTIME DESTINATION bin
+-          LIBRARY DESTINATION lib
+-          ARCHIVE DESTINATION lib)
+ endforeach()
+ 
+ 
+diff --git a/unsupported/Eigen/CMakeLists.txt b/unsupported/Eigen/CMakeLists.txt
+index 1517ba956..4883e9b09 100644
+--- a/unsupported/Eigen/CMakeLists.txt
++++ b/unsupported/Eigen/CMakeLists.txt
+@@ -21,11 +21,4 @@ set(Eigen_HEADERS
+   Splines
+   )
+ 
+-install(FILES
+-  ${Eigen_HEADERS}
+-  DESTINATION ${INCLUDE_INSTALL_DIR}/unsupported/Eigen COMPONENT Devel
+-  )
+-
+-install(DIRECTORY src DESTINATION ${INCLUDE_INSTALL_DIR}/unsupported/Eigen COMPONENT Devel FILES_MATCHING PATTERN "*.h")
+-
+ add_subdirectory(CXX11)
+diff --git a/unsupported/Eigen/CXX11/CMakeLists.txt b/unsupported/Eigen/CXX11/CMakeLists.txt
+index 385ed240c..42c43ad4b 100644
+--- a/unsupported/Eigen/CXX11/CMakeLists.txt
++++ b/unsupported/Eigen/CXX11/CMakeLists.txt
+@@ -1,8 +1 @@
+ set(Eigen_CXX11_HEADERS Tensor TensorSymmetry ThreadPool)
+-
+-install(FILES
+-  ${Eigen_CXX11_HEADERS}
+-  DESTINATION ${INCLUDE_INSTALL_DIR}/unsupported/Eigen/CXX11 COMPONENT Devel
+-  )
+-
+-install(DIRECTORY src DESTINATION ${INCLUDE_INSTALL_DIR}/unsupported/Eigen/CXX11 COMPONENT Devel FILES_MATCHING PATTERN "*.h")
+diff --git a/unsupported/Eigen/src/EulerAngles/CMakeLists.txt b/unsupported/Eigen/src/EulerAngles/CMakeLists.txt
+index 22088eb30..9cccfaf3b 100644
+--- a/unsupported/Eigen/src/EulerAngles/CMakeLists.txt
++++ b/unsupported/Eigen/src/EulerAngles/CMakeLists.txt
+@@ -1,6 +1 @@
+ file(GLOB Eigen_EulerAngles_SRCS "*.h")
+-
+-install(FILES
+-  ${Eigen_EulerAngles_SRCS}
+-  DESTINATION ${INCLUDE_INSTALL_DIR}/unsupported/Eigen/src/EulerAngles COMPONENT Devel
+-  )
