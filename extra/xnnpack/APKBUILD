@@ -59,7 +59,6 @@ prepare() {
 }
 
 build() {
-    # Something is stalling this command after it finishes configuring.
     CC=clang \
     CXX=clang++ \
     cmake3.5 -B build -G Ninja \
