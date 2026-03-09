@@ -1,0 +1,115 @@
+# Alpine Contributor: Francesco Colista <fcolista@alpinelinux.org>
+# Alpine Maintainer: Francesco Colista <fcolista@alpinelinux.org>
+# Maintainer: abdulahmoda <abahmoda@qnx.com>
+pkgname=mosh
+pkgver=1.4.0
+pkgrel=0
+pkgdesc="Mobile shell surviving disconnects with local echo and line editing"
+url="https://mosh.org"
+arch="all"
+license="GPL-3.0-or-later"
+depends="$pkgname-client $pkgname-server"
+checkdepends="tmux perl"
+makedepends="
+	abseil-cpp-dev
+	autoconf
+	automake
+	gzip
+	libtool
+	libutempter-dev
+	ncurses-dev
+	openssl-dev>3
+	perl-dev
+	perl-io-tty
+	protobuf-dev
+	zlib-dev
+	"
+subpackages="
+	$pkgname-client
+	$pkgname-client-doc:clientdoc:noarch
+	$pkgname-server
+	$pkgname-server-doc:serverdoc:noarch
+	$pkgname-doc
+	$pkgname-bash-completion
+	"
+source="https://github.com/mobile-shell/mosh/archive/refs/tags/mosh-$pkgver.tar.gz
+	fix-ppc64le-build-with-musl.patch
+	fix-makefile.am.patch
+	"
+builddir="$srcdir"/$pkgname-$pkgname-$pkgver
+options="!check" # emulation-cursor-motion.test fails
+
+prepare() {
+	default_prepare
+	# Test unicode-later-combining is failing. Ideally we want to fix it.
+	sed -i '/unicode-later-combining.test/d' "$builddir"/src/tests/Makefile.am
+	./autogen.sh
+}
+
+
+build() {
+	CXXFLAGS="$CXXFLAGS -std=c++17 -Wno-deprecated-declarations" \
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--sysconfdir=/etc \
+		--mandir=/usr/share/man \
+		--localstatedir=/var \
+		--enable-compile-warnings=error \
+		--enable-examples
+	make
+}
+
+check() {
+	make distcheck VERBOSE=1 V=1
+}
+
+package() {
+	make DESTDIR="$pkgdir" install
+	install -Dm644 "$builddir"/conf/bash-completion/completions/mosh \
+		"$pkgdir"/usr/share/bash-completion/completions/$pkgname
+	install -Dm644 "$srcdir"/mosh.nft "$pkgdir"/usr/share/nftables.avail/50_mosh.nft
+}
+
+server() {
+	replaces="mosh"
+	pkgdesc="Mosh server"
+	depends=""
+	mkdir -p "$subpkgdir"/usr/bin
+	mv "$pkgdir"/usr/bin/mosh-server \
+		"$subpkgdir"/usr/bin/
+}
+
+client() {
+	replaces="mosh"
+	pkgdesc="Mosh client"
+	depends="openssh-client perl-io-tty"
+	mkdir -p "$subpkgdir"/usr/bin
+	mv "$pkgdir"/usr/bin/mosh-client \
+		"$subpkgdir"/usr/bin/
+}
+
+serverdoc() {
+	pkgdesc="Mosh server (documentation)"
+	install_if="mosh-server docs"
+	depends=""
+
+	gzip -n -9 "$pkgdir/usr/share/man/man1/mosh-server.1"
+	amove usr/share/man/man1/mosh-server.1.gz
+}
+
+clientdoc() {
+	pkgdesc="Mosh client (documentation)"
+	install_if="mosh-client docs"
+	depends=""
+
+	gzip -n -9 "$pkgdir/usr/share/man/man1/mosh-client.1"
+	amove usr/share/man/man1/mosh-client.1.gz
+}
+
+sha512sums="
+b91b0e719774f87a565c0f5870a6105edae1763fb7bed0697db152fa38dd748c6e413201887ad3c6c7c2fc75ccc003c2afbb60e754c6f6a977103f90a7caee4a  mosh-1.4.0.tar.gz
+360bdd9e353eec982c98d68ec1a6806c9ccb6dac57bb58ddc98b2fb03dc14346a8bb613c50cada4efbfa4fee0efc5e69b3dcd1e5b164f6ec85f179a18b262d16  fix-ppc64le-build-with-musl.patch
+52a7c167f4150b03a787d124e3aed40f97215ef4171576f4ef75c504b93d28e5240e9fe0a71769b2ef32756565a46926d711f32ab6e07dca17dd53f774f82c5c  fix-makefile.am.patch
+"
