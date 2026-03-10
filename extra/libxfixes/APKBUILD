@@ -1,0 +1,36 @@
+# Alpine-Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+# Maintainer: Aaron Bassett <abassett@qnx.com
+pkgname=libxfixes
+pkgver=6.0.2
+pkgrel=0
+pkgdesc="X11 miscellaneous 'fixes' extension library"
+url="https://xorg.freedesktop.org/"
+arch="all"
+license="MIT"
+options="!check"  # No test suite.
+depends="libx11"
+depends_dev="libx11-dev xorgproto"
+makedepends="xorgproto libx11-dev util-macros"
+subpackages="$pkgname-dev $pkgname-doc"
+source="https://www.x.org/releases/individual/lib/libXfixes-$pkgver.tar.xz"
+builddir="$srcdir"/libXfixes-$pkgver
+
+build() {
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--sysconfdir=/etc \
+		--mandir=/usr/share/man \
+		--localstatedir=/var
+	make
+}
+
+package() {
+	make DESTDIR="$pkgdir" install
+}
+
+sha512sums="
+87542927ba9839fdd83282b0fba1bd2afae853ffe4e0f5f548915de22432bbc34a064578ba8527ba6041a993ee27390ba6ee2f1a957cb961717d45026e40ec75  libXfixes-6.0.2.tar.xz
+"
+
