@@ -1,0 +1,41 @@
+# Apline-Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+# Maintainer: Aaron Bassett <abassett@qnx.com>
+pkgname=libxdmcp
+pkgver=1.1.5
+pkgrel=0
+pkgdesc="X11 Display Manager Control Protocol library"
+url="https://xorg.freedesktop.org/"
+arch="all"
+license="MIT"
+depends="qnx-io-sock"
+depends_dev="xorgproto"
+makedepends="$depends_dev util-macros xmlto qnx-io-sock-dev"
+subpackages="$pkgname-dev $pkgname-doc"
+source="https://www.x.org/releases/individual/lib/libXdmcp-$pkgver.tar.xz"
+builddir="$srcdir/libXdmcp-$pkgver"
+
+# secfixes:
+#   1.1.2-r3:
+#     - CVE-2017-2625
+
+build() {
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--sysconfdir=/etc
+	make
+}
+
+check() {
+	make check
+}
+
+package() {
+	make -j1 DESTDIR="$pkgdir" install
+}
+
+sha512sums="
+d7a1d70a58b7d34ddd01a91d3ccbc086a36626b7081cfcbb150d24288c6adad612b042ba7ea63a218595afb2ee04384c0f8ba84ee3c6bd29913724b54e898d83  libXdmcp-1.1.5.tar.xz
+"
+
