@@ -12,10 +12,7 @@ pkgdesc="TensorFlow Lite - High-performance ML & GenAI deployment on edge platfo
 url="https://ai.google.dev/edge/litert"
 arch="all"
 license="Apache-2.0"
-# Currently we need abseil-cpp-dev as a workaround for abseil-cpp-<abseillib>
-# not installing libabsl-*.so which gets used for linking.
 depends="
-    abseil-cpp-dev
     abseil-cpp-status
     abseil-cpp-raw-hash-set
     abseil-cpp-synchronization
@@ -156,7 +153,7 @@ build() {
         -DOVERRIDABLE_FETCH_CONTENT_ruy_URL=$_ruy_builddir \
         -DOVERRIDABLE_FETCH_CONTENT_xnnpack_URL=$_xnnpack_builddir \
         -DOVERRIDABLE_FETCH_CONTENT_abseil-cpp_GIT_REPOSITORY=https://github.com/qnx-ports/abseil-cpp.git \
-        -DOVERRIDABLE_FETCH_CONTENT_abseil-cpp_GIT_TAG=qnx_20250814.1-r0 \
+        -DOVERRIDABLE_FETCH_CONTENT_abseil-cpp_GIT_TAG=qnx_20250814.1-r1 \
         -DOVERRIDABLE_FETCH_CONTENT_farmhash_GIT_REPOSITORY=https://github.com/qnx-ports/farmhash.git \
         -DOVERRIDABLE_FETCH_CONTENT_farmhash_GIT_TAG=qnx-tflite-r0 \
         -DOVERRIDABLE_FETCH_CONTENT_google_benchmark_GIT_REPOSITORY=https://github.com/qnx-ports/benchmark.git \
