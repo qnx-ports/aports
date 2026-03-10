@@ -1,0 +1,37 @@
+# Alpine-Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+# Maintainer: Aaron Bassett <abassett@qnx.com>
+pkgname=libxau
+pkgver=1.0.12
+pkgrel=0
+pkgdesc="X11 authorisation library"
+url="https://xorg.freedesktop.org/"
+arch="all"
+license="MIT"
+depends="qnx-io-sock"
+makedepends="meson xorgproto util-macros qnx-io-sock-dev"
+depends_dev="xorgproto"
+subpackages="$pkgname-dev $pkgname-doc"
+source="https://www.x.org/releases/individual/lib/libXau-$pkgver.tar.xz"
+
+builddir="$srcdir"/libXau-$pkgver
+
+build() {
+	CFLAGS="$CFLAGS -lsocket"
+	abuild-meson \
+		output .
+	meson compile -C output
+}
+
+check() {
+	meson test --print-errorlogs -C output
+}
+
+package() {
+	DESTDIR="$pkgdir" meson install --no-rebuild -C output
+	install -Dm644 COPYING "$pkgdir"/usr/share/licenses/$pkgname/COPYING
+}
+
+sha512sums="
+4bbe8796f4a14340499d5f75046955905531ea2948944dfc3d6069f8b86c1710042bfc7918d459320557883e6631359d48e6173c69c62ff572314e864ff97c5e  libXau-1.0.12.tar.xz
+"
+
