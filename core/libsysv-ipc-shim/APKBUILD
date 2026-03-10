@@ -1,17 +1,17 @@
-# Maintainer: Felix Xing <fxing@qnx.com>
+# Maintainer: Aaron Bassett <abassett@qnx.com>
 pkgname=libsysv-ipc-shim
 pkgver=0.1.0
-pkgrel=1
-pkgdesc="Felix's ipc.h shim"
+pkgrel=2
+pkgdesc="QNX ipc.h shim"
 url="https://qnx.com"
 arch="all"
 license="LicenseRef-QDL-Non-Commercial"
 options="!check"
 makedepends="clang"
 subpackages="$pkgname-dev"
-source="libsysv-ipc.tar.gz
+source="$pkgname-v$pkgver.tar.gz::https://github.com/qnx-ports/libsysv-ipc-shim/archive/refs/tags/v$pkgver.tar.gz
     "
-builddir="$srcdir"/libsysv-ipc
+
 build() {
     CC=clang ./build.sh
 }
@@ -31,5 +31,5 @@ dev() {
 }
 
 sha512sums="
-7ae435811bc62288cc5b8e2dc4c06fe403a3609fd72385efa30dff967fe2f2619ed820072ef11ca6da6a6c7ac4ed313066dd25639c73c68f3396d0736639ba59  libsysv-ipc.tar.gz
+3c36b3af4a33586a95f7e77051a3dc82522102976fcfa5ede278db35de8b7966828b6bd2bc0e205d764c720a9e33f4ed784c516cd308aafcbdf8514e9c94501d  libsysv-ipc-shim-v0.1.0.tar.gz
 "
