@@ -1,0 +1,46 @@
+# Alpine Maintainer: Laurent Bercot <ska-devel@skarnet.org>
+# Maintainer: abdulahmoda <abahmoda@qnx.com>
+pkgname=skalibs
+# NOTE: If you're upgrading to a new version that fixes some security
+# vulnerability in the APIs used by utmps (mainly timed ipcs),
+# rebuild the following aports:
+# - busybox
+# - mingetty
+# - openssh
+# - util-linux
+pkgver=2.14.5.1
+pkgrel=0
+pkgdesc="Set of general-purpose C programming libraries for skarnet.org software."
+url="https://skarnet.org/software/skalibs/"
+arch="all"
+license="ISC"
+options="!check"  # No test suite.
+makedepends="qnx-utils-dev"
+subpackages="$pkgname-static $pkgname-libs $pkgname-dev $pkgname-doc"
+source="https://skarnet.org/software/skalibs/skalibs-$pkgver.tar.gz"
+
+build() {
+	./configure \
+		--prefix=/usr \
+		--enable-pkgconfig \
+		--with-sysdep-devurandom=yes \
+		--with-sysdep-posixspawnearlyreturn=no \
+		--with-sysdep-procselfexe=/proc/self/exe
+	make
+}
+
+package() {
+	make DESTDIR="$pkgdir" install
+	install -D -m 0644 COPYING "$pkgdir/usr/share/licenses/$pkgname/COPYING"
+	mkdir -p "$pkgdir/usr/share/doc"
+	cp -a doc "$pkgdir/usr/share/doc/$pkgname"
+}
+
+dev() {
+	default_dev
+	amove usr/lib/skalibs/sysdeps
+}
+
+sha512sums="
+ef485f5dac647a46a76ae452dcb5456ba29601efa204e1153b944094685ff48ff7635dfef806b7f2abdd31e752e3dbbb63b244e4d016d67bac31803cf4e807b3  skalibs-2.14.5.1.tar.gz
+"
