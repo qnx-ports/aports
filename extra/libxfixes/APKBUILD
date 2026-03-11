@@ -1,5 +1,5 @@
 # Alpine-Maintainer: Natanael Copa <ncopa@alpinelinux.org>
-# Maintainer: Aaron Bassett <abassett@qnx.com
+# Maintainer: Aaron Bassett <abassett@qnx.com>
 pkgname=libxfixes
 pkgver=6.0.2
 pkgrel=0
