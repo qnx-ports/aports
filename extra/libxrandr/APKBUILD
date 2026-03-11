@@ -8,7 +8,7 @@ url="https://xorg.freedesktop.org/"
 arch="all"
 license="MITi"
 depends="libx11 libxrender libxext"
-depends_dev="libx11-dev libxext-dev libxrender-dev xorgproto "
+depends_dev="libx11-dev libxrender-dev libxext-dev xorgproto"
 makedepends="
 	$depends_dev
 	meson
