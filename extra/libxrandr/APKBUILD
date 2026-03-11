@@ -1,0 +1,39 @@
+# Alpine-Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+# Maintainer: Aaron Bassett <abassett@qnx.com>
+pkgname=libxrandr
+pkgver=1.5.5
+pkgrel=0
+pkgdesc="X11 RandR extension library"
+url="https://xorg.freedesktop.org/"
+arch="all"
+license="MITi"
+depends="libx11 libxrender libxext"
+depends_dev="libx11-dev libxext-dev libxrender-dev xorgproto "
+makedepends="
+	$depends_dev
+	meson
+	util-macros
+	"
+subpackages="$pkgname-dev $pkgname-doc"
+source="https://www.x.org/releases/individual/lib/libXrandr-$pkgver.tar.xz"
+builddir="$srcdir"/libXrandr-$pkgver
+options="!check"  # No test suite.
+
+build() {
+	abuild-meson \
+		output .
+	meson compile -C output
+}
+
+check() {
+	meson test --print-errorlogs -C output
+}
+
+package() {
+	DESTDIR="$pkgdir" meson install --no-rebuild -C output
+}
+
+sha512sums="
+3cae1d2eb425dd3d3bd89f514a8e4bd9c696170ab6f3882f6db1936c30674b48277f2e485a8e3e47b3093fb1d9a32d2b054b064bd781db039e833b397aeeda9b  libXrandr-1.5.5.tar.xz
+"
+
