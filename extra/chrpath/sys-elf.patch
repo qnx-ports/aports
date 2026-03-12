@@ -1,0 +1,95 @@
+diff --color -U 6 -r before/chrpath.c after/chrpath.c
+--- before/chrpath.c	2026-03-12 12:52:24.578499193 -0400
++++ after/chrpath.c	2026-03-12 12:53:49.159212094 -0400
+@@ -43,13 +43,19 @@
+ #  include "config.h"
+ #endif
+ 
+ #include <stdio.h>
+ #include <unistd.h>
+ #include <fcntl.h>
+-#include <elf.h>
++#if __QNX__
++#  include <sys/elf.h>
++#  define DT_RPATH DT_RPATH
++#  define DT_RUNPATH DT_RUNPATH
++#else
++#  include <elf.h>
++#endif
+ #if defined(HAVE_LINK_H)
+ #  include <link.h>
+ #endif /* HAVE_LINK_H */
+ #include <stdlib.h>
+ #include <string.h>
+ #include <sys/stat.h>
+diff --color -U 6 -r before/elf.c after/elf.c
+--- before/elf.c	2026-03-12 12:52:24.578499193 -0400
++++ after/elf.c	2026-03-12 12:53:56.847276894 -0400
+@@ -8,13 +8,19 @@
+  */
+ 
+ #ifdef HAVE_CONFIG_H
+ #  include "config.h"
+ #endif
+ 
+-#include <elf.h>
++#if __QNX__
++#  include <sys/elf.h>
++#  define DT_RPATH DT_RPATH
++#  define DT_RUNPATH DT_RUNPATH
++#else
++#  include <elf.h>
++#endif
+ #if defined(HAVE_SYS_LINK_H)
+ #  include <sys/link.h> /* Find DT_RPATH on Solaris 2.6 */
+ #endif /*  HAVE_SYS_LINK_H */
+ #include <stdio.h>
+ #include <string.h>
+ #include <unistd.h>
+diff --color -U 6 -r before/killrpath.c after/killrpath.c
+--- before/killrpath.c	2026-03-12 12:52:24.578499193 -0400
++++ after/killrpath.c	2026-03-12 12:54:03.415332253 -0400
+@@ -20,13 +20,19 @@
+ #  include "config.h"
+ #endif
+ 
+ #include <stdio.h>
+ #include <unistd.h>
+ #include <fcntl.h>
+-#include <elf.h>
++#if __QNX__
++#  include <sys/elf.h>
++#  define DT_RPATH DT_RPATH
++#  define DT_RUNPATH DT_RUNPATH
++#else
++#  include <elf.h>
++#endif
+ #if defined(HAVE_LINK_H)
+ #  include <link.h>
+ #endif /* HAVE_LINK_H */
+ #include <stdlib.h>
+ #include "protos.h"
+ #include <string.h>
+diff --color -U 6 -r before/protos.h after/protos.h
+--- before/protos.h	2026-03-12 12:52:24.578499193 -0400
++++ after/protos.h	2026-03-12 12:54:18.927462997 -0400
+@@ -14,13 +14,19 @@
+ #elif defined(HAVE_SYS_BYTEORDER_H)
+ #include <sys/byteorder.h>
+ #define bswap_16 BSWAP_16
+ #define bswap_32 BSWAP_32
+ #define bswap_64 BSWAP_64
+ #endif
++#if __QNX__
++#include <sys/elf.h>
++#define DT_RPATH DT_RPATH
++#define DT_RUNPATH DT_RUNPATH
++#else
+ #include <elf.h>
++#endif
+ #include "config.h"
+ 
+ #ifdef WORDS_BIGENDIAN
+ #define ELFDATA2 ELFDATA2MSB
+ #else
+ #define ELFDATA2 ELFDATA2LSB
