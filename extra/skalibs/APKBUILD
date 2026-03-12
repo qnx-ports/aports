@@ -34,6 +34,7 @@ build() {
 }
 
 package() {
+	cd "$build_dir"
 	make DESTDIR="$pkgdir" install
 	install -D -m 0644 COPYING "$pkgdir/usr/share/licenses/$pkgname/COPYING"
 	mkdir -p "$pkgdir/usr/share/doc"
