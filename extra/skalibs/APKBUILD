@@ -17,15 +17,19 @@ license="ISC"
 options="!check"  # No test suite.
 makedepends="qnx-utils-dev"
 subpackages="$pkgname-static $pkgname-libs $pkgname-dev $pkgname-doc"
-source="https://skarnet.org/software/skalibs/skalibs-$pkgver.tar.gz"
+source="https://github.com/abdulahmoda/skalibs/archive/refs/heads/qnx_changes.tar.gz"
+build_dir="$srcdir/skalibs-qnx_changes"
 
 build() {
+	cd "$build_dir"
 	./configure \
+		CFLAGS="$CFLAGS -Qunused-arguments -DSA_RESTART=0" \
+		CXX_FLAGS="$CXX_FLAGS -Qunused-arguments" \
 		--prefix=/usr \
 		--enable-pkgconfig \
 		--with-sysdep-devurandom=yes \
 		--with-sysdep-posixspawnearlyreturn=no \
-		--with-sysdep-procselfexe=/proc/self/exe
+		--with-sysdep-procselfexe=none
 	make
 }
 
@@ -42,5 +46,5 @@ dev() {
 }
 
 sha512sums="
-ef485f5dac647a46a76ae452dcb5456ba29601efa204e1153b944094685ff48ff7635dfef806b7f2abdd31e752e3dbbb63b244e4d016d67bac31803cf4e807b3  skalibs-2.14.5.1.tar.gz
+775bf1db3293bffb533055f790270b4eb2a13479c829daebb75b015ff7959777182e54f171bd2c6574f8b7013d0941a576625fdf54b444bacb591c2138edf0d8  qnx_changes.tar.gz
 "
