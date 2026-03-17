@@ -15,7 +15,7 @@ diff --color -U 6 -r before/protos.h after/protos.h
 +#define bswap_64(x) ENDIAN_RET64(x)
  #endif
  #if __QNX__
- #  include <sys/elf.h>
+ #include <sys/elf.h>
+ #define DT_RPATH DT_RPATH
+ #define DT_RUNPATH DT_RUNPATH
  #else
- #  include <elf.h>
- #endif
