@@ -18,7 +18,7 @@ builddir="$srcdir/$pkgname-qnx-v$pkgver/$pkgname"
 
 build() {
 	cd $builddir
-	make CFLAGS="$CFLAGS -I/usr/include/utmps -DQNX=ON" LDLIBS="-Wl,--no-as-needed -lskarnet -Wl,--as-needed"
+	make CFLAGS="$CFLAGS -I/usr/include/utmps -DQNX=ON" LDLIBS="-Wl,--no-as-needed -Wl,--as-needed"
 }
 
 package() {
@@ -28,5 +28,5 @@ package() {
 }
 
 sha512sums="
-f304ea3ec244544434716f6e849056a8f5560d714b1fb7370de6990cdcdf986881b80e15dfdad032f7d6daff5fc38843c6ff892897ab62b0810ce8aced088242  qnx-v1.2.3.tar.gz
+4080732d64c9b2fe9b3a165cf1b9d89b1b2c8bbf91fd2a3c52ad19f40dce6cac1abff6b38ce8a941864018ab2486624bd2758cf0940ef86bb0b7fa9e91aa004a  qnx-v1.2.3.tar.gz
 "
