@@ -1,0 +1,320 @@
+# Alpine-Contributor: Simon Frankenberger <simon-alpine@fraho.eu>
+# Alpine-Maintainer: Simon Frankenberger <simon-alpine@fraho.eu>
+# Maintainer: Aaron Bassett <abassett@qnx.com>
+
+# QNX does not have pandoc-cli due to no ghc currently
+# For now we are going to borrow the pre-compiled docs that Alpine
+# has pre-generated and remove it when we have pandoc-cli
+pkgname=openjdk25
+_updatever=10
+pkgver="25.0.2_p$_updatever"
+_pkgver=${pkgver%_p*}
+pkgrel=0
+pkgdesc="Oracle OpenJDK 25"
+provider_priority=25
+url="https://github.com/openjdk/jdk25u"
+arch="all"
+license="GPL-2.0-with-classpath-exception"
+#TODO: add bootstrap after first build
+makedepends="
+	$pkgname-bootstrap
+	autoconf
+	bash
+	gawk
+	grep
+	make
+	zip
+	qnx-alsa-dev
+	qnx-io-sock-dev
+	qnx-fd-notify-dev
+	libsysv-ipc-shim-dev
+	cups-dev
+	fontconfig-dev
+	freetype-dev
+	giflib-dev
+	lcms2-dev
+	libffi-dev
+	libjpeg-turbo-dev
+	libx11-dev
+	libxext-dev
+	libxrandr-dev
+	libxrender-dev
+	libxt-dev
+	libxtst-dev
+	zlib-ng-dev
+	"
+depends="$pkgname-jdk $pkgname-demos"
+subpackages="$pkgname-jmods:_jmods:noarch
+	$pkgname-demos:_demos:noarch
+	$pkgname-doc:_doc
+	$pkgname-jre:_jre
+	$pkgname-src:_src:noarch
+	$pkgname-jre-headless:_jre_headless
+	$pkgname-jdk:_jdk
+	"
+source="jdk-qnx-$_pkgver.tar.gz::https://github.com/qnx-ports/jdk25u/archive/refs/tags/qnx-jdk-$_pkgver+$_updatever.tar.gz
+	docs-$_pkgver.tgz::https://github.com/bratkartoffel/openjdk-docs/raw/refs/heads/main/$pkgname-$pkgver-doc.tgz?download=
+	gtest-1.14.0.tar.gz::https://github.com/qnx-ports/googletest/archive/refs/heads/qnx_v1.14.0.tar.gz
+	main-targets.gmk
+	java-multicall.sh
+"
+builddir="$srcdir/jdk25u-qnx-jdk-$_pkgver-$_updatever"
+
+provides="$pkgname-bootstrap=$pkgver-r$pkgrel"
+
+_java_home="/usr/lib/jvm/java-25-openjdk"
+
+sonameprefix="$pkgname:"
+
+# enable running the JTReg tests in check?
+# see comment in that function for explanation
+_run_jtreg=${_run_jtreg:-0}
+if [ $_run_jtreg -ne 0 ]; then
+	makedepends="$makedepends java-jtreg"
+	checkdepends="$checkdepends ttf-freefont xvfb-run"
+fi
+
+# just build the documentation?
+_build_doc=0
+if [ "$_build_doc" -ne 0 ]; then
+	makedepends="$makedepends pandoc-cli"
+fi
+
+ldpath="$_java_home/lib:$_java_home/lib/$_jvm_variants"
+
+build() {
+	if [ $_run_jtreg -ne 0 ]; then
+		_with_jtreg="--with-jtreg=/usr/share/java/jtreg"
+	else
+		_with_jtreg="--with-jtreg=no"
+	fi
+
+	if [ -n "$USE_CCACHE" ]; then
+		# workaround ccache being disallowed
+		export PATH="/usr/bin:/bin:/sbin:/usr/sbin"
+		local ccache="--enable-ccache"
+	fi
+
+	if [ "$CARCH" == "x86_64" ]; then
+		_openjdk_target="x86_64-pc-qnx"
+	elif [ "$CARCH" == "aarch64" ]; then
+		_openjdk_target="aarch64-unknown-qnx"
+	fi
+
+	msg $_openjdk_target
+
+	# CFLAGS, CXXFLAGS and LDFLAGS are ignored as shown by a warning
+	# in the output of ./configure unless used like such:
+	#  --with-extra-cflags="$CFLAGS"
+	#  --with-extra-cxxflags="$CXXFLAGS"
+	#  --with-extra-ldflags="$LDFLAGS"
+	# See also paragraph "Configure Control Variables" from "common/doc/building.md"
+	# shellcheck disable=2097 disable=2098
+	CFLAGS='' CXXFLAGS='' LDFLAGS='' \
+		bash ./configure \
+		--build="$_openjdk_target" \
+		--openjdk-target="$_openjdk_target" \
+		--prefix="$_java_home" \
+		--sysconfdir=/etc \
+		--mandir=/usr/share/man \
+		--infodir=/usr/share/info \
+		--localstatedir=/var \
+		--with-extra-cflags="$CFLAGS -D_LARGEFILE64_SOURCE" \
+		--with-extra-cxxflags="$CXXFLAGS -D_LARGEFILE64_SOURCE" \
+		--with-extra-ldflags="-lsocket" \
+		--with-zlib=system \
+		--with-libjpeg=system \
+		--with-giflib=system \
+		--with-libpng=system \
+		--with-lcms=system \
+		--with-jobs=${JOBS:-4} \
+		--with-test-jobs=${JOBS:-4} \
+		--with-native-debug-symbols=none \
+		--with-gtest=../googletest-qnx_v1.14.0 \
+		$ccache \
+		$_with_jtreg \
+		--disable-warnings-as-errors \
+		--disable-precompiled-headers \
+		--enable-dtrace=no \
+		--with-jvm-variants=server \
+		--with-debug-level=release \
+		--with-version-pre= \
+		--with-version-opt="alpine-r$pkgrel" \
+		--with-version-build="${pkgver##*p}" \
+		--with-vendor-name="QNX" \
+		--with-vendor-url="https://qnx.com" \
+		--with-vendor-bug-url="https://github.com/qnx-ports/aports/issues" \
+		--with-vendor-vm-bug-url="https://github.com/qnx-ports/aports/issues" \
+		--with-toolchain-type=clang \
+
+
+	mkdir -p ./build/qnx-$CARCH-server-release/make-support
+	cp $srcdir/main-targets.gmk ./build/qnx-$CARCH-server-release/make-support
+
+	# QNX does not support $ORIGIN resolution in RPATH in order to work around this we set the LD_LIBRARY_PATH
+	# to where the next jdk will be so that when it runs for the final build it will pick it up
+	# this is solved in the final build via a multi call shell script 
+	MAKEFLAGS='' LD_LIBRARY_PATH="$(realpath .)/build/qnx-$CARCH-server-release/jdk/lib:$LD_LIBRARY_PATH" make jdk-image
+}
+
+check() {
+	# run the gtest unittest suites
+	# they don't take long, DO NOT DISABLE THEM!
+	# override make variable, disable -Werror
+	LD_LIBRARY_PATH="$(realpath "./build/qnx-$CARCH-server-release/jdk/lib"):$(realpath "./build/qnx-$CARCH-server-release/hotspot/variant-server/libjvm/gtest")" \
+	MAKEFLAGS="" \
+	make test-hotspot-gtest
+
+	# The jtreg tests take very, very long to finish and show some failures (9 - 12 on my machine, varying between runs)
+	# I think these are not critical and can be safely ignored.
+	# As the tests take too long, they are disabled by default.
+	# When updating this aport please let them run at least once on your machine to see if the failure count changes.
+	if [ $_run_jtreg -ne 0 ]; then
+		_logfile=$( mktemp -p "$builddir" )
+		MAKEFLAGS='' xvfb-run make \
+			run-test-tier1 \
+			run-test-tier2 \
+			run-test-tier3 \
+			| tee "$_logfile"
+		msg "---------------------------------------"
+		msg "The build log can be found at $_logfile"
+		# abort the build so you may take a look at the logfile
+		false
+		return 1
+	fi
+}
+
+package() {
+	mkdir -p "$pkgdir/$_java_home"
+
+	cd build/qnx*-server-release/images/
+	cp -r jdk/* "$pkgdir/$_java_home"
+
+	cd "$pkgdir/$_java_home"/bin
+	# To work around QNX not have $ORIGIN resoltuion in RPATH we have a multicall shell script
+	# Its job is to set the LD_LIBRARY_PATH to emulate $ORIGIN. java also has a weird req where
+	# the binraries must be in a folder called bin or they can't resolve JAVA_HOME so we make a nested
+	# bin directory and use that as the base.
+	mkdir bin
+	find . -maxdepth 1 -type f -exec mv "{}" ./bin/ ";"
+	cp "$srcdir"/java-multicall.sh .
+	ls bin/ | xargs -I {} ln -sf java-multicall.sh {}
+}
+
+_jmods() {
+	pkgdesc="Oracle OpenJDK 25 (jmods)"
+	depends=""
+	_fromroot="$pkgdir/$_java_home"
+	_toroot="$subpkgdir/$_java_home"
+
+	mkdir -p "$_toroot"
+	mv "$_fromroot/jmods" "$_toroot"
+}
+
+_demos() {
+	pkgdesc="Oracle OpenJDK 25 (demos)"
+	depends=""
+	_fromroot="$pkgdir/$_java_home"
+	_toroot="$subpkgdir/$_java_home"
+
+	mkdir -p "$_toroot"
+	mv "$_fromroot/demo" "$_toroot"
+}
+
+_doc() {
+	pkgdesc="Oracle OpenJDK 25 (Documentation)"
+	depends=""
+	_toroot="$subpkgdir/$_java_home"
+
+	mkdir -p "$_toroot"
+	mv "$srcdir/docs" "$_toroot"
+}
+
+_jre() {
+	pkgdesc="Oracle OpenJDK 25 (JRE)"
+	depends="$pkgname-jre-headless freetype giflib lcms2 lcms2-plugins libjpeg-turbo libpng libsysv-ipc-shim libx11 libxext libxi libxrender libxtst qnx-alsa"
+	provides=java-jre
+	_fromroot="$pkgdir/$_java_home"
+	_toroot="$subpkgdir/$_java_home"
+
+	mkdir -p "$_toroot/lib"
+	mv "$_fromroot/lib/libawt_xawt.so" \
+		"$_fromroot/lib/libfontmanager.so" \
+		"$_fromroot/lib/libjavajpeg.so" \
+		"$_fromroot/lib/libjawt.so" \
+		"$_fromroot/lib/libjsound.so" \
+		"$_fromroot/lib/liblcms.so" \
+		"$_fromroot/lib/libsplashscreen.so" \
+		"$_toroot/lib"
+}
+
+_src() {
+	pkgdesc="Oracle OpenJDK 25 (sources)"
+	depends="$pkgname-jre-headless"
+	mkdir -p "$subpkgdir/$_java_home"/lib
+	mv "$pkgdir"/$_java_home/lib/src.zip \
+		"$subpkgdir"/$_java_home/lib/
+}
+
+_jre_headless() {
+	pkgdesc="Oracle OpenJDK 25 (JRE headless)"
+	depends="java-common java-cacerts libc++ libiconv qnx-fd-notify qnx-io-sock zlib-ng"
+	provides=java-jre-headless
+	_fromroot="$pkgdir/$_java_home"
+	_toroot="$subpkgdir/$_java_home"
+
+	mkdir -p "$_toroot"
+	mv "$_fromroot/lib" "$_toroot"
+
+	# ct.sym should stay in -jdk
+	mkdir "$_fromroot/lib"
+	mv "$_toroot/lib/ct.sym" "$_fromroot/lib"
+
+	mkdir -p "$_toroot/bin"
+	for i in java-multicall.sh \
+		java \
+		jfr \
+		jrunscript \
+		jwebserver \
+		keytool \
+		rmiregistry; do
+		mv "$_fromroot/bin/$i" "$_toroot/bin/$i"
+	done
+
+	mv "$_fromroot/legal"              "$_toroot"
+	mv "$_fromroot/conf"               "$_toroot"
+	mv "$_fromroot/release"            "$_toroot"
+	cp "$builddir/ASSEMBLY_EXCEPTION"  "$_toroot"
+	cp "$builddir/LICENSE"             "$_toroot"
+	cp "$builddir/README.md"           "$_toroot"
+
+	# symlink to shared cacerts store
+	rm "$_toroot/lib/security/cacerts"
+	ln -sf /etc/ssl/certs/java/cacerts \
+		"$_toroot/lib/security/cacerts"
+
+	# symlink for java-common to work (expects jre in $_java_home/jre)
+	ln -sf . "$_toroot/jre"
+}
+
+_jdk() {
+	pkgdesc="Oracle OpenJDK 25 (JDK)"
+	depends="$pkgname-jre $pkgname-jmods"
+	provides=java-jdk
+	_fromroot="$pkgdir/$_java_home"
+	_toroot="$subpkgdir/$_java_home"
+
+	mkdir -p "$_toroot"
+	mv "$_fromroot/bin" "$_toroot"
+	mv "$_fromroot/lib" "$_toroot"
+	mv "$_fromroot/include" "$_toroot"
+}
+
+
+sha512sums="
+08ec2ba8d70efea0240978b7bd2e3ee65a554e64c526a29794176893dce8dcf1bddc6b90b1b0996701d721b3b24d32d79c6ab74dc1ddfccc406ee3a385284e92  jdk-qnx-25.0.2.tar.gz
+5e64329d8e00fa44721febd0fe47b70ca22ffb1a707a6bc3fde214d8f502eeea8aa6fb287ff0f0c461e8954d17d7f142170c22600081654fe554eaec2f809cdb  docs-25.0.2.tgz
+203906a27be0d4400b1665b0ba5e0b2d1ee7497c740e90f0f9406f3ff9400bb7ae989bf0e0985d42143ebaa55d6b1e27cd91eb6d44639fac83bb542b709b0d59  gtest-1.14.0.tar.gz
+42c7f3a0b23156682f81f34d6cd047bee99bdbc8aac886770ff5aefc2b7360b5168cbf76fc6c518c643b7ab1a8f9239e12a04f7e65f30247295d1ef48e65de05  main-targets.gmk
+243acaa98f2bfbfe4678849dd46abcdb0dc8de66a6ba370557d6ecf13c0ae3ba63adc6651b7e2272b09e309dfad2bcb1fa2eb6f087cf59f110530edd45edbf1f  java-multicall.sh
+"
