@@ -14,7 +14,7 @@ pkgdesc="Oracle OpenJDK 25"
 provider_priority=25
 url="https://github.com/openjdk/jdk25u"
 arch="all"
-license="GPL-2.0-with-classpath-exception"
+license="GPL-2.0-only WITH Classpath-exception-2.0"
 makedepends="
 	$pkgname-bootstrap
 	autoconf
