@@ -15,7 +15,6 @@ provider_priority=25
 url="https://github.com/openjdk/jdk25u"
 arch="all"
 license="GPL-2.0-with-classpath-exception"
-#TODO: add bootstrap after first build
 makedepends="
 	$pkgname-bootstrap
 	autoconf
