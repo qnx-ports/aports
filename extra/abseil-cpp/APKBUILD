@@ -8,18 +8,16 @@ pkgdesc="Abseil Common Libraries (C++)"
 url="https://abseil.io/"
 arch="all"
 license="Apache-2.0"
-#depends_dev="linux-headers"
-depends_dev=
 makedepends="
 	$depends_dev
 	cmake
 	gtest-dev
-	samurai
+	ninja
 	"
 checkdepends="tzdata"
 subpackages="$pkgname-dev"
 source="https://github.com/abseil/abseil-cpp/archive/$pkgver/abseil-cpp-$pkgver.tar.gz
-        001-qnx-sig-t.patch
+        0001-qnx-sig-t.patch
 	0002-abseil.patch
 	test.patch
 	"
@@ -149,14 +147,6 @@ build() {
 	cmake --build build
 }
 
-#check() {
-#	case "$CARCH" in
-#	s390x) local _extratest="|absl_stacktrace_test" ;;
-#	esac
-#	# https://github.com/abseil/abseil-cpp/pull/1888
-#	ctest --test-dir build -E "absl_str_format_convert_test|absl_raw_hash_set_test$_extratest"
-#}
-
 check() {
 	case "$CARCH" in
 	s390x) local _extratest="|absl_stacktrace_test" ;;
@@ -193,7 +183,7 @@ abseillib() {
 
 sha512sums="
 7083b73c3cf763f6f7a7edb70a5171f44d27045a0f5e52ca043e0a86379af2c50cf85dbfea30ebaa22a7bb2929452581d26b1ba18945023b057267d4c3bad2f7  abseil-cpp-20250814.1.tar.gz
-51803ded8de5039e6c323537db1c42cb65ede8f5a8eb2ae31f2beeb4ae893e7bfb0fb26f5be5974baec8059b0c9014aa3dd8626408d12240a3e6c002d6dee756  001-qnx-sig-t.patch
+51803ded8de5039e6c323537db1c42cb65ede8f5a8eb2ae31f2beeb4ae893e7bfb0fb26f5be5974baec8059b0c9014aa3dd8626408d12240a3e6c002d6dee756  0001-qnx-sig-t.patch
 ddd2a5ce3f37230c3976a8c088670951ebaeee7f1a8275ab4f699cc24dc038bf23ae37abb1c050269161dcd4343e4a75f0570867e6b16a0050af7657f2282e9d  0002-abseil.patch
 6aafc9e3e3f5fc51d3ea0ac45a0461bb4b499df58c434bca9d3f233cfe26dccf13f8599af6aa4bebb74f5f0f463f31fda682c495a892946a7706da694b0d0b3b  test.patch
 "
