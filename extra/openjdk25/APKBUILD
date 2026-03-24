@@ -146,6 +146,9 @@ build() {
 		--with-vendor-vm-bug-url="https://github.com/qnx-ports/aports/issues" \
 		--with-toolchain-type=clang 
 
+	# QNX has a max size on argv the generaeted main-targets.gmk is done via echo
+	# it ends up blowing the limit of argv there for we pre-generate it and 
+	# copy it to the correct place
 	mkdir -p ./build/qnx-$CARCH-server-release/make-support
 	cp $srcdir/main-targets.gmk ./build/qnx-$CARCH-server-release/make-support
 
