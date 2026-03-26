@@ -19,6 +19,7 @@ makedepends="
     clang
     flang
     openmp
+    libc++-dev
 "
 subpackages="$pkgname-dev"
 source="$pkgname-$pkgver.tar.gz::https://github.com/OpenMathLib/OpenBLAS/archive/refs/tags/v$pkgver.tar.gz
