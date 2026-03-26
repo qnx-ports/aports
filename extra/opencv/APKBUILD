@@ -190,13 +190,37 @@ samples() {
 
 _py3() {
     pkgdesc="$pkgdesc (python modules)"
-    depends="python3-numpy"
+    depends="
+        python3-numpy
+        libopencv_aruco
+        libopencv_calib3d
+        libopencv_core
+        libopencv_dnn
+        libopencv_face
+        libopencv_features2d
+        libopencv_flann
+        libopencv_highgui
+        libopencv_imgcodecs
+        libopencv_imgproc
+        libopencv_ml
+        libopencv_objdetect
+        libopencv_optflow
+        libopencv_photo
+        libopencv_plot
+        libopencv_shape
+        libopencv_stitching
+        libopencv_tracking
+        libopencv_video
+        libopencv_videoio
+        libopencv_ximgproc
+        "
 
     amove usr/lib/python3.*
 }
 
 _lib() {
     pkgdesc="$pkgdesc ($subpkgname library)"
+    depends="libc++"
 
     amove usr/lib/$subpkgname.so.*
 }
