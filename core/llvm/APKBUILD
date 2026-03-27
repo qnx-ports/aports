@@ -1,7 +1,7 @@
 # Maintainer: Felix Xing <fxing@qnx.com>
 pkgname=llvm
 pkgver=21.1.3
-pkgrel=5
+pkgrel=6
 _git_rev=3
 pkgdesc="Low Level Virtual Machine compiler system."
 arch="all"
@@ -35,7 +35,8 @@ makedepends="
     "
 source="https://github.com/qnx-ports/llvm-project/archive/refs/tags/qnx-$pkgver-r$_git_rev.tar.gz
         libcxx.clang.cfg
-        llvm.clang.cfg"
+        llvm.clang.cfg
+        csetjmp.patch"
 options="!check" # takes too long
 subpackages="libc++:_libcxx
             libc++-dev:_libcxx_dev
@@ -435,4 +436,5 @@ sha512sums="
 e454eab5025795591372952cdd1642f0dbdb4f6a2ccc4986689ff55efcdd0515c03cf7e3ab03f12310077ac183ae6e4df0e847558f51c5a91ce470f7cb36f3d8  qnx-21.1.3-r3.tar.gz
 103ffbb207e88a0994f74b7397f9a2d7cba7c871c9f6d629c7c43ca068ae92dbe83b58c525c49907c3b1b416284cd4d4fe5d42f2974868e9bf436d32c47dbb87  libcxx.clang.cfg
 1135f904d893902ad83703a754a3cb7be772b6c08f66ed73c5b69a263d19eb9e1a13a28d80470e344eb7e0bd9bda2e24dc6291e1f3677ff4a0efb49100f3171c  llvm.clang.cfg
+fdc73a9a8b4af3fc00de4e13de28ec9f407b7b9c81de26b23c718a34e37860ad28b8f33e4703959f9cf1a1ef404e6d8ee68ceef3f9a126869f45406038fee055  csetjmp.patch
 "

@@ -1,0 +1,50 @@
+diff --git a/libcxx/include/__cxx03/csetjmp b/libcxx/include/__cxx03/csetjmp
+index 0a260c15466d..230568c47bf8 100644
+--- a/libcxx/include/__cxx03/csetjmp
++++ b/libcxx/include/__cxx03/csetjmp
+@@ -44,12 +44,15 @@ void longjmp(jmp_buf env, int val);
+ #  pragma GCC system_header
+ #endif
+ 
+-_LIBCPP_BEGIN_NAMESPACE_STD
++#if defined(__QNX__)
++#  undef longjmp
++inline void longjmp(jmp_buf __env, int __val)
++{
++    ::siglongjmp(__env, __val);
++}
++#endif
+ 
+-#  if defined(__QNX__)
+-#    undef longjmp
+-#    undef setjmp
+-#  endif
++_LIBCPP_BEGIN_NAMESPACE_STD
+ 
+ using ::jmp_buf _LIBCPP_USING_IF_EXISTS;
+ using ::longjmp _LIBCPP_USING_IF_EXISTS;
+diff --git a/libcxx/include/csetjmp b/libcxx/include/csetjmp
+index 3900c786ca20..9d3083bd5aea 100644
+--- a/libcxx/include/csetjmp
++++ b/libcxx/include/csetjmp
+@@ -47,12 +47,15 @@ void longjmp(jmp_buf env, int val);
+ #    pragma GCC system_header
+ #  endif
+ 
+-_LIBCPP_BEGIN_NAMESPACE_STD
++#if defined(__QNX__)
++#  undef longjmp
++inline void longjmp(jmp_buf __env, int __val)
++{
++    ::siglongjmp(__env, __val);
++}
++#endif
+ 
+-#  if defined(__QNX__)
+-#    undef longjmp
+-#    undef setjmp
+-#  endif
++_LIBCPP_BEGIN_NAMESPACE_STD
+ 
+ using ::jmp_buf _LIBCPP_USING_IF_EXISTS;
+ using ::longjmp _LIBCPP_USING_IF_EXISTS;
