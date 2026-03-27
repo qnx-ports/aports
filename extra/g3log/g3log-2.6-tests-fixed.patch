@@ -1,0 +1,54 @@
+diff -ruN g3log-2.6/test_unit/test_fatal.cpp g3log-2.6_modified/test_unit/test_fatal.cpp
+--- g3log-2.6/test_unit/test_fatal.cpp	2026-03-27 14:12:57.190420874 +0530
++++ g3log-2.6_modified/test_unit/test_fatal.cpp	2026-03-27 14:18:34.000000000 +0530
+@@ -194,6 +194,7 @@
+    EXPECT_TRUE(verifyContent(mockFatalMessage(), "FATAL"));
+ 
+    logger.reset();
++    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    std::string file_content = readFileToText(logger.logFile());
+    EXPECT_TRUE(verifyContent(file_content, "This message is fatal"));
+    EXPECT_TRUE(verifyContent(file_content, "FATAL"));
+diff -ruN g3log-2.6/test_unit/test_io.cpp g3log-2.6_modified/test_unit/test_io.cpp
+--- g3log-2.6/test_unit/test_io.cpp	2026-03-27 14:12:57.191420874 +0530
++++ g3log-2.6_modified/test_unit/test_io.cpp	2026-03-27 14:16:32.000000000 +0530
+@@ -275,6 +275,7 @@
+          LOG(INFO) << "This-should-show-up";
+ 
+       logger.reset();  // force flush of logger
++       std::this_thread::sleep_for(std::chrono::milliseconds(100));
+       file_content = readFileToText(logger.logFile());
+    }
+ 
+@@ -293,6 +294,7 @@
+       }
+ 
+       logger.reset();  // force flush of logger
++       std::this_thread::sleep_for(std::chrono::milliseconds(100));
+       file_content = readFileToText(logger.logFile());
+    }
+ 
+@@ -307,6 +309,7 @@
+       LOGF_IF(INFO, (2 == 2), std::string(t_info + "%d").c_str(), 123);
+       LOGF_IF(G3LOG_DEBUG, (2 != 2), std::string(t_debug + "%f").c_str(), 1.123456);
+       logger.reset();  // force flush of logger
++       std::this_thread::sleep_for(std::chrono::milliseconds(100));
+       file_content = readFileToText(logger.logFile());
+       SCOPED_TRACE("LOG_IF");  // Scope exit be prepared for destructor failure
+    }
+@@ -321,6 +324,7 @@
+       LOG_IF(INFO, (2 == 2)) << t_info << 123;
+       LOG_IF(G3LOG_DEBUG, (2 != 2)) << t_debug << std::setprecision(7) << 1.123456f;
+       logger.reset();  // force flush of logger
++       std::this_thread::sleep_for(std::chrono::milliseconds(100));
+       file_content = readFileToText(logger.logFile());
+       SCOPED_TRACE("LOG_IF");  // Scope exit be prepared for destructor failure
+    }
+@@ -338,6 +342,7 @@
+    LOG(MYINFO) << "Testing my own custom level"; auto line = __LINE__;
+    // clang-format on
+    logger.reset();
++    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    std::string file_content = readFileToText(logger.logFile());
+    std::string expected;
+    expected += "MY_INFO_LEVEL [test_io.cpp->" + std::string(G3LOG_PRETTY_FUNCTION) + ":" + std::to_string(line);
