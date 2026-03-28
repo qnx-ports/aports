@@ -1,0 +1,43 @@
+# Alpine-Contributor: Peter Bui <pnutzh4x0r@gmail.com>
+# Alpine-Maintainer: Steven Guikal <void@fluix.one>
+# Maintainer: Elliott Mazzuca <emazzuca@qnx.com>
+pkgname=python3-requests
+pkgver=2.32.5
+pkgrel=0
+pkgdesc="HTTP request library for Python3"
+url="https://requests.readthedocs.io/"
+arch="noarch"
+license="Apache-2.0"
+# Requirements for tests are not available in main
+options="!check"
+depends="
+	python3-certifi
+	python3-charset-normalizer
+	python3-idna
+	python3-urllib3
+	python3
+	"
+makedepends="python3-gpep517 python3-setuptools python3-wheel"
+source="https://files.pythonhosted.org/packages/source/r/requests/requests-$pkgver.tar.gz"
+builddir="$srcdir/requests-$pkgver"
+
+# secfixes:
+#   2.32.3-r0:
+#     - CVE-2024-35195
+#   2.32.4-r0:
+#     - CVE-2024-47081
+
+build() {
+	gpep517 build-wheel \
+		--wheel-dir .dist \
+		--output-fd 3 3>&1 >&2
+}
+
+package() {
+	python3 -m installer -d "$pkgdir" \
+		.dist/*.whl
+}
+
+sha512sums="
+2fbc05f5b638cefe59b9edaac86d53666d0416cebdbe8343caa818cae677a733c1f3a9ae62ef5c880b77cf706a2e3da57e0783d8936bda128f071367524189de  requests-2.32.5.tar.gz
+"
