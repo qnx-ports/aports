@@ -1,0 +1,38 @@
+# Alpine-Contributor: "Patrycja Rosa <alpine@ptrcnull.me>"
+# Alpine-maintainer: "team/gnome <achill@achill.org>"
+# Maintainer: "Elliott Mazzuca <emazzuca@qnx.com>"
+pkgname=gi-docgen
+pkgver=2025.5
+pkgrel=0
+pkgdesc="A documentation generator for GObject-based libraries"
+url="https://gitlab.gnome.org/GNOME/gi-docgen"
+arch="noarch"
+license="Apache-2.0 OR GPL-3.0-or-later"
+depends="
+	python3-jinja2
+	python3-markdown
+	python3-markupsafe
+	python3-packaging
+	python3-pygments
+	python3-typogrify
+	python3
+	"
+makedepends="meson"
+source="https://gitlab.gnome.org/GNOME/gi-docgen/-/archive/$pkgver/gi-docgen-$pkgver.tar.gz"
+
+build() {
+	abuild-meson . output
+	meson compile -C output
+}
+
+check() {
+	meson test --print-errorlogs -C output
+}
+
+package() {
+	DESTDIR="$pkgdir" meson install --no-rebuild -C output
+}
+
+sha512sums="
+085b23e3162a1484c0703525a9144298804bd97f305370bd700c73c1ddd611675f1da2f034679486e90a3f813b6a7d85d2bac7f149eb08f169da98aa982ce2e7  gi-docgen-2025.5.tar.gz
+"
