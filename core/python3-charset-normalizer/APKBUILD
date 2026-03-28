@@ -1,0 +1,43 @@
+# Alpine-Contributor: Bart Ribbers <bribbers@disroot.org>
+# Alpine-Maintainer: Andy Postnikov <apostnikov@gmail.com>
+# Maintainer: Elliott Mazzuca <emazzuca@qnx.com>
+pkgname=python3-charset-normalizer
+pkgver=3.4.4
+pkgrel=0
+pkgdesc="offers you an alternative to Universal Charset Encoding Detector, also known as Chardet"
+url="https://github.com/ousret/charset_normalizer"
+arch="noarch"
+license="MIT"
+depends="python3"
+makedepends="python3-gpep517 python3-setuptools python3-wheel"
+checkdepends="python3-pytest"
+source="https://files.pythonhosted.org/packages/source/c/charset_normalizer/charset_normalizer-$pkgver.tar.gz"
+builddir="$srcdir/charset_normalizer-$pkgver"
+
+prepare() {
+	default_prepare
+
+	# community/py3-pytest-cov not available
+	sed -i '/cov-report/d' setup.cfg
+}
+
+build() {
+	gpep517 build-wheel \
+		--wheel-dir .dist \
+		--output-fd 3 3>&1 >&2
+}
+
+check() {
+	python3 -m venv --clear --without-pip --system-site-packages .testenv
+	.testenv/bin/python3 -m installer .dist/*.whl
+	.testenv/bin/python3 -m pytest
+}
+
+package() {
+	python3 -m installer -d "$pkgdir" \
+		.dist/*.whl
+}
+
+sha512sums="
+ea3e15123b6a526ef52abeae2a8a8af0b044380606d4ef4a43ca1feb4c626b5899b511634ee8927b959f5ab1dbbd3c57651d1ac3a91c5ab67cd905034f759c9c  charset_normalizer-3.4.4.tar.gz
+"
