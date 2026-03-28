@@ -1,0 +1,52 @@
+# Alpine-Contributor: Yura Kushnir <kushnir.yura@gmail.com>
+# Alpine-Maintainer: Francesco Colista <fcolista@alpinelinux.org>
+# Maintainer: Elliott Mazzuca <emazzuca@qnx.com>
+pkgname=python3-urllib3
+_pkgname=urllib3
+pkgver=2.6.3
+pkgrel=0
+pkgdesc="HTTP library with thread-safe connection pooling, file post, and more"
+url="https://urllib3.readthedocs.io/"
+arch="noarch"
+license="MIT"
+depends="python3"
+makedepends="
+	python3-gpep517
+	python3-hatch-vcs
+	python3-hatchling
+	python3-setuptools
+	python3-setuptools_scm
+	python3-wheel
+	"
+source="https://github.com/urllib3/urllib3/releases/download/$pkgver/urllib3-$pkgver.tar.gz"
+builddir="$srcdir/$_pkgname-$pkgver"
+options="!check" # needs various py3-* packages from community and testing
+
+# secfixes:
+#   2.6.3-r0:
+#     - CVE-2026-21441
+#   1.26.18-r0:
+#     - CVE-2023-45803
+#   1.26.17-r0:
+#     - CVE-2023-43804
+#   1.25.9-r0:
+#     - CVE-2020-26137
+#   1.26.4-r0:
+#     - CVE-2021-28363
+
+export SETUPTOOLS_SCM_PRETEND_VERSION="$pkgver"
+
+build() {
+	gpep517 build-wheel \
+		--wheel-dir .dist \
+		--output-fd 3 3>&1 >&2
+}
+
+package() {
+	python3 -m installer -d "$pkgdir" \
+		.dist/*.whl
+}
+
+sha512sums="
+663c83a78908dac9bb05c7ac833183c2fdc2969d0662d21dd8751ba13c51880ee264f7804760f33ebdabfd1c1f04a5d44171a420396de6ae582f9789801b141c  urllib3-2.6.3.tar.gz
+"
