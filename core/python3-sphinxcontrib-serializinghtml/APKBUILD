@@ -1,0 +1,34 @@
+# Alpine-Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+# Maintainer: Elliott Mazzuca <emazzuca@qnx.com>
+pkgname=python3-sphinxcontrib-serializinghtml
+_pyname=sphinxcontrib-serializinghtml
+pkgver=1.1.9
+pkgrel=2
+pkgdesc="Sphinx serializinghtml extension"
+url="https://pypi.org/project/sphinxcontrib-serializinghtml"
+arch="noarch"
+license="BSD-2-Clause"
+depends="python3"
+makedepends="python3-gpep517 python3-flit-core python3-setuptools python3-wheel"
+checkdepends="python3-pytest python3-sphinx"
+source="$_pyname-$pkgver.tar.gz::https://github.com/sphinx-doc/sphinxcontrib-serializinghtml/archive/refs/tags/$pkgver.tar.gz"
+builddir="$srcdir"/$_pyname-$pkgver
+options="!check" # py3-sphinx is a circular dep
+
+build() {
+	gpep517 build-wheel --wheel-dir .dist --output-fd 3 3>&1 >&2
+}
+
+check() {
+	python3 -m venv --clear --without-pip --system-site-packages .testenv
+	.testenv/bin/python3 -m installer .dist/*.whl
+	.testenv/bin/python3 -m pytest
+}
+
+package() {
+	python3 -m installer -d "$pkgdir" .dist/*.whl
+}
+
+sha512sums="
+f40dc6159232a39e4926bbb867470314b060574c6f5b39117bab5d15f97126b4833ee97777131bf60b3a8e4968419ad4c32d8b42e5fe175ce70fc3fe9ef8a1cd  sphinxcontrib-serializinghtml-1.1.9.tar.gz
+"
