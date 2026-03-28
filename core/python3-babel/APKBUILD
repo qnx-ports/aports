@@ -1,0 +1,35 @@
+# Alpine-Contributor: Kaarle Ritvanen <kunkku@alpinelinux.org>
+# Alpine-Maintainer: Kaarle Ritvanen <kunkku@alpinelinux.org>
+# Maintainer: Elliott Mazzuca <emazzuca@qnx.com>
+pkgname=python3-babel _pkgname=babel pkgver=2.17.0 pkgrel=0 
+pkgdesc="Python3 i18n tool" url="https://babel.pocoo.org/" arch="noarch" 
+license="BSD-3-Clause" depends="python3-tz python3-setuptools" 
+makedepends="python3-gpep517 python3-wheel" checkdepends="python3-pytest 
+python3-pytest-freezegun" 
+source="https://files.pythonhosted.org/packages/source/${_pkgname:0:1}/$_pkgname/$_pkgname-$pkgver.tar.gz" 
+builddir="$srcdir/$_pkgname-$pkgver" options="!check" # freezegun not in main
+
+# secfixes:
+#   2.9.1-r0:
+#     - CVE-2021-42771
+
+build() {
+	gpep517 build-wheel \
+		--wheel-dir .dist \
+		--output-fd 3 3>&1 >&2
+}
+
+check() {
+	python3 -m venv --clear --without-pip --system-site-packages .testenv
+	.testenv/bin/python3 -m installer .dist/*.whl
+	.testenv/bin/python3 -m pytest
+}
+
+package() {
+	python3 -m installer -d "$pkgdir" \
+		.dist/*.whl
+}
+
+sha512sums="
+978ca79e9ce95ecfcfc8e3c6fe1b9b273088cc166490e64edd59c71f6793472d987ea982a67e8cf9d840b8e25f602639ad45e3a35c1482d39cbf09e0c21071ae  babel-2.17.0.tar.gz
+"
