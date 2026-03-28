@@ -1,0 +1,27 @@
+# Alpine-Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+# Maintainer: Elliott Mazzuca <emazzuca@qnx.com>
+pkgname=python3-sphinxcontrib-jsmath
+_pyname=sphinxcontrib-jsmath
+pkgver=1.0.1
+pkgrel=8
+pkgdesc="Sphinx jsmath extension"
+url="https://pypi.org/project/sphinxcontrib-jsmath"
+arch="noarch"
+license="BSD-2-Clause"
+depends="python3"
+makedepends="python3-gpep517 python3-setuptools python3-wheel"
+source="https://files.pythonhosted.org/packages/source/${_pyname%${_pyname#?}}/$_pyname/$_pyname-$pkgver.tar.gz"
+builddir="$srcdir"/$_pyname-$pkgver
+options="!check"
+
+build() {
+	gpep517 build-wheel --wheel-dir .dist --output-fd 3 3>&1 >&2
+}
+
+package() {
+	python3 -m installer -d "$pkgdir" .dist/*.whl
+}
+
+sha512sums="
+c1e6488f5c0ca4567c27ec7c597c9db321ac32ce354c4ad62fea534b2ae1c0acb183a921f46216bbc3891f14acfaac05ddf324b8fdaf99828df07bc91aa7e5c7  sphinxcontrib-jsmath-1.0.1.tar.gz
+"
