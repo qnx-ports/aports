@@ -1,0 +1,33 @@
+# Alpine-Contributor: "Antoine Martin (ayakael) <dev@ayakael.net>"
+# Alpine-maintainer: "Achill Gilgenast <achill@achill.org>"
+# Maintainer: Elliott Mazzuca <emazzuca@qnx.com>
+pkgname=python3-coverage
+pkgver=7.12.0
+pkgrel=0
+pkgdesc="Code coverage measurement for Python"
+options="!check" # Requires 'xdist'
+url="https://pypi.org/project/coverage"
+arch="all"
+license="Apache-2.0"
+makedepends="python3-dev python3-gpep517 python3-setuptools python3-wheel"
+checkdepends="python3-pytest"
+source="https://files.pythonhosted.org/packages/source/c/coverage/coverage-$pkgver.tar.gz"
+builddir="$srcdir/coverage-$pkgver"
+
+build() {
+	gpep517 build-wheel --wheel-dir .dist --output-fd 3 3>&1 >&2
+}
+
+check() {
+	python3 -m venv --clear --without-pip --system-site-packages .testenv
+	.testenv/bin/python3 -m installer .dist/*.whl
+	.testenv/bin/python3 -m pytest
+}
+
+package() {
+	python3 -m installer -d "$pkgdir" .dist/*.whl
+}
+
+sha512sums="
+eeb7228f8f834d304b168b34e29e60e7ccec820f46643785f17beae69cecea34550cf251268c5f58f7238c13ff71a495fad7ac1c790b21b8d6a4c46124d3d20c  coverage-7.12.0.tar.gz
+"
