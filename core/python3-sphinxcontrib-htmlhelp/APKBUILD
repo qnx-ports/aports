@@ -1,0 +1,38 @@
+# Alpine-Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+# Maintainer: Elliott Mazzuca <emazzuca@qnx.com>
+pkgname=python3-sphinxcontrib-htmlhelp
+pkgver=2.1.0
+pkgrel=0
+pkgdesc="Sphinx htmlhelp extension"
+url="https://pypi.org/project/sphinxcontrib-htmlhelp"
+arch="noarch"
+license="BSD-2-Clause"
+depends="python3"
+makedepends="
+	python3-gpep517
+	python3-flit-core
+	"
+options="!check" # cyclic dependency
+source="https://files.pythonhosted.org/packages/source/s/sphinxcontrib-htmlhelp/sphinxcontrib_htmlhelp-$pkgver.tar.gz"
+builddir="$srcdir"/sphinxcontrib_htmlhelp-$pkgver
+
+build() {
+	gpep517 build-wheel \
+		--wheel-dir .dist \
+		--output-fd 3 3>&1 >&2
+}
+
+check() {
+	python3 -m venv --clear --without-pip --system-site-packages .testenv
+	.testenv/bin/python3 -m installer .dist/*.whl
+	.testenv/bin/python3 -m unittest discover
+}
+
+package() {
+	python3 -m installer -d "$pkgdir" \
+		.dist/*.whl
+}
+
+sha512sums="
+9aa2650ed27712a94de6ea16954db952db9c4a0c5f509aba42e33c69ba46f7069e9ee01c09a31e531fd096882c0248cf72334404d717a9f35aafc22e3976530e  sphinxcontrib_htmlhelp-2.1.0.tar.gz
+"
