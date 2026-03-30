@@ -21,7 +21,10 @@ build() {
 
 check() {
     cd build
-    ctest --output-on-failure || true
+    for t in $(ctest -N | grep "Test #" | awk '{print $3}'); do
+        ctest -R "$t" --output-on-failure
+        sleep 0.2
+    done
 }
 
 package() {
