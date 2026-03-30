@@ -32,7 +32,7 @@ subpackages="
 	$pkgname-doc
 	$pkgname-bash-completion
 	"
-source="https://github.com/abdulahmoda/mosh/archive/refs/heads/qnx-v1.4.0.tar.gz
+source="https://github.com/qnx-ports/mosh/archive/refs/heads/qnx-v1.4.0.tar.gz
 	fix-makefile.am.patch
 	"
 builddir="$srcdir"/$pkgname-qnx-v$pkgver
@@ -113,6 +113,6 @@ clientdoc() {
 }
 
 sha512sums="
-37ac6d71c947db65c1abe06b56868cab78e3c4797f0419f8066828e92f79d49cd1aa197fe6bd893856febe60420d0fa4f699343a743c27fdd45c2d2b89f5f55b  qnx-v1.4.0.tar.gz
+857a1f0709b5821ad06b3ca6bd769db0296d4a583c21918c820030ae48c96385016c55ed7ad4ae18aa89710d83492c28fd86e1cd364093a56532eef696881c92  qnx-v1.4.0.tar.gz
 52a7c167f4150b03a787d124e3aed40f97215ef4171576f4ef75c504b93d28e5240e9fe0a71769b2ef32756565a46926d711f32ab6e07dca17dd53f774f82c5c  fix-makefile.am.patch
 "
