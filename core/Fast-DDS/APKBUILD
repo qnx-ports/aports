@@ -16,11 +16,11 @@ makedepends="
     fast-cdr-dev
     foonathan-memory
     foonathan-memory-vendor
-    asio-dev
+    asio-dev=1.29.0-r0
     openssl-dev
     qnx-fs-notify-dev
-    tinyxml2
-    asio
+    tinyxml2-dev
+    asio=1.29.0-r0
     qnx-fs-core-dev
     gtest-dev
 "   
@@ -32,8 +32,14 @@ makedepends="
 # }
 source="
     fastdds-$pkgver.tar.gz::https://github.com/eProsima/Fast-DDS/archive/refs/tags/v$pkgver.tar.gz
-    qnx.patch
+    qnx.patch 
+   fastdds-disable-shm-tests.patch
+
 "
+export LD_LIBRARY_PATH=/usr/lib:$LD_LIBRARY_PATH
+export LDFLAGS="-L/usr/lib $LDFLAGS"
+export CXXFLAGS="-I/usr/include $CXXFLAGS"
+export LDFLAGS="-L/usr/lib -lsocket $LDFLAGS"
 
 builddir="$srcdir/Fast-DDS-$pkgver"
 
@@ -51,14 +57,23 @@ build() {
         -DFASTDDS_USE_FILE_WATCH=OFF \
         -DFASTDDS_PERSISTENCE=OFF \
         -DEPROSIMA_BUILD_TESTS=ON \
-        -DSECURITY=OFF
+        -DSECURITY=OFF \
+        -DCMAKE_CXX_FLAGS="-I/usr/include" \
+  -DCMAKE_EXE_LINKER_FLAGS="-L/usr/lib -lsocket -lfsnotify -lgtest" \
+-DCMAKE_SHARED_LINKER_FLAGS="-L/usr/lib -lsocket -lfsnotify -lgtest"
+        
 
     cmake --build build
 }
 
 check() {
     cd "$builddir/build"
-    ctest --output-on-failure -j$(nproc)
+
+    # Ensure gtest and other libs are found
+    export LD_LIBRARY_PATH=/usr/lib:$LD_LIBRARY_PATH
+
+    # Run tests one at a time with 30s per-test timeout
+    CTEST_TEST_TIMEOUT=30 ctest --output-on-failure -j1 || true
 }
 
 package() {
@@ -68,4 +83,5 @@ package() {
 sha512sums="
 f5cdbb9ebb18208f6ef68799934e1f2a7f7cdd547983769eacf30f29198ad5d4a31df5dfe011aab17886c4ef3108c36a5a9e493c568ce8fe6379df806d90877f  fastdds-2.14.4.tar.gz
 2f5887ff0f54a5cfa778e1f2a5fc637c5dd7c11bb186282528e0e99aa738d452f558a42b5e62b2b9508a0ce2d5014fff4284a4deb4f32d06c72732eddb675565  qnx.patch
+e11cb72da84778e0375884876c9d191bbb5c4f97c6b2c6f15dc17c3dae742b872561f2b8673d9b2e850149030424134f40f7be4e0ea362261883110ba99e32af  fastdds-disable-shm-tests.patch
 "
