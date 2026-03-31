@@ -7,12 +7,24 @@ arch="noarch"
 license="BSL-1.0"
 subpackages="$pkgname-dev"
 
-builddir="$startdir/asio"
+source="https://github.com/chriskohlhoff/asio/archive/asio-1-29-0.tar.gz
+        asio.patch"
+
+builddir="$srcdir/asio-asio-1-29-0"
 
 build() { :; }
 check() { :; }
 
+prepare() {
+    default_prepare
+}
+
 package() {
     mkdir -p "$pkgdir/usr/include"
-    cp -a "$builddir/include/"* "$pkgdir/usr/include/"
+    cp -a "$builddir/asio/include/"* "$pkgdir/usr/include/"
 }
+
+sha512sums="
+f8df39c5a5e89dcfe4bd37c7e757e44e3e94d9b79d7ab08d1804ad8980993a607070f7e12238ffe3286840cd08c0b3c8e3639d3a1177e5ff795994cbc42a8292  asio-1-29-0.tar.gz
+c91ae21919089c4a37244deda5905ff59f7f4acf5c0317d65c3e68eeffdbd05e0ef0a4789a828204166ffc3e97e19aad69b86f29cf37990ae78fbcefe26f043b  asio.patch
+"
