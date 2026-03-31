@@ -1,4 +1,3 @@
-# Maintainer: Your Name <your.email@example.com>
 pkgname=muslflt
 pkgver=0.1
 pkgrel=0
@@ -12,7 +11,7 @@ makedepends="build-base"
 source="muslflt-main.tar.gz::https://github.com/qnx-ports/muslflt/archive/refs/heads/main.tar.gz"
 builddir="$srcdir/muslflt-main"
 
-# Detect architecture
+
 CARCH="${CARCH:-$(uname -m)}"
 case "$CARCH" in
     x86_64|i?86)
@@ -31,24 +30,15 @@ echo "Building for architecture: $ARCH"
 
 build() {
     cd "$builddir"
-      # Patch fenv.h to include correct path
     sed -i "s|<bits/fenv.h>|\"$ARCH/bits/fenv.h\"|" fenv/fenv.h
+    export CFLAGS="$CFLAGS -Dweak_alias(a,b)="
 
-    # Remove x86_64 optimized math for non-x86 architectures
     if [ "$ARCH" != "x86_64" ]; then
-        echo "Removing x86_64 optimized math for $ARCH"
-
-        # Collect all C sources, skipping x86_64 asm if needed
         find . -name "*.c" ! -path "./math/x86_64/*" > sources.txt
-        export CFLAGS="$CFLAGS -Dweak_alias(a,b)="
     else
-        
-    # Collect all C sources, skipping aarch64le  asm if needed
-    find . -name "*.c" ! -path "./math/aarch64le/*" > sources.txt
-        
+        find . -name "*.c" ! -path "./math/aarch64le/*" > sources.txt
     fi
 
-    # Include directories
     INCLUDES="-I. \
               -I./include \
               -I./math \
@@ -59,7 +49,6 @@ build() {
               -I./fenv \
               -I./fenv/$ARCH/bits"
 
-    # Compile all sources with PIC
     CFLAGS="$CFLAGS -fPIC \
                      -Wno-parentheses \
                      -Werror=implicit-function-declaration \
@@ -69,11 +58,9 @@ build() {
 
     $CC $CFLAGS $INCLUDES -c $(cat sources.txt)
 
-    # Create libraries
     ar rcs libmuslflt.a *.o
     $CC -shared -o libmuslflt.so *.o
 
-     # --- Build test executable ---
     echo "Building tests..."
     cd tests
     $CXX $CFLAGS -I../include -I../math -I../math/$ARCH -I../math/$ARCH/bits \
@@ -84,7 +71,6 @@ build() {
 check() {
     cd "$builddir/tests"
     echo "Running test..."
-    # Make sure the shared library can be found
     export LD_LIBRARY_PATH=..:$LD_LIBRARY_PATH
     ./test
 }
@@ -92,11 +78,9 @@ check() {
 package() {
     cd "$builddir"
 
-    # Install libraries
     install -Dm755 libmuslflt.so "$pkgdir/usr/lib/libmuslflt.so"
     install -Dm644 libmuslflt.a "$pkgdir/usr/lib/libmuslflt.a"
 
-    # Install headers
     mkdir -p "$pkgdir/usr/include/muslflt"
     find . -name "*.h" -exec install -Dm644 {} "$pkgdir/usr/include/muslflt/" \;
 }
