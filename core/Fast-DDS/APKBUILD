@@ -25,11 +25,6 @@ makedepends="
     gtest-dev
 "   
 
-# prepare() {
-#     default_prepare
-#     cd "$srcdir/Fast-DDS-$pkgver"
-#     patch -p1 < "$srcdir/0001-qnx-platform-adjustments.patch"
-# }
 source="
     fastdds-$pkgver.tar.gz::https://github.com/eProsima/Fast-DDS/archive/refs/tags/v$pkgver.tar.gz
     qnx.patch 
@@ -69,10 +64,8 @@ build() {
 check() {
     cd "$builddir/build"
 
-    # Ensure gtest and other libs are found
     export LD_LIBRARY_PATH=/usr/lib:$LD_LIBRARY_PATH
 
-    # Run tests one at a time with 30s per-test timeout
     CTEST_TEST_TIMEOUT=30 ctest --output-on-failure -j1 || true
 }
 

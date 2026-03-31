@@ -7,7 +7,7 @@ arch="all"
 license="Zlib"
 depends=""
 makedepends="cmake ninja"
-# Use the vendor tag from eProsima repo
+
 source="$pkgname-$pkgver.tar.gz::https://github.com/eProsima/memory/archive/refs/tags/vendor-$pkgver.tar.gz"
 builddir="$srcdir/memory-vendor-$pkgver"
 
@@ -16,7 +16,7 @@ prepare() {
 }
 
 build() {
-    # Remove unsupported Alpine/QNX hardening flag
+  
     export CFLAGS="${CFLAGS/-fstack-clash-protection/}"
     export CXXFLAGS="${CXXFLAGS/-fstack-clash-protection/}"
 
