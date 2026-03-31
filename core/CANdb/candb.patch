@@ -1,0 +1,203 @@
+diff -ruN '--exclude=.git' CANdb/.gitignore CANdb_modified/.gitignore
+--- CANdb/.gitignore	2026-03-30 17:24:27.629084095 +0530
++++ CANdb_modified/.gitignore	2026-03-30 17:23:00.360081432 +0530
+@@ -6,3 +6,6 @@
+ 
+ # VIM swap files
+ *.swp
++
++# VSCode settings folder
++.vscode
+diff -ruN '--exclude=.git' CANdb/src/dbc_grammar.peg CANdb_modified/src/dbc_grammar.peg
+--- CANdb/src/dbc_grammar.peg	2026-03-30 17:24:27.629084095 +0530
++++ CANdb_modified/src/dbc_grammar.peg	2026-03-30 17:23:00.361081432 +0530
+@@ -1,5 +1,5 @@
+ # DBC Grammar
+-grammar                 <- spacing _ version _ comment* ns_comment bs? _ (bu / bu_sl)? _ val_table? _ message* _ bo_tx_bu* _ cm* cm_bu* _ (cm_bo _ / cm_sg _)* _ ev* _ (ba_def_str / ba_def_num / ba_def_enum / ba_def_rel)* _ (ba_def_def / ba_def_def_rel)* _ ba* _ ba_bu* _ ba_bo* _ ba_sg* _ ba_rel* vals* sig_val* _ EndOfFile
++grammar                 <- spacing _ version _ comment* ns_comment bs? _ (bu / bu_sl)? _ val_table? _ message* _ bo_tx_bu* _ cm* _ cm_bu* _ (cm_bo _ / cm_sg _)* _ ev* _ (ba_def_str / ba_def_num / ba_def_enum / ba_def_rel)* _ (ba_def_def / ba_def_def_rel)* _ ba* _ ba_bu* _ ba_bo* _ ba_sg* _ ba_rel* _ vals* _ sig_val* _ cm* _ EndOfFile
+ 
+ spacing                 <- (s / comment)*
+ ns_comment              <- (ns? / comment)? NewLine*
+@@ -9,7 +9,7 @@
+ bu                      <- < 'BU_' s* ':' s* NewLine symbol_name* > NewLine
+ bu_sl                   <- < 'BU_' s* ':' s* TOKEN (s* TOKEN)* > NewLine
+ val_table               <- val_entry* NewLine
+-message                 <- 'BO_' s* number s* TOKEN ':' s number s TOKEN _ signal* (TrailingSpace / _ )
++message                 <- 'BO_' s* number s* TOKEN s* ':' s number s TOKEN _ signal* (TrailingSpace / _ )
+ bo_tx_bu                <- < 'BO_TX_BU_' s* number s* ':' s* ECU_TOKEN (',' ECU_TOKEN)* ';' > NewLine
+ cm                      <- < 'CM_' s* phrase > ';' NewLine
+ cm_bu                   <- < 'CM_' s* 'BU_' s* TOKEN s* phrase > ';' NewLine
+@@ -35,7 +35,7 @@
+ comment                 <- '//' (!NewLine .)* NewLine
+ sig_val                 <- < 'SIG_VALTYPE_' s* number s* TOKEN s* ':' s* number ';' > NewLine
+ 
+-signal                  <- < s* 'SG_' s* TOKEN s* mux? mux_ndx? s* ':' s* number '|' number '@' number sig_sign s* '(' number ',' s* number ')' s* '[' number '|' number ']' s* phrase s* ECU_TOKEN (',' ECU_TOKEN)* > NewLine
++signal                  <- < s* 'SG_' s* TOKEN s* mux? mux_ndx? s* ':' s* number '|' number '@' number sig_sign s* '(' number ',' s* number ')' s* '[' number '|' number ']' s* phrase s* ECU_TOKEN (',' ECU_TOKEN)* > s* NewLine
+ val_entry               <- < 'VAL_TABLE_' s* TOKEN s (number_phrase_pair)* ';' > NewLine
+ number_phrase_pair      <- number s phrase s
+ phrase                  <- < '"' (escaped_quote / string_char)* '"' >
+@@ -48,7 +48,7 @@
+ ENUM_VAL                <- (!';' .)+
+ number                  <- double / integer
+ integer                 <- < sign? [0-9]+ > _
+-double                   <- < sign? ([0-9]+'.')?[0-9]+('E' sign [0-9]+)? > _
++double                   <- < sign? ([0-9]+'.')?[0-9]+([Ee] sign [0-9]+)? > _
+ symbol_name             <- < s* TOKEN > NewLine
+ mux                     <- 'M'
+ mux_ndx                 <- 'm'< [0-9]+ >
+diff -ruN '--exclude=.git' CANdb/tests/CMakeLists.txt CANdb_modified/tests/CMakeLists.txt
+--- CANdb/tests/CMakeLists.txt	2026-03-30 17:24:27.629084095 +0530
++++ CANdb_modified/tests/CMakeLists.txt	2026-03-30 17:23:00.362081432 +0530
+@@ -1,6 +1,19 @@
+ include(GoogleTest)
++include(GNUInstallDirs)
++
++#path to tests on target
++set(tests_path ${CMAKE_INSTALL_BINDIR}/CANdb_tests)
++
+ function(candb_add_test test_name)
+   add_executable(${test_name} ${test_name}.cpp)
++if(QNX)
++  if(__NTO_VERSION GREATER_EQUAL "800")
++    target_link_libraries(${test_name} CANdb gtest gtest_main test_helper regex)
++  else()
++    target_link_libraries(${test_name} CANdb gtest gtest_main test_helper regex c++fs)
++  endif()
++  set(artifacts_list ${artifacts_list} ${test_name} PARENT_SCOPE)
++else()
+   gtest_discover_tests(${test_name})
+   target_link_libraries(${test_name} CANdb gtest gtest_main test_helper)
+   add_test(NAME ${test_name} COMMAND ${test_name})
+@@ -10,6 +23,7 @@
+       add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND})
+       add_dependencies(check ${test_name})
+   endif()
++endif()
+ endfunction()
+ 
+ try_compile(
+@@ -25,12 +39,19 @@
+ 
+ add_library(test_helper STATIC test_helper.cpp)
+ target_link_libraries(test_helper PUBLIC spdlog)
+-target_compile_definitions(test_helper PUBLIC DBC_DIR="${CMAKE_CURRENT_SOURCE_DIR}/dbc/")
++if(QNX)
++  target_compile_definitions(test_helper PUBLIC DBC_DIR="dbc/")
++else()
++  target_compile_definitions(test_helper PUBLIC DBC_DIR="${CMAKE_CURRENT_SOURCE_DIR}/dbc/")
++endif()
+ 
+ 
+ target_compile_features(test_helper PUBLIC cxx_std_17)
+ target_compile_definitions(test_helper PUBLIC HAS_STD_FILESYSTEM)
+ 
++#initialize empty artifacts list
++set(artifacts_list CANdb gtest gtest_main)
++
+ candb_add_test(dbcparser_tests)
+ # As opendbc is a submodule we can't use it with Conan
+ if(NOT CANDB__WITH_CONAN)
+@@ -40,6 +61,24 @@
+ candb_add_test(prop_tests)
+ candb_add_test(stringutils_tests)
+ 
++if (QNX)
++  install(
++    TARGETS ${artifacts_list}
++    LIBRARY DESTINATION ${tests_path}/lib
++    RUNTIME DESTINATION ${tests_path}
++  )
++  install(
++    DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/dbc
++    DESTINATION ${tests_path}
++    FILES_MATCHING PATTERN "*.dbc"
++    PATTERN "*/.git*" EXCLUDE
++  )
++  install(
++    PROGRAMS ${QNX_TEST_SCRIPT}
++    DESTINATION ${tests_path}
++  )
++endif ()
++
+ if(CANDB__WITH_CONAN)
+     add_executable(dbc_parser_benchmark benchmark.cpp)
+     target_compile_features(dbc_parser_benchmark PUBLIC cxx_std_17)
+diff -ruN '--exclude=.git' CANdb/tests/opendbc_tests.cpp CANdb_modified/tests/opendbc_tests.cpp
+--- CANdb/tests/opendbc_tests.cpp	2026-03-30 17:24:27.629084095 +0530
++++ CANdb_modified/tests/opendbc_tests.cpp	2026-03-30 17:23:00.363081432 +0530
+@@ -56,4 +56,62 @@
+         "ford_cgea1_2_bodycan_2011.dbc", "toyota_adas.dbc", "luxgen_s5_2015.dbc", "mazda_2017.dbc",
+         "toyota_2017_ref_pt.dbc", "vw_golf_mk4.dbc", "nissan_x_trail_2017.dbc", "volvo_v60_2015_pt.dbc",
+         "honda_accord_touring_2016_can.dbc", "gm_global_a_lowspeed_1818125.dbc", "mazda_3_2019.dbc", "bmw_e9x_e8x.dbc",
+-        "cadillac_ct6_object.dbc"));
++        "cadillac_ct6_object.dbc",
++        "mercedes_benz_e350_2010.dbc",
++        "toyota_prius_2010_pt.dbc",
++        "tesla_can.dbc",
++        "tesla_radar.dbc",
++//        "FORD_CADS.dbc",
++//        "acura_ilx_2016_can_generated.dbc",
++//        "acura_rdx_2020_can_generated.dbc",
++        "ford_cgea1_2_ptcan_2011.dbc",
++//        "ford_fusion_2018_pt.dbc",
++//        "ford_lincoln_base_pt.dbc",
++//        "gm_global_a_high_voltage_management.dbc",
++//        "gm_global_a_object.dbc",
++//        "gm_global_a_powertrain_expansion.dbc",
++//        "honda_accord_lx15t_2018_can_generated.dbc",
++//        "honda_accord_s2t_2018_can_generated.dbc",
++//        "honda_civic_hatchback_ex_2017_can_generated.dbc",
++//        "honda_civic_sedan_16_diesel_2019_can_generated.dbc",
++//        "honda_civic_touring_2016_can_generated.dbc",
++//        "honda_clarity_hybrid_2018_can_generated.dbc",
++//        "honda_crv_ex_2017_body_generated.dbc",
++//        "honda_crv_ex_2017_can_generated.dbc",
++//        "honda_crv_executive_2016_can_generated.dbc",
++//        "honda_crv_hybrid_2019_can_generated.dbc",
++//        "honda_crv_touring_2016_can_generated.dbc",
++//        "honda_fit_ex_2018_can_generated.dbc",
++//        "honda_fit_hybrid_2018_can_generated.dbc",
++//        "honda_hrv_touring_2019_can_generated.dbc",
++//        "honda_insight_ex_2019_can_generated.dbc",
++//        "honda_odyssey_exl_2018_generated.dbc",
++//        "honda_odyssey_extreme_edition_2018_china_can_generated.dbc",
++//        "honda_pilot_touring_2017_can_generated.dbc",
++//        "honda_ridgeline_black_edition_2017_can_generated.dbc",
++        "hyundai_i30_2014.dbc",
++//        "lexus_ct200h_2018_pt_generated.dbc",
++//        "lexus_gs300h_2017_pt_generated.dbc",
++//        "lexus_is_2018_pt_generated.dbc",
++//        "lexus_nx300_2018_pt_generated.dbc",
++//        "lexus_nx300h_2018_pt_generated.dbc",
++//        "lexus_rx_350_2016_pt_generated.dbc",
++//        "lexus_rx_hybrid_2017_pt_generated.dbc",
++//        "subaru_forester_2017_generated.dbc",
++//        "subaru_global_2017_generated.dbc",
++//        "subaru_global_2020_hybrid_generated.dbc",
++//        "subaru_outback_2015_generated.dbc",
++//        "subaru_outback_2019_generated.dbc",
++//        "toyota_avalon_2017_pt_generated.dbc",
++//        "toyota_camry_hybrid_2018_pt_generated.dbc",
++//        "toyota_corolla_2017_pt_generated.dbc",
++//        "toyota_highlander_2017_pt_generated.dbc",
++//        "toyota_highlander_hybrid_2018_pt_generated.dbc",
++        "toyota_iQ_2009_can.dbc",
++//        "toyota_nodsu_hybrid_pt_generated.dbc",
++//        "toyota_nodsu_pt_generated.dbc",
++//        "toyota_prius_2017_pt_generated.dbc",
++//        "toyota_rav4_2017_pt_generated.dbc",
++//        "toyota_rav4_hybrid_2017_pt_generated.dbc",
++//        "toyota_sienna_xle_2018_pt_generated.dbc",
++        "vw_mqb_2010.dbc"));
+diff -ruN '--exclude=.git' CANdb/tests/opendbc_tests_expected_data.hpp CANdb_modified/tests/opendbc_tests_expected_data.hpp
+--- CANdb/tests/opendbc_tests_expected_data.hpp	2026-03-30 17:24:27.629084095 +0530
++++ CANdb_modified/tests/opendbc_tests_expected_data.hpp	2026-03-30 17:23:00.363081432 +0530
+@@ -21,7 +21,7 @@
+               "BO_TX_BU_", "BA_DEF_REL_", "BA_REL_", "BA_DEF_DEF_REL_",
+               "BU_SG_REL_", "BU_EV_REL_", "BU_BO_REL_", "SG_MUL_VAL_" };
+     const strings bs{};
+-    const strings bu{ "NEO", "MCU", "GTW", "EPAS", "DI", "ESP", "SBW", "STW" };
++    const strings bu{ "NEO", "MCU", "GTW", "EPAS", "DI", "ESP", "SBW", "STW", "APP", "DAS", "XXX" };
+ }; // namespace tesla_dbc
+ 
+ const std::map<std::string, Data> dbc_data{ std::make_pair("tesla_can.dbc",
