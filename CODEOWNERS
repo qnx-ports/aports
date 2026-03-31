@@ -1,0 +1,5 @@
+# Require a review from owners.
+*   @szclsya @arbassett @eleir9268
+
+# Allow management to assign owners.
+CODEOWNERS  @csinnott-work @yulee-qnx
