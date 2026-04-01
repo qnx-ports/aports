@@ -1,0 +1,54 @@
+# Alpine-Contributor: Leo <thinkabit.ukim@gmail.com>
+# Alpine-Contributor: Sören Tempel <soeren+alpine@soeren-tempel.net>
+# Alpine-Maintainer: Patrycja Rosa <alpine@ptrcnull.me>
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=python3-fonttools
+_pkgname=fonttools
+pkgver=4.60.1
+pkgrel=0
+pkgdesc="Converts OpenType and TrueType fonts to and from XML"
+url="https://github.com/fonttools/fonttools"
+arch="all"
+license="MIT AND OFL-1.1"
+makedepends="
+    cython
+    python3-gpep517
+    python3-installer
+    python3-setuptools
+    python3-wheel
+    python3-dev
+    "
+checkdepends="python3-fs python3-pytest python3-pytest-xdist python3-brotli"
+subpackages="$pkgname-doc"
+source="$_pkgname-$pkgver.tar.gz::https://github.com/fonttools/fonttools/archive/refs/tags/$pkgver.tar.gz"
+builddir="$srcdir/$_pkgname-$pkgver"
+
+prepare() {
+    default_prepare
+    # remove interpreter line
+    sed -i '1d' Lib/fontTools/mtiLib/__init__.py
+}
+
+build() {
+    CFLAGS="$CFLAGS -O2" \
+    gpep517 build-wheel \
+        --wheel-dir .dist \
+        --output-fd 3 3>&1 >&2
+}
+
+check() {
+    # Skip tests that fail strtod() conversions, or have weird inherent logic errors.
+    python3 -m venv --clear --without-pip --system-site-packages .testenv
+    .testenv/bin/python3 -m installer .dist/*.whl
+    PATH="$PATH:$PWD" \
+        .testenv/bin/python3 -m pytest -n auto -k "not test_build_n_ary_tree and not test_getFileModificationTime"
+}
+
+package() {
+    python3 -m installer -d "$pkgdir" \
+        .dist/fonttools-$pkgver-*.whl
+}
+
+sha512sums="
+50e887f7cfa3a35ba5ca606fe0ce4766185272804bbd05e880cc47b0b73b4af865d902e5a34391bca1fed45275bd1b7922c0bb2b1c6685b9a2aa7026ae70d104  fonttools-4.60.1.tar.gz
+"
