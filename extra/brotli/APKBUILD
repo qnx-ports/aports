@@ -1,0 +1,87 @@
+# Alpine-Contributor: prspkt <prspkt@protonmail.com>
+# Alpine-Maintainer: prspkt <prspkt@protonmail.com>
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=brotli
+pkgver=1.2.0
+pkgrel=0
+pkgdesc="Generic lossless compressor"
+url="https://github.com/google/brotli"
+arch="all"
+license="MIT"
+depends_dev="$pkgname=$pkgver-r$pkgrel"
+makedepends_build="cmake ninja"
+subpackages="
+    $pkgname-doc
+    $pkgname-static
+    $pkgname-dev
+    $pkgname-libs
+    "
+if [ -z "$BOOTSTRAP" ]; then
+    makedepends_host="python3-dev python3-gpep517 python3-setuptools python3-wheel"
+    subpackages="$subpackages python3-$pkgname:py3"
+fi
+source="$pkgname-$pkgver.tar.gz::https://github.com/google/brotli/archive/refs/tags/v$pkgver.tar.gz
+    "
+
+prepare() {
+    default_prepare
+    sed -i 's,/usr/bin/env bash,/bin/sh,' tests/*.sh
+}
+
+build() {
+    export CFLAGS="$CFLAGS -O2"
+
+    # static libs, see https://github.com/google/brotli/issues/795
+    cmake -B build -G Ninja \
+        -DCMAKE_BUILD_TYPE=None \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DBUILD_SHARED_LIBS=OFF
+    cmake --build build
+
+    cmake -B build -G Ninja \
+        -DCMAKE_BUILD_TYPE=None \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DBUILD_SHARED_LIBS=ON
+    cmake --build build
+
+    if [ -z "$BOOTSTRAP" ]; then
+        gpep517 build-wheel \
+            --wheel-dir .dist \
+            --output-fd 3 3>&1 >&2
+    fi
+}
+
+check() {
+    ctest --test-dir build
+
+    python3 -m venv --clear --without-pip --system-site-packages .testenv
+    .testenv/bin/python3 -m installer .dist/*.whl
+    cd python; ../.testenv/bin/python3 -m unittest discover -v -p '*_test.py'
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install build
+
+    local file; for file in common dec enc; do
+        install -D -m 755 "$builddir"/build/libbrotli$file.a \
+            "$pkgdir"/usr/lib/
+    done
+
+    local man; for man in docs/*.?; do
+        install -D -m644 $man "$pkgdir"/usr/share/man/man${man##*.}/${man##*/}
+    done
+
+    if [ -z "$BOOTSTRAP" ]; then
+        python3 -m installer -d "$pkgdir" .dist/*.whl
+    fi
+}
+
+py3() {
+    pkgdesc="$pkgdesc (python bindings)"
+
+    amove usr/lib/python3*
+}
+
+sha512sums="
+f94542afd2ecd96cc41fd21a805a3da314281ae558c10650f3e6d9ca732b8425bba8fde312823f0a564c7de3993bdaab5b43378edab65ebb798cefb6fd702256  brotli-1.2.0.tar.gz
+"
