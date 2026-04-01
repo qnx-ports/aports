@@ -9,7 +9,7 @@ pkgname=openjdk25
 _updatever=10
 pkgver="25.0.2_p$_updatever"
 _pkgver=${pkgver%_p*}
-pkgrel=0
+pkgrel=1
 pkgdesc="Oracle OpenJDK 25"
 provider_priority=25
 url="https://github.com/openjdk/jdk25u"
@@ -259,7 +259,7 @@ _src() {
 
 _jre_headless() {
 	pkgdesc="Oracle OpenJDK 25 (JRE headless)"
-	depends="java-common java-cacerts libc++ libiconv qnx-fd-notify qnx-io-sock zlib-ng"
+	depends="java-common ca-certificates p11-kit libc++ libiconv qnx-fd-notify qnx-io-sock zlib-ng"
 	provides=java-jre-headless
 	_fromroot="$pkgdir/$_java_home"
 	_toroot="$subpkgdir/$_java_home"
