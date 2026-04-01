@@ -38,6 +38,157 @@ makedepends="
     python3-setuptools
     python3-wheel
     "
+_libopencv_aruco_depends="
+    libopencv_objdetect
+    libopencv_calib3d
+    libopencv_core
+    libopencv_dnn
+    libopencv_imgproc
+    libopencv_features2d
+    libopencv_flann
+    "
+_libopencv_calib3d_depends="
+    libopencv_core
+    libopencv_imgproc
+    libopencv_features2d
+    libopencv_flann
+    "
+_libopencv_dnn_depends="
+    libopencv_core
+    libopencv_imgproc
+    "
+_libopencv_face_depends="
+    libopencv_objdetect
+    libopencv_calib3d
+    libopencv_imgproc
+    libopencv_core
+    libopencv_dnn
+    libopencv_features2d
+    libopencv_flann
+    "
+_libopencv_features2d_depends="
+    libopencv_imgproc
+    libopencv_core
+    libopencv_flann
+    "
+_libopencv_flann_depends="
+    libopencv_core
+    "
+_libopencv_highgui_depends="
+    libopencv_imgproc
+    libopencv_core
+    "
+_libopencv_imgcodecs_depends="
+    libopencv_imgproc
+    libopencv_core
+    openjpeg
+    "
+_libopencv_imgproc_depends="
+    libopencv_core
+    "
+_libopencv_ml_depends="
+    libopencv_core
+    "
+_libopencv_objdetect_depends="
+    libopencv_calib3d
+    libopencv_imgproc
+    libopencv_core
+    libopencv_dnn
+    libopencv_features2d
+    libopencv_flann
+    "
+_libopencv_optflow_depends="
+    libopencv_ximgproc
+    libopencv_imgcodecs
+    libopencv_video
+    libopencv_calib3d
+    libopencv_flann
+    libopencv_imgproc
+    libopencv_core
+    libopencv_dnn
+    libopencv_features2d
+    "
+_libopencv_photo_depends="
+    libopencv_imgproc
+    libopencv_core
+    "
+_libopencv_plot_depends="
+    libopencv_imgproc
+    libopencv_core
+    "
+_libopencv_shape_depends="
+    libopencv_calib3d
+    libopencv_flann
+    libopencv_imgproc
+    libopencv_core
+    libopencv_features2d
+    "
+_libopencv_stitching_depends="
+    libopencv_calib3d
+    libopencv_flann
+    libopencv_imgproc
+    libopencv_core
+    libopencv_features2d
+    "
+_libopencv_superres_depends="
+    libopencv_videoio
+    libopencv_optflow
+    libopencv_video
+    libopencv_imgproc
+    libopencv_core
+    libopencv_imgcodecs
+    libopencv_ximgproc
+    libopencv_calib3d
+    libopencv_flann
+    libopencv_dnn
+    libopencv_features2d
+    "
+_libopencv_tracking_depends="
+    libopencv_video
+    libopencv_imgproc
+    libopencv_core
+    libopencv_dnn
+    libopencv_calib3d
+    libopencv_features2d
+    libopencv_flann
+    "
+_libopencv_video_depends="
+    libopencv_dnn
+    libopencv_calib3d
+    libopencv_imgproc
+    libopencv_core
+    libopencv_features2d
+    libopencv_flann
+    "
+_libopencv_videoio_depends="
+    libopencv_imgcodecs
+    libopencv_core
+    gst-plugins-base
+    gstreamer
+    ffmpeg
+    "
+_libopencv_videostab_depends="
+    libopencv_photo
+    libopencv_videoio
+    libopencv_video
+    libopencv_calib3d
+    libopencv_features2d
+    libopencv_imgproc
+    libopencv_core
+    libopencv_imgcodecs
+    libopencv_dnn
+    libopencv_flann
+    "
+_libopencv_ximgproc_depends="
+    libopencv_imgcodecs
+    libopencv_video
+    libopencv_calib3d
+    libopencv_imgproc
+    libopencv_core
+    libopencv_dnn
+    libopencv_features2d
+    libopencv_flann
+    "
 subpackages="
     $pkgname-dbg
     $pkgname-dev
@@ -220,9 +371,15 @@ _py3() {
 
 _lib() {
     pkgdesc="$pkgdesc ($subpkgname library)"
-    depends="libc++"
+    depends="libc++ zlib onetbb $(getvar "_${subpkgname}_depends")"
 
     amove usr/lib/$subpkgname.so.*
+}
+
+# Print value of the specified variable, or the default if empty or not defined.
+# From https://github.com/alpinelinux/aports/blob/3d4f2edabc7cca3a16b88a2d3795f584ae40aff5/main/nginx/APKBUILD
+getvar() {
+	eval "printf '%s\n' \"\${$1:-$2}\""
 }
 
 sha512sums="
