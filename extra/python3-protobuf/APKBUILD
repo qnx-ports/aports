@@ -16,12 +16,17 @@ makedepends="
     python3-setuptools
     python3-wheel
     "
+options="!check"
 source="https://files.pythonhosted.org/packages/source/p/protobuf/protobuf-$pkgver.tar.gz"
-builddir="protobuf-$pkgver"
+builddir="$srcdir/protobuf-$pkgver"
 
 build() {
   CFLAGS="$CFLAGS -O3 -fPIC" \
   python3 setup.py build
+}
+
+check() {
+  pytest
 }
 
 package() {
