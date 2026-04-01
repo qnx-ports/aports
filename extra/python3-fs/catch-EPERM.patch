@@ -1,0 +1,18 @@
+diff --color -U 6 -r before/fs/osfs.py after/fs/osfs.py
+--- before/fs/osfs.py	2026-04-01 14:59:50.289190080 -0400
++++ after/fs/osfs.py	2026-04-01 15:00:14.049393381 -0400
+@@ -368,13 +368,13 @@
+                 os.remove(sys_path)
+             except OSError as error:
+                 if error.errno == errno.EACCES and sys.platform == "win32":
+                     # sometimes windows says this for attempts to remove a dir
+                     if os.path.isdir(sys_path):  # pragma: no cover
+                         raise errors.FileExpected(path)
+-                if error.errno == errno.EPERM and sys.platform == "darwin":
++                if error.errno == errno.EPERM and (sys.platform == "darwin" or sys.platform.startswith("qnx")):
+                     # sometimes OSX says this for attempts to remove a dir
+                     if os.path.isdir(sys_path):  # pragma: no cover
+                         raise errors.FileExpected(path)
+                 raise
+ 
+     def removedir(self, path):
