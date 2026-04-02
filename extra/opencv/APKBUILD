@@ -27,6 +27,7 @@ depends_dev="
     openjpeg-tools
     openblas-dev
     python3-setuptools
+    libc++-dev
     "
 makedepends="
     $depends_dev
