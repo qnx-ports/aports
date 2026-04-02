@@ -1,8 +1,66 @@
-diff --git a/Include/internal/pycore_time.h b/Include/internal/pycore_time.h
-index 2331247..e42da26 100644
---- a/Include/internal/pycore_time.h
-+++ b/Include/internal/pycore_time.h
-@@ -59,7 +59,7 @@ extern "C" {
+diff --color -U 6 -r before/configure after/configure
+--- before/configure	2026-04-02 11:41:59.166082557 -0400
++++ after/configure	2026-04-02 11:41:19.425688912 -0400
+@@ -7543,13 +7543,13 @@
+ then
+ 	LINKCC='$(PURIFY) $(CC)'
+ 	case $ac_sys_system in
+ 	QNX*)
+ 	   # qcc must be used because the other compilers do not
+ 	   # support -N.
+-	   LINKCC=qcc;;
++	   LINKCC=gcc;;
+ 	esac
+ fi
+ { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $LINKCC" >&5
+ printf "%s\n" "$LINKCC" >&6; }
+ 
+ # EXPORTSYMS holds the list of exported symbols for AIX.
+@@ -7734,12 +7734,22 @@
+ 
+       if test "$with_pydebug" != yes
+       then
+         PY3LIBRARY=libpython3.so
+       fi
+       ;;
++    QNX)
++      LDLIBRARY='libpython$(LDVERSION).so'
++      BLDLIBRARY='-L. -lpython$(LDVERSION)'
++      RUNSHARED=LD_LIBRARY_PATH=`pwd`${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
++
++      if test "$with_pydebug" != yes
++      then
++        PY3LIBRARY=libpython3.so
++      fi
++      ;;
+     hp*|HP*)
+       case `uname -m` in
+         ia64)
+           LDLIBRARY='libpython$(LDVERSION).so'
+           ;;
+         *)
+@@ -13754,13 +13764,13 @@
+ 	QNX*)
+ 		# -Wl,-E causes the symbols to be added to the dynamic
+ 		# symbol table so that they can be found when a module
+ 		# is loaded.  -N 2048K causes the stack size to be set
+ 		# to 2048 kilobytes so that the stack doesn't overflow
+ 		# when running test_compile.py.
+-		LINKFORSHARED='-Wl,-E -N 2048K';;
++		LINKFORSHARED='-Wl,-export-dynamic -Wl,-E -Wl,--stack,8388608';;
+ 	VxWorks*)
+ 		LINKFORSHARED='-Wl,-export-dynamic';;
+ 	esac
+ fi
+ { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $LINKFORSHARED" >&5
+ printf "%s\n" "$LINKFORSHARED" >&6; }
+diff --color -U 6 -r before/Include/internal/pycore_time.h after/Include/internal/pycore_time.h
+--- before/Include/internal/pycore_time.h	2026-04-02 11:41:59.070081605 -0400
++++ after/Include/internal/pycore_time.h	2026-04-02 11:41:18.917683880 -0400
+@@ -56,13 +56,13 @@
+ #ifndef Py_BUILD_CORE
+ #  error "this header requires Py_BUILD_CORE define"
+ #endif
  
  #include "pycore_runtime_structs.h" // _PyTimeFraction
  
@@ -11,11 +69,16 @@ index 2331247..e42da26 100644
  struct timeval;
  #endif
  
-diff --git a/Lib/asyncio/unix_events.py b/Lib/asyncio/unix_events.py
-index 1c14581..4468ad5 100644
---- a/Lib/asyncio/unix_events.py
-+++ b/Lib/asyncio/unix_events.py
-@@ -118,7 +118,8 @@ def add_signal_handler(self, sig, callback, *args):
+ #define _SIZEOF_PYTIME_T 8
+ 
+ typedef enum {
+diff --color -U 6 -r before/Lib/asyncio/unix_events.py after/Lib/asyncio/unix_events.py
+--- before/Lib/asyncio/unix_events.py	2026-04-02 11:41:59.078081685 -0400
++++ after/Lib/asyncio/unix_events.py	2026-04-02 11:41:18.933684038 -0400
+@@ -115,13 +115,14 @@
+             # Register a dummy signal handler to ask Python to write the signal
+             # number in the wakeup file descriptor. _process_self_data() will
+             # read signal numbers from this file descriptor to handle signals.
              signal.signal(sig, _sighandler_noop)
  
              # Set SA_RESTART to limit EINTR occurrences.
@@ -25,24 +88,34 @@ index 1c14581..4468ad5 100644
          except OSError as exc:
              del self._signal_handlers[sig]
              if not self._signal_handlers:
-diff --git a/Lib/getpass.py b/Lib/getpass.py
-index 3d9bb1f..caae57a 100644
---- a/Lib/getpass.py
-+++ b/Lib/getpass.py
-@@ -86,6 +86,8 @@ def unix_getpass(prompt='Password: ', stream=None, *, echo_char=None):
+                 try:
+                     signal.set_wakeup_fd(-1)
+                 except (ValueError, OSError) as nexc:
+diff --color -U 6 -r before/Lib/getpass.py after/Lib/getpass.py
+--- before/Lib/getpass.py	2026-04-02 11:41:59.074081644 -0400
++++ after/Lib/getpass.py	2026-04-02 11:44:10.379382680 -0400
+@@ -83,12 +83,14 @@
+                     passwd = _raw_input(prompt, stream, input=input,
+                                         echo_char=echo_char)
+ 
                  finally:
                      termios.tcsetattr(fd, tcsetattr_flags, old)
                      stream.flush()  # issue7208
-+                    if os.name == 'qnx':
++                    if sys.platform.startswith('qnx'):
 +                        stream.seek(0, 1)
              except termios.error:
                  if passwd is not None:
                      # _raw_input succeeded.  The final tcsetattr failed.  Reraise
-diff --git a/Lib/shutil.py b/Lib/shutil.py
-index 8d8fe14..4278c40 100644
---- a/Lib/shutil.py
-+++ b/Lib/shutil.py
-@@ -762,7 +762,7 @@ def _rmtree_safe_fd_step(stack, onexc):
+                     # instead of leaving the terminal in an unknown state.
+                     raise
+                 # We can't control the tty or stdin.  Give up and use normal IO.
+diff --color -U 6 -r before/Lib/shutil.py after/Lib/shutil.py
+--- before/Lib/shutil.py	2026-04-02 11:41:59.074081644 -0400
++++ after/Lib/shutil.py	2026-04-02 11:41:18.965684355 -0400
+@@ -759,13 +759,13 @@
+         if orig_entry is None:
+             orig_st = os.lstat(name, dir_fd=dirfd)
+         else:
              orig_st = orig_entry.stat(follow_symlinks=False)
  
          func = os.open  # For error reporting.
@@ -51,24 +124,53 @@ index 8d8fe14..4278c40 100644
  
          func = os.path.islink  # For error reporting.
          try:
-diff --git a/Lib/test/support/os_helper.py b/Lib/test/support/os_helper.py
-index 2c45fe2..882253b 100644
---- a/Lib/test/support/os_helper.py
-+++ b/Lib/test/support/os_helper.py
-@@ -50,7 +50,7 @@
+             if not os.path.samestat(orig_st, os.fstat(topfd)):
+                 # Symlinks to directories are forbidden, see GH-46010.
+                 raise OSError("Cannot call rmtree on a symbolic link")
+diff --color -U 6 -r before/Lib/test/support/os_helper.py after/Lib/test/support/os_helper.py
+--- before/Lib/test/support/os_helper.py	2026-04-02 11:41:59.130082201 -0400
++++ after/Lib/test/support/os_helper.py	2026-04-02 11:44:57.631851029 -0400
+@@ -47,13 +47,13 @@
+         else:
+             print('WARNING: The filename %r CAN be encoded by the filesystem '
+                   'encoding (%s). Unicode filename tests may not be effective'
                    % (TESTFN_UNENCODABLE, sys.getfilesystemencoding()))
              TESTFN_UNENCODABLE = None
  # Apple and Emscripten deny unencodable filenames (invalid utf-8)
 -elif not support.is_apple and sys.platform not in {"emscripten", "wasi"}:
-+elif not support.is_apple and sys.platform not in {"emscripten", "wasi", 'qnx'}:
++elif not support.is_apple and (sys.platform not in {"emscripten", "wasi"} or sys.platform.startswith('qnx')):
      try:
          # ascii and utf-8 cannot encode the byte 0xff
          b'\xff'.decode(sys.getfilesystemencoding())
-diff --git a/Modules/_localemodule.c b/Modules/_localemodule.c
-index 41e6d48..5ff2577 100644
---- a/Modules/_localemodule.c
-+++ b/Modules/_localemodule.c
-@@ -563,31 +563,31 @@ static struct langinfo_constant{
+     except UnicodeDecodeError:
+         # 0xff will be encoded using the surrogate character u+DCFF
+         TESTFN_UNENCODABLE = TESTFN_ASCII \
+diff --color -U 6 -r before/Modules/faulthandler.c after/Modules/faulthandler.c
+--- before/Modules/faulthandler.c	2026-04-02 11:41:59.178082677 -0400
++++ after/Modules/faulthandler.c	2026-04-02 11:41:19.297687644 -0400
+@@ -849,13 +849,15 @@
+     struct sigaction action;
+     action.sa_handler = faulthandler_user;
+     sigemptyset(&action.sa_mask);
+     /* if the signal is received while the kernel is executing a system
+        call, try to restart the system call instead of interrupting it and
+        return EINTR. */
++#ifndef __QNX__
+     action.sa_flags = SA_RESTART;
++#endif
+     if (chain) {
+         /* do not prevent the signal from being received from within its
+            own signal handler */
+         action.sa_flags = SA_NODEFER;
+     }
+ #ifdef FAULTHANDLER_USE_ALT_STACK
+diff --color -U 6 -r before/Modules/_localemodule.c after/Modules/_localemodule.c
+--- before/Modules/_localemodule.c	2026-04-02 11:41:59.178082677 -0400
++++ after/Modules/_localemodule.c	2026-04-02 11:41:19.257687248 -0400
+@@ -560,37 +560,37 @@
+     LANGINFO(PM_STR, LC_TIME),
+ 
+     /* The following constants are available only with XPG4, but...
         OpenBSD doesn't have CODESET but has T_FMT_AMPM, and doesn't have
         a few of the others.
         Solution: ifdef-test them all. */
@@ -109,39 +211,16 @@ index 41e6d48..5ff2577 100644
      LANGINFO(NOEXPR, LC_MESSAGES),
  #endif
  #ifdef _DATE_FMT
-diff --git a/Modules/_testinternalcapi/pytime.c b/Modules/_testinternalcapi/pytime.c
-index 2b0a205..41c9aea 100644
---- a/Modules/_testinternalcapi/pytime.c
-+++ b/Modules/_testinternalcapi/pytime.c
-@@ -2,6 +2,9 @@
- 
- #include "parts.h"
- 
-+#ifdef __QNX__
-+#  include <sys/select.h>
-+#endif
- #include "pycore_time.h"          // _PyTime_FromSeconds()
- 
- #ifdef MS_WINDOWS
-diff --git a/Modules/faulthandler.c b/Modules/faulthandler.c
-index d49ce79..4c46e2e 100644
---- a/Modules/faulthandler.c
-+++ b/Modules/faulthandler.c
-@@ -852,7 +852,9 @@ faulthandler_register(int signum, int chain, _Py_sighandler_t *previous_p)
-     /* if the signal is received while the kernel is executing a system
-        call, try to restart the system call instead of interrupting it and
-        return EINTR. */
-+#ifndef __QNX__
-     action.sa_flags = SA_RESTART;
-+#endif
-     if (chain) {
-         /* do not prevent the signal from being received from within its
-            own signal handler */
-diff --git a/Modules/posixmodule.c b/Modules/posixmodule.c
-index e1576f8..29264bb 100644
---- a/Modules/posixmodule.c
-+++ b/Modules/posixmodule.c
-@@ -606,6 +606,12 @@ extern char *ctermid_r(char *);
+     /* This is not available in all glibc versions that have CODESET. */
+     LANGINFO(_DATE_FMT, LC_TIME),
+ #endif
+diff --color -U 6 -r before/Modules/posixmodule.c after/Modules/posixmodule.c
+--- before/Modules/posixmodule.c	2026-04-02 11:41:59.182082716 -0400
++++ after/Modules/posixmodule.c	2026-04-02 11:41:19.329687961 -0400
+@@ -603,12 +603,18 @@
+ #else
+ #  define INITFUNC PyInit_posix
+ #  define MODNAME "posix"
  #  define MODNAME_OBJ &_Py_ID(posix)
  #endif
  
@@ -154,7 +233,13 @@ index e1576f8..29264bb 100644
  /*[clinic input]
  # one of the few times we lie about this name!
  module os
-@@ -11156,6 +11162,11 @@ os_open_impl(PyObject *module, path_t *path, int flags, int mode, int dir_fd)
+ [clinic start generated code]*/
+ /*[clinic end generated code: output=da39a3ee5e6b4b0d input=94a0f0f978acae17]*/
+ 
+@@ -11153,12 +11159,17 @@
+ #ifdef MS_WINDOWS
+         fd = _wopen(path->wide, flags, mode);
+ #else
  #ifdef HAVE_OPENAT
          if (dir_fd != DEFAULT_DIR_FD) {
              if (HAVE_OPENAT_RUNTIME) {
@@ -166,11 +251,16 @@ index e1576f8..29264bb 100644
                  fd = openat(dir_fd, path->narrow, flags, mode);
  
              } else {
-diff --git a/Modules/selectmodule.c b/Modules/selectmodule.c
-index d234d50..ee062e8 100644
---- a/Modules/selectmodule.c
-+++ b/Modules/selectmodule.c
-@@ -37,6 +37,10 @@
+                 openat_unavailable = 1;
+                 fd = -1;
+             }
+diff --color -U 6 -r before/Modules/selectmodule.c after/Modules/selectmodule.c
+--- before/Modules/selectmodule.c	2026-04-02 11:41:59.182082716 -0400
++++ after/Modules/selectmodule.c	2026-04-02 11:41:19.333688001 -0400
+@@ -34,12 +34,16 @@
+     /* Perform runtime testing for a broken poll on OSX to make it easier
+      * to use the same binary on multiple releases of the OS.
+      */
  #undef HAVE_BROKEN_POLL
  #endif
  
@@ -181,11 +271,16 @@ index d234d50..ee062e8 100644
  /* Windows #defines FD_SETSIZE to 64 if FD_SETSIZE isn't already defined.
     64 is too small (too many people have bumped into that limit).
     Here we boost it.
-diff --git a/Modules/termios.c b/Modules/termios.c
-index efb5fcc..6597b90 100644
---- a/Modules/termios.c
-+++ b/Modules/termios.c
-@@ -11,7 +11,9 @@
+    Users who want even more than the boosted limit should #define
+    FD_SETSIZE higher before this; e.g., via compiler /D switch.
+ */
+diff --color -U 6 -r before/Modules/termios.c after/Modules/termios.c
+--- before/Modules/termios.c	2026-04-02 11:41:59.182082716 -0400
++++ after/Modules/termios.c	2026-04-02 11:41:19.337688040 -0400
+@@ -8,13 +8,15 @@
+ #endif
+ 
+ #include "Python.h"
  
  #include <string.h>               // memset()
  #include <sys/ioctl.h>
@@ -196,11 +291,33 @@ index efb5fcc..6597b90 100644
  #include <unistd.h>               // _POSIX_VDISABLE
  
  // On QNX 6, struct termio must be declared by including sys/termio.h
-diff --git a/Objects/mimalloc/prim/unix/prim.c b/Objects/mimalloc/prim/unix/prim.c
-index 1598eba..24b00f9 100644
---- a/Objects/mimalloc/prim/unix/prim.c
-+++ b/Objects/mimalloc/prim/unix/prim.c
-@@ -51,7 +51,7 @@ terms of the MIT license. A copy of the license can be found in the file
+ // if TCGETA, TCSETA, TCSETAW, or TCSETAF are used. sys/termio.h must
+ // be included before termios.h or it will generate an error.
+ #if defined(HAVE_SYS_TERMIO_H) && !defined(__hpux)
+diff --color -U 6 -r before/Modules/_testinternalcapi/pytime.c after/Modules/_testinternalcapi/pytime.c
+--- before/Modules/_testinternalcapi/pytime.c	2026-04-02 11:41:59.190082795 -0400
++++ after/Modules/_testinternalcapi/pytime.c	2026-04-02 11:41:19.297687644 -0400
+@@ -1,10 +1,13 @@
+ /* Test pycore_time.h */
+ 
+ #include "parts.h"
+ 
++#ifdef __QNX__
++#  include <sys/select.h>
++#endif
+ #include "pycore_time.h"          // _PyTime_FromSeconds()
+ 
+ #ifdef MS_WINDOWS
+ #  include <winsock2.h>           // struct timeval
+ #endif
+ 
+diff --color -U 6 -r before/Objects/mimalloc/prim/unix/prim.c after/Objects/mimalloc/prim/unix/prim.c
+--- before/Objects/mimalloc/prim/unix/prim.c	2026-04-02 11:41:59.202082913 -0400
++++ after/Objects/mimalloc/prim/unix/prim.c	2026-04-02 11:41:19.353688198 -0400
+@@ -48,13 +48,13 @@
+   #include <sys/cpuset.h>
+   #include <sys/domainset.h>
+   #endif
    #include <sys/sysctl.h>
  #endif
  
@@ -209,7 +326,13 @@ index 1598eba..24b00f9 100644
    #define MI_HAS_SYSCALL_H
    #include <sys/syscall.h>
  #endif
-@@ -156,6 +156,8 @@ int _mi_prim_free(void* addr, size_t size ) {
+ 
+ //------------------------------------------------------------------------------------
+ // Use syscalls for some primitives to allow for libraries that override open/read/close etc.
+@@ -153,12 +153,14 @@
+ // mmap
+ //---------------------------------------------
+ 
  static int unix_madvise(void* addr, size_t size, int advice) {
    #if defined(__sun)
    return madvise((caddr_t)addr, size, advice);  // Solaris needs cast (issue #520)
@@ -218,7 +341,13 @@ index 1598eba..24b00f9 100644
    #else
    return madvise(addr, size, advice);
    #endif
-@@ -370,7 +372,11 @@ int _mi_prim_commit(void* start, size_t size, bool* is_zero) {
+ }
+ 
+ static void* unix_mmap_prim(void* addr, size_t size, size_t try_alignment, int protect_flags, int flags, int fd) {
+@@ -367,13 +369,17 @@
+   return err;
+ }
+ 
  int _mi_prim_decommit(void* start, size_t size, bool* needs_recommit) {
    int err = 0;
    // decommit: use MADV_DONTNEED as it decreases rss immediately (unlike MADV_FREE)
@@ -230,7 +359,13 @@ index 1598eba..24b00f9 100644
    #if !MI_DEBUG && !MI_SECURE
      *needs_recommit = false;
    #else
-@@ -402,6 +408,8 @@ int _mi_prim_reset(void* start, size_t size) {
+     *needs_recommit = true;
+     mprotect(start, size, PROT_NONE);
+   #endif
+@@ -399,12 +405,14 @@
+   while ((err = unix_madvise(start, size, oadvice)) != 0 && errno == EAGAIN) { errno = 0;  };
+   if (err != 0 && errno == EINVAL && oadvice == MADV_FREE) {
+     // if MADV_FREE is not supported, fall back to MADV_DONTNEED from now on
      mi_atomic_store_release(&advice, (size_t)MADV_DONTNEED);
      err = unix_madvise(start, size, MADV_DONTNEED);
    }
@@ -239,11 +374,16 @@ index 1598eba..24b00f9 100644
    #else
    int err = unix_madvise(start, size, MADV_DONTNEED);
    #endif
-diff --git a/Python/fileutils.c b/Python/fileutils.c
-index 78603d4..6f5522f 100644
---- a/Python/fileutils.c
-+++ b/Python/fileutils.c
-@@ -1643,6 +1643,11 @@ _Py_open_impl(const char *pathname, int flags, int gil_held)
+   return err;
+ }
+ 
+diff --color -U 6 -r before/Python/fileutils.c after/Python/fileutils.c
+--- before/Python/fileutils.c	2026-04-02 11:41:59.218083072 -0400
++++ after/Python/fileutils.c	2026-04-02 11:41:19.401688674 -0400
+@@ -1640,12 +1640,17 @@
+             Py_DECREF(pathname_obj);
+             return -1;
+         }
  
          do {
              Py_BEGIN_ALLOW_THREADS
@@ -255,7 +395,13 @@ index 78603d4..6f5522f 100644
              fd = open(pathname, flags);
              Py_END_ALLOW_THREADS
          } while (fd < 0
-@@ -1659,6 +1664,11 @@ _Py_open_impl(const char *pathname, int flags, int gil_held)
+                  && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+         if (async_err) {
+             Py_DECREF(pathname_obj);
+@@ -1656,12 +1661,17 @@
+             Py_DECREF(pathname_obj);
+             return -1;
+         }
          Py_DECREF(pathname_obj);
      }
      else {
@@ -267,42 +413,6 @@ index 78603d4..6f5522f 100644
          fd = open(pathname, flags);
          if (fd < 0)
              return -1;
-diff --git a/configure b/configure
-index d31c24d..dc82353 100755
---- a/configure
-+++ b/configure
-@@ -7546,7 +7546,7 @@ then
- 	QNX*)
- 	   # qcc must be used because the other compilers do not
- 	   # support -N.
--	   LINKCC=qcc;;
-+	   LINKCC=gcc;;
- 	esac
- fi
- { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $LINKCC" >&5
-@@ -7732,6 +7732,16 @@ printf "%s\n" "#define Py_ENABLE_SHARED 1" >>confdefs.h
-           INSTSONAME="$LDLIBRARY".$SOVERSION
-       fi
+     }
  
-+      if test "$with_pydebug" != yes
-+      then
-+        PY3LIBRARY=libpython3.so
-+      fi
-+      ;;
-+    QNX)
-+      LDLIBRARY='libpython$(LDVERSION).so'
-+      BLDLIBRARY='-L. -lpython$(LDVERSION)'
-+      RUNSHARED=LD_LIBRARY_PATH=`pwd`${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
-+
-       if test "$with_pydebug" != yes
-       then
-         PY3LIBRARY=libpython3.so
-@@ -13757,7 +13767,7 @@ printf "%s\n" "#define THREAD_STACK_SIZE 0x$stack_size" >>confdefs.h
- 		# is loaded.  -N 2048K causes the stack size to be set
- 		# to 2048 kilobytes so that the stack doesn't overflow
- 		# when running test_compile.py.
--		LINKFORSHARED='-Wl,-E -N 2048K';;
-+		LINKFORSHARED='-Wl,-export-dynamic -Wl,-E -Wl,--stack,8388608';;
- 	VxWorks*)
- 		LINKFORSHARED='-Wl,-export-dynamic';;
- 	esac
+ #ifndef MS_WINDOWS
