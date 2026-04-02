@@ -3,7 +3,7 @@
 # Maintainer: Ethan Leir <eleir@qnx.com>
 pkgname=brotli
 pkgver=1.1.0
-pkgrel=0
+pkgrel=1
 pkgdesc="Brotli compression format"
 arch="all"
 license="MIT"
