@@ -12,6 +12,7 @@ depends="$pkgname-client $pkgname-server"
 checkdepends="tmux perl"
 makedepends="
 	abseil-cpp-dev
+    qnx-io-sock-dev
 	autoconf
 	automake
 	gzip
@@ -88,7 +89,7 @@ server() {
 client() {
 	replaces="mosh"
 	pkgdesc="Mosh client"
-	depends="openssh-client perl-io-tty"
+	depends="openssh perl-io-tty"
 	mkdir -p "$subpkgdir"/usr/bin
 	mv "$pkgdir"/usr/bin/mosh-client \
 		"$subpkgdir"/usr/bin/
