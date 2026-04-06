@@ -11,6 +11,7 @@ license="GPL-3.0-or-later"
 depends="$pkgname-client $pkgname-server"
 checkdepends="tmux perl"
 makedepends="
+    libc++-dev
 	abseil-cpp-dev
     qnx-io-sock-dev
 	autoconf
