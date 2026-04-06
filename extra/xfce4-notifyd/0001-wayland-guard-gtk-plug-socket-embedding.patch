@@ -1,0 +1,20 @@
+--- a/xfce4-notifyd-config/main.c
++++ b/xfce4-notifyd-config/main.c
+@@ -1270,6 +1270,7 @@
+                                         notifyd_running,
+                                         NULL);
+ 
++#ifdef GDK_WINDOWING_X11
+     if(opt_socket_id) {
+         GtkWidget *plug, *plug_child;
+ 
+@@ -1290,6 +1291,9 @@
+ 
+         gtk_main();
+     } else {
++#else
++    {
++#endif
+         g_object_unref(G_OBJECT(builder));
+ 
+         gtk_dialog_run(GTK_DIALOG(settings_dialog));

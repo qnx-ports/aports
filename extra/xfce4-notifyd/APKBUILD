@@ -1,0 +1,50 @@
+# Alpine-Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+# Maintainer: Elliott Mazzuca <emazzuca@qnx.com>
+pkgname=xfce4-notifyd
+pkgver=0.9.7
+pkgrel=0
+pkgdesc="Notification daemon for the xfce desktop"
+url="https://docs.xfce.org/apps/notifyd/"
+arch="all"
+license="GPL-2.0-or-later"
+depends="hicolor-icon-theme"
+makedepends="
+	gtk3-dev
+	libnotify-dev
+	libxfce4ui-dev
+	libxfce4util
+	sqlite-dev
+	xfce4-panel-dev
+	xfce4-dev-tools
+	xfconf-dev
+	"
+subpackages="$pkgname-lang $pkgname-doc"
+source="https://archive.xfce.org/src/apps/xfce4-notifyd/${pkgver%.*}/xfce4-notifyd-$pkgver.tar.bz2
+        0001-wayland-guard-gtk-plug-socket-embedding.patch"
+# tests are somewhat interactive and build manual programs
+options="!check"
+
+build() {
+    export CFLAGS="$CFLAGS -fPIC"
+    export CXXFLAGS="$CXXFLAGS -fPIC"
+    ./configure \
+        --build=$CBUILD \
+        --host=$CHOST \
+        --prefix=/usr \
+        --sysconfdir=/etc \
+        --libexecdir=/usr/lib/xfce4 \
+        --localstatedir=/var \
+        --disable-static \
+        --disable-systemd \
+        --disable-libsexy
+    make
+}
+
+package() {
+	make DESTDIR="$pkgdir" install
+}
+
+sha512sums="
+8bbc7eff631704c7ac9417d3eaba151a0e6de54e48e0b75f7e7ec67c596a11b5ecd3b7ed12ffe6d657d335cb11102686fd69d5f0d1ab5b6645a594d6f0cbd6a6  xfce4-notifyd-0.9.7.tar.bz2
+dc3e50386c4d4300ecd806f854038cf7ddf3067cdeb34c2f9291bee751201078c5bab7f2950b5f3e7b077a88f5379d8b2c99108cff89aa01613f3bff8be475ee  0001-wayland-guard-gtk-plug-socket-embedding.patch
+"
