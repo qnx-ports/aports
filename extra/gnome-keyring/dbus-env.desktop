@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=DBus Environment
+Exec=dbus-update-activation-environment DISPLAY WAYLAND_DISPLAY XDG_RUNTIME_DIR
+NoDisplay=true
+X-GNOME-Autostart-Phase=PreDisplayServer
