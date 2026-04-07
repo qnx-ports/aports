@@ -13,7 +13,7 @@ makedepends="qnx-io-sock-dev"
 subpackages="$pkgname-dev $pkgname-doc"
 options="suid !check"
 pkggroups="utmp"
-source="https://github.com/abdulahmoda/libutempter/archive/refs/heads/qnx-v1.2.3.tar.gz"
+source="$pkgname-qnx-$pkgver.tar.gz::https://github.com/qnx-ports/libutempter/archive/refs/heads/qnx-v1.2.3.tar.gz"
 builddir="$srcdir/$pkgname-qnx-v$pkgver/$pkgname"
 
 build() {
@@ -28,5 +28,5 @@ package() {
 }
 
 sha512sums="
-4080732d64c9b2fe9b3a165cf1b9d89b1b2c8bbf91fd2a3c52ad19f40dce6cac1abff6b38ce8a941864018ab2486624bd2758cf0940ef86bb0b7fa9e91aa004a  qnx-v1.2.3.tar.gz
+4080732d64c9b2fe9b3a165cf1b9d89b1b2c8bbf91fd2a3c52ad19f40dce6cac1abff6b38ce8a941864018ab2486624bd2758cf0940ef86bb0b7fa9e91aa004a  libutempter-qnx-1.2.3.tar.gz
 "
