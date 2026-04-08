@@ -1,7 +1,7 @@
 # This can only be compiled natively on QNX
 pkgname=libtool
 pkgver=2.5.4
-pkgrel=2
+pkgrel=3
 pkgdesc="A generic library support script"
 url="https://www.gnu.org/software/libtool"
 arch="all"
@@ -9,7 +9,8 @@ depends="perl libltdl"
 makedepends="m4 help2man"
 license="LGPL-2.0-or-later AND GPL-2.0-or-later"
 subpackages="libltdl-static libltdl $pkgname-doc"
-source="https://mirror.csclub.uwaterloo.ca/gnu/libtool/libtool-$pkgver.tar.gz"
+source="https://mirror.csclub.uwaterloo.ca/gnu/libtool/libtool-$pkgver.tar.gz
+    qnx-broken-force.patch"
 #source="https://ftp.gnu.org/gnu/libtool/libtool-$pkgver.tar.gz"
 builddir="${srcdir}/libtool-${pkgver}"
 
@@ -47,4 +48,5 @@ libltdl() {
 
 sha512sums="
 60599f5c3168a287fe3a35062fd2e32e0b73433fce820bfd18d28b0e3bd7a8fefde6d6f0505fbbc2d664119ab7c539269184993843289932c895847ea1ab9f04  libtool-2.5.4.tar.gz
+c72a580b4a7dfc2399f50ae8c2a65fe69905097357fabd88c666ba1189e3554ffc09dad1f1bda2e04073ba39ae7006fd18b12e8daa6972aca9346749c46ca7a4  qnx-broken-force.patch
 "

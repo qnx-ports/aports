@@ -1,0 +1,18 @@
+diff --color -U 6 -N -r before/build-aux/ltmain.in after/build-aux/ltmain.in
+--- before/build-aux/ltmain.in	2026-04-08 11:58:40.620030061 -0400
++++ after/build-aux/ltmain.in	2026-04-08 12:02:23.025829037 -0400
+@@ -2583,13 +2583,13 @@
+ 	    # Try 'ln -sf' first, because the 'ln' binary might depend on
+ 	    # the symlink we replace!  Solaris /bin/ln does not understand -f,
+ 	    # so we also need to try rm && ln -s.
+ 	    for linkname
+ 	    do
+ 	      test "$linkname" != "$realname" \
+-		&& func_show_eval "(cd $destdir && { $LN_S -f $realname $linkname || { $RM $linkname && $LN_S $realname $linkname; }; })"
++		&& func_show_eval "(cd $destdir && { $LN_S $realname $linkname || { $RM $linkname && $LN_S $realname $linkname; }; })"
+ 	    done
+ 	  fi
+ 
+ 	  # Do each command in the postinstall commands.
+ 	  lib=$destdir/$realname
+ 	  func_execute_cmds "$postinstall_cmds" 'exit $?'
