@@ -8,10 +8,11 @@ pkgdesc="A cross-platform, open-source C language library for real-time audio in
 url="http://www.portaudio.com/"
 license="MIT"
 arch="all"
-depends="qnx-alsa"
+depends="qnx-alsa qnx-io-sock"
 makedepends="
     libc++-dev
     qnx-alsa-dev
+    qnx-io-sock-dev
     autoconf
     automake
     libtool
@@ -72,7 +73,7 @@ package() {
 
 _cxx() {
     pkgdesc="C++ bindings library for portaudio"
-    depends="libc++ qnx-alsa"
+    depends="libc++ qnx-alsa qnx-io-sock"
 
     amove usr/lib/libportaudiocpp*
 }
