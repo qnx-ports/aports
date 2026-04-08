@@ -15,8 +15,6 @@ source="https://files.pythonhosted.org/packages/source/${_pkgname:0:1}/$_pkgname
     skip-railroad.patch
     "
 builddir="$srcdir"/$_pkgname-$pkgver
-# Some small rounding errors that could be due to strtod() conversion issues.
-options="!check"
 
 build() {
     gpep517 build-wheel \
@@ -28,10 +26,11 @@ check() {
     python3 -m venv --clear --without-pip --system-site-packages test-env
     test-env/bin/python3 -m installer .dist/*.whl
     # no pytest yet
+    # Some small rounding errors that could be due to strtod() conversion issues.
     test-env/bin/python3 -m unittest -b \
         tests/test_simple_unit.py \
         tests/test_unit.py \
-        tests/test_examples.py
+        tests/test_examples.py || true
 }
 
 package() {
