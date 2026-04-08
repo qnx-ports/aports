@@ -1,0 +1,67 @@
+diff --color -U 6 -N -r before/scipy/special/ellint_carlson_wrap.hh after/scipy/special/ellint_carlson_wrap.hh
+--- before/scipy/special/ellint_carlson_wrap.hh	2026-02-22 14:06:42.000000000 -0500
++++ after/scipy/special/ellint_carlson_wrap.hh	2026-04-08 15:42:11.017304331 -0400
+@@ -1,29 +1,49 @@
+ #ifndef ELLINT_CARLSON_WRAP_HH_INCLUDED
+ #define ELLINT_CARLSON_WRAP_HH_INCLUDED
+ 
+ 
++#ifdef __QNX__
++#undef _EXTERN_C
++#undef _END_EXTERN_C
++#ifdef __cplusplus
++#define _EXTERN_C	extern "C" {
++#define _END_EXTERN_C	}
++#else
++#define _EXTERN_C	/* nothing */
++#define _END_EXTERN_C	/* nothing */
++#endif
++#else
+ #undef _BEGIN_EXTERN_C
+ #undef _END_EXTERN_C
+ #ifdef __cplusplus
+ #define _BEGIN_EXTERN_C	extern "C" {
+ #define _END_EXTERN_C	}
+ #else
+ #define _BEGIN_EXTERN_C	/* nothing */
+ #define _END_EXTERN_C	/* nothing */
+ #endif
++#endif
+ 
++#ifdef __QNX__
++_EXTERN_C
++#else
+ _BEGIN_EXTERN_C
++#endif
+ #include <numpy/npy_math.h>
+ _END_EXTERN_C
+ 
+ #define ELLINT_NO_VALIDATE_RELATIVE_ERROR_BOUND
+ #include "ellint_carlson_cpp_lite/ellint_carlson.hh"
+ 
+ 
++#ifdef __QNX__
++_EXTERN_C
++#else
+ _BEGIN_EXTERN_C
++#endif
+ 
+ 
+ extern double fellint_RC(double x, double y);
+ extern npy_cdouble cellint_RC(npy_cdouble x, npy_cdouble y);
+ 
+ extern double fellint_RD(double x, double y, double z);
+@@ -39,11 +59,13 @@
+ extern npy_cdouble cellint_RJ(npy_cdouble x, npy_cdouble y, npy_cdouble z, npy_cdouble p);
+ 
+ 
+ _END_EXTERN_C
+ 
+ 
++#ifndef __QNX__
+ #undef _BEGIN_EXTERN_C
+ #undef _END_EXTERN_C
++#endif
+ 
+ 
+ #endif /* ELLINT_CARLSON_WRAP_HH_INCLUDED */
