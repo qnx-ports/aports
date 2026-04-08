@@ -1,0 +1,12 @@
+diff -ruN '--exclude=.git' lely-core-v3.2.0/lib/util/error.c lely-core_modified/lib/util/error.c
+--- lely-core-v3.2.0/lib/util/error.c	2021-11-25 23:19:42.000000000 +0530
++++ lely-core_modified/lib/util/error.c	2026-04-06 12:52:52.954095305 +0530
+@@ -1049,7 +1049,7 @@
+ 	}
+ #elif _POSIX_C_SOURCE >= 200112L
+ 	if (strerrbuf) {
+-#ifdef _GNU_SOURCE
++#if defined(_GNU_SOURCE) && !defined(__QNX__)
+ 		return strerror_r(errnum, strerrbuf, buflen);
+ #else
+ 		int errc = strerror_r(errnum, strerrbuf, buflen);
