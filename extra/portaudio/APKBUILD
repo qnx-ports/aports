@@ -73,7 +73,7 @@ package() {
 
 _cxx() {
     pkgdesc="C++ bindings library for portaudio"
-    depends="libc++ qnx-alsa qnx-io-sock"
+    depends="$pkgname libc++ qnx-alsa qnx-io-sock"
 
     amove usr/lib/libportaudiocpp*
 }
