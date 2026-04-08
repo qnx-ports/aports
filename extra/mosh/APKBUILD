@@ -38,7 +38,7 @@ source="$pkgname-qnx-$pkgver.tar.gz::https://github.com/qnx-ports/mosh/archive/r
 	fix-makefile.am.patch
 	"
 builddir="$srcdir/$pkgname-qnx-v$pkgver"
-options="" # emulation-cursor-motion.test fails
+options="" 
 
 prepare() {
 	default_prepare
