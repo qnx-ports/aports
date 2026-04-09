@@ -1,5 +1,6 @@
-# Contributor: Jakub Jirutka <jakub@jirutka.cz>
-# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+# Alpine Contributor: Jakub Jirutka <jakub@jirutka.cz>
+# Alpine Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+# Maintainer: Abdulfatah Ahmoda <abahmoda@qnx.com>
 pkgname=dnsmasq
 pkgver=2.92
 pkgrel=0
@@ -11,24 +12,19 @@ depends="$pkgname-common=$pkgver-r$pkgrel"
 makedepends="
 	coreutils
 	dbus-dev
-	linux-headers
 	nettle-dev
-	nftables-dev
 	"
 install="
 	$pkgname.pre-install
 	$pkgname.pre-upgrade
 	$pkgname-dnssec.pre-install
 	$pkgname-dnssec.pre-upgrade
-	$pkgname-dnssec-nftset.pre-install
-	$pkgname-dnssec-nftset.pre-upgrade
 	$pkgname-dnssec-dbus.pre-install
 	$pkgname-dnssec-dbus.pre-upgrade
 	"
 subpackages="
 	$pkgname-doc
 	$pkgname-dnssec
-	$pkgname-dnssec-nftset
 	$pkgname-dnssec-dbus
 	$pkgname-openrc
 	$pkgname-common::noarch
@@ -99,7 +95,7 @@ check() {
 }
 
 package() {
-	provider_priority=100  # highest (other providers are dnsmasq-dnssec, dnsmasq-dnssec-nftset, dnsmasq-dnssec-dbus)
+	provider_priority=100  # highest (other providers are dnsmasq-dnssec, dnsmasq-dnssec-dbus)
 
 	make PREFIX=/usr DESTDIR="$pkgdir" install
 
@@ -110,21 +106,9 @@ package() {
 dnssec() {
 	pkgdesc="$pkgdesc with DNSSEC support"
 	provides="$pkgname=$pkgver-r$pkgrel"
-	provider_priority=20  # middle (other providers are dnsmasq, dnsmasq-dnssec-nftset, dnsmasq-dnssec-dbus)
+	provider_priority=20  # middle (other providers are dnsmasq, dnsmasq-dnssec-dbus)
 
 	install -D -m 755 "$builddir"/src/dnsmasq~dnssec "$subpkgdir"/usr/sbin/dnsmasq
-}
-
-nftset() {
-	pkgdesc="$pkgdesc with DNSSEC and nftables set support"
-	provides="
-		$pkgname=$pkgver-r$pkgrel
-		$pkgname-dnssec=$pkgver-r$pkgrel
-		"
-	provider_priority=15  # lower (other providers are dnsmasq, dnsmasq-dnssec, dnsmasq-dnssec-nftset)
-
-	cd "$builddir"
-	install -D -m755 src/dnsmasq~nftset "$subpkgdir"/usr/sbin/dnsmasq
 }
 
 dbus() {
@@ -134,7 +118,7 @@ dbus() {
 		$pkgname-dbus=$pkgver-r$pkgrel
 		$pkgname-dnssec=$pkgver-r$pkgrel
 		"
-	provider_priority=10  # lowest (other providers are dnsmasq, dnsmasq-dnssec, dnsmasq-dnssec-nftset)
+	provider_priority=10  # lowest (other providers are dnsmasq, dnsmasq-dnssec)
 
 	cd "$builddir"
 	install -D -m755 src/dnsmasq~dbus "$subpkgdir"/usr/sbin/dnsmasq
