@@ -33,7 +33,6 @@ subpackages="
 	"
 source="https://www.thekelleys.org.uk/dnsmasq/dnsmasq-$pkgver.tar.xz
 	0000-underflow.patch
-
 	config.h.patch
 	dnsmasq.conf.patch
 	$pkgname.initd
@@ -75,9 +74,6 @@ build() {
 	export CFLAGS="$CFLAGS -flto=auto"
 	make LDFLAGS="$LDFLAGS" CFLAGS="$CFLAGS" COPTS="-DHAVE_DNSSEC" all
 	mv src/dnsmasq src/dnsmasq~dnssec
-
-	make LDFLAGS="$LDFLAGS" CFLAGS="$CFLAGS" COPTS="-DHAVE_DNSSEC -DHAVE_NFTSET" all
-	mv src/dnsmasq src/dnsmasq~nftset
 
 	make LDFLAGS="$LDFLAGS" CFLAGS="$CFLAGS" COPTS="-DHAVE_DNSSEC -DHAVE_DBUS" all
 	mv src/dnsmasq src/dnsmasq~dbus
