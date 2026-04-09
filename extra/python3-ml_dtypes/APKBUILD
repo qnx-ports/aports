@@ -1,0 +1,45 @@
+# Maintainer: Deep Chordia <dchordia@blackberry.com>
+pkgname=python3-ml_dtypes
+_pkgname=ml_dtypes
+pkgrel=0
+pkgver=0.5.4
+pkgdesc="A stand-alone implementation of several NumPy dtype extensions used in machine learning."
+url="https://github.com/jax-ml/ml_dtypes"
+arch="all"
+license="Apache-2.0"
+depends_dev="
+    python3-numpy-dev
+    "
+makedepends="
+    $depends_dev
+    cmake
+    ninja
+    "
+_eigen_version="5.0.1"
+checkdepends="python3-absl-py"
+source="
+    $_pkgname-$pkgver.tar.gz::https://github.com/jax-ml/ml_dtypes/archive/refs/tags/v$pkgver.tar.gz
+    eigen-$_eigen_version.tar.gz::https://gitlab.com/libeigen/eigen/-/archive/$_eigen_version.tar.gz
+    "
+builddir="$srcdir/$_pkgname-$pkgver"
+
+prepare() {
+  mv "$srcdir"/eigen-$_eigen_version/* "$builddir"/third_party/eigen
+}
+
+build() {
+  python3 setup.py build
+}
+
+check() {
+  pytest
+}
+
+package() {
+  python3 setup.py install --skip-build --root="$pkgdir"
+}
+
+sha512sums="
+585641b2d4d9ff7b134310ac38484989d85efd3f303cc99fa71b2b693c710f435d4245bb64239b79f823da647e71f477be89d3141fa6aeb775262ea13a4f1bf7  ml_dtypes-0.5.4.tar.gz
+b337d3bc38440db190a8f1fbc4eabc0098e69fcc95bfba195fe039ffb942cae2a7f0153f3094f35fa26325750d1c62e20cccaf916a41f5c7f248ec5e5d30a942  eigen-5.0.1.tar.gz
+"
