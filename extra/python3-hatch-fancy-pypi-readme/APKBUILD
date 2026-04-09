@@ -1,0 +1,37 @@
+# Alpine-Contributor: Francesco Colista <fcolista@alpinelinux.org>
+# Alpine-Maintainer: Francesco Colista <fcolista@alpinelinux.org>
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=python3-hatch-fancy-pypi-readme
+_pkgname=${pkgname/python3-/}
+pkgver=25.1.0
+pkgrel=0
+pkgdesc="Fancy PyPI READMEs with Hatch"
+url="https://github.com/hynek/hatch-fancy-pypi-readme"
+arch="noarch"
+license="MIT"
+makedepends="python3-gpep517 python3-installer python3-hatchling python3-hatch-vcs"
+checkdepends="python3-pytest"
+subpackages=""
+source="$pkgname-$pkgver.tar.gz::https://github.com/hynek/hatch-fancy-pypi-readme/archive/refs/tags/$pkgver.tar.gz"
+builddir="$srcdir/$_pkgname-$pkgver"
+
+build() {
+    gpep517 build-wheel \
+        --wheel-dir .dist \
+        --output-fd 3 3>&1 >&2
+}
+
+check() {
+    python3 -m venv --clear --without-pip --system-site-packages .testenv
+    .testenv/bin/python3 -m installer .dist/*.whl
+    .testenv/bin/python3 -m pytest -k 'not test_end_to_end.py'
+}
+
+package() {
+    python3 -m installer -d "$pkgdir" \
+        .dist/*.whl
+}
+
+sha512sums="
+0d882a2203f69e0c65c93e23b3ad04627e31695a106a4c93dbe8e4483f514497646944d3788ea2a9d534b68410b2b4511b49fd6b870ee3d8b2c024fc0c654cab  python3-hatch-fancy-pypi-readme-25.1.0.tar.gz
+"
