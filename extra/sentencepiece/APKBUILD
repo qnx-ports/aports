@@ -16,6 +16,7 @@ makedepends="
     python3-setuptools
     python3-wheel
     libc++-dev
+    qnx-io-sock-dev
     "
 checkdepends="
     python3-pytest
@@ -64,7 +65,7 @@ package() {
 
 py3() {
     pkgdesc="Python3 wrapper for sentencepiece"
-    depends="python3"
+    depends="python3 libc++ qnx-io-sock"
 
     amove usr/lib/python*
 }
