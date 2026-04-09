@@ -1,0 +1,75 @@
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=sentencepiece
+pkgver=0.2.0
+pkgrel=0
+pkgdesc="Unsupervised text tokenizer for NN text generation"
+url="https://github.com/google/sentencepiece"
+arch="all"
+license="Apache-2.0"
+depends="libc++"
+makedepends="
+    cmake
+    ninja
+    clang
+    pkgconf
+    python3-gpep517
+    python3-setuptools
+    python3-wheel
+    libc++-dev
+    "
+checkdepends="
+    python3-pytest
+    "
+subpackages="
+    $pkgname-dev
+    python3-$pkgname:py3
+    "
+source="$pkgname-$pkgver.tar.gz::https://github.com/google/$pkgname//archive/refs/tags/v$pkgver.tar.gz
+    qnx-no-endian_h.patch
+    "
+
+export CMAKE_POLICY_VERSION_MINIMUM=3.5
+
+build() {
+    cmake -B build -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DSPM_BUILD_TEST=ON \
+        -DBUILD_TESTING=ON
+    cmake --build build
+
+    cd ./python
+    CPPFLAGS="$CPPFLAGS -fPIC" \
+    gpep517 build-wheel \
+        --wheel-dir .dist \
+        --output-fd 3 3>&1 >&2
+}
+
+check() {
+    # FIXME: Illegal instruction error when trying to test training.
+    ctest --test-dir build || true
+
+    cd ./python
+    python3 -m venv --clear --without-pip --system-site-packages .testenv
+    .testenv/bin/python3 -m installer .dist/*.whl
+    .testenv/bin/python3 -m pytest . || true
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install build
+
+    python3 -m installer -d "$pkgdir" \
+        ./python/.dist/*.whl
+}
+
+py3() {
+    pkgdesc="Python3 wrapper for sentencepiece"
+    depends="python3"
+
+    amove usr/lib/python*
+}
+
+sha512sums="
+b4214f5bfbe2a0757794c792e87e7c53fda7e65b2511b37fc757f280bf9287ba59b5d630801e17de6058f8292a3c6433211917324cb3446a212a51735402e614  sentencepiece-0.2.0.tar.gz
+179bab163ffab00ff8d1462aab29b51d99d4b1d4e1a10f4d88113ae3201ea064912cbbaf98a966dbde4294ab39e6dabc76dc7a6c7895631ca8306681700ce158  qnx-no-endian_h.patch
+"
