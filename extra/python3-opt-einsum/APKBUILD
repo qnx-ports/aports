@@ -13,8 +13,8 @@ depends="
     "
 makedepends="
     python3-gpep517
-    python3-hatch-fancy-pypi-readme
     python3-hatch-vcs
+    python3-hatch-fancy-pypi-readme
     python3-hatchling
     python3-wheel
     "
@@ -26,6 +26,7 @@ source="https://github.com/dgasmith/opt_einsum/archive/v$pkgver/opt_einsum-$pkgv
 builddir="$srcdir/opt_einsum-$pkgver"
 
 build() {
+    export SETUPTOOLS_SCM_PRETEND_VERSION=$pkgver
     gpep517 build-wheel \
         --wheel-dir .dist \
         --output-fd 3 3>&1 >&2
