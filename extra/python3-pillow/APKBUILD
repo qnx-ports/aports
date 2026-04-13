@@ -8,6 +8,7 @@ pkgdesc="Python Imaging Library"
 url="https://python-pillow.org/"
 arch="all"
 license="MIT-CMU"
+depends="python3 qnx-io-sock"
 makedepends="
     freetype-dev
     fribidi-dev
@@ -23,10 +24,10 @@ makedepends="
     python3-wheel
     python3-dev
     tiff-dev
+    qnx-io-sock-dev
     zlib-dev
     "
 checkdepends="python3-pytest python3-numpy"
-subpackages=""
 source="https://files.pythonhosted.org/packages/source/p/pillow/pillow-$pkgver.tar.gz"
 builddir="$srcdir/pillow-$pkgver"
 options="!check" # todo
