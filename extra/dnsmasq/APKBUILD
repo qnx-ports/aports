@@ -10,7 +10,7 @@ arch="all"
 license="GPL-2.0-or-later"
 depends="$pkgname-common=$pkgver-r$pkgrel"
 makedepends="
-	coreutils
+    qnx-io-sock-dev
 	dbus-dev
 	nettle-dev
 	"
@@ -71,7 +71,8 @@ source="https://www.thekelleys.org.uk/dnsmasq/dnsmasq-$pkgver.tar.xz
 #     - CVE-2017-14496
 
 build() {
-	export CFLAGS="$CFLAGS -flto=auto"
+	export CFLAGS="$CFLAGS"
+	export LDFLAGS="-lsocket $LDFLAGS"
 	make LDFLAGS="$LDFLAGS" CFLAGS="$CFLAGS" COPTS="-DHAVE_DNSSEC" all
 	mv src/dnsmasq src/dnsmasq~dnssec
 
