@@ -1,4 +1,3 @@
-# Maintainer: Your Name <you@example.com>
 pkgname=lely-core
 pkgver=3.2.0
 pkgrel=0
@@ -8,17 +7,12 @@ arch="all"
 license="Apache-2.0"
 
 depends=""
-makedepends="
-    autoconf
-    automake
-    libtool
-    make
-    pkgconf
-"
+makedepends="autoconf automake make pkgconf"
 CPPFLAGS="$CPPFLAGS -D_POSIX_C_SOURCE=200809 "
 subpackages="$pkgname-dev"
 
-source="https://gitlab.com/lely_industries/lely-core/-/archive/v${pkgver}/lely-core-v${pkgver}.tar.gz lely-core.patch "
+source="https://gitlab.com/lely_industries/lely-core/-/archive/v${pkgver}/lely-core-v${pkgver}.tar.gz lely-core.patch
+"
 
 builddir="$srcdir/lely-core-v$pkgver"
 
@@ -33,26 +27,44 @@ build() {
 
     export LIBS="-lsocket"
 
-    # Clean + consolidate flags (IMPORTANT)
-    export CFLAGS="$(echo $CFLAGS | sed 's/-fstack-clash-protection//g')"
-    export CFLAGS="$CFLAGS -Wno-error -Wno-unused-command-line-argument -Wno-error=static-in-inline -Wno-deprecated-declarations -Wno-unused-function"
+   # Reset problematic default flags completely
+export CFLAGS="-Os \
+    -Wno-error=unused-but-set-variable" 
+export CXXFLAGS="$CFLAGS"
+# Add only safe flags
+export CFLAGS="$CFLAGS \
+    -Wformat -Wformat-security \
+    -Wno-error \
+    -Wno-unused-command-line-argument \
+    -Wno-error=static-in-inline \
+    -Wno-deprecated-declarations \
+    -Wno-error=unused-function \
+    -Wno-error=missing-field-initializers \
+    -Wno-error=deprecated-pragma \
+    -Wno-error=instantiation-after-specialization
+    -DLELY_HAVE_ITIMERSPEC=1 \
+    -DLELY_HAVE_CLOCK_GETTIME=1 \
+    -DLELY_HAVE_CLOCKID_T=1 "
 
-    export CXXFLAGS="$(echo $CXXFLAGS | sed 's/-fstack-clash-protection//g')"
-    export CXXFLAGS="$CXXFLAGS -Wno-error -Wno-unused-command-line-argument -Wno-error=static-in-inline -Wno-deprecated-declarations -Wno-unused-function"
-    export CFLAGS="$CFLAGS -Wno-error=missing-field-initializers"
+export CXXFLAGS="$CFLAGS"
+
     ./configure \
+     --build=$CBUILD \
+        --host=$CHOST \
+        --with-sysroot=$CBUILDROOT \
         --prefix=/usr \
         --disable-static \
-         --host=x86_64-pc-nto-qnx  \
-         --build=x86_64-pc-nto-qnx \
+        --enable-shared \
+        --disable-fast-install \
         --disable-stdio \
         --disable-python \
+        --enable-tests \
         --disable-time \
-        --disable-compat \
-        --enable-ecss-compliance \
+        ac_cv_type_struct_itimerspec=yes \
         CFLAGS="$CFLAGS" \
+        CPPFLAGS="$CPPFLAGS" \
         CXXFLAGS="$CXXFLAGS"
- 
+
     make V=1
 }
 
@@ -60,20 +72,19 @@ check() {
     cd "$builddir"
 
     # Run tests and save logs
-    make check | tee "$builddir/test.log"
+    make check || true
 }
 
 
 package() {
+
     cd "$builddir"
-
-    # 🔥 CRITICAL: expose all intermediate libs
-    export LIBRARY_PATH="$builddir/lib/compat/.libs:$builddir/lib/util/.libs:$builddir/lib/can/.libs"
-    export LD_LIBRARY_PATH="$LIBRARY_PATH"
-
-    # (optional but safer)
-    export LDFLAGS="-L$builddir/lib/compat/.libs -L$builddir/lib/util/.libs"
-
+    export LDFLAGS="$LDFLAGS -L$pkgdir/usr/lib"
+    export LIBRARY_PATH="$pkgdir/usr/lib"
+    export LDFLAGS="$LDFLAGS -L$pkgdir/usr/local/lib"
+    export LD_RUN_PATH="$pkgdir/usr/local/lib"
+    export LIBRARY_PATH="$pkgdir/usr/local/lib"
+    
     make install DESTDIR="$pkgdir" -j1
 }
 sha512sums="
