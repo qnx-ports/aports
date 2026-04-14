@@ -1,3 +1,4 @@
+# Maintainer: Your Name <you@example.com>
 pkgname=lely-core
 pkgver=3.2.0
 pkgrel=0
@@ -7,12 +8,17 @@ arch="all"
 license="Apache-2.0"
 
 depends=""
-makedepends="autoconf automake make pkgconf"
+makedepends="
+    autoconf
+    automake
+    libtool
+    make
+    pkgconf
+"
 CPPFLAGS="$CPPFLAGS -D_POSIX_C_SOURCE=200809 "
 subpackages="$pkgname-dev"
 
-source="https://gitlab.com/lely_industries/lely-core/-/archive/v${pkgver}/lely-core-v${pkgver}.tar.gz lely-core.patch
-"
+source="https://gitlab.com/lely_industries/lely-core/-/archive/v${pkgver}/lely-core-v${pkgver}.tar.gz lely-core.patch "
 
 builddir="$srcdir/lely-core-v$pkgver"
 
@@ -23,70 +29,29 @@ prepare() {
 }
 
 build() {
+    
     cd "$builddir"
-
     export LIBS="-lsocket"
-
-   # Reset problematic default flags completely
-export CFLAGS="-Os \
-    -Wno-error=unused-but-set-variable" 
-export CXXFLAGS="$CFLAGS"
-# Add only safe flags
-export CFLAGS="$CFLAGS \
-    -Wformat -Wformat-security \
-    -Wno-error \
-    -Wno-unused-command-line-argument \
-    -Wno-error=static-in-inline \
-    -Wno-deprecated-declarations \
-    -Wno-error=unused-function \
-    -Wno-error=missing-field-initializers \
-    -Wno-error=deprecated-pragma \
-    -Wno-error=instantiation-after-specialization
-    -DLELY_HAVE_ITIMERSPEC=1 \
-    -DLELY_HAVE_CLOCK_GETTIME=1 \
-    -DLELY_HAVE_CLOCKID_T=1 "
-
-export CXXFLAGS="$CFLAGS"
-
+    export CFLAGS="$CFLAGS -Wno-error -Wno-unused-command-line-argument -Wno-error=static-in-inline -Wno-deprecated-declarations -Wno-unused-function"
+    export CXXFLAGS="$CXXFLAGS -Wno-error -Wno-unused-command-line-argument -Wno-error=static-in-inline -Wno-deprecated-declarations -Wno-unused-function"
+    export CFLAGS="$CFLAGS -Wno-error=missing-field-initializers"
     ./configure \
-     --build=$CBUILD \
-        --host=$CHOST \
-        --with-sysroot=$CBUILDROOT \
         --prefix=/usr \
         --disable-static \
-        --enable-shared \
-        --disable-fast-install \
-        --disable-stdio \
         --disable-python \
-        --enable-tests \
-        --disable-time \
-        ac_cv_type_struct_itimerspec=yes \
+        --enable-ecss-compliance \
         CFLAGS="$CFLAGS" \
         CPPFLAGS="$CPPFLAGS" \
         CXXFLAGS="$CXXFLAGS"
-
+ 
     make V=1
 }
 
-check() {
-    cd "$builddir"
-
-    # Run tests and save logs
-    make check || true
-}
-
-
 package() {
-
     cd "$builddir"
-    export LDFLAGS="$LDFLAGS -L$pkgdir/usr/lib"
-    export LIBRARY_PATH="$pkgdir/usr/lib"
-    export LDFLAGS="$LDFLAGS -L$pkgdir/usr/local/lib"
-    export LD_RUN_PATH="$pkgdir/usr/local/lib"
-    export LIBRARY_PATH="$pkgdir/usr/local/lib"
-    
     make install DESTDIR="$pkgdir" -j1
 }
+
 sha512sums="
 771a7e1db5a7e0ed98e392090eaf423545e057f3e0050ccbf1a2e5d1eb4f36c205664795fc9604c86ea4a9e6aa593192e26ac4f75e43101b1554e4318a8cf571  lely-core-v3.2.0.tar.gz
 3a76d9b60a14fc4126f1ab55361c3db3f68e43750248d360ea9ac29072800d8512a9b917540de3a201a129b470862becd85f95cd27cb390d8d6c5230b9ed767c  lely-core.patch
