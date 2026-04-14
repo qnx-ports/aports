@@ -1,17 +1,23 @@
 # Alpine-Maintainer: Francesco Colista <fcolista@alpinelinux.org>
 # Maintainer: Felix Xing <fxing@qnx.com>
+
 pkgname=gtest
-pkgver=1.17.0
-pkgrel=2
+pkgver=1.13.0
+pkgrel=0
 pkgdesc="Google Test - C++ testing utility based on the xUnit framework (like JUnit)"
 url="https://github.com/google/googletest"
 arch="all"
 license="BSD-3-Clause"
-depends_dev="$pkgname=$pkgver-r$pkgrel gmock=$pkgver-r$pkgrel"
+
 depends="libc++"
-makedepends="$depends_dev cmake python3-dev ninja libc++-dev clang"
+depends_dev="$pkgname=$pkgver-r$pkgrel gmock=$pkgver-r$pkgrel"
+
+makedepends="$depends_dev cmake ninja python3-dev libc++-dev clang"
+
 subpackages="$pkgname-dev gmock $pkgname-src::noarch"
+
 source="$pkgname-$pkgver.tar.gz::https://github.com/google/googletest/archive/refs/tags/v$pkgver.tar.gz"
+
 builddir="$srcdir/googletest-$pkgver"
 
 build() {
@@ -44,10 +50,9 @@ gmock() {
 
 src() {
 	mkdir -p "$subpkgdir"/usr/src/$pkgname/src
-	mv  "$builddir"/googletest/src/* "$subpkgdir"/usr/src/$pkgname/src
+	mv "$builddir"/googletest/src/* "$subpkgdir"/usr/src/$pkgname/src
 }
 
 sha512sums="
-0f57e9ef06925e5b7722df1eb92ef5850e8dce79220ea16a8aaff586a71c0b01460ef1713649ee24ffedb2e6ad5a51e9198c5a5ae1b2789e43feb1f494e7d45c  gtest-1.17.0.tar.gz
+70c0cfb1b4147bdecb467ecb22ae5b5529eec0abc085763213a796b7cdbd81d1761d12b342060539b936fa54f345d33f060601544874d6213fdde79111fa813e  gtest-1.13.0.tar.gz
 "
-
