@@ -1,0 +1,58 @@
+
+pkgname=dlt-daemon
+pkgver=2.18.10
+pkgrel=0
+pkgdesc="Diagnostic Log and Trace (DLT) daemon"
+url="https://github.com/COVESA/dlt-daemon"
+arch="all"
+license="MPL-2.0"
+
+makedepends="cmake make gtest gtest-dev"
+depends="qnx-io-sock qnx-microkernel"
+
+source="https://deb.debian.org/debian/pool/main/d/dlt-daemon/dlt-daemon_${pkgver}.orig.tar.gz dlt-daemon.patch 
+"
+
+builddir="$srcdir/dlt-daemon-$pkgver"
+export CFLAGS="${CFLAGS/-fstack-clash-protection/}"
+export CXXFLAGS="${CXXFLAGS/-fstack-clash-protection/}"
+
+
+build() {
+    
+
+    cmake -B build -S "$builddir" \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=/usr \
+    -DWITH_SYSTEMD=OFF \
+    -DWITH_DOC=OFF \
+    -DWITH_MAN=OFF \
+    -DWITH_TESTS=ON \
+    -DBUILD_TESTING=ON \
+    -DWITH_DLT_UNIT_TESTS=ON \
+    -DWITH_DLT_INSTALLED_TESTS=ON \
+    -DWITH_DLT_CXX11_EXT=ON \
+    -DWITH_DLT_DBUS=OFF \
+    -DWITH_OFFLINE_LOGSTORAGE=OFF \
+    -DWITH_DLT_QNX_SYSTEM=OFF \
+    -DBUILD_SHARED_LIBS=ON \
+    -DCMAKE_POLICY_VERSION_MINIMUM=3.5 
+
+    cmake --build build
+}
+
+
+
+check() {
+     cd "$builddir/build"
+    ctest --output-on-failure || true
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install build
+} 
+
+sha512sums="
+5fd8b564e041b730766e7f9c8740e93f4d7d04b56330ed1e55b4230431537900c937583317e557313dda6a392ab7350715b45e3437bfd972f6221416bc0a2f06  dlt-daemon_2.18.10.orig.tar.gz
+021683fa8a8c0ee365cff20aed9ea2f097113cee0fe20252e2e51f8fe46bd35b1e11e6ca1ce1fad569ab1a71896ef1db66c5c4e5f97b853e4c556eb60f5bd1fd  dlt-daemon.patch
+"
