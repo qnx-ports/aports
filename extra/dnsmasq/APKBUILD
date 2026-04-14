@@ -28,13 +28,12 @@ subpackages="
 	$pkgname-dnssec-dbus
 	$pkgname-openrc
 	$pkgname-common::noarch
-	$pkgname-utils
-	$pkgname-utils-doc:utils_doc:noarch
 	"
 source="https://www.thekelleys.org.uk/dnsmasq/dnsmasq-$pkgver.tar.xz
 	0000-underflow.patch
-	dnsmasq.conf.patch
-    0000-qnx-dnsmasq.patch
+    0001-dnsmasq.conf.patch
+    0002-qnx-dnsmasq.patch
+    0003-qnx-dhcp-includes.patch
 	$pkgname.initd
 	$pkgname.confd
 	"
@@ -71,7 +70,6 @@ source="https://www.thekelleys.org.uk/dnsmasq/dnsmasq-$pkgver.tar.xz
 #     - CVE-2017-14496
 
 build() {
-	export CFLAGS="$CFLAGS"
 	export LDFLAGS="-lsocket $LDFLAGS"
 	make LDFLAGS="$LDFLAGS" CFLAGS="$CFLAGS" COPTS="-DHAVE_DNSSEC" all
 	mv src/dnsmasq src/dnsmasq~dnssec
@@ -81,9 +79,12 @@ build() {
 
 	make LDFLAGS="$LDFLAGS" CFLAGS="$CFLAGS" clean all
 
-	cd contrib/lease-tools/
-	make LDFLAGS="$LDFLAGS" CFLAGS="$CFLAGS" clean all
+    # Alpine builds lease-tools, which depend on netlink headers.
+    # They are not available on QNX
+    # cd contrib/lease-tools/
+    # make LDFLAGS="$LDFLAGS" CFLAGS="$CFLAGS" clean all
 }
+
 
 # dnsmasq doesn't provide any test suite (shame on them!), so just check that
 # the binary isn't totally broken...
@@ -139,32 +140,12 @@ openrc() {
 	install_if="openrc $pkgname-common=$pkgver-r$pkgrel"
 }
 
-utils() {
-	pkgdesc="$pkgdesc - contrib utilities"
-	depends="$pkgname=$pkgver-r$pkgrel"
-
-	install -Dm755 -t "$subpkgdir"/usr/bin/ \
-		"$builddir"/contrib/lease-tools/dhcp_release \
-		"$builddir"/contrib/lease-tools/dhcp_release6 \
-		"$builddir"/contrib/lease-tools/dhcp_lease_time
-}
-
-utils_doc() {
-	pkgdesc="$pkgdesc - contrib utilities (documentation)"
-	install_if="$pkgname-utils=$pkgver-r$pkgrel docs"
-
-	install -Dm644 -t "$subpkgdir"/usr/share/man/man1/ \
-		"$builddir"/contrib/lease-tools/dhcp_release.1 \
-		"$builddir"/contrib/lease-tools/dhcp_release6.1 \
-		"$builddir"/contrib/lease-tools/dhcp_lease_time.1
-	gzip -9 "$subpkgdir"/usr/share/man/man1/*.1
-}
-
 sha512sums="
 14a4638f4819c88c1214f38ca66622ce618b800dcc0d271d4eec6fd97639611f2317b711f6342c62b1f132acc7c2dec657fbf26c004d0d55ef10786944ad0ad1  dnsmasq-2.92.tar.xz
 3d2d7bc1199bc15348838ab86a842229c2ae70b46a05d907d0d64d893d5f8a2584e2ba4f80aeb24a7df5e0155bafaa1e99e144ae7965e2f1d5835b50d2e98140  0000-underflow.patch
-41679e0e889607896dcf7fdeb179b9b7a79095c9f86aebda131ac09c12e3ef2a94cece0018ab33ea08d3e6f6bbae44379e9d6fb8987fae29e68ecad952ccdd45  dnsmasq.conf.patch
-f856cba47f4b24b0d41edfc0c83fac95e9740dec5af2b0c40efb33726d039e6408e1c0531f8e3c3115b1abd963f0295cd5ee01fbf3019bc9bd6960f631f559cf  0000-qnx-dnsmasq.patch
+41679e0e889607896dcf7fdeb179b9b7a79095c9f86aebda131ac09c12e3ef2a94cece0018ab33ea08d3e6f6bbae44379e9d6fb8987fae29e68ecad952ccdd45  0001-dnsmasq.conf.patch
+49347181eb0759647b1bd21821702767010ca02eaaaad1335b1c0dfa52517a7a1f41c5414afc05df22c27d281c1afaca39bd1cda608b4578af77b2a4a13ac513  0002-qnx-dnsmasq.patch
+9a3771713f5ec6afbeec104845c2250e5e5855cfeb29b78ebae71f6a71f90dc86e36b27e0c069471ef3eb86711e33002e21f69beb81776da82a29314605bdb9b  0003-qnx-dhcp-includes.patch
 0c609a55ca0140d8f31f8f6eb4cb96eca7bc76385d48739998bea926b409f3d72cbfdffc30ad3f9e3a62db4ea3280f7fe6a60a12fc091164814a7cdf6a14b307  dnsmasq.initd
 c6ecec498f07916cd3c5ff183ff2a2ec478cf95ee43c0082d164b548d72b13fc9ba7cfbca9fb50e919e146708b5ce7f3b3a6565b36223c4efe1481172214ad93  dnsmasq.confd
 "

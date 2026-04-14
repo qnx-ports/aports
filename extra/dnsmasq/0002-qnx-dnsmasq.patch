@@ -1,8 +1,16 @@
 diff --git a/Makefile b/Makefile
-index a503c82..d920a5b 100644
+index a503c82..5edb229 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -25,7 +25,7 @@ LOCALEDIR     = $(PREFIX)/share/locale
+@@ -18,14 +18,14 @@
+ 
+ # Variables you may well want to override.
+ 
+-PREFIX        = /usr/local
++PREFIX        = /usr
+ BINDIR        = $(PREFIX)/sbin
+ MANDIR        = $(PREFIX)/share/man
+ LOCALEDIR     = $(PREFIX)/share/locale
  BUILDDIR      = $(SRC)
  DESTDIR       = 
  CFLAGS        = -Wall -W -O2
@@ -12,7 +20,7 @@ index a503c82..d920a5b 100644
  RPM_OPT_FLAGS = 
  LIBS          = 
 diff --git a/src/config.h b/src/config.h
-index 0994f95..bad7838 100644
+index 0994f95..789bc6c 100644
 --- a/src/config.h
 +++ b/src/config.h
 @@ -49,8 +49,8 @@
@@ -35,13 +43,14 @@ index 0994f95..bad7838 100644
  #    endif
  #endif
  
-@@ -286,6 +286,10 @@ HAVE_SOCKADDR_SA_LEN
+@@ -286,6 +286,11 @@ HAVE_SOCKADDR_SA_LEN
  #endif
  #define HAVE_SOCKADDR_SA_LEN
  
 +#elif defined(__QNX__)
 +#define HAVE_BSD_NETWORK
 +#define bzero __builtin_bzero
++#define HAVE_GETOPT_LONG
 +
  #elif defined(__APPLE__)
  #define HAVE_BSD_NETWORK
