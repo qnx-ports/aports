@@ -15,7 +15,11 @@ makedepends="
 CPPFLAGS="$CPPFLAGS -D_POSIX_C_SOURCE=200809 "
 subpackages="$pkgname-dev"
 
-source="https://gitlab.com/lely_industries/lely-core/-/archive/v${pkgver}/lely-core-v${pkgver}.tar.gz lely-core.patch "
+source="
+
+https://gitlab.com/lely_industries/lely-core/-/archive/v${pkgver}/lely-core-v${pkgver}.tar.gz 
+
+lely-core.patch "
 
 builddir="$srcdir/lely-core-v$pkgver"
 
