@@ -1,30 +1,37 @@
+# Maintainer: Felix Lionardo <flionardo@qnx.com>
 pkgname=asio
-pkgver=1.29.0
-pkgrel=0
-pkgdesc="Standalone Asio C++ networking library (header-only)"
+pkgver=1.36.0
+pkgrel=1
+pkgdesc="Cross-platform C++ library for network programming"
 url="https://think-async.com/Asio/"
 arch="noarch"
 license="BSL-1.0"
+depends_dev="openssl-dev>3"
+makedepends="$depends_dev qnx-io-sock-dev libc++-dev"
 subpackages="$pkgname-dev"
+source="https://downloads.sourceforge.net/sourceforge/asio/asio-$pkgver.tar.bz2"
 
-source="https://github.com/chriskohlhoff/asio/archive/asio-1-29-0.tar.gz
-        asio.patch"
+build() {
+    ./configure \
+        --build=$CBUILD \
+        --host=$CHOST \
+        --prefix=/usr \
+        --mandir=/usr/share/man \
+        CXXFLAGS="$CXXFLAGS -O2 -DASIO_HAS_PTHREADS -DASIO_HAS_STD_STRING_VIEW \
+                            -DASIO_HAS_CONSTEXPR -DASIO_HAS_STD_FUTURE_CLASS -DSA_RESTART=0 \
+                            -Wno-deprecated-declarations" \
+	    LIBS="$LIBS -lsocket"
+    make
+}
 
-builddir="$srcdir/asio-asio-1-29-0"
-
-build() { :; }
-check() { :; }
-
-prepare() {
-    default_prepare
+check() {
+    make check || true
 }
 
 package() {
-    mkdir -p "$pkgdir/usr/include"
-    cp -a "$builddir/asio/include/"* "$pkgdir/usr/include/"
+    make DESTDIR="$pkgdir" install
 }
 
 sha512sums="
-f8df39c5a5e89dcfe4bd37c7e757e44e3e94d9b79d7ab08d1804ad8980993a607070f7e12238ffe3286840cd08c0b3c8e3639d3a1177e5ff795994cbc42a8292  asio-1-29-0.tar.gz
-c91ae21919089c4a37244deda5905ff59f7f4acf5c0317d65c3e68eeffdbd05e0ef0a4789a828204166ffc3e97e19aad69b86f29cf37990ae78fbcefe26f043b  asio.patch
+87cfe606a38d3b697a15dacc35e367f556fb9e36b3d80785ddf3b59b6d214417ea7d483586077e7023f732b57a1369e2eb9b0f13be8b3f9f8bfdd59005683510  asio-1.36.0.tar.bz2
 "
