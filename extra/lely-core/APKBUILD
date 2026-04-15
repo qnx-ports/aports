@@ -1,4 +1,4 @@
-# Maintainer: Your Name <you@example.com>
+# Maintainer:Ramya santoshi <rtimmaraju@qnx.com>
 pkgname=lely-core
 pkgver=3.2.0
 pkgrel=0
@@ -9,11 +9,8 @@ license="Apache-2.0"
 
 depends=""
 makedepends="
-    autoconf
     automake
-    libtool
-    make
-    pkgconf
+    qnx-io-sock-dev
 "
 CPPFLAGS="$CPPFLAGS -D_POSIX_C_SOURCE=200809 "
 subpackages="$pkgname-dev"
@@ -29,26 +26,22 @@ prepare() {
 }
 
 build() {
-    
-    cd "$builddir"
     export LIBS="-lsocket"
-    export CFLAGS="$CFLAGS -Wno-error -Wno-unused-command-line-argument -Wno-error=static-in-inline -Wno-deprecated-declarations -Wno-unused-function"
+    export CFLAGS="$CFLAGS -Wno-error -Wno-unused-command-line-argument -Wno-error=static-in-inline -Wno-deprecated-declarations -Wno-unused-function -Wno-error=missing-field-initializers"
     export CXXFLAGS="$CXXFLAGS -Wno-error -Wno-unused-command-line-argument -Wno-error=static-in-inline -Wno-deprecated-declarations -Wno-unused-function"
-    export CFLAGS="$CFLAGS -Wno-error=missing-field-initializers"
     ./configure \
         --prefix=/usr \
         --disable-static \
         --disable-python \
         --enable-ecss-compliance \
+        --disable-doc \
         CFLAGS="$CFLAGS" \
         CPPFLAGS="$CPPFLAGS" \
         CXXFLAGS="$CXXFLAGS"
- 
-    make V=1
+    make
 }
 
 package() {
-    cd "$builddir"
     make install DESTDIR="$pkgdir" -j1
 }
 
