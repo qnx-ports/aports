@@ -34,11 +34,10 @@ subpackages="
 	$pkgname-doc
 	$pkgname-bash-completion
 	"
-source="$pkgname-qnx-$pkgver.tar.gz::https://github.com/qnx-ports/mosh/archive/refs/heads/qnx-v1.4.0.tar.gz
+source="$pkgname-qnx-$pkgver.tar.gz::https://github.com/qnx-ports/mosh/archive/refs/tags/qnx-v$pkgver.tar.gz
 	fix-makefile.am.patch
 	"
 builddir="$srcdir/$pkgname-qnx-v$pkgver"
-options="" 
 
 prepare() {
 	default_prepare
