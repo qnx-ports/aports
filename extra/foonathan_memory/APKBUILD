@@ -13,6 +13,8 @@ makedepends="cmake ninja libc++-dev"
 source="$pkgname-$pkgver.tar.gz::https://github.com/eProsima/memory/archive/refs/tags/vendor-$pkgver.tar.gz"
 builddir="$srcdir/memory-vendor-$pkgver"
 
+subpackages="$pkgname-dev"
+
 prepare() {
     default_prepare
 }
