@@ -1,3 +1,4 @@
+# Maintainer:Ramya santoshi <rtimmaraju@qnx.com>
 pkgname=g3log
 pkgver=2.6
 pkgrel=0
@@ -5,8 +6,8 @@ pkgdesc="Asynchronous crash-safe logging library for C++"
 url="https://github.com/KjellKod/g3log"
 arch="all"
 license="MIT"
-depends=""
-makedepends="cmake "
+depends="libc++"
+makedepends="cmake  libc++-dev"
 source="$pkgname-$pkgver.tar.gz::https://github.com/KjellKod/g3log/archive/refs/tags/2.6.tar.gz g3log-2.6_qnx.patch"
 builddir="$srcdir/g3log-$pkgver"
 
