@@ -97,6 +97,7 @@ build() {
         --copt="-D_STRUCT_IOVEC=1" \
         --copt="-Wno-c++11-narrowing" \
         --copt="-Wno-invalid-specialization" \
+        --linkopt="-lcares" \
         --repo_env=HERMETIC_PYTHON_VERSION=3.14 \
         --repo_env=TF_NEED_CUDA=0 \
         --@xla//xla/python:enable_gpu=False \
