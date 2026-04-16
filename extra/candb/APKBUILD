@@ -11,6 +11,7 @@ makedepends="cmake make git libc++-dev"
 
 source="candb.patch"
 builddir="$srcdir/CANdb"
+subpackages="$pkgname-dev"
 
 prepare() {
     git clone https://github.com/GENIVI/CANdb.git "$builddir"
