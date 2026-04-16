@@ -20,6 +20,7 @@ depends="
     qnx-fd-notify
     "
 makedepends="
+    bazel6
     c-ares-dev
     libc++-dev
     python3-build
@@ -32,7 +33,6 @@ makedepends="
     python3-zstandard
     qnx-fd-notify-dev
     "
-# bazel6
 checkdepends="
     python3-pytest
     python3-pytest-xdist
