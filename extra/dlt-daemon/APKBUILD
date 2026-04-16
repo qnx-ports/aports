@@ -13,6 +13,8 @@ source="dlt-daemon-${pkgver}.tar.gz::https://github.com/COVESA/dlt-daemon/archiv
 
 builddir="$srcdir/dlt-daemon-$pkgver"
 
+subpackages="$pkgname-dev"
+
 build() {
     export CFLAGS="${CFLAGS/-fstack-clash-protection/}"
     export CXXFLAGS="${CXXFLAGS/-fstack-clash-protection/}"
