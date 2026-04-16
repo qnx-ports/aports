@@ -7,7 +7,7 @@ pkgdesc="Python bindings for the abseil-cpp library"
 url="https://abseil.io/"
 arch="all"
 license="Apache-2.0"
-depends=""
+depends="python3"
 makedepends="
     python3-dev
     python3-gpep517
@@ -15,7 +15,6 @@ makedepends="
     python3-wheel
     "
 checkdepends="bazel8"
-subpackages=""
 source="$pkgname-$pkgver.tar.gz::https://github.com/abseil/$_pkgname/archive/refs/tags/v$pkgver.tar.gz"
 builddir="$srcdir/$_pkgname-$pkgver"
 options="!check" # No bazel8 yet.
