@@ -1,3 +1,4 @@
+# Maintainer:Ramya santoshi <rtimmaraju@qnx.com>
 pkgname=candb
 pkgver=1.0.0
 pkgrel=0
@@ -5,36 +6,30 @@ pkgdesc="GENIVI CAN database parser library"
 url="https://github.com/GENIVI/CANdb"
 arch="all"
 license="MPL-2.0"
-depends=""
-makedepends="cmake make git"
-
-_commit=150c42a8cdfc0748915f09d2cd0c5a68591263a7
+depends="libc++"
+makedepends="cmake make git libc++-dev"
 
 source="candb.patch"
 builddir="$srcdir/CANdb"
 
-export CXXFLAGS="$CXXFLAGS \
-    -Wno-error=unused-command-line-argument \
-    -Wno-error=character-conversion \
-    -Wno-error=missing-field-initializers \
-    -Wno-error=deprecated-literal-operator"
-
-export CFLAGS="$CFLAGS \
-    -Wno-error=unused-command-line-argument \
-    -Wno-error=missing-field-initializers \
-    -Wno-error=deprecated-literal-operator"
-
 prepare() {
     git clone https://github.com/GENIVI/CANdb.git "$builddir"
     cd "$builddir"
-    git checkout $_commit
     git submodule update --init --recursive
     patch -p1 < "$srcdir/candb.patch"
 }
 
 build() {
-    cd "$builddir"
-    
+    export CXXFLAGS="$CXXFLAGS \
+    -Wno-error=unused-command-line-argument \
+    -Wno-error=character-conversion \
+    -Wno-error=missing-field-initializers \
+    -Wno-error=deprecated-literal-operator"
+
+    export CFLAGS="$CFLAGS \
+    -Wno-error=unused-command-line-argument \
+    -Wno-error=missing-field-initializers \
+    -Wno-error=deprecated-literal-operator"
     cmake -B build -S . \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_INSTALL_PREFIX=/usr \
