@@ -13,7 +13,6 @@ license="BSD-3-Clause"
 depends="python3"
 makedepends="python3-gpep517 python3-setuptools python3-wheel"
 checkdepends="python3-six"
-subpackages=""
 source="$_pkgname-$pkgver.tar.gz::https://github.com/dabeaz/ply/archive/$pkgver.tar.gz
     assertTrue.patch
     "
