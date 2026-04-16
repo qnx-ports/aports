@@ -1,0 +1,88 @@
+# Alpine-Maintainer: Leon White <badfunkstripe@gmail.com>
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=bazel6
+pkgver=6.5.0.pre
+_pkgver=${pkgver/.pre/}
+pkgrel=0
+pkgdesc="Bazel is an open-source build and test tool"
+url="https://bazel.build/"
+arch="all"
+license="Apache-2.0"
+depends="bash openjdk25-jdk"
+makedepends="python3 unzip zip clang libc++-dev"
+# Bazel binary is thin C++ client with zip file embedded into the binary,
+# stripping breaks that: https://github.com/bazelbuild/bazel/issues/11842
+options="!strip"
+provides="bazel=$pkgver-r$pkgrel"
+subpackages=""
+# We need jar files from the official distribution, so we apply the changes as a
+# patch
+source="https://github.com/bazelbuild/bazel/releases/download/$_pkgver/bazel-$_pkgver-dist.zip
+    qnx.patch"
+builddir="$srcdir/$pkgname-$pkgver"
+options="!check" # Bazel test targets are buggy.
+
+unpack() {
+    default_unpack
+
+    # Workaround for busybox bug.
+    mkdir -p $builddir
+    cd $srcdir
+    for u in $source; do
+        local s
+        if is_remote "$u"; then
+            s="$SRCDEST/$(filename_from_uri $u)"
+        else
+            s="$startdir/$u"
+        fi
+        case "$s" in
+            *.zip)
+                msg "Unpacking $s..."
+				unzip -n -q -d "$builddir" "$s";;
+        esac
+    done
+}
+
+build() {
+    EMBED_LABEL=$pkgver-$pkgrel \
+    EXTRA_BAZEL_ARGS=--tool_java_runtime_version=local_jdk \
+        ./compile.sh
+
+    # Bash completion relies on the local java toolchain working.
+    #./output/bazel --batch build //scripts:bazel-complete.bash \
+    #    --tool_java_runtime_version=local_jdk_25
+    #cp bazel-bin/scripts/bazel-complete.bash output/
+
+    ./output/bazel --batch clean --expunge
+}
+
+check() {
+    # shellcheck disable=SC2046
+    ./output/bazel --batch build $(\
+        ./output/bazel --batch query --noshow_progress '//examples/...' \
+            | grep -vF \
+                -e /android/ \
+                -e /windows/ \
+                -e :hello-error-prone \
+    )
+    ./output/bazel --batch test --host_copt=-D_LARGEFILE64_SOURCE --test_output=errors \
+        //examples/cpp:hello-success_test \
+        //examples/java-native/src/test/java/com/example/myproject:custom \
+        //examples/java-native/src/test/java/com/example/myproject:hello \
+        //examples/java-starlark/src/test/java/com/example/myproject:pass \
+        //examples/py_native:test \
+        //examples/shell:test
+
+    ./output/bazel --batch clean --expunge
+}
+
+package() {
+    install -Dm 755 -t "$pkgdir/usr/bin" output/bazel
+    #install -Dm 644 output/bazel-complete.bash \
+    #    "$pkgdir/usr/share/bash-completion/completions/bazel"
+}
+
+sha512sums="
+c12f3072de3643f2c1754781ef737b85c05fbb39a77f87f0d4230068c519cb352607c42eb8abcad58c736c1d396bc7e7f879f04cbad0ce9e845a3621401451be  bazel-6.5.0-dist.zip
+d534e033222bfb5d3d2424b7ce19d83be1572e38a125829ccbec2eade7a7706a8db1cfa5e81b813ee5f22d6ffa4334b3169ee0cceb51dab18981f9d96714503f  qnx.patch
+"
