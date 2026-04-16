@@ -6,9 +6,6 @@ pkgdesc="eProsima Fast DDS with bundled foonathan"
 url="https://github.com/eProsima/Fast-DDS"
 arch="all"
 license="Apache-2.0"
-pkgname=fastdds
-pkgver=2.14.4
-pkgrel=1
 
 makedepends="
     build-base
@@ -23,7 +20,9 @@ makedepends="
     qnx-fs-core-dev
     gtest-dev
     qnx-io-sock-dev
+    libc++-dev
 "   
+depends="libc++"
 
 source="
     fastdds-$pkgver.tar.gz::https://github.com/eProsima/Fast-DDS/archive/refs/tags/v$pkgver.tar.gz
