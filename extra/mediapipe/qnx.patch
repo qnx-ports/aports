@@ -1,0 +1,289 @@
+diff --git a/.bazelrc b/.bazelrc
+index 45856764d..d5121b0ec 100644
+--- a/.bazelrc
++++ b/.bazelrc
+@@ -105,6 +105,12 @@ build:darwin_arm64 --apple_platform_type=macos
+ build:darwin_arm64 --macos_minimum_os=10.16
+ build:darwin_arm64 --cpu=darwin_arm64
+ 
++# Use our local toolchains
++build --extra_toolchains=@python_qnx//:qnx_py_toolchain
++build --extra_toolchains=@python_qnx//:qnx_py_toolchain2
++build --extra_toolchains=@python_qnx//:qnx_py_cc_toolchain
++build --extra_toolchains=//cpp_qnx:qnx_cc_toolchain
++
+ # Turn off maximum stdout size
+ build --experimental_ui_max_stdouterr_bytes=-1
+ 
+diff --git a/WORKSPACE b/WORKSPACE
+index 50218fccb..0b59b7072 100644
+--- a/WORKSPACE
++++ b/WORKSPACE
+@@ -1,5 +1,17 @@
+ workspace(name = "mediapipe")
+ 
++# Override @python definitions.
++local_repository(
++    name = "python",
++    path = "python",
++)
++
++# Override @python_qnx definitions.
++local_repository(
++    name = "python_qnx",
++    path = "python_qnx",
++)
++
+ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+ 
+ # Protobuf expects an //external:python_headers target
+@@ -131,10 +143,10 @@ http_archive(
+ # 2020-08-21
+ http_archive(
+     name = "com_github_glog_glog",
+-    sha256 = "8a83bf982f37bb70825df71a9709fa90ea9f4447fb3c099e1d720a439d88bad6",
+-    strip_prefix = "glog-0.6.0",
++    sha256 = "3cbd1368692f0bee05577ed6b51dd8245a2c22db80cc2d6cd14820e74228fa83",
++    strip_prefix = "glog-a527632506d63fac2eb835dfd742897cea0a056f",
+     urls = [
+-        "https://github.com/google/glog/archive/v0.6.0.tar.gz",
++        "https://github.com/google/glog/archive/a527632506d63fac2eb835dfd742897cea0a056f.tar.gz",
+     ],
+ )
+ 
+@@ -147,10 +159,10 @@ http_archive(
+     patches = [
+         "@//third_party:com_github_glog_glog.diff",
+     ],
+-    sha256 = "8a83bf982f37bb70825df71a9709fa90ea9f4447fb3c099e1d720a439d88bad6",
+-    strip_prefix = "glog-0.6.0",
++    sha256 = "3cbd1368692f0bee05577ed6b51dd8245a2c22db80cc2d6cd14820e74228fa83",
++    strip_prefix = "glog-a527632506d63fac2eb835dfd742897cea0a056f",
+     urls = [
+-        "https://github.com/google/glog/archive/v0.6.0.tar.gz",
++        "https://github.com/qnx-ports/glog/archive/a527632506d63fac2eb835dfd742897cea0a056f.tar.gz",
+     ],
+ )
+ 
+@@ -290,10 +302,10 @@ http_archive(
+ 
+ http_archive(
+     name = "cpuinfo",
+-    sha256 = "e2bd8049d29dfbed675a0bc7c01947f8b8bd3f17f706b827d3f6c1e5c64dd8c3",
+-    strip_prefix = "cpuinfo-8df44962d437a0477f07ba6b8843d0b6a48646a4",
++    sha256 = "051ea5a3ecfff16d600acf82a002698b997b1370ff2cfa9b8be2d2367c2c2c40",
++    strip_prefix = "cpuinfo-9a97b8fe5a102f353a9917cd559e10dc888be739",
+     urls = [
+-        "https://github.com/pytorch/cpuinfo/archive/8df44962d437a0477f07ba6b8843d0b6a48646a4.zip",
++        "https://github.com/pytorch/cpuinfo/archive/9a97b8fe5a102f353a9917cd559e10dc888be739.zip",
+     ],
+ )
+ 
+@@ -353,6 +365,7 @@ python_init_repositories(
+         "3.10": "//:requirements_lock_3_10.txt",
+         "3.11": "//:requirements_lock_3_11.txt",
+         "3.12": "//:requirements_lock_3_12.txt",
++        "3.14": "//:requirements_lock_3_14.txt",
+     },
+ )
+ 
+@@ -711,28 +724,6 @@ load("@coral_crosstool//:configure.bzl", "cc_crosstool")
+ 
+ cc_crosstool(name = "crosstool")
+ 
+-# Node dependencies
+-http_archive(
+-    name = "build_bazel_rules_nodejs",
+-    sha256 = "94070eff79305be05b7699207fbac5d2608054dd53e6109f7d00d923919ff45a",
+-    urls = ["https://github.com/bazelbuild/rules_nodejs/releases/download/5.8.2/rules_nodejs-5.8.2.tar.gz"],
+-)
+-
+-load("@build_bazel_rules_nodejs//:repositories.bzl", "build_bazel_rules_nodejs_dependencies")
+-
+-build_bazel_rules_nodejs_dependencies()
+-
+-# fetches nodejs, npm, and yarn
+-load("@build_bazel_rules_nodejs//:index.bzl", "node_repositories", "yarn_install")
+-
+-node_repositories()
+-
+-yarn_install(
+-    name = "npm",
+-    package_json = "@//:package.json",
+-    yarn_lock = "@//:yarn.lock",
+-)
+-
+ # Protobuf for Node dependencies
+ http_archive(
+     name = "rules_proto_grpc",
+diff --git a/mediapipe/framework/port/build_config.bzl b/mediapipe/framework/port/build_config.bzl
+index 0b58cf752..39461b67a 100644
+--- a/mediapipe/framework/port/build_config.bzl
++++ b/mediapipe/framework/port/build_config.bzl
+@@ -3,7 +3,6 @@
+ 
+ """.bzl file for mediapipe open source build configs."""
+ 
+-load("@npm//@bazel/typescript:index.bzl", "ts_project")
+ load(
+     "//mediapipe/framework/tool:mediapipe_proto.bzl",
+     _mediapipe_cc_proto_library = "mediapipe_cc_proto_library",
+@@ -43,22 +42,6 @@ def mediapipe_ts_library(
+     """
+     _ignore = [allow_unoptimized_namespaces]  # buildifier: disable=unused-variable
+ 
+-    ts_project(**provided_args(
+-        name = name,
+-        srcs = srcs,
+-        visibility = visibility,
+-        deps = deps + [
+-            "@npm//@types/jasmine",
+-            "@npm//@types/node",
+-            "@npm//@types/offscreencanvas",
+-            "@npm//@types/google-protobuf",
+-            "@npm//@webgpu/types",
+-        ],
+-        testonly = testonly,
+-        declaration = True,
+-        tsconfig = "//:tsconfig.json",
+-    ))
+-
+ def mediapipe_ts_declaration(
+         name,
+         srcs,
+diff --git a/mediapipe/framework/tool/mediapipe_proto.bzl b/mediapipe/framework/tool/mediapipe_proto.bzl
+index ff40577c1..f841826f4 100644
+--- a/mediapipe/framework/tool/mediapipe_proto.bzl
++++ b/mediapipe/framework/tool/mediapipe_proto.bzl
+@@ -6,7 +6,6 @@ load("//mediapipe/framework/tool:mediapipe_graph.bzl", "mediapipe_options_librar
+ load("//mediapipe/framework/tool:mediapipe_proto_allowlist.bzl", "rewrite_target_list")
+ load("@com_google_protobuf//:protobuf.bzl", "cc_proto_library", "py_proto_library")
+ load("@rules_proto//proto:defs.bzl", _proto_library = "proto_library")
+-load("@rules_proto_grpc//js:defs.bzl", "js_proto_library")
+ 
+ java_proto_library = native.java_proto_library
+ java_lite_proto_library = native.java_lite_proto_library
+@@ -143,17 +142,6 @@ def mediapipe_proto_library_impl(
+             compatible_with = compatible_with,
+         ))
+ 
+-    if def_jspb_proto:
+-        mediapipe_js_proto_library(**provided_args(
+-            name = replace_suffix(name, "_proto", "_jspb_proto"),
+-            srcs = srcs,
+-            deps = proto_deps,
+-            lib_proto_deps = deps,
+-            visibility = visibility,
+-            testonly = testonly,
+-            compatible_with = compatible_with,
+-        ))
+-
+     if def_options_lib:
+         cc_deps = replace_deps(deps, "_proto", "_cc_proto")
+         mediapipe_options_library(**provided_args(
+@@ -441,16 +429,6 @@ def mediapipe_js_proto_library_oss(
+         deps = lib_proto_deps,
+         visibility = visibility,
+     )
+-    js_proto_library(
+-        name = name,
+-        protos = [replace_suffix(name, "_jspb_proto", "_lib_proto")],
+-        output_mode = "NO_PREFIX_FLAT",
+-        # Need to specify this to work around bug in js_proto_library()
+-        # https://github.com/bazelbuild/rules_nodejs/issues/3503
+-        legacy_path = "unused",
+-        deps = js_deps,
+-        visibility = visibility,
+-    )
+ 
+ def mediapipe_py_proto_library(**kwargs):
+     mediapipe_py_proto_library_oss(**kwargs)
+diff --git a/requirements_lock_3_14.txt b/requirements_lock_3_14.txt
+new file mode 100644
+index 000000000..9659a3eba
+--- /dev/null
++++ b/requirements_lock_3_14.txt
+@@ -0,0 +1,70 @@
++#
++# This file is autogenerated by pip-compile with Python 3.12
++# by the following command:
++#
++#    pip-compile --output-file=mediapipe/opensource_only/requirements_lock_3_12.txt mediapipe/opensource_only/requirements.txt
++#
++absl-py
++    # via -r mediapipe/opensource_only/requirements.txt
++attrs
++    # via -r mediapipe/opensource_only/requirements.txt
++cffi
++    # via sounddevice
++contourpy
++    # via matplotlib
++cycler
++    # via matplotlib
++flatbuffers
++    # via -r mediapipe/opensource_only/requirements.txt
++fonttools
++    # via matplotlib
++jax
++    # via -r mediapipe/opensource_only/requirements.txt
++jaxlib
++    # via
++    #   -r mediapipe/opensource_only/requirements.txt
++    #   jax
++kiwisolver
++    # via matplotlib
++matplotlib
++    # via -r mediapipe/opensource_only/requirements.txt
++ml-dtypes
++    # via
++    #   jax
++    #   jaxlib
++numpy
++    # via
++    #   -r mediapipe/opensource_only/requirements.txt
++    #   contourpy
++    #   jax
++    #   jaxlib
++    #   matplotlib
++    #   ml-dtypes
++    #   opencv-contrib-python
++    #   scipy
++opencv-contrib-python
++    # via -r mediapipe/opensource_only/requirements.txt
++opt-einsum
++    # via jax
++packaging
++    # via matplotlib
++pillow
++    # via matplotlib
++protobuf
++    # via -r mediapipe/opensource_only/requirements.txt
++pycparser
++    # via cffi
++pyparsing
++    # via matplotlib
++python-dateutil
++    # via matplotlib
++scipy
++    # via
++    #   jax
++    #   jaxlib
++sentencepiece
++    # via -r mediapipe/opensource_only/requirements.txt
++six
++    # via python-dateutil
++sounddevice
++    # via -r mediapipe/opensource_only/requirements.txt
+diff --git a/setup.py b/setup.py
+index e5422ffb6..4983446cf 100644
+--- a/setup.py
++++ b/setup.py
+@@ -303,6 +303,8 @@ class BuildModules(build_ext.build_ext):
+     bazel_command = [
+         'bazel',
+         'build',
++        '--subcommands',
++        '--toolchain_resolution_debug=.*',
+         '--compilation_mode=opt',
+         '--copt=-DNDEBUG',
+         '--action_env=PYTHON_BIN_PATH=' + _normalize_path(sys.executable),
