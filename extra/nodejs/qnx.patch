@@ -1,0 +1,170 @@
+diff --git a/common.gypi b/common.gypi
+index 283c60eab35..b13c308b441 100644
+--- a/common.gypi
++++ b/common.gypi
+@@ -508,7 +508,7 @@
+         'cflags': [ '-pthread' ],
+         'ldflags': [ '-pthread' ],
+       }],
+-      [ 'OS in "linux freebsd openbsd solaris android aix os400 cloudabi openharmony"', {
++      [ 'OS in "linux freebsd openbsd solaris android aix os400 cloudabi openharmony qnx"', {
+         'cflags': [ '-Wall', '-Wextra', '-Wno-unused-parameter', ],
+         'cflags_cc': [
+           '-fno-rtti',
+@@ -639,6 +639,21 @@
+           }],
+         ],
+       }],
++      ['OS=="qnx"', {
++	'ldflags!': [ '-rdynamic' ],
++      	'target_conditions': [
++	  ['_toolset=="target"', {
++            'defines': [
++	      'madvise=posix_madvise',
++	      'MADV_DONTNEED=POSIX_MADV_DONTNEED',
++	    ],
++	    'libraries': [
++	    	'-lsocket',
++		'-lm',
++	    ],
++	  }],
++	],
++      }],
+       ['OS=="mac"', {
+         'defines': ['_DARWIN_USE_64_BIT_INODE=1'],
+         'xcode_settings': {
+diff --git a/configure.py b/configure.py
+index 98a8b147e4c..ed100490386 100755
+--- a/configure.py
++++ b/configure.py
+@@ -45,7 +45,7 @@ from utils import SearchFiles
+ parser = argparse.ArgumentParser()
+ 
+ valid_os = ('win', 'mac', 'solaris', 'freebsd', 'openbsd', 'linux',
+-            'android', 'aix', 'cloudabi', 'os400', 'ios', 'openharmony')
++            'android', 'aix', 'cloudabi', 'os400', 'ios', 'openharmony', 'qnx')
+ valid_arch = ('arm', 'arm64', 'ia32', 'mips', 'mipsel', 'mips64el',
+               'ppc64', 'x64', 'x86', 'x86_64', 's390x', 'riscv64', 'loong64')
+ valid_arm_float_abi = ('soft', 'softfp', 'hard')
+diff --git a/deps/v8/src/base/platform/memory.h b/deps/v8/src/base/platform/memory.h
+index 32161ba8197..69b742bbf94 100644
+--- a/deps/v8/src/base/platform/memory.h
++++ b/deps/v8/src/base/platform/memory.h
+@@ -27,7 +27,10 @@
+ #include <malloc.h>
+ #endif
+ 
+-#if (V8_OS_POSIX && !V8_OS_AIX && !V8_OS_SOLARIS && !V8_OS_ZOS && !V8_OS_OPENBSD) || V8_OS_WIN
++// QNX 8.0.X has a bug in malloc_usable_size for values that are greated than mmap threashold
++// it will be off by 8 bytes causing the internals of malloc to be overwritten disabling for now
++// it will waste a little bit of memory but its just the difference from the request to the next PAGE_SIZE
++#if (V8_OS_POSIX && !V8_OS_AIX && !V8_OS_SOLARIS && !V8_OS_ZOS && !V8_OS_OPENBSD && !V8_OS_QNX) || V8_OS_WIN
+ #define V8_HAS_MALLOC_USABLE_SIZE 1
+ #endif
+ 
+diff --git a/deps/v8/src/base/platform/platform-posix.cc b/deps/v8/src/base/platform/platform-posix.cc
+index 5c93b3aaafe..66bf0d540a7 100644
+--- a/deps/v8/src/base/platform/platform-posix.cc
++++ b/deps/v8/src/base/platform/platform-posix.cc
+@@ -72,7 +72,7 @@
+ #include <sys/resource.h>
+ #endif
+ 
+-#if !defined(_AIX) && !defined(V8_OS_FUCHSIA) && !V8_OS_ZOS
++#if !defined(_AIX) && !defined(V8_OS_FUCHSIA) && !V8_OS_ZOS && !defined(V8_OS_QNX)
+ #include <sys/syscall.h>
+ #endif
+ 
+@@ -867,7 +867,7 @@ int OS::GetCurrentThreadIdInternal() {
+   return static_cast<int>(thread_self());
+ #elif V8_OS_FUCHSIA
+   return static_cast<int>(zx_thread_self());
+-#elif V8_OS_SOLARIS
++#elif V8_OS_SOLARIS || V8_OS_QNX
+   return static_cast<int>(pthread_self());
+ #elif V8_OS_ZOS
+   return gettid();
+@@ -1388,6 +1388,10 @@ Stack::StackSlot Stack::ObtainCurrentThreadStackStart() {
+   }
+   void* stack_start = reinterpret_cast<uint8_t*>(stack.ss_sp) + stack.ss_size;
+   return stack_start;
++#elif V8_OS_QNX
++  struct _thread_local_storage* tls = __tls();
++  void* stack_start = reinterpret_cast<std::uint8_t*>(tls->__stackaddr) + tls->__stacksize;
++  return stack_start;
+ #else
+   pthread_attr_t attr;
+   int error = pthread_getattr_np(pthread_self(), &attr);
+diff --git a/deps/v8/src/base/platform/platform-qnx.cc b/deps/v8/src/base/platform/platform-qnx.cc
+index d4671c0feea..8efd082c03d 100644
+--- a/deps/v8/src/base/platform/platform-qnx.cc
++++ b/deps/v8/src/base/platform/platform-qnx.cc
+@@ -5,7 +5,7 @@
+ // Platform-specific code for QNX goes here. For the POSIX-compatible
+ // parts the implementation is in platform-posix.cc.
+ 
+-#include <backtrace.h>
++//#include <backtrace.h>
+ #include <pthread.h>
+ #include <semaphore.h>
+ #include <signal.h>
+diff --git a/src/debug_utils.cc b/src/debug_utils.cc
+index 2166e54aba3..31f043c8ef7 100644
+--- a/src/debug_utils.cc
++++ b/src/debug_utils.cc
+@@ -14,7 +14,7 @@
+ 
+ #if defined(__linux__) && !defined(__GLIBC__) || \
+     defined(__UCLIBC__) || \
+-    defined(_AIX)
++    defined(_AIX) || defined(__QNX__)
+ #define HAVE_EXECINFO_H 0
+ #else
+ #define HAVE_EXECINFO_H 1
+diff --git a/src/node_credentials.cc b/src/node_credentials.cc
+index 0c7978a4843..cc7df7a02db 100644
+--- a/src/node_credentials.cc
++++ b/src/node_credentials.cc
+@@ -219,8 +219,8 @@ static const char* name_by_gid(gid_t gid) {
+ 
+ static uid_t uid_by_name(Isolate* isolate, Local<Value> value) {
+   if (value->IsUint32()) {
+-    static_assert(std::is_same<uid_t, uint32_t>::value);
+-    return value.As<Uint32>()->Value();
++    static_assert(sizeof(gid_t) <= sizeof(uint32_t));
++    return static_cast<uid_t>(value.As<Uint32>()->Value());
+   } else {
+     Utf8Value name(isolate, value);
+     return uid_by_name(*name);
+@@ -229,8 +229,8 @@ static uid_t uid_by_name(Isolate* isolate, Local<Value> value) {
+ 
+ static gid_t gid_by_name(Isolate* isolate, Local<Value> value) {
+   if (value->IsUint32()) {
+-    static_assert(std::is_same<gid_t, uint32_t>::value);
+-    return value.As<Uint32>()->Value();
++    static_assert(sizeof(gid_t) <= sizeof(uint32_t));
++    return static_cast<uid_t>(value.As<Uint32>()->Value());
+   } else {
+     Utf8Value name(isolate, value);
+     return gid_by_name(*name);
+diff --git a/tools/v8_gypfiles/v8.gyp b/tools/v8_gypfiles/v8.gyp
+index 3b749ba71c9..0541905624f 100644
+--- a/tools/v8_gypfiles/v8.gyp
++++ b/tools/v8_gypfiles/v8.gyp
+@@ -1579,11 +1578,11 @@
+                   '-lrt'
+                 ],
+               }],
+-              ['_toolset=="target"', {
+-                'libraries': [
+-                  '-lbacktrace'
+-                ],
+-              }],
++              #['_toolset=="target"', {
++              #  'libraries': [
++              #    '-lbacktrace'
++              #  ],
++              #}],
+             ],
+           },
+           'sources': [
