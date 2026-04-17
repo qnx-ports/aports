@@ -8,7 +8,8 @@ pkgdesc="Calculate convex hulls and related structures"
 url="https://www.qhull.org/"
 arch="all"
 license="Qhull"
-makedepends="cmake ninja"
+depends="libc++"
+makedepends="cmake ninja libc++-dev"
 subpackages="
     $pkgname-static
     $pkgname-dev
