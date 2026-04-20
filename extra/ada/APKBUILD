@@ -41,7 +41,7 @@ build() {
 			-DADA_TESTING="$(want_check && echo ON || echo OFF)" \
 			-DADA_BENCHMARKS=OFF \
 			-DADA_TOOLS=ON \
-			-DADA_USE_SIMDUTF=OFF \
+			-DADA_USE_SIMDUTF=OFF
 		cmake --build build
 	done
 }
