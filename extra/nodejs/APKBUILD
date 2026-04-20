@@ -169,11 +169,6 @@ package() {
 	(cd "$pkgdir"/usr/lib; ln -sf libnode.so.* libnode.so)
 }
 
-dev() {
-	default_dev
-}
-
-
 sha512sums="
 9e4e5c24cb59f29252e19c232ef47cfc175b34847f1cc5afac26eec0f7b9179e69eb349679e3e88ac098353f3446b977ed8e43bf2df44fe29a90c1d248e437ca  qnx-v24.14.1.tar.gz
 1737faba6c26857bd39c75e689113bc3904c444db1345f309c054f4e6a1dda8138a41a763443f8d143b99854968736c2c4344e9b3c40035eb2799bfc2bde9d5c  nodejs.pc.in
