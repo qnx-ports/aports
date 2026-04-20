@@ -15,6 +15,7 @@ url="https://nodejs.org/"
 arch="all"
 license="MIT"
 depends="ca-certificates ada-libs brotli c-ares icu-libs libc++ libcrypto3 libssl3 libuv nghttp2 simdjson simdutf sqlite-libs zlib-ng zstd-libs"
+depends_libs="$depends"
 makedepends="
 	ada-dev
 	brotli-dev
@@ -148,7 +149,7 @@ _build() {
 
 # TODO Run provided test suite.
 check() {
-	cd "$builddir"/out/Release
+	cd "$builddir"/out
 
 	./node -e 'console.log("Hello, world!")'
 	./node -e "require('assert').equal(process.versions.node, '$pkgver')"
