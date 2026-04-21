@@ -1,15 +1,15 @@
 # Alpine-Maintainer: Leon White <badfunkstripe@gmail.com>
 # Maintainer: Ethan Leir <eleir@qnx.com>
 pkgname=bazel6
-pkgver=6.5.0.pre
-_pkgver=${pkgver/.pre/}
+pkgver=6.5.0_alpha
+_pkgver=${pkgver/_alpha/}
 pkgrel=0
 pkgdesc="Bazel is an open-source build and test tool"
 url="https://bazel.build/"
 arch="all"
 license="Apache-2.0"
 depends="bash openjdk25-jdk"
-makedepends="python3 unzip zip clang libc++-dev"
+makedepends="python3 busybox zip clang libc++-dev"
 # Bazel binary is thin C++ client with zip file embedded into the binary,
 # stripping breaks that: https://github.com/bazelbuild/bazel/issues/11842
 options="!strip"
