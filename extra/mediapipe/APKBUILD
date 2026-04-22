@@ -35,7 +35,9 @@ depends="
 #    python3-jax
 #    python3-jaxlib
 makedepends="
+    cmake
     libc++-dev
+    ninja
     protobuf-dev
     opencv-dev
     python3-packaging
@@ -54,6 +56,8 @@ source="$pkgname-$pkgver.tar.gz::https://github.com/google-ai-edge/$pkgname/arch
     python_qnx_WORKSPACE
     cpp_qnx_BUILD.bazel.tpl
     cpp_qnx_WORKSPACE
+    buildbase_qnx_BUILD.bazel
+    buildbase_qnx_WORKSPACE
     qnx.patch
     "
 builddir="$srcdir/$pkgname-$pkgver"
@@ -96,6 +100,13 @@ prepare() {
     sed "s|%CPU%|$_cpu|" $srcdir/cpp_qnx_BUILD.bazel.tpl > $srcdir/cpp_qnx_BUILD.bazel
     cp $srcdir/cpp_qnx_BUILD.bazel $builddir/cpp_qnx/BUILD.bazel
     cp -L $srcdir/cpp_qnx_WORKSPACE $builddir/cpp_qnx/WORKSPACE
+
+    # Finally, toolchains for ninja and cmake to override rules_foreign_cc.
+    mkdir -p $builddir/buildbase_qnx/bin
+    cp -L $srcdir/buildbase_qnx_BUILD.bazel $builddir/buildbase_qnx/BUILD.bazel
+    cp -L $srcdir/buildbase_qnx_WORKSPACE $builddir/buildbase_qnx/WORKSPACE
+    #ln -s /usr/bin/cmake $builddir/buildbase_qnx/bin/cmake
+    #ln -s /usr/bin/ninja $builddir/buildbase_qnx/bin/ninja
 
     sed -i "s|__version__ = 'dev'|__version__ = '0.10.26'|" $builddir/setup.py
 }
@@ -140,5 +151,7 @@ f67d77752fbd786104c5a58c4301be64d346021cd032df1e5b6081f435747b25debc20527105d7da
 e8e83404f5e078fdbefaef20d8f3b75371c7dab2018c5d863e2b2ad26a2b5c137f242878daaa699997a72cf8997e050fefd7b0cc32c5b9deb05f51aa0c929ee9  python_qnx_WORKSPACE
 9f40661f2324c6646c5de9573b9420db6c4aacafeef08acdcfe776a0ee9d56dc510399ff23d5a672ae7229fb2d17a443024872e452015195ff53c69deb3e6b75  cpp_qnx_BUILD.bazel.tpl
 43de963a6220b632da108bf21b55cbd30a6ba37f9f76123db4716771be5d9780e48d892722d436f063096a103217f2094d8994da9f6abed0a5f905c6073cf530  cpp_qnx_WORKSPACE
-0997c09e205970a312244e5475fe5a59f7e3c3709621285c06c424b1aa9d489db837441a8dcb75a8665e4496704b51cd90fb0c84ae1a60fefd53770ed30129af  qnx.patch
+426c4e68f7b3bac1b8a299ad1cb5b75eacb7ad99a52c84c0d2fbcec1d10a369e3da426a8336c39c49a87bb1c9134590856c3d36eab4e1cbf368b84ee30755415  buildbase_qnx_BUILD.bazel
+efb0a915934bb31b8311caeb6a0dd61b6645e917d449ba978870cb2abf50b9d93b9d1ac2245367285307330eb967629ab83d215e59ffa46fadc5670dc9caac63  buildbase_qnx_WORKSPACE
+237ef5ec236701c3b00db1d450fb74c09d171c06f0360f146bf3c542476cd0394355bb3f62d8a304433a2a857d830e7622ed2e655bc90e20350024d24e51b770  qnx.patch
 "
