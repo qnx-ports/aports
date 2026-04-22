@@ -8,6 +8,12 @@ pkgdesc="Client-side decorations library for Wayland clients"
 url="https://gitlab.freedesktop.org/libdecor/libdecor"
 license="MIT"
 arch="all"
+depends="
+	dbus
+	gtk3
+	qnx-hid
+	wayland
+"
 makedepends="
 	meson
 	cairo-dev
