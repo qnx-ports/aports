@@ -12,8 +12,6 @@ toolchain(
     toolchain_type = "@rules_foreign_cc//toolchains:ninja_toolchain",
 )
 
-#exports_files(["bin/cmake", "bin/ninja"])
-
 native_tool_toolchain(
     name = "qnx_cmake",
     env = {"CMAKE": "/usr/bin/cmake3.5"},

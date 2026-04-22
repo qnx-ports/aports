@@ -46,7 +46,7 @@ index 45856764d..a5262523a 100644
  build --experimental_ui_max_stdouterr_bytes=-1
  
 diff --git a/WORKSPACE b/WORKSPACE
-index 50218fccb..1708edcfa 100644
+index 50218fccb..55c6e90f1 100644
 --- a/WORKSPACE
 +++ b/WORKSPACE
 @@ -1,5 +1,17 @@
@@ -67,6 +67,19 @@ index 50218fccb..1708edcfa 100644
  load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
  
  # Protobuf expects an //external:python_headers target
+@@ -34,9 +46,9 @@ http_archive(
+     patches = [
+         "@//third_party:com_google_absl_windows_patch.diff",
+     ],
+-    sha256 = "f841f78243f179326f2a80b719f2887c38fe226d288ecdc46e2aa091e6aa43bc",
+-    strip_prefix = "abseil-cpp-9687a8ea750bfcddf790372093245a1d041b21a3",
+-    urls = ["https://github.com/abseil/abseil-cpp/archive//9687a8ea750bfcddf790372093245a1d041b21a3.tar.gz"],
++    sha256 = "0fa79ee7386f205988b11b821f7a4f6a3fb041458844d3f7b220a5d5a79a49bd",
++    strip_prefix = "abseil-cpp-4d9b2f51af9075a620ab40c001dc3795624835b6",
++    urls = ["https://github.com/qnx-ports/abseil-cpp/archive//4d9b2f51af9075a620ab40c001dc3795624835b6.tar.gz"],
+ )
+ 
+ http_archive(
 @@ -131,10 +143,10 @@ http_archive(
  # 2020-08-21
  http_archive(
@@ -480,6 +493,27 @@ index 000000000..486cb5be9
 + #include <endian.h>
 + #if BYTE_ORDER == __BIG_ENDIAN
 + #define IS_BIG_ENDIAN
+diff --git a/third_party/opencv_linux.BUILD b/third_party/opencv_linux.BUILD
+index 844585541..afc370097 100644
+--- a/third_party/opencv_linux.BUILD
++++ b/third_party/opencv_linux.BUILD
+@@ -18,14 +18,14 @@ cc_library(
+         #"include/aarch64-linux-gnu/opencv4/opencv2/cvconfig.h",
+         #"include/arm-linux-gnueabihf/opencv4/opencv2/cvconfig.h",
+         #"include/x86_64-linux-gnu/opencv4/opencv2/cvconfig.h",
+-        #"include/opencv4/opencv2/**/*.h*",
++        "include/opencv4/opencv2/**/*.h*",
+     ]),
+     includes = [
+         # For OpenCV 4.x
+         #"include/aarch64-linux-gnu/opencv4/",
+         #"include/arm-linux-gnueabihf/opencv4/",
+         #"include/x86_64-linux-gnu/opencv4/",
+-        #"include/opencv4/",
++        "include/opencv4/",
+     ],
+     linkopts = [
+         "-l:libopencv_core.so",
 diff --git a/third_party/org_tensorflow_elementwise.diff b/third_party/org_tensorflow_elementwise.diff
 new file mode 100644
 index 000000000..93188e0e9
