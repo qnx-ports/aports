@@ -1,0 +1,35 @@
+# Contributor: Marcin Sochacki <msochacki@qnx.com>
+# Maintainer: Marcin Sochacki <msochacki@qnx.com>
+pkgname=pistache
+pkgver=0.4.26
+pkgrel=0
+pkgdesc="A high-performance REST toolkit written in C++"
+url="https://pistacheio.github.io/pistache/"
+arch="all"
+license="MIT"
+makedepends="clang libc++-dev meson libevent libevent-dev rapidjson-dev qnx-io-sock-dev"
+subpackages="$pkgname-dev"
+pkgusers="pistache"
+pkggroups="pistache"
+source="$pkgname-$pkgver.tar.gz::https://github.com/qnx-ports/pistache/archive/refs/tags/qnx-v$pkgver-1.tar.gz
+pkgconf_version_string.patch
+"
+builddir="$srcdir/$pkgname-qnx-v$pkgver-1"
+
+build() {
+    LDFLAGS="-lm -lregex -lsocket -lgcc_s"
+    abuild-meson . output
+    meson compile -C output
+}
+
+package() {
+  DESTDIR="$pkgdir" meson install --no-rebuild -C output
+  echo "done"
+}
+
+
+
+sha512sums="
+9aeacf6b9764dabd8fb03992ae7a03d16a701703800ba4f02502f7ecee3a908b80013dee602fd1517ce10d388660df41921d786915eaa7caa6c1d78b7cc34706  pistache-0.4.26.tar.gz
+db9c0424c43d5426ae62a289653cdf3d2f6b17beaf0a27034bacd98aabbadfcdedc8705da5e6f57881262ef14895f6d4c042b770cb57c821c7d18b8252b70b5e  pkgconf_version_string.patch
+"
