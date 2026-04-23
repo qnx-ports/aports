@@ -1,8 +1,8 @@
 diff --git a/.bazelrc b/.bazelrc
-index 45856764d..a5262523a 100644
+index 45856764d..8b8aeddc4 100644
 --- a/.bazelrc
 +++ b/.bazelrc
-@@ -105,6 +105,42 @@ build:darwin_arm64 --apple_platform_type=macos
+@@ -105,6 +105,25 @@ build:darwin_arm64 --apple_platform_type=macos
  build:darwin_arm64 --macos_minimum_os=10.16
  build:darwin_arm64 --cpu=darwin_arm64
  
@@ -14,23 +14,6 @@ index 45856764d..a5262523a 100644
 +build --extra_toolchains=//buildbase_qnx:qnx_cmake_toolchain
 +build --extra_toolchains=//buildbase_qnx:qnx_ninja_toolchain
 +build --conlyopt="-std=c99"
-+build --copt="-march=x86-64-v4"
-+build --copt="-mavx2"
-+build --copt="-mavxvnni"
-+build --copt="-mavx512f"
-+build --copt="-mavx512cd"
-+build --copt="-mavx512bw"
-+build --copt="-mavx512dq"
-+build --copt="-mavx512vl"
-+build --copt="-mavx512vnni"
-+build --copt="-mavx512fp16"
-+build --copt="-mavx512vbmi"
-+build --copt="-mf16c"
-+build --copt="-mfma"
-+build --copt="-mgfni"
-+build --copt="-mamx-tile"
-+build --copt="-mamx-int8"
-+build --copt="-mavxvnniint8"
 +build --copt="-DEIGEN_DONT_VECTORIZE=1"
 +build --copt="-DFARMHASH_LITTLE_ENDIAN=1"
 +build --copt="-Wno-c++11-narrowing"
@@ -422,10 +405,10 @@ index 000000000..9659a3eba
 +    # via -r mediapipe/opensource_only/requirements.txt
 diff --git a/third_party/XNNPACK.diff b/third_party/XNNPACK.diff
 new file mode 100644
-index 000000000..216acbaf4
+index 000000000..570656e66
 --- /dev/null
 +++ b/third_party/XNNPACK.diff
-@@ -0,0 +1,45 @@
+@@ -0,0 +1,58 @@
 +diff --git a/build_config/BUILD.bazel b/build_config/BUILD.bazel
 +index 32c31381f8..917104550b 100644
 +--- a/build_config/BUILD.bazel
@@ -471,6 +454,19 @@ index 000000000..216acbaf4
 +     ],
 + )
 + 
++diff --git a/build_defs.bzl b/build_defs.bzl
++index c27265ee3d..483f1a1096 100644
++--- a/build_defs.bzl
+++++ b/build_defs.bzl
++@@ -208,6 +208,8 @@ def xnnpack_cc_library(
++             "//build_config:emscripten_wasm": wasm_copts,
++             "//build_config:emscripten_wasmsimd": wasmsimd_copts,
++             "//build_config:emscripten_wasmrelaxedsimd": wasmrelaxedsimd_copts,
+++            "//build_config:qnx_arm64": aarch64_copts,
+++            "//build_config:qnx_x64": gcc_x86_copts,
++             "//conditions:default": [],
++         }) + select({
++             "//build_config:windows_x86_64_clang": ["/clang:" + opt for opt in gcc_copts],
 diff --git a/third_party/com_google_audio_tools_c99.diff b/third_party/com_google_audio_tools_c99.diff
 new file mode 100644
 index 000000000..4ca9b0d99
