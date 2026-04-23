@@ -328,6 +328,22 @@ index ff40577c1..f841826f4 100644
  
  def mediapipe_py_proto_library(**kwargs):
      mediapipe_py_proto_library_oss(**kwargs)
+diff --git a/mediapipe/python/BUILD b/mediapipe/python/BUILD
+index 5837be764..c70cf5eb0 100644
+--- a/mediapipe/python/BUILD
++++ b/mediapipe/python/BUILD
+@@ -51,6 +51,11 @@ pybind_extension(
+         "//mediapipe/tasks/python/core/pybind:task_runner",
+         "@com_google_absl//absl/strings:str_format",
+         "@stblib//:stb_image",
++        "@org_tensorflow//tensorflow/lite/kernels/internal:tensor_utils",
++        "@org_tensorflow//tensorflow/lite/kernels/internal:portable_tensor_utils",
++        "@org_tensorflow//tensorflow/lite/kernels/internal:tensor_utils_no_eigen",
++        "@org_tensorflow//tensorflow/lite/kernels/internal:sse_tensor_utils",
++        "@org_tensorflow//tensorflow/lite/kernels/internal:neon_tensor_utils",
+         # Type registration.
+         "//mediapipe/framework:basic_types_registration",
+         "//mediapipe/framework/formats:body_rig_registration",
 diff --git a/requirements_lock_3_14.txt b/requirements_lock_3_14.txt
 new file mode 100644
 index 000000000..9659a3eba
