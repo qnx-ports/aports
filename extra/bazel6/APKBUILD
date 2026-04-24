@@ -8,8 +8,8 @@ pkgdesc="Bazel is an open-source build and test tool"
 url="https://bazel.build/"
 arch="all"
 license="Apache-2.0"
-depends="bash openjdk25-jdk"
-makedepends="python3 busybox zip clang libc++-dev"
+depends="bash openjdk25-jdk qnx-io-sock"
+makedepends="python3 busybox zip clang libc++-dev qnx-io-sock-dev"
 # Bazel binary is thin C++ client with zip file embedded into the binary,
 # stripping breaks that: https://github.com/bazelbuild/bazel/issues/11842
 options="!strip"
