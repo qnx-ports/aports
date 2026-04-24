@@ -1,7 +1,7 @@
 # Alpine-Maintainer: John Vogel <jvogel@stygian.me>
 # Maintainer: Aaron Bassett <abassett@qnx.com>
 pkgname=tree-sitter-vim
-pkgver=0.7.0
+pkgver=0.8.1
 pkgrel=2
 pkgdesc="A tree-sitter parser for Vimscript files"
 url="https://github.com/tree-sitter-grammars/tree-sitter-vim/"
@@ -30,5 +30,5 @@ package() {
 
 
 sha512sums="
-fe585fc01f1fae6239ac89c1924d5adf70c43f41b40a8c811457068723094bc4a3a545581738173d39f10b6525ca711d419c3cb0ab59d48c60a9ea68c62ade3b  tree-sitter-vim-0.7.0.tar.gz
+8a4c9ed3c3342a42c855b04a2aeeafbe6f4dabed52e8374f969ffd2bc616907ce9cefd955908ac8f04ac3fbbf9664ed6ed3c1bc8808d12c93d9dffac58943f35  tree-sitter-vim-0.8.1.tar.gz
 "
