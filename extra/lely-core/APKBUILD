@@ -48,7 +48,7 @@ build() {
 package() {
     make install DESTDIR="$pkgdir" -j1
 }
-
+#Tests are disabled during the build to maintain ECSS compliance.
 sha512sums="
 771a7e1db5a7e0ed98e392090eaf423545e057f3e0050ccbf1a2e5d1eb4f36c205664795fc9604c86ea4a9e6aa593192e26ac4f75e43101b1554e4318a8cf571  lely-core-v3.2.0.tar.gz
 3a76d9b60a14fc4126f1ab55361c3db3f68e43750248d360ea9ac29072800d8512a9b917540de3a201a129b470862becd85f95cd27cb390d8d6c5230b9ed767c  lely-core.patch
