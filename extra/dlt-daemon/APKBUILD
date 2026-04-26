@@ -37,7 +37,7 @@ build() {
 package() {
     DESTDIR="$pkgdir" cmake --install build
 } 
-
+#Tests are disabled because they require an older version of Google Test (gtest).
 sha512sums="
 5fd8b564e041b730766e7f9c8740e93f4d7d04b56330ed1e55b4230431537900c937583317e557313dda6a392ab7350715b45e3437bfd972f6221416bc0a2f06  dlt-daemon-2.18.10.tar.gz
 021683fa8a8c0ee365cff20aed9ea2f097113cee0fe20252e2e51f8fe46bd35b1e11e6ca1ce1fad569ab1a71896ef1db66c5c4e5f97b853e4c556eb60f5bd1fd  dlt-daemon.patch
