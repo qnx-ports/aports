@@ -1,5 +1,5 @@
 # Maintainer:Ramya santoshi <rtimmaraju@qnx.com>
-pkgname=foonathan-memory
+pkgname=foonathan_memory
 pkgver=1.4.1
 pkgrel=0
 pkgdesc="STL-compatible C++ memory allocator library (eProsima vendor fork)"
@@ -14,10 +14,6 @@ source="$pkgname-$pkgver.tar.gz::https://github.com/eProsima/memory/archive/refs
 builddir="$srcdir/memory-vendor-$pkgver"
 
 subpackages="$pkgname-dev"
-
-prepare() {
-    default_prepare
-}
 
 build() {
   
