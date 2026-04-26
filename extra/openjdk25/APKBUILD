@@ -7,9 +7,10 @@
 # has pre-generated and remove it when we have pandoc-cli
 pkgname=openjdk25
 _updatever=10
+_qnxupdatever=1
 pkgver="25.0.2_p$_updatever"
 _pkgver=${pkgver%_p*}
-pkgrel=1
+pkgrel=2
 pkgdesc="Oracle OpenJDK 25"
 provider_priority=25
 url="https://github.com/openjdk/jdk25u"
@@ -41,6 +42,7 @@ makedepends="
 	libxt-dev
 	libxtst-dev
 	zlib-ng-dev
+	libc++-dev
 	"
 depends="$pkgname-jdk $pkgname-demos"
 subpackages="$pkgname-jmods:_jmods:noarch
@@ -51,13 +53,13 @@ subpackages="$pkgname-jmods:_jmods:noarch
 	$pkgname-jre-headless:_jre_headless
 	$pkgname-jdk:_jdk
 	"
-source="jdk-qnx-$_pkgver.tar.gz::https://github.com/qnx-ports/jdk25u/archive/refs/tags/qnx-jdk-$_pkgver+$_updatever.tar.gz
+source="jdk-qnx-${_pkgver}_p$_qnxupdatever.tar.gz::https://github.com/qnx-ports/jdk25u/archive/refs/tags/qnx-jdk-$_pkgver+${_updatever}_p$_qnxupdatever.tar.gz
 	docs-$_pkgver.tgz::https://github.com/bratkartoffel/openjdk-docs/raw/refs/heads/main/$pkgname-$pkgver-doc.tgz?download=
 	gtest-1.14.0.tar.gz::https://github.com/qnx-ports/googletest/archive/refs/heads/qnx_v1.14.0.tar.gz
 	main-targets.gmk
 	java-multicall.sh
 "
-builddir="$srcdir/jdk25u-qnx-jdk-$_pkgver-$_updatever"
+builddir="$srcdir/jdk25u-qnx-jdk-$_pkgver-${_updatever}_p$_qnxupdatever"
 
 provides="$pkgname-bootstrap=$pkgver-r$pkgrel"
 
@@ -313,7 +315,7 @@ _jdk() {
 
 
 sha512sums="
-08ec2ba8d70efea0240978b7bd2e3ee65a554e64c526a29794176893dce8dcf1bddc6b90b1b0996701d721b3b24d32d79c6ab74dc1ddfccc406ee3a385284e92  jdk-qnx-25.0.2.tar.gz
+3eb1834e3180facb14df266f8832a20d9eecfc750633fa1207364b0c8ca568728562095a834751cce47b6ead77b473628b18d55878c8311c32ee854a4ed82971  jdk-qnx-25.0.2_p1.tar.gz
 5e64329d8e00fa44721febd0fe47b70ca22ffb1a707a6bc3fde214d8f502eeea8aa6fb287ff0f0c461e8954d17d7f142170c22600081654fe554eaec2f809cdb  docs-25.0.2.tgz
 203906a27be0d4400b1665b0ba5e0b2d1ee7497c740e90f0f9406f3ff9400bb7ae989bf0e0985d42143ebaa55d6b1e27cd91eb6d44639fac83bb542b709b0d59  gtest-1.14.0.tar.gz
 42c7f3a0b23156682f81f34d6cd047bee99bdbc8aac886770ff5aefc2b7360b5168cbf76fc6c518c643b7ab1a8f9239e12a04f7e65f30247295d1ef48e65de05  main-targets.gmk
