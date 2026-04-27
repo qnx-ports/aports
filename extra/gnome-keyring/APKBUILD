@@ -7,7 +7,7 @@ pkgrel=0
 pkgdesc="GNOME keyring"
 url="https://gitlab.gnome.org/GNOME/gnome-keyring"
 arch="all"
-license="GPL-2.0-only OR LGPL-2.0-only"
+license="GPL-2.0-only AND LGPL-2.0-only"
 # the gcr binaries are needed for things to open the keyring via libsecret
 depends="gcr"
 makedepends="
