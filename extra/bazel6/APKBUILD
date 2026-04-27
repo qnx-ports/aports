@@ -46,12 +46,17 @@ unpack() {
 export JAVA_HOME=/usr/lib/jvm/java-25-openjdk
 
 build() {
-    mkdir $builddir/tmp
+    mkdir $builddir/build
 
-    BAZEL_WRKDIR=$builddir/tmp \
+    TMPDIR=$builddir/build \
+    BAZEL_WRKDIR=$builddir/build \
     EMBED_LABEL=$pkgver-$pkgrel \
     EXTRA_BAZEL_ARGS=--tool_java_runtime_version=local_jdk \
         ./compile.sh
+
+    # Let us clean the jar files shipped with bazel that get unpacked in the
+    # tmp directory.
+    chmod -R +w "$builddir"
 
     # Bash completion relies on the local java toolchain working.
     #./output/bazel --batch build //scripts:bazel-complete.bash \
