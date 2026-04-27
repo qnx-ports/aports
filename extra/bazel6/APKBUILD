@@ -1,4 +1,5 @@
 # Alpine-Maintainer: Leon White <badfunkstripe@gmail.com>
+# Contributor: jscaffidi <jscaffidi@qnx.com>
 # Maintainer: Ethan Leir <eleir@qnx.com>
 pkgname=bazel6
 pkgver=6.5.0_alpha
