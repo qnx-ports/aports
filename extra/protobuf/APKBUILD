@@ -94,6 +94,7 @@ depends="
     abseil-cpp-vlog-config-internal
     libc++
     "
+install_if="abseil-cpp=20230802.1-r0"
 depends_dev="
     protoc=$pkgver-r$pkgrel
     zlib-dev
