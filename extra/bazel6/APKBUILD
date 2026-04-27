@@ -22,11 +22,16 @@ source="https://github.com/bazelbuild/bazel/releases/download/$_pkgver/bazel-$_p
 builddir="$srcdir/$pkgname-$pkgver"
 options="!check" # Bazel test targets are buggy.
 
+cleanup_srcdir() {
+    [[ -d "$srcdir" ]] && chmod -R +w "$srcdir"
+    default_cleanup_srcdir
+}
+
 unpack() {
     default_unpack
 
     # Workaround for busybox bug.
-    mkdir -p $builddir
+    mkdir -p "$builddir"
     cd $srcdir
     for u in $source; do
         local s
@@ -46,17 +51,12 @@ unpack() {
 export JAVA_HOME=/usr/lib/jvm/java-25-openjdk
 
 build() {
-    mkdir $builddir/build
+    mkdir "$builddir/build"
 
-    TMPDIR=$builddir/build \
-    BAZEL_WRKDIR=$builddir/build \
-    EMBED_LABEL=$pkgver-$pkgrel \
+    BAZEL_WRKDIR="$builddir/build" \
+    EMBED_LABEL="$pkgver-$pkgrel" \
     EXTRA_BAZEL_ARGS=--tool_java_runtime_version=local_jdk \
         ./compile.sh
-
-    # Let us clean the jar files shipped with bazel that get unpacked in the
-    # tmp directory.
-    chmod -R +w "$builddir"
 
     # Bash completion relies on the local java toolchain working.
     #./output/bazel --batch build //scripts:bazel-complete.bash \
