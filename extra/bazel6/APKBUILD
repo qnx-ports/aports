@@ -46,6 +46,9 @@ unpack() {
 export JAVA_HOME=/usr/lib/jvm/java-25-openjdk
 
 build() {
+    mkdir $builddir/tmp
+
+    BAZEL_WRKDIR=$builddir/tmp \
     EMBED_LABEL=$pkgver-$pkgrel \
     EXTRA_BAZEL_ARGS=--tool_java_runtime_version=local_jdk \
         ./compile.sh
