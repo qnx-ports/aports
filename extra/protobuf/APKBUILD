@@ -1,0 +1,196 @@
+# Alpine-Contributor: Sheila Aman <sheila@vulpine.house>
+# Alpine-Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+# Contributor: Ethan Leir <eleir@qnx.com>
+# Maintainer: Elliott Mazzuca <emazzuca@qnx.com>
+pkgname=protobuf
+pkgver=27.2
+pkgrel=0
+pkgdesc="Library for extensible, efficient structure packing"
+url="https://github.com/protocolbuffers/protobuf"
+arch="all"
+license="BSD-3-Clause"
+depends="
+    protoc=$pkgver-r$pkgrel
+    libprotoc=$pkgver-r$pkgrel
+    libprotobuf=$pkgver-r$pkgrel
+    libprotobuf-lite=$pkgver-r$pkgrel
+    abseil-cpp-base
+    abseil-cpp-city
+    abseil-cpp-civil-time
+    abseil-cpp-cord
+    abseil-cpp-cord-internal
+    abseil-cpp-cordz-functions
+    abseil-cpp-cordz-handle
+    abseil-cpp-cordz-info
+    abseil-cpp-crc-cord-state
+    abseil-cpp-crc-cpu-detect
+    abseil-cpp-crc-internal
+    abseil-cpp-crc32c
+    abseil-cpp-debugging-internal
+    abseil-cpp-decode-rust-punycode
+    abseil-cpp-demangle-internal
+    abseil-cpp-demangle-rust
+    abseil-cpp-die-if-null
+    abseil-cpp-examine-stack
+    abseil-cpp-exponential-biased
+    abseil-cpp-flags-commandlineflag
+    abseil-cpp-flags-commandlineflag-internal
+    abseil-cpp-flags-config
+    abseil-cpp-flags-internal
+    abseil-cpp-flags-marshalling
+    abseil-cpp-flags-private-handle-accessor
+    abseil-cpp-flags-program-name
+    abseil-cpp-flags-reflection
+    abseil-cpp-graphcycles-internal
+    abseil-cpp-hash
+    abseil-cpp-hashtablez-sampler
+    abseil-cpp-int128
+    abseil-cpp-kernel-timeout-internal
+    abseil-cpp-leak-check
+    abseil-cpp-log-entry
+    abseil-cpp-log-globals
+    abseil-cpp-log-initialize
+    abseil-cpp-log-internal-check-op
+    abseil-cpp-log-internal-conditions
+    abseil-cpp-log-internal-fnmatch
+    abseil-cpp-log-internal-format
+    abseil-cpp-log-internal-globals
+    abseil-cpp-log-internal-log-sink-set
+    abseil-cpp-log-internal-message
+    abseil-cpp-log-internal-nullguard
+    abseil-cpp-log-internal-proto
+    abseil-cpp-log-internal-structured-proto
+    abseil-cpp-log-severity
+    abseil-cpp-log-sink
+    abseil-cpp-malloc-internal
+    abseil-cpp-random-distributions
+    abseil-cpp-random-internal-entropy-pool
+    abseil-cpp-random-internal-platform
+    abseil-cpp-random-internal-randen
+    abseil-cpp-random-internal-randen-hwaes
+    abseil-cpp-random-internal-randen-hwaes-impl
+    abseil-cpp-random-internal-randen-slow
+    abseil-cpp-random-internal-seed-material
+    abseil-cpp-random-seed-gen-exception
+    abseil-cpp-random-seed-sequences
+    abseil-cpp-raw-hash-set
+    abseil-cpp-raw-logging-internal
+    abseil-cpp-spinlock-wait
+    abseil-cpp-stacktrace
+    abseil-cpp-status
+    abseil-cpp-statusor
+    abseil-cpp-str-format-internal
+    abseil-cpp-strerror
+    abseil-cpp-string-view
+    abseil-cpp-strings
+    abseil-cpp-strings-internal
+    abseil-cpp-symbolize
+    abseil-cpp-synchronization
+    abseil-cpp-throw-delegate
+    abseil-cpp-time
+    abseil-cpp-time-zone
+    abseil-cpp-tracing-internal
+    abseil-cpp-utf8-for-code-point
+    abseil-cpp-vlog-config-internal
+    libc++
+    "
+depends_dev="
+    protoc=$pkgver-r$pkgrel
+    zlib-dev
+    libc++-dev
+    "
+makedepends="
+    $depends_dev
+    abseil-cpp-dev
+    cmake
+    ninja
+    "
+checkdepends="gtest-dev"
+subpackages="
+    $pkgname-dev
+    $pkgname-vim::noarch
+    protoc
+    libprotoc
+    libprotobuf
+    libprotobuf-lite
+    "
+source="$pkgname-$pkgver.tar.gz::https://github.com/protocolbuffers/protobuf/archive/refs/tags/v$pkgver.tar.gz
+    soversion.patch
+    fix-protoc-abs-path.patch
+    "
+options="!check" # We aren't verifying this version.
+
+build() {
+    export CFLAGS="$CFLAGS -DNDEBUG -O2"
+    export CXXFLAGS="$CXXFLAGS -DNDEBUG -O2 -Wno-deprecated-declarations"
+    cmake -B build -G Ninja \
+        -DCMAKE_BUILD_TYPE=None \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DBUILD_SHARED_LIBS=ON \
+        -DCMAKE_EXE_LINKER_FLAGS="-lsocket" \
+        -Dprotobuf_BUILD_TESTS="$(want_check && echo ON || echo OFF)" \
+        -Dprotobuf_BUILD_LIBPROTOC=ON \
+        -Dprotobuf_ALLOW_CCACHE=ON
+    cmake --build build
+}
+
+check() {
+    cd "$builddir"/build
+    # Use gtest filter to exclude QNX float precision tests
+    export GTEST_FILTER='-TextFormatTest.PrintFloatPrecision:TextFormatTest.PrintFieldsInIndexOrder'
+    ctest --test-dir .
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install build
+
+    sed -i \
+        -e "/Requires:/s|;| |g" \
+        -e "/Requires:/s|::|_|g" \
+        "$pkgdir"/usr/lib/pkgconfig/protobuf.pc
+
+    install -Dm644 editors/proto.vim \
+        "$pkgdir"/usr/share/vim/vimfiles/syntax/proto.vim
+}
+
+vim() {
+    pkgdesc="Vim syntax for $pkgname"
+    depends=""
+    install_if="$pkgname=$pkgver-r$pkgrel vim"
+
+    amove usr/share/vim/vimfiles/syntax/proto.vim
+}
+
+libprotoc() {
+    pkgdesc="Runtime library for Protocol Buffer compiler"
+    depends=""
+
+    amove usr/lib/libprotoc.so.*
+}
+
+protoc() {
+    pkgdesc="Protocol buffer compiler binary and library"
+    depends=""
+
+    amove usr/bin/protoc*
+}
+
+libprotobuf() {
+    pkgdesc="Runtime library for C++ users of protocol buffers"
+    depends=""
+
+    amove usr/lib/libprotobuf.so.*
+}
+
+lite() {
+    pkgdesc="Runtime library for C++ users with 'lite runtime' setting of protocol buffers"
+    depends=""
+
+    amove usr/lib/libprotobuf-lite.so.*
+}
+
+sha512sums="
+664c66b62cf1ed0c65d9b910d8e67d4d5d471113697f1b8edf1573cd5c0fc8e850ac53ce984e48e6c6b9cbbefa12f8530058384e7388e65a59c1e46d03772397  protobuf-27.2.tar.gz
+a932fdb61d8bf1ad150176dd74362313c1e7fe2862b0899caea22c4a4921c25ff05136d0e14d0528f111af73ff223e5f697a772d8fb31a630479137736110060  soversion.patch
+1a5e231f4da8f925062acbc35861755e339fb3410222b4852f74de2ac7eae2e761960b8da6f09264a7758f5d16f6a435b0e8320d02cf5199730b3a05fc33ca23  fix-protoc-abs-path.patch
+"
