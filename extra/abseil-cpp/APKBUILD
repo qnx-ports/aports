@@ -17,7 +17,7 @@ makedepends="
 checkdepends="tzdata"
 subpackages="$pkgname-dev"
 _git_rev=0
-source="$pkgname-$pkgver-r$_git_rev::https://github.com/qnx-ports/abseil-cpp/archive/refs/tags/qnx_$pkgver-r$_git_rev.tar.gz"
+source="$pkgname-$pkgver-r$_git_rev.tar.gz::https://github.com/qnx-ports/abseil-cpp/archive/refs/tags/qnx_$pkgver-r$_git_rev.tar.gz"
 builddir="$srcdir/$pkgname-qnx_$pkgver"
 
 _libs="
@@ -156,6 +156,7 @@ package() {
 
 abseillib() {
     pkgdesc="Abseil Common C++ library: $subpkgname"
+    install_if="$pkgname=$pkgver-r$pkgrel"
 
     local libname="${subpkgname#"$pkgname"-}"
     amove usr/lib/libabsl_${libname//-/_}.so.*
