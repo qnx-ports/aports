@@ -19,7 +19,7 @@ makedepends="
     python3-wheel
     "
 subpackages="
-    python3-$pkgname:py3
+    python3-$pkgname-cpu:py3
     "
 source="$pkgname-$pkgver.tar.gz::https://github.com/google-ai-edge/$pkgname/archive/refs/tags/v$pkgver.tar.gz
     python_BUILD.bazel
@@ -108,7 +108,8 @@ package() {
 
 py3() {
     pkgdesc="Python3 wrapper for $subpkgname"
-    depends="python3
+    depends="
+        python3
         python3-absl-py
         python3-attrs
         python3-cffi
