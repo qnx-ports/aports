@@ -2,7 +2,7 @@
 # Alpine-Maintainer: Patrycja Rosa <alpine@ptrcnull.me>
 # Maintainer: Deep Chordia <dchordia@blackberry.com>
 pkgname=python3-protobuf
-pkgver=7.34.1
+pkgver=5.29.3
 pkgrel=0
 pkgdesc="Google's data interchange format"
 url="https://github.com/protocolbuffers/protobuf"
