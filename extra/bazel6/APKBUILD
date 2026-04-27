@@ -33,7 +33,7 @@ unpack() {
 
     # Workaround for busybox bug.
     mkdir -p "$builddir"
-    cd $srcdir
+    cd "$srcdir"
     for u in $source; do
         local s
         if is_remote "$u"; then
