@@ -16,6 +16,7 @@ makedepends="
     gtk4-dev
     intltool
     libgcrypt-dev
+    libgpg-error-dev
     libxslt
     meson
     openssh
