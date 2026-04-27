@@ -130,7 +130,8 @@ build() {
         -DCMAKE_EXE_LINKER_FLAGS="-lsocket" \
         -Dprotobuf_BUILD_TESTS="$(want_check && echo ON || echo OFF)" \
         -Dprotobuf_BUILD_LIBPROTOC=ON \
-        -Dprotobuf_ALLOW_CCACHE=ON
+        -Dprotobuf_ALLOW_CCACHE=ON \
+        -Dprotobuf_ABSL_PROVIDER="package"
     cmake --build build
 }
 
