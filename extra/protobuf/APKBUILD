@@ -16,17 +16,19 @@ depends="
     libprotobuf-lite=$pkgver-r$pkgrel
     abseil-cpp=20230802.1-r0
     libc++
+    qnx-io-sock
     "
 depends_dev="
     protoc=$pkgver-r$pkgrel
     zlib-dev
-    libc++-dev
     "
 makedepends="
     $depends_dev
     abseil-cpp-dev
     cmake
+    libc++-dev
     ninja
+    qnx-io-sock-dev
     "
 checkdepends="gtest-dev"
 subpackages="
