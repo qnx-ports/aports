@@ -27,9 +27,7 @@ depends="
     abseil-cpp-crc-internal
     abseil-cpp-crc32c
     abseil-cpp-debugging-internal
-    abseil-cpp-decode-rust-punycode
     abseil-cpp-demangle-internal
-    abseil-cpp-demangle-rust
     abseil-cpp-die-if-null
     abseil-cpp-examine-stack
     abseil-cpp-exponential-biased
@@ -42,7 +40,6 @@ depends="
     abseil-cpp-flags-program-name
     abseil-cpp-flags-reflection
     abseil-cpp-graphcycles-internal
-    abseil-cpp-hash
     abseil-cpp-hashtablez-sampler
     abseil-cpp-int128
     abseil-cpp-kernel-timeout-internal
@@ -52,19 +49,16 @@ depends="
     abseil-cpp-log-initialize
     abseil-cpp-log-internal-check-op
     abseil-cpp-log-internal-conditions
-    abseil-cpp-log-internal-fnmatch
     abseil-cpp-log-internal-format
     abseil-cpp-log-internal-globals
     abseil-cpp-log-internal-log-sink-set
     abseil-cpp-log-internal-message
     abseil-cpp-log-internal-nullguard
     abseil-cpp-log-internal-proto
-    abseil-cpp-log-internal-structured-proto
     abseil-cpp-log-severity
     abseil-cpp-log-sink
     abseil-cpp-malloc-internal
     abseil-cpp-random-distributions
-    abseil-cpp-random-internal-entropy-pool
     abseil-cpp-random-internal-platform
     abseil-cpp-random-internal-randen
     abseil-cpp-random-internal-randen-hwaes
@@ -89,9 +83,6 @@ depends="
     abseil-cpp-throw-delegate
     abseil-cpp-time
     abseil-cpp-time-zone
-    abseil-cpp-tracing-internal
-    abseil-cpp-utf8-for-code-point
-    abseil-cpp-vlog-config-internal
     libc++
     "
 install_if="abseil-cpp=20230802.1-r0"
