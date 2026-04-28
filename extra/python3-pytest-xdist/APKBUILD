@@ -11,7 +11,6 @@ license="MIT"
 depends="python3-execnet python3-pytest"
 checkdepends="python3-filelock python3-py python3-pexpect python3-psutil"
 makedepends="python3-gpep517 python3-setuptools python3-setuptools_scm python3-wheel"
-subpackages=""
 source="https://files.pythonhosted.org/packages/source/p/pytest_xdist/pytest_xdist-$pkgver.tar.gz
     pytest9.patch
     "
