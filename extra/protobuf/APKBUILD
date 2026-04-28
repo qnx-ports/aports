@@ -14,78 +14,9 @@ depends="
     libprotoc=$pkgver-r$pkgrel
     libprotobuf=$pkgver-r$pkgrel
     libprotobuf-lite=$pkgver-r$pkgrel
-    abseil-cpp-base
-    abseil-cpp-city
-    abseil-cpp-civil-time
-    abseil-cpp-cord
-    abseil-cpp-cord-internal
-    abseil-cpp-cordz-functions
-    abseil-cpp-cordz-handle
-    abseil-cpp-cordz-info
-    abseil-cpp-crc-cord-state
-    abseil-cpp-crc-cpu-detect
-    abseil-cpp-crc-internal
-    abseil-cpp-crc32c
-    abseil-cpp-debugging-internal
-    abseil-cpp-demangle-internal
-    abseil-cpp-die-if-null
-    abseil-cpp-examine-stack
-    abseil-cpp-exponential-biased
-    abseil-cpp-flags-commandlineflag
-    abseil-cpp-flags-commandlineflag-internal
-    abseil-cpp-flags-config
-    abseil-cpp-flags-internal
-    abseil-cpp-flags-marshalling
-    abseil-cpp-flags-private-handle-accessor
-    abseil-cpp-flags-program-name
-    abseil-cpp-flags-reflection
-    abseil-cpp-graphcycles-internal
-    abseil-cpp-hashtablez-sampler
-    abseil-cpp-int128
-    abseil-cpp-kernel-timeout-internal
-    abseil-cpp-leak-check
-    abseil-cpp-log-entry
-    abseil-cpp-log-globals
-    abseil-cpp-log-initialize
-    abseil-cpp-log-internal-check-op
-    abseil-cpp-log-internal-conditions
-    abseil-cpp-log-internal-format
-    abseil-cpp-log-internal-globals
-    abseil-cpp-log-internal-log-sink-set
-    abseil-cpp-log-internal-message
-    abseil-cpp-log-internal-nullguard
-    abseil-cpp-log-internal-proto
-    abseil-cpp-log-severity
-    abseil-cpp-log-sink
-    abseil-cpp-malloc-internal
-    abseil-cpp-random-distributions
-    abseil-cpp-random-internal-platform
-    abseil-cpp-random-internal-randen
-    abseil-cpp-random-internal-randen-hwaes
-    abseil-cpp-random-internal-randen-hwaes-impl
-    abseil-cpp-random-internal-randen-slow
-    abseil-cpp-random-internal-seed-material
-    abseil-cpp-random-seed-gen-exception
-    abseil-cpp-random-seed-sequences
-    abseil-cpp-raw-hash-set
-    abseil-cpp-raw-logging-internal
-    abseil-cpp-spinlock-wait
-    abseil-cpp-stacktrace
-    abseil-cpp-status
-    abseil-cpp-statusor
-    abseil-cpp-str-format-internal
-    abseil-cpp-strerror
-    abseil-cpp-string-view
-    abseil-cpp-strings
-    abseil-cpp-strings-internal
-    abseil-cpp-symbolize
-    abseil-cpp-synchronization
-    abseil-cpp-throw-delegate
-    abseil-cpp-time
-    abseil-cpp-time-zone
+    abseil-cpp=20230802.1-r0
     libc++
     "
-install_if="abseil-cpp=20230802.1-r0"
 depends_dev="
     protoc=$pkgver-r$pkgrel
     zlib-dev
