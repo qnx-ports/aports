@@ -114,6 +114,7 @@ _libs="
 
 for _lib in $_libs; do
     subpackages="$subpackages $pkgname-${_lib//_/-}:abseillib"
+    depends="$depends $pkgname-${_lib//_/-}=$pkgver-r$pkgrel"
 done
 
 build() {
@@ -161,7 +162,6 @@ package() {
 
 abseillib() {
     pkgdesc="Abseil Common C++ library: $subpkgname"
-    install_if="$pkgname=$pkgver-r$pkgrel"
     depends="libc++"
 
     local libname="${subpkgname#"$pkgname"-}"
