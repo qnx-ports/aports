@@ -8,11 +8,12 @@ pkgdesc="distributed Python deployment and communication"
 url="https://execnet.readthedocs.io"
 arch="noarch"
 license="MIT"
+depends="qnx-io-sock"
 makedepends="python3-gpep517 python3-hatch-vcs python3-setuptools python3-wheel"
 checkdepends="python3-pytest"
-subpackages=""
 source="https://files.pythonhosted.org/packages/source/e/execnet/execnet-$pkgver.tar.gz"
 builddir="$srcdir"/execnet-$pkgver
+options="!check" # Net not working on packaging system.
 
 build() {
     gpep517 build-wheel --wheel-dir .dist --output-fd 3 3>&1 >&2
