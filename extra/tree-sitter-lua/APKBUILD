@@ -3,8 +3,8 @@
 # Alpine-Maintainer: Jakub Jirutka <jakub@jirutka.cz>
 # Maintainer: Aaron Bassett <abassett@qnx.com>
 pkgname=tree-sitter-lua
-pkgver=0.4.0
-pkgrel=2
+pkgver=0.5.0
+pkgrel=0
 pkgdesc="Lua grammar for tree-sitter"
 url="https://github.com/tree-sitter-grammars/tree-sitter-lua"
 arch="all"
@@ -28,5 +28,5 @@ package() {
 
 
 sha512sums="
-6afcac83394b0583b721b88acd1115b97e8844d0c94134235e63df1b0e46773691ab37b7ff1921d7672924baf0144eb6f60ac0196daf8691c96f0567ccac1f67  tree-sitter-lua-0.4.0.tar.gz
+9b27adee591e2f69c1479195b09a86c9dec2d423cc8ae84ec45a1d0516c1211e05cc764b34e475e77672e495a6bcc76f0907bb3d677afeebc871c513156afe23  tree-sitter-lua-0.5.0.tar.gz
 "
