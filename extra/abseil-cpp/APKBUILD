@@ -8,6 +8,9 @@ pkgdesc="Abseil Common Libraries (C++)"
 url="https://abseil.io/"
 arch="all"
 license="Apache-2.0"
+depends_dev="
+    libc++-dev
+    "
 makedepends="
     $depends_dev
     cmake
@@ -157,6 +160,7 @@ package() {
 abseillib() {
     pkgdesc="Abseil Common C++ library: $subpkgname"
     install_if="$pkgname=$pkgver-r$pkgrel"
+    depends="libc++"
 
     local libname="${subpkgname#"$pkgname"-}"
     amove usr/lib/libabsl_${libname//-/_}.so.*
