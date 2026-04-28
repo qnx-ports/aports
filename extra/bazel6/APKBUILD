@@ -11,15 +11,14 @@ arch="all"
 license="Apache-2.0"
 depends="bash openjdk25-jdk qnx-io-sock libc++"
 makedepends="python3 busybox zip clang libc++-dev qnx-io-sock-dev"
-# Bazel binary is thin C++ client with zip file embedded into the binary,
-# stripping breaks that: https://github.com/bazelbuild/bazel/issues/11842
-options=""
 provides="bazel=$pkgver-r$pkgrel"
 # We need jar files from the official distribution, so we apply the changes as a
 # patch
 source="https://github.com/bazelbuild/bazel/releases/download/$_pkgver/bazel-$_pkgver-dist.zip
     qnx.patch"
 builddir="$srcdir/$pkgname-$pkgver"
+# Bazel binary is thin C++ client with zip file embedded into the binary,
+# stripping breaks that: https://github.com/bazelbuild/bazel/issues/11842
 options="!check !strip" # Bazel test targets are buggy.
 
 cleanup_srcdir() {
