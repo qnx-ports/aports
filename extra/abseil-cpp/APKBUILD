@@ -22,6 +22,7 @@ subpackages="$pkgname-dev"
 _git_rev=0
 source="$pkgname-$pkgver-r$_git_rev.tar.gz::https://github.com/qnx-ports/abseil-cpp/archive/refs/tags/qnx_$pkgver-r$_git_rev.tar.gz"
 builddir="$srcdir/$pkgname-qnx_$pkgver-r$_git_rev"
+options="!check" # We're not testing this version.
 
 _libs="
     bad_any_cast_impl
@@ -118,11 +119,12 @@ done
 build() {
     cmake -B build -G Ninja \
         -DCMAKE_BUILD_TYPE=MinSizeRel \
+        -DCMAKE_CXX_STANDARD=17 \
         -DCMAKE_INSTALL_PREFIX=/usr \
         -DCMAKE_INSTALL_LIBDIR=lib \
         -DCMAKE_SKIP_INSTALL_RPATH=ON \
         -DBUILD_SHARED_LIBS=ON \
-        -DABSL_BUILD_TESTING=ON \
+        -DABSL_BUILD_TESTING="$(want_check && echo ON || echo OFF)" \
         -DABSL_BUILD_TEST_HELPERS=ON \
         -DABSL_USE_EXTERNAL_GOOGLETEST=ON \
         -DABSL_PROPAGATE_CXX_STD=ON \
