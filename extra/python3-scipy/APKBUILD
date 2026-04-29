@@ -36,6 +36,7 @@ builddir="$srcdir"/scipy-$pkgver
 build() {
     export CFLAGS="$CFLAGS -O3"
     export CXXFLAGS="$CXXFLAGS -O3"
+    export LDFLAGS="$LDFLAGS -Wl,--no-as-needed -lgcc_s -lm"
 
     gpep517 build-wheel \
         --wheel-dir .dist \
