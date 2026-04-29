@@ -2,7 +2,7 @@
 # Alpine-Maintainer: Natanael Copa <ncopa@alpinelinux.org>
 # Maintainer: Ethan Leir <eleir@qnx.com>
 pkgname=portaudio
-pkgver=19.7.0
+pkgver=19.7.0_alpha
 pkgrel=0
 pkgdesc="A cross-platform, open-source C language library for real-time audio input and output"
 url="http://www.portaudio.com/"
