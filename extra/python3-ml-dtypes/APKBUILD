@@ -24,7 +24,6 @@ checkdepends="
     python3-pytest
     python3-pytest-xdist
     "
-subpackages=""
 source="$pkgname-$pkgver.tar.gz::https://github.com/jax-ml/$_pkgname/archive/refs/tags/v$pkgver.tar.gz"
 builddir="$srcdir/$_pkgname-$pkgver"
 
