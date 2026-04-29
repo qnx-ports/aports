@@ -1,5 +1,3 @@
-diff --git a/Source/JavaScriptCore/runtime/JSCBytecodeCacheVersion.cpp b/Source/JavaScriptCore/runtime/JSCBytecodeCacheVersion.cpp
-index 76590729..26e825ac 100644
 --- a/Source/JavaScriptCore/runtime/JSCBytecodeCacheVersion.cpp
 +++ b/Source/JavaScriptCore/runtime/JSCBytecodeCacheVersion.cpp
 @@ -37,6 +37,8 @@
@@ -11,7 +9,7 @@ index 76590729..26e825ac 100644
  #else
  #include <link.h>
  #endif
-@@ -66,7 +68,7 @@ uint32_t computeJSCBytecodeCacheVersion()
+@@ -66,7 +68,7 @@
          }
          cacheVersion.construct(0);
          dataLogLnIf(JSCBytecodeCacheVersionInternal::verbose, "Failed to get UUID for JavaScriptCore framework");
@@ -20,24 +18,21 @@ index 76590729..26e825ac 100644
          auto result = ([&] -> std::optional<uint32_t> {
              Dl_info info { };
              if (!dladdr(jsFunctionAddr, &info))
-diff --git a/Source/JavaScriptCore/runtime/MachineContext.h b/Source/JavaScriptCore/runtime/MachineContext.h
-index 0232941c..95a08222 100644
 --- a/Source/JavaScriptCore/runtime/MachineContext.h
 +++ b/Source/JavaScriptCore/runtime/MachineContext.h
-@@ -165,6 +165,16 @@ static inline void*& stackPointerImpl(mcontext_t& machineContext)
+@@ -190,7 +190,15 @@
+ #else
  #error Unknown Architecture
  #endif
- 
 +#elif OS(QNX)
-+
 +#if CPU(X86_64)
 +    return reinterpret_cast<void*&>((uintptr_t&) machineContext.cpu.rsp);
 +#elif CPU(ARM64)
 +    return reinterpret_cast<void*&>((uintptr_t&) machineContext.cpu.gpr[AARCH64_REG_SP]);
 +#else
 +#error Unknown Architecture
+ #endif
 +#endif
-+
- #elif OS(NETBSD)
+ }
+ #endif // !USE(PLATFORM_REGISTERS_WITH_PROFILE)
  
- #if CPU(X86_64)

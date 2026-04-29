@@ -1,6 +1,13 @@
 --- a/Source/WebKit/UIProcess/API/gtk/DragSource.h
 +++ b/Source/WebKit/UIProcess/API/gtk/DragSource.h
-@@ -57,7 +57,11 @@
+@@ -50,21 +50,25 @@
+ namespace WebKit {
+ 
+ class DragSource {
+     WTF_MAKE_TZONE_ALLOCATED_INLINE(DragSource);
+     WTF_MAKE_NONCOPYABLE(DragSource);
+ public:
+ 
      explicit DragSource(GtkWidget*);
      ~DragSource();
  
@@ -13,9 +20,23 @@
  
  private:
      GRefPtr<GdkPixbuf> selectionImage() const;
+ 
+     GtkWidget* m_webView { nullptr };
+ #if USE(GTK4)
+     GRefPtr<GdkDrag> m_drag;
+ #else
+     GRefPtr<GdkDragContext> m_drag;
+ #endif
 --- a/Source/WebKit/UIProcess/API/gtk/DragSourceGtk3.cpp
 +++ b/Source/WebKit/UIProcess/API/gtk/DragSourceGtk3.cpp
-@@ -112,7 +112,7 @@
+@@ -105,21 +105,21 @@
+         ASSERT(page);
+         page->dragEnded({ x, y }, { xRoot, yRoot }, gdkDragActionToDragOperation(gdk_drag_context_get_selected_action(context)));
+     }), this);
+ }
+ 
+ DragSource::~DragSource()
+ {
      g_signal_handlers_disconnect_by_data(m_webView, this);
  }
  
@@ -24,9 +45,23 @@
  {
      if (m_drag) {
          gtk_drag_cancel(m_drag.get());
+         m_drag = nullptr;
+     }
+ 
+     m_selectionData = WTFMove(selectionData);
+ 
+     GRefPtr<GtkTargetList> list = adoptGRef(gtk_target_list_new(nullptr, 0));
+     if (m_selectionData->hasText())
 --- a/Source/WebKit/UIProcess/API/gtk/WebKitWebViewBase.cpp
 +++ b/Source/WebKit/UIProcess/API/gtk/WebKitWebViewBase.cpp
-@@ -328,6 +328,7 @@
+@@ -321,20 +321,21 @@
+ #endif
+     GtkWidget* dialog { nullptr };
+     GtkWidget* inspectorView { nullptr };
+     AttachmentSide inspectorAttachmentSide { AttachmentSide::Bottom };
+     unsigned inspectorViewSize { 0 };
+ #if ENABLE(CONTEXT_MENUS)
+ #if USE(GTK4)
      GRefPtr<GdkEvent> contextMenuEvent;
  #else
      GUniquePtr<GdkEvent> contextMenuEvent;
@@ -34,7 +69,21 @@
  #endif
      WebContextMenuProxyGtk* activeContextMenuProxy { nullptr };
  #endif // ENABLE(CONTEXT_MENUS)
-@@ -1368,7 +1369,7 @@
+     InputMethodFilter inputMethodFilter;
+     KeyAutoRepeatHandler keyAutoRepeatHandler;
+     KeyBindingTranslator keyBindingTranslator;
+     TouchEventsMap touchEvents;
+     IntSize contentsSize;
+     std::optional<MotionEvent> lastMotionEvent;
+     bool isBlank;
+@@ -1361,21 +1362,21 @@
+     WebKitWebViewBase* webViewBase = WEBKIT_WEB_VIEW_BASE(widget);
+     WebKitWebViewBasePrivate* priv = webViewBase->priv;
+ 
+     if (priv->dialog)
+         return GDK_EVENT_STOP;
+ 
+     if (gdk_device_get_source(gdk_event_get_source_device(reinterpret_cast<GdkEvent*>(event))) == GDK_SOURCE_TOUCHSCREEN)
          return GTK_WIDGET_CLASS(webkit_web_view_base_parent_class)->button_press_event(widget, event);
  
      webkitWebViewBaseHandleMouseEvent(webViewBase, reinterpret_cast<GdkEvent*>(event));
@@ -43,7 +92,45 @@
      return GDK_EVENT_STOP;
  }
  
-@@ -1676,6 +1677,8 @@
+ static gboolean webkitWebViewBaseButtonReleaseEvent(GtkWidget* widget, GdkEventButton* event)
+ {
+     WebKitWebViewBase* webViewBase = WEBKIT_WEB_VIEW_BASE(widget);
+     WebKitWebViewBasePrivate* priv = webViewBase->priv;
+ 
+     if (priv->dialog)
+         return GDK_EVENT_STOP;
+@@ -1449,23 +1450,20 @@
+ #if !USE(GTK4)
+ static gboolean webkitWebViewBaseScrollEvent(GtkWidget* widget, GdkEventScroll* eventScroll)
+ {
+     WebKitWebViewBase* webViewBase = WEBKIT_WEB_VIEW_BASE(widget);
+     WebKitWebViewBasePrivate* priv = webViewBase->priv;
+ 
+     auto* event = reinterpret_cast<GdkEvent*>(eventScroll);
+     if (shouldForwardWheelEvent(webViewBase, event))
+         return GDK_EVENT_PROPAGATE;
+ 
+-    if (priv->dialog)
+-        return GDK_EVENT_PROPAGATE;
+-
+     ViewGestureController* controller = webkitWebViewBaseViewGestureController(webViewBase);
+     if (controller && controller->isSwipeGestureEnabled()) {
+         double deltaX, deltaY;
+         gdk_event_get_scroll_deltas(event, &deltaX, &deltaY);
+         FloatSize delta(deltaX, deltaY);
+ 
+         int32_t eventTime = static_cast<int32_t>(gdk_event_get_time(event));
+ 
+         GdkDevice* device = gdk_event_get_source_device(event);
+         GdkInputSource source = gdk_device_get_source(device);
+@@ -1669,20 +1667,22 @@
+     return GDK_EVENT_PROPAGATE;
+ }
+ 
+ static gboolean webkitWebViewBaseCrossingNotifyEvent(GtkWidget* widget, GdkEventCrossing* crossingEvent)
+ {
+     WebKitWebViewBase* webViewBase = WEBKIT_WEB_VIEW_BASE(widget);
+     WebKitWebViewBasePrivate* priv = webViewBase->priv;
  
      if (priv->dialog)
          return GDK_EVENT_PROPAGATE;
@@ -52,16 +139,46 @@
  
  #if ENABLE(DEVELOPER_MODE)
      // Do not send mouse move events to the WebProcess for crossing events during testing.
-@@ -1767,6 +1770,8 @@
+     // WTR never generates crossing events and they can confuse tests.
+     // https://bugs.webkit.org/show_bug.cgi?id=185072.
+     if (priv->pageProxy->configuration().processPool().configuration().fullySynchronousModeIsAllowedForTesting()) [[unlikely]]
+         return GDK_EVENT_PROPAGATE;
+ #endif
+ 
+     // In the case of crossing events, it's very important the actual coordinates the WebProcess receives, because once the mouse leaves
+@@ -1718,22 +1718,24 @@
+     webkitWebViewBaseHandleMouseEvent(webViewBase, copiedEvent ? copiedEvent.get() : event);
+ 
+     return GDK_EVENT_PROPAGATE;
+ }
+ #endif
+ 
+ #if USE(GTK4)
+ static void webkitWebViewBaseEnter(WebKitWebViewBase* webViewBase, double x, double y, GdkCrossingMode, GtkEventController*)
+ {
      WebKitWebViewBasePrivate* priv = webViewBase->priv;
++
      if (priv->dialog)
          return;
-+    if (crossingEvent->type == GDK_LEAVE_NOTIFY)
-+        priv->lastButtonPressEvent.reset();
++    priv->lastButtonPressEvent.reset();
  
  #if ENABLE(DEVELOPER_MODE)
      // Do not send mouse move events to the WebProcess for crossing events during testing.
-@@ -2583,10 +2588,12 @@
+     // WTR never generates crossing events and they can confuse tests.
+     // https://bugs.webkit.org/show_bug.cgi?id=185072.
+     if (priv->pageProxy->configuration().processPool().configuration().fullySynchronousModeIsAllowedForTesting()) [[unlikely]]
+         return;
+ #endif
+ 
+     priv->pageProxy->handleMouseEvent(NativeWebMouseEvent(DoublePoint(x, y)));
+@@ -2576,24 +2578,26 @@
+ 
+ void webkitWebViewBaseSetMouseIsOverScrollbar(WebKitWebViewBase* webViewBase, WebHitTestResultData::IsScrollbar isScrollbar)
+ {
+     webViewBase->priv->mouseIsOverScrollbar = isScrollbar;
+ }
+ 
+ #if ENABLE(DRAG_SUPPORT)
  void webkitWebViewBaseStartDrag(WebKitWebViewBase* webViewBase, SelectionData&& selectionData, OptionSet<DragOperation> dragOperationMask, RefPtr<ShareableBitmap>&& image, IntPoint&& dragImageHotspot)
  {
      WebKitWebViewBasePrivate* priv = webViewBase->priv;
@@ -75,9 +192,23 @@
  
  #if !USE(GTK4)
      // A drag starting should prevent a double-click from happening. This might
+     // happen if a drag is followed very quickly by another click (like in the WTR).
+     priv->clickCounter.reset();
+ #endif
+ }
+ 
+ void webkitWebViewBaseDidPerformDragControllerAction(WebKitWebViewBase* webViewBase)
+ {
 --- a/Source/JavaScriptCore/jit/JITInlineCacheGenerator.h
 +++ b/Source/JavaScriptCore/jit/JITInlineCacheGenerator.h
-@@ -53,7 +53,11 @@
+@@ -46,21 +46,25 @@
+ class CodeBlock;
+ class JIT;
+ class StructureStubInfo;
+ struct UnlinkedStructureStubInfo;
+ struct BaselineUnlinkedStructureStubInfo;
+ 
+ enum class AccessType : int8_t;
  enum class CacheType : int8_t;
  enum class JITType : uint8_t;
  
@@ -89,9 +220,23 @@
  
  class JITInlineCacheGenerator {
  protected:
+     JITInlineCacheGenerator() = default;
+     JITInlineCacheGenerator(CodeBlock*, CompileTimeStructureStubInfo, JITType, CodeOrigin, AccessType);
+     
+ public:
+     StructureStubInfo* stubInfo() const { return m_stubInfo; }
+ 
+     void reportSlowPathCall(CCallHelpers::Label slowPathBegin, CCallHelpers::Call call)
 --- a/Source/JavaScriptCore/wasm/WasmIPIntSlowPaths.cpp
 +++ b/Source/JavaScriptCore/wasm/WasmIPIntSlowPaths.cpp
-@@ -176,6 +176,7 @@
+@@ -169,20 +169,21 @@
+             else
+                 tierUpCounter.optimizeAfterWarmUp();
+         }
+     }
+ 
+     return getReplacement();
+ }
  
  WASM_IPINT_EXTERN_CPP_DECL(prologue_osr, CallFrame* callFrame)
  {
@@ -99,7 +244,18 @@
      Wasm::IPIntCallee* callee = IPINT_CALLEE(callFrame);
  
      if (!shouldJIT(callee)) {
-@@ -193,6 +194,10 @@
+         callee->tierUpCounter().deferIndefinitely();
+         WASM_RETURN_TWO(nullptr, nullptr);
+     }
+ 
+     if (!Options::useWasmIPIntPrologueOSR())
+         WASM_RETURN_TWO(nullptr, nullptr);
+ 
+@@ -189,17 +190,21 @@
+     dataLogLnIf(Options::verboseOSR(), *callee, ": Entered prologue_osr with tierUpCounter = ", callee->tierUpCounter());
+ 
+     if (RefPtr replacement = jitCompileAndSetHeuristics(*callee, instance, OSRFor::Prologue)) {
+         instance->ensureBaselineData(callee->functionIndex());
          WASM_RETURN_TWO(replacement->entrypoint().taggedPtr(), nullptr);
      }
      WASM_RETURN_TWO(nullptr, nullptr);
@@ -110,7 +266,21 @@
  }
  
  template<SavedFPWidth savedFPWidth>
-@@ -248,6 +253,7 @@
+ static ALWAYS_INLINE uint64_t* buildEntryBufferForLoopOSR(Wasm::IPIntCallee* ipintCallee, Wasm::BBQCallee* bbqCallee, JSWebAssemblyInstance* instance, const Wasm::IPIntTierUpCounter::OSREntryData& osrEntryData, IPIntLocal* pl)
+ {
+     ASSERT(bbqCallee->compilationMode() == Wasm::CompilationMode::BBQMode);
+     size_t osrEntryScratchBufferSize = bbqCallee->osrEntryScratchBufferSize();
+ 
+     constexpr unsigned valueSize = Wasm::Context::scratchBufferSlotsPerValue(savedFPWidth);
+     RELEASE_ASSERT(osrEntryScratchBufferSize >= valueSize * (ipintCallee->numLocals() + osrEntryData.numberOfStackValues + osrEntryData.tryDepth + Wasm::BBQCallee::extraOSRValuesForLoopIndex));
+@@ -241,20 +246,21 @@
+     for (uint32_t i = 0; i < osrEntryData.numberOfStackValues; ++i) {
+         pl -= 1;
+         copyValueToBuffer(*pl);
+     }
+     return buffer;
+ }
+ 
  
  WASM_IPINT_EXTERN_CPP_DECL(loop_osr, CallFrame* callFrame, uint8_t* pc, IPIntLocal* pl)
  {
@@ -118,7 +288,21 @@
      Wasm::IPIntCallee* callee = IPINT_CALLEE(callFrame);
      Wasm::IPIntTierUpCounter& tierUpCounter = callee->tierUpCounter();
  
-@@ -289,10 +295,15 @@
+     if (!Options::useWasmOSR() || !Options::useWasmIPIntLoopOSR() || !shouldJIT(callee)) {
+         ipint_extern_prologue_osr(instance, callFrame);
+         WASM_RETURN_TWO(nullptr, nullptr);
+     }
+ 
+     dataLogLnIf(Options::verboseOSR(), *callee, ": Entered loop_osr with tierUpCounter = ", callee->tierUpCounter());
+ 
+@@ -282,24 +288,29 @@
+         buffer = buildEntryBufferForLoopOSR<SavedFPWidth::DontSaveVectors>(callee, bbqCallee, instance, osrEntryData, pl);
+ 
+     if (!buffer)
+         WASM_RETURN_TWO(nullptr, nullptr);
+ 
+     auto sharedLoopEntrypoint = bbqCallee->sharedLoopEntrypoint();
+     RELEASE_ASSERT(sharedLoopEntrypoint);
  
      instance->ensureBaselineData(callee->functionIndex());
      WASM_RETURN_TWO(buffer, sharedLoopEntrypoint->taggedPtr());
@@ -134,7 +318,14 @@
      Wasm::IPIntCallee* callee = IPINT_CALLEE(callFrame);
  
      if (!shouldJIT(callee)) {
-@@ -306,6 +317,24 @@
+         callee->tierUpCounter().deferIndefinitely();
+         WASM_RETURN_TWO(nullptr, nullptr);
+     }
+     if (!Options::useWasmIPIntEpilogueOSR())
+         WASM_RETURN_TWO(nullptr, nullptr);
+ 
+     dataLogLnIf(Options::verboseOSR(), *callee, ": Entered epilogue_osr with tierUpCounter = ", callee->tierUpCounter());
+@@ -306,15 +317,33 @@
  
      jitCompileAndSetHeuristics(*callee, instance, OSRFor::Epilogue);
      WASM_RETURN_TWO(nullptr, nullptr);
@@ -142,8 +333,8 @@
 +    UNUSED_PARAM(callFrame);
 +    WASM_RETURN_TWO(nullptr, nullptr);
 +#endif
-+}
-+#endif
+ }
+ #endif
 +#if !ENABLE(WEBASSEMBLY_BBQJIT)
 +extern "C" UGPRPair SYSV_ABI ipint_extern_prologue_osr(JSWebAssemblyInstance*, CallFrame*)
 +{
@@ -156,6 +347,15 @@
 +extern "C" UGPRPair SYSV_ABI ipint_extern_epilogue_osr(JSWebAssemblyInstance*, CallFrame*)
 +{
 +    return UGPRPair { 0, 0 };
- }
- #endif
++}
++#endif
  
+ static void copyExceptionStackToPayload(const Wasm::FunctionSignature& tagType, const IPIntStackEntry* stackPointer, FixedVector<uint64_t>& payload)
+ {
+     unsigned payloadIndex = payload.size();
+     for (unsigned i = 0; i < tagType.argumentCount(); ++i) {
+         unsigned argIndex = tagType.argumentCount() - i - 1;
+         if (tagType.argumentType(argIndex).isV128()) {
+             payload[--payloadIndex] = stackPointer[i].v128.u64x2[1];
+             payload[--payloadIndex] = stackPointer[i].v128.u64x2[0];
+         } else
