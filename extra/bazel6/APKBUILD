@@ -4,7 +4,7 @@
 pkgname=bazel6
 pkgver=6.5.0_alpha
 _pkgver=${pkgver/_alpha/}
-pkgrel=0
+pkgrel=1
 pkgdesc="Bazel is an open-source build and test tool"
 url="https://bazel.build/"
 arch="all"
@@ -53,7 +53,7 @@ build() {
     mkdir "$builddir/build"
 
     BAZEL_WRKDIR="$builddir/build" \
-    EMBED_LABEL="$pkgver-$pkgrel" \
+    EMBED_LABEL="$_pkgver-$pkgrel" \
     EXTRA_BAZEL_ARGS=--tool_java_runtime_version=local_jdk \
         ./compile.sh
 
