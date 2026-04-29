@@ -22,6 +22,7 @@ subpackages="$pkgname-dev libportaudiocxx:_cxx"
 source="https://github.com/PortAudio/portaudio/archive/v$_pkgver/portaudio-v$_pkgver.tar.gz
     portaudio-pkgconfig-alsa.patch
     "
+builddir="$srcdir/$pkgname-$_pkgver"
 options="!check" # No unit tests, requires hardware to execute tests
 
 prepare() {
