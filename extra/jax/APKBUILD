@@ -28,6 +28,7 @@ makedepends="
     python3-gpep517
     python3-numpy-dev
     python3-packaging
+    python3-pip
     python3-pyproject-metadata
     python3-setuptools
     python3-wheel
