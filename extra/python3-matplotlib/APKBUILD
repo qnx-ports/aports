@@ -129,8 +129,7 @@ package() {
 
 fonts() {
     pkgdesc="Fonts used by $pkgname"
-    license="OFL-1.0 AND Bitstream-Vera AND Public-Domain"
-    depends=""
+    license="OFL-1.1 AND Bitstream-Vera AND LicenseRef-scancode-public-domain"
 
     amove usr/lib/python*/site-packages/matplotlib/mpl-data/fonts
 }
