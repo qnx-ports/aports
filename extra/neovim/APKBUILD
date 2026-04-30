@@ -3,7 +3,7 @@
 # Maintianer: Aaron Bassett <abassett@qnx.com>
 pkgname=neovim
 pkgver=0.12.1
-pkgrel=0
+pkgrel=1
 pkgdesc="Vim-fork focused on extensibility and agility"
 url="https://neovim.io/"
 arch="all"
@@ -56,6 +56,7 @@ source="https://github.com/neovim/neovim/archive/v$pkgver/neovim-$pkgver.tar.gz
         qnx-forkpty.patch
        	qnx-remove-util.patch
         qnx-define.patch
+        qnx-vim.fs.dir.patch
         nodoc.txt
 "
 
@@ -158,5 +159,6 @@ bad34ecd68ef5909356c2d2010c074fc37af61ae91529fa24ac98515405d0331df6481439c37ab7a
 1067ea1b1117fd501c9180b1a5cec2b911e2ce8651f79a5b101a6a289c0686074d2fec53673fbbba2b36dd35e12ab648d968ac95e18cb94bc9bf9e015c719639  qnx-forkpty.patch
 42b3a32c4653364745930bd98298c728576ce568b18906a9bd37b9de5a31e6a45a30e3ea8d62409aa35a57e31c1037170555dc5cf1cb949817fb398f271a3479  qnx-remove-util.patch
 b443f9aed0b1ae94bb55c43a2159fae13b505c98313b28053f89d1b22332ceda34f671e77a68466a7cc9d609dfe0b860788ff7db3829c68a17cfc1889560a80f  qnx-define.patch
+de0e14d1f56c4cb9c7a539befaedbfffbd11d942c765dc1ff4641818222247cf471ff5102a69ec61c2b40d8945e919a9f6038f9be0671d25416aa611632a7969  qnx-vim.fs.dir.patch
 44bc920ba9c7cc39fdc8417d81beb26a04383cca0128c55fe14561508bf3593fdee169dded8c3f5dd78b448deb15e967875440f98a4f58bf719f68b5bde9cf61  nodoc.txt
 "

@@ -1,0 +1,14 @@
+diff --git a/runtime/lua/vim/pack.lua b/runtime/lua/vim/pack.lua
+index 7a10e1707a..1fdcbff433 100644
+--- a/runtime/lua/vim/pack.lua
++++ b/runtime/lua/vim/pack.lua
+@@ -864,6 +864,9 @@ local function lock_sync(confirm, specs)
+   -- Also, single `vim.fs.dir()` scales better than on demand `uv.fs_stat()` checks.
+   local installed = {} --- @type table<string,string>
+   for name, fs_type in vim.fs.dir(plug_dir) do
++       if vim.uv.os_uname().sysname == 'QNX' then
++               fs_type = vim.uv.fs_stat(vim.fs.joinpath(plug_dir, name)).type
++         end
+     installed[name] = fs_type
+     plugin_lock.plugins[name] = plugin_lock.plugins[name] or {}
+   end
