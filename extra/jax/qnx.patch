@@ -72,7 +72,7 @@ diff --color -U 6 -N -r before/build/requirements_lock_3_14.txt after/build/requ
 +    # via -r build/requirements.in
 +
 +# The following packages are considered to be unsafe in a requirements file:
-+setuptools==60.9.0
++setuptools==60.7.1
 +    # via -r build/test-requirements.txt
 diff --color -U 6 -N -r before/jax/_src/basearray.py after/jax/_src/basearray.py
 --- before/jax/_src/basearray.py	2026-04-16 13:45:24.278878691 -0400
