@@ -128,8 +128,7 @@ build() {
     bazel \
         --host_jvm_args=-Djavax.net.ssl.trustStore=/usr/lib/jvm/java-25-openjdk/lib/security/cacerts \
         fetch \
-        @pypi_setuptools//:* \
-        --define build_with_openmp=true
+        @pypi_setuptools//:*
     sed -i "s|files(__name__).joinpath('Lorem ipsum.txt').read_text(encoding='utf-8')|''|" $(bazel info output_base)/external/pypi__setuptools/setuptools/_vendor/jaraco/text/__init__.py
     sed -i "s|files(__name__).joinpath('Lorem ipsum.txt').read_text(encoding='utf-8')|''|" $(bazel-6.5.0 info output_base)/external/pypi_setuptools/site-packages/setuptools/_vendor/jaraco/text/__init__.py
 
