@@ -112,11 +112,11 @@ prepare() {
 
 build() {
     if [[ $CARCH == "x86_64" ]]; then
-        _extra_bazel_args="--define build_with_mkl=true --define build_with_openmp=true"
+        _extra_bazel_defines="--define build_with_mkl=true --define build_with_openmp=true"
     elif [[ $CARCH == "aarch64" ]]; then
         # mkl calls out to Arm - ComputeLibrary, which we ported, but pulls in xbyak_aarch64 (with oneDNN v3.2.1) which needs some work.
-        # _extra_bazel_args="--define build_with_mkl_aarch64=true --define tensorflow_mkldnn_contraction_kernel=0 --define build_with_openmp=true"
-        _extra_bazel_args="--define build_with_mkl=false --define enable_mkl=false --define tensorflow_mkldnn_contraction_kernel=0"
+        # _extra_bazel_defines="--define build_with_mkl_aarch64=true --define tensorflow_mkldnn_contraction_kernel=0 --define build_with_openmp=true"
+        _extra_bazel_defines="--define build_with_mkl=false --define enable_mkl=false --define tensorflow_mkldnn_contraction_kernel=0"
     else
         die "$CARCH not supported"
     fi
@@ -130,7 +130,8 @@ build() {
     bazel \
         --host_jvm_args=-Djavax.net.ssl.trustStore=/usr/lib/jvm/java-25-openjdk/lib/security/cacerts \
         fetch \
-        @pypi_setuptools//:*
+        @pypi_setuptools//:* \
+        ${_extra_bazel_defines}
     sed -i "s|files(__name__).joinpath('Lorem ipsum.txt').read_text(encoding='utf-8')|''|" $(bazel info output_base)/external/pypi__setuptools/setuptools/_vendor/jaraco/text/__init__.py
     sed -i "s|files(__name__).joinpath('Lorem ipsum.txt').read_text(encoding='utf-8')|''|" $(bazel info output_base)/external/pypi_setuptools/site-packages/setuptools/_vendor/jaraco/text/__init__.py
 
@@ -151,7 +152,7 @@ build() {
         --extra_toolchains=@python_qnx//:qnx_py_toolchain2 \
         --extra_toolchains=@python_qnx//:qnx_py_cc_toolchain \
         --subcommands --verbose_failures \
-        ${_extra_bazel_args} \
+        ${_extra_bazel_defines} \
         -- \
         --output_path="$builddir/.dist" \
         --jaxlib_git_hash="$_commit" \
