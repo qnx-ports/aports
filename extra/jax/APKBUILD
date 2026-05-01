@@ -114,7 +114,7 @@ build() {
     if [[ $CARCH == "x86_64" ]]; then
         _extra_bazel_args="--define build_with_mkl=true"
     elif [[ $CARCH == "aarch64" ]]; then
-        _extra_bazel_args="--define build_with_mkl_aarch64=true"
+        _extra_bazel_args="--define build_with_mkl_aarch64=true --define tensorflow_mkldnn_contraction_kernel=0"
     else
         die "$CARCH not supported"
     fi
