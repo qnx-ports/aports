@@ -8,29 +8,29 @@ diff --color -U 6 -N -r before/build/requirements_lock_3_14.txt after/build/requ
 +#
 +#    bazel run //build:requirements_dev.update
 +#
-+absl-py
++absl-py==2.4.0
 +    # via -r build/test-requirements.txt
-+build
++build==1.2.2
 +    # via -r build/test-requirements.txt
-+contourpy
++contourpy==1.3.3
 +    # via matplotlib
-+cycler
++cycler==0.12.1
 +    # via matplotlib
-+execnet
++execnet==2.1.1
 +    # via pytest-xdist
-+flatbuffers
++flatbuffers==25.12.19
 +    # via -r build/test-requirements.txt
-+fonttools
++fonttools==4.60.1
 +    # via matplotlib
-+iniconfig
++iniconfig==2.3.0
 +    # via pytest
-+kiwisolver
++kiwisolver==1.4.8
 +    # via matplotlib
-+matplotlib
++matplotlib==3.10.6
 +    # via -r build/requirements.in
-+ml-dtypes
++ml-dtypes==0.5.0
 +    # via -r build/requirements.in
-+numpy
++numpy==2.4.1
 +    # via
 +    #   -r build/requirements.in
 +    #   -r build/test-requirements.txt
@@ -39,40 +39,40 @@ diff --color -U 6 -N -r before/build/requirements_lock_3_14.txt after/build/requ
 +    #   ml-dtypes
 +    #   opt-einsum
 +    #   scipy
-+opt-einsum
++opt-einsum==3.4.0
 +    # via -r build/requirements.in
-+packaging
++packaging==25.0
 +    # via
 +    #   build
 +    #   matplotlib
 +    #   pytest
-+pillow
++pillow==12.1.1
 +    # via
 +    #   -r build/test-requirements.txt
 +    #   matplotlib
-+pluggy
++pluggy==1.6.0
 +    # via pytest
-+pyparsing
++pyparsing==3.3.2
 +    # via matplotlib
-+pyproject-hooks
++pyproject-hooks==1.0.0
 +    # via build
-+pytest
++pytest==8.4.2
 +    # via pytest-xdist
-+pytest-xdist
++pytest-xdist==3.8.0
 +    # via -r build/test-requirements.txt
-+python-dateutil
++python-dateutil==2.9.0
 +    # via matplotlib
-+scipy
++scipy==1.17.1
 +    # via -r build/requirements.in
-+six
++six==1.17.0
 +    # via python-dateutil
-+wheel
++wheel==0.46.1
 +    # via -r build/test-requirements.txt
-+zstandard
++zstandard==0.25.0
 +    # via -r build/requirements.in
 +
 +# The following packages are considered to be unsafe in a requirements file:
-+setuptools
++setuptools==60.9.0
 +    # via -r build/test-requirements.txt
 diff --color -U 6 -N -r before/jax/_src/basearray.py after/jax/_src/basearray.py
 --- before/jax/_src/basearray.py	2026-04-16 13:45:24.278878691 -0400
