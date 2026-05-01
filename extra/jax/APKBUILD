@@ -133,9 +133,6 @@ build() {
         --repo_env=HERMETIC_PYTHON_VERSION=3.14 \
         --repo_env=TF_NEED_CUDA=0 \
         --@xla//xla/python:enable_gpu=False \
-        --extra_toolchains=@python_qnx//:qnx_py_toolchain \
-        --extra_toolchains=@python_qnx//:qnx_py_toolchain2 \
-        --extra_toolchains=@python_qnx//:qnx_py_cc_toolchain \
         ${_extra_bazel_defines} \
         @pypi_setuptools//:*
     sed -i "s|files(__name__).joinpath('Lorem ipsum.txt').read_text(encoding='utf-8')|''|" $(bazel info output_base)/external/pypi__setuptools/setuptools/_vendor/jaraco/text/__init__.py
