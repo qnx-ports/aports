@@ -87,7 +87,7 @@ prepare() {
     # Remove the old repository cache
     rm -rf $(bazel info repository_cache)
 
-    # Remove the old abuild cache
+    # Remove the old bazel cache
     bazel clean --expunge
 
     # Create the toolchain to register our local python.
