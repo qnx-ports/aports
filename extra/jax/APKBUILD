@@ -152,6 +152,7 @@ build() {
         --extra_toolchains=@python_qnx//:qnx_py_toolchain \
         --extra_toolchains=@python_qnx//:qnx_py_toolchain2 \
         --extra_toolchains=@python_qnx//:qnx_py_cc_toolchain \
+        --nofetch \
         --subcommands --verbose_failures \
         ${_extra_bazel_args} \
         -- \
