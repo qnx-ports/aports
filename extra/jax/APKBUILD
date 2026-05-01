@@ -112,9 +112,11 @@ prepare() {
 
 build() {
     if [[ $CARCH == "x86_64" ]]; then
-        _extra_bazel_args="--define build_with_mkl=true"
+        _extra_bazel_args="--define build_with_mkl=true --define build_with_openmp=true"
     elif [[ $CARCH == "aarch64" ]]; then
-        _extra_bazel_args="--define build_with_mkl_aarch64=true --define tensorflow_mkldnn_contraction_kernel=0"
+        # mkl calls out to Arm - ComputeLibrary, which we ported, but still needs work to integrate with xla.
+        # _extra_bazel_args="--define build_with_mkl_aarch64=true --define tensorflow_mkldnn_contraction_kernel=0 --define build_with_openmp=true"
+        _extra_bazel_args="--define build_with_mkl=false --define enable_mkl=false --define tensorflow_mkldnn_contraction_kernel=0"
     else
         die "$CARCH not supported"
     fi
@@ -142,7 +144,6 @@ build() {
         --copt="-Wno-c++11-narrowing" \
         --copt="-Wno-invalid-specialization" \
         --linkopt="-lcares" \
-        --define build_with_openmp=true \
         --repo_env=HERMETIC_PYTHON_VERSION=3.14 \
         --repo_env=TF_NEED_CUDA=0 \
         --@xla//xla/python:enable_gpu=False \
