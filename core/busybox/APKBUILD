@@ -1,13 +1,13 @@
 # Maintainer: Leo Shen <yishen@qnx.com>
 pkgname=busybox
 pkgver=1.36.1
-pkgrel=9
+pkgrel=10
 arch="all"
 pkgdesc="Size optimized toolbox of many common UNIX utilities"
 url="https://www.busybox.net"
 license="GPL-2.0-only"
 depends="qnx-io-sock"
-makedepends="qnx-io-sock-dev help2man"
+makedepends="qnx-io-sock-dev help2man diffutils"
 subpackages="$pkgname-doc $pkgname-utils:utils"
 source="$url/downloads/$pkgname-$pkgver.tar.bz2
     config
@@ -16,14 +16,8 @@ source="$url/downloads/$pkgname-$pkgver.tar.bz2
 
 build() {
     cp ../config .config
-
-    if [[ $CBUILD = $CHOST ]]; then
-        # Compile natively
-        make HOSTCFLAGS="-D_QNX_SOURCE" HOSTLDFLAGS="-lregex -lsocket"
-    else
-        # Cross compiling
-        make LDFLAGS="-Wl,-z,stack-size=4194304"
-    fi
+    # the -no-pie argument for LD is a hack that should be removed when clang's QNX support is fixed
+    make LD="ld -no-pie" HOSTCFLAGS="-D_QNX_SOURCE" HOSTLDFLAGS="-lregex -lsocket"
 }
 
 package() {
@@ -37,7 +31,7 @@ utils() {
     pkgdesc="Busybox (coreutils symlinks)"
     depends="$pkgname"
 
-    _user_utils="adduser addgroup deluser delgroup add-shell remove-shell chpasswd"
+    _user_utils="adduser addgroup deluser delgroup add-shell remove-shell"
     _utils="date find getopt setopt sha256sum sha512sum tree unzip $_user_utils"
     mkdir -p "$subpkgdir"/usr/bin
     for util in $_utils; do
@@ -48,5 +42,5 @@ utils() {
 sha512sums="
 8c0c754c9ae04b5e6b23596283a7d3a4ef96225fe179f92d6f6a99c69c0caa95b1aa56c267f52d7c807f6cc69e1f0b7dd29a8ac624098f601738f8c0c57980d4  busybox-1.36.1.tar.bz2
 46eb409a42ae1d90ed7f513224d8611a8266671f3bf48d15347171afb1667ebb19d0ec2e0965775ee2bb4ccda2817d1b611839ae5b6241a264db4032d4b8f8ba  config
-a8a656fdac4b8f8b0f404d735ea1c597c9c133945d12a8860f36bc162712c3697e4b7c74e7897ae8a68e7ddae483f970f37409f615d59dde6ff5c465442c1192  fix-qnx.patch
+a497503b408cef7c5574b859f59eef978b7db43dc8303eb84d2765ae54413e8450c6e8e89559054fa342120a88edfb8964778a091341c382c5fe44eb0623417b  fix-qnx.patch
 "
