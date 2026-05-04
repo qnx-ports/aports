@@ -3,8 +3,8 @@
 # Maintainer: Aaron Bassett <abassett@qnx.com>
 pkgname=weston
 pkgver=14.0.2
-pkgrel=8
-_commit="aac2fd40ef55ee09c6891276837d07faefd9b7db"
+pkgrel=9
+_commit="68cedb89ee881682eba544e67b79f4220946c315"
 _libname=lib$pkgname
 _libdir=$_libname-${pkgver%%.*}
 pkgdesc="Reference Wayland server"
