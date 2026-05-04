@@ -203,9 +203,9 @@ py3() {
     pkgdesc="Python3 wrapper for $subpkgname"
     depends="python3 $(getvar "_${subpkgname/-/_}_depends")"
 
-    amove usr/lib/python3.14/site-packages/$(getvar "${subpkgname/python3-/}")
+    amove usr/lib/python3.14/site-packages/"${subpkgname/python3-/}"
     # amove the egginfo file as well
-    amove usr/lib/python3.14/site-packages/$(getvar "${subpkgname/python3-/}")-*
+    amove usr/lib/python3.14/site-packages/"${subpkgname/python3-/}"-*
 }
 
 # Print value of the specified variable, or the default if empty or not defined.
