@@ -8,8 +8,8 @@ url="https://docs.jax.dev"
 arch="all"
 license="Apache-2.0"
 depends="
-    python3-jax=$pkgname-$pkgver
-    python3-jaxlib=$pkgname-$pkgver
+    python3-jax=$pkgver-$pkgrel
+    python3-jaxlib=$pkgver-$pkgrel
     "
 makedepends="
     bazel6
@@ -61,7 +61,7 @@ subpackages="
     python3-jax:py3
     python3-jaxlib:py3
     "
-_python3_jax_depends="python3-jaxlib=$pkgname-$pkgver"
+_python3_jax_depends="python3-jaxlib=$pkgver-$pkgrel"
 _python3_jaxlib_depends="
     c-ares
     libc++
