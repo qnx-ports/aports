@@ -127,12 +127,29 @@ build() {
     export BAZEL_CXXOPTS=-std=c++17
 
     # Setuptools with bazel6 has a known bug which we need to work-around.
+    # For bazel6, the fetch command is vastly inferior to the build command.
     bazel \
         --host_jvm_args=-Djavax.net.ssl.trustStore=/usr/lib/jvm/java-25-openjdk/lib/security/cacerts \
-        fetch \
+        run \
+        //jaxlib/tools:build_wheel \
+        --copt="-DEIGEN_DONT_VECTORIZE=1" \
+        --copt="-DFARMHASH_LITTLE_ENDIAN=1" \
+        --copt="-D_STRUCT_IOVEC=1" \
+        --copt="-Wno-c++11-narrowing" \
+        --copt="-Wno-invalid-specialization" \
+        --linkopt="-lcares" \
         --repo_env=HERMETIC_PYTHON_VERSION=3.14 \
         --repo_env=TF_NEED_CUDA=0 \
-        @pypi_setuptools//:*
+        --@xla//xla/python:enable_gpu=False \
+        --extra_toolchains=@python_qnx//:qnx_py_toolchain \
+        --extra_toolchains=@python_qnx//:qnx_py_toolchain2 \
+        --extra_toolchains=@python_qnx//:qnx_py_cc_toolchain \
+        --subcommands --verbose_failures \
+        ${_extra_bazel_args} \
+        -- \
+        --output_path="$builddir/.dist" \
+        --jaxlib_git_hash="$_commit" \
+        --cpu="$CARCH" || true
     sed -i "s|files(__name__).joinpath('Lorem ipsum.txt').read_text(encoding='utf-8')|''|" $(bazel info output_base)/external/pypi__setuptools/setuptools/_vendor/jaraco/text/__init__.py
     sed -i "s|files(__name__).joinpath('Lorem ipsum.txt').read_text(encoding='utf-8')|''|" $(bazel info output_base)/external/pypi_setuptools/site-packages/setuptools/_vendor/jaraco/text/__init__.py
 
@@ -152,7 +169,6 @@ build() {
         --extra_toolchains=@python_qnx//:qnx_py_toolchain \
         --extra_toolchains=@python_qnx//:qnx_py_toolchain2 \
         --extra_toolchains=@python_qnx//:qnx_py_cc_toolchain \
-        --nofetch \
         --subcommands --verbose_failures \
         ${_extra_bazel_args} \
         -- \
