@@ -5,7 +5,7 @@
 # Maintainer: Elliott Mazzuca <emazzuca@qnx.com>
 pkgname=webkit2gtk-4.1
 pkgver=2.51.1
-pkgrel=6
+pkgrel=7
 pkgdesc="Portable web rendering engine WebKit for GTK+ - GTK+3 libsoup3 version"
 url="https://webkitgtk.org/"
 arch="all"
@@ -184,7 +184,7 @@ EOF
         mkdir -p /tmp/ldwrap
         printf '#!/bin/sh\nexec /usr/bin/ld.bfd "$@" /tmp/qnx_setjmp_stub.o\n' > /tmp/ldwrap/ld
         chmod +x /tmp/ldwrap/ld
-        _linker_flags="-B/tmp/ldwrap -Wl,--strip-debug -lsocket"
+         _linker_flags="-B/tmp/ldwrap -Wl,--strip-debug -Wl,--reduce-memory-overheads -lsocket"
     else
         _linker_flags="-Wl,--strip-debug -lsocket"
     fi
@@ -215,7 +215,12 @@ EOF
         [ ! -e "$dest" ] && ln -sf "$src" "$dest"
     done || true
 
-    ninja -C build -j$(nproc)
+    if [ "$CARCH" = "aarch64" ]; then
+        # Limit parallelism on aarch64 — 4 parallel clang jobs exhaust 8GB RAM during WebCore
+        ninja -C build -j2
+    else
+        ninja -C build -j$(nproc)
+    fi
 }
 
 check() {
