@@ -8,22 +8,15 @@ url="https://docs.jax.dev"
 arch="all"
 license="Apache-2.0"
 depends="
-    c-ares
-    python3-absl-py
-    python3-filelock
-    python3-numpy
-    python3-opt-einsum
-    python3-scipy
-    python3-flatbuffers
-    python3-matplotlib
-    python3-ml-dtypes
-    qnx-fd-notify
+    python3-jax=$pkgname-$pkgver
+    python3-jaxlib=$pkgname-$pkgver
     "
 makedepends="
     bazel6
     cython
     c-ares-dev
     libc++-dev
+    openmp-dev
     python3-build
     python3-dev
     python3-installer
@@ -68,8 +61,21 @@ subpackages="
     python3-jax:py3
     python3-jaxlib:py3
     "
-_python3_jax_depends="python3-jaxlib"
-_python3_jaxlib_depends="libc++"
+_python3_jax_depends="python3-jaxlib=$pkgname-$pkgver"
+_python3_jaxlib_depends="
+    c-ares
+    libc++
+    openmp
+    python3-absl-py
+    python3-filelock
+    python3-numpy
+    python3-opt-einsum
+    python3-scipy
+    python3-flatbuffers
+    python3-matplotlib
+    python3-ml-dtypes
+    qnx-fd-notify
+    "
 source="$pkgname-$pkgver.tar.gz::https://github.com/jax-ml/$pkgname/archive/refs/tags/$pkgname-v$pkgver.tar.gz
     python_BUILD.bazel
     python_defs.bzl
@@ -138,6 +144,7 @@ build() {
         --copt="-Wno-c++11-narrowing" \
         --copt="-Wno-invalid-specialization" \
         --linkopt="-lcares" \
+        --linkopt="-lomp" \
         --repo_env=HERMETIC_PYTHON_VERSION=3.14 \
         --repo_env=TF_NEED_CUDA=0 \
         --@xla//xla/python:enable_gpu=False \
@@ -163,6 +170,7 @@ build() {
         --copt="-Wno-c++11-narrowing" \
         --copt="-Wno-invalid-specialization" \
         --linkopt="-lcares" \
+        --linkopt="-lomp" \
         --repo_env=HERMETIC_PYTHON_VERSION=3.14 \
         --repo_env=TF_NEED_CUDA=0 \
         --@xla//xla/python:enable_gpu=False \
