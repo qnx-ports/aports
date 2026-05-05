@@ -1,0 +1,15 @@
+diff --git a/meson_options.txt b/meson_options.txt
+index 88ed047..da03105 100644
+--- a/meson_options.txt
++++ b/meson_options.txt
+@@ -2,8 +2,8 @@
+ #
+ # SPDX-License-Identifier: Apache-2.0
+ 
+-option('PISTACHE_BUILD_TESTS', type: 'boolean', value: false, description: 'build tests alongside the project')
+-option('PISTACHE_BUILD_EXAMPLES', type: 'boolean', value: false, description: 'build examples alongside the project')
++option('PISTACHE_BUILD_TESTS', type: 'boolean', value: true, description: 'build tests alongside the project')
++option('PISTACHE_BUILD_EXAMPLES', type: 'boolean', value: true, description: 'build examples alongside the project')
+ option('PISTACHE_BUILD_DOCS', type: 'boolean', value: false, description: 'build docs alongside the project')
+ option('PISTACHE_INSTALL', type: 'boolean', value: true, description: 'add pistache as install target (recommended)')
+ option('PISTACHE_USE_SSL', type: 'boolean', value: false, description: 'add support for SSL server')

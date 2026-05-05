@@ -7,14 +7,16 @@ pkgdesc="A high-performance REST toolkit written in C++"
 url="https://pistacheio.github.io/pistache/"
 arch="all"
 license="MIT"
-makedepends="clang libc++-dev meson libevent libevent-dev rapidjson-dev qnx-io-sock-dev"
+makedepends="clang libc++-dev meson libevent libevent-dev rapidjson-dev qnx-io-sock-dev libcurl curl curl-dev gtest gtest-dev gmock"
 subpackages="$pkgname-dev"
 pkgusers="pistache"
 pkggroups="pistache"
 source="$pkgname-$pkgver.tar.gz::https://github.com/qnx-ports/pistache/archive/refs/tags/qnx-v$pkgver-1.tar.gz
 pkgconf_version_string.patch
+build_test.patch
 "
 builddir="$srcdir/$pkgname-qnx-v$pkgver-1"
+options="!check"
 
 build() {
     LDFLAGS="-lm -lregex -lsocket -lgcc_s"
@@ -22,14 +24,21 @@ build() {
     meson compile -C output
 }
 
+check() {
+    #2 from 26 test programs currently fail:
+    #run_http_server_test
+    #run_rest_server_test
+    meson test -C output
+}
+
 package() {
   DESTDIR="$pkgdir" meson install --no-rebuild -C output
-  echo "done"
 }
 
 
 
 sha512sums="
-9aeacf6b9764dabd8fb03992ae7a03d16a701703800ba4f02502f7ecee3a908b80013dee602fd1517ce10d388660df41921d786915eaa7caa6c1d78b7cc34706  pistache-0.4.26.tar.gz
+7e764e235132260e41423b6fe9756b18056a74881fc2e5400d60b756b9683b15a1a127c6c3fb7f9087a308d0d826ec2380361d58f6143dafbb612cad94e198ae  pistache-0.4.26.tar.gz
 db9c0424c43d5426ae62a289653cdf3d2f6b17beaf0a27034bacd98aabbadfcdedc8705da5e6f57881262ef14895f6d4c042b770cb57c821c7d18b8252b70b5e  pkgconf_version_string.patch
+c9ed782907712f821ea21de6438cc53b8b12fe69b4817b8d4f00f0d123db18c98819c538b30bdf516ae9d71af4760ecea4aa928ccf902e14a85f216f5450ea7d  build_test.patch
 "
