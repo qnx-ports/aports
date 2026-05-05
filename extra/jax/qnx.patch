@@ -119,7 +119,7 @@ diff --color -U 6 -N -r before/jax/tools/build_utils.py after/jax/tools/build_ut
      sources_path: str, output_path: str, package_name: str, git_hash: str = ""
 diff --color -U 6 -N -r before/third_party/xla/workspace.bzl after/third_party/xla/workspace.bzl
 --- before/third_party/xla/workspace.bzl	2026-05-05 10:01:05.158022638 -0400
-+++ after/third_party/xla/workspace.bzl	2026-05-05 10:14:40.028835230 -0400
++++ after/third_party/xla/workspace.bzl	2026-05-05 11:52:57.770469328 -0400
 @@ -18,21 +18,21 @@
  # To update XLA to a new revision,
  # a) update XLA_COMMIT to the new git commit hash
@@ -129,8 +129,8 @@ diff --color -U 6 -N -r before/third_party/xla/workspace.bzl after/third_party/x
  
 -XLA_COMMIT = "79fd5733f99b3c0948d7202bc1bbe1ee3980da5c"
 -XLA_SHA256 = "083c7281a629647ab2cc32f054afec74893c33e75328783b8085c818f48235ff"
-+XLA_COMMIT = "b67d6893017a0d86915190cea2824d91c557bfaf"
-+XLA_SHA256 = "1232a1e4da914c609b51cd6a242dddccba4d8f551d71ce5319d47437e3efffa7"
++XLA_COMMIT = "7bb062e1b3415d693895b4589904051aae0feb6d"
++XLA_SHA256 = "49dbdb3e6640c6f7e5f0137f0a85372dbac66af766675a5d1f9dff713734550e"
  
  def repo():
      tf_http_archive(
