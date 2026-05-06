@@ -13,8 +13,8 @@ source="$pkgname-$pkgver.tar.gz::https://github.com/flexible-collision-library/f
 "
 
 builddir="$srcdir/$pkgname-$pkgver"
-depends="libccd octomap"
-depends_dev="eigen-dev libccd-dev octomap-dev"
+depends="libccd octomap libc++"
+depends_dev="eigen-dev libccd-dev octomap-dev libc++-dev"
 makedepends="
 	$depends_dev
 	cmake
