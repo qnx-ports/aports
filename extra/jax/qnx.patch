@@ -129,8 +129,8 @@ diff --color -U 6 -N -r before/third_party/xla/workspace.bzl after/third_party/x
  
 -XLA_COMMIT = "79fd5733f99b3c0948d7202bc1bbe1ee3980da5c"
 -XLA_SHA256 = "083c7281a629647ab2cc32f054afec74893c33e75328783b8085c818f48235ff"
-+XLA_COMMIT = "b3202b95cf342274bc41501223072b36cb449d9c"
-+XLA_SHA256 = "a57a1e7a1a219ed62dda937687c6cfdcc13011189192fc9f7cb602e4a775d100"
++XLA_COMMIT = "200f7c98609cc17f97d8837a148a95aea81664b3"
++XLA_SHA256 = "e3f8122c8a45d7bf82751875da0e4e3be48e7f25d4c58404a355bad92331e61e"
  
  def repo():
      tf_http_archive(
