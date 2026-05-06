@@ -10,8 +10,10 @@ license="MIT"
 source="$pkgname-$pkgver.tar.gz::https://github.com/pantor/ruckig/archive/refs/tags/v$pkgver.tar.gz"
 
 builddir="$srcdir/$pkgname-$pkgver"
+depends="libc++ qnx-io-sock"
 makedepends="
 	libc++-dev
+	qnx-io-sock-dev
 	cmake
 	ninja
 "
