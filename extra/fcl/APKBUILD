@@ -6,7 +6,6 @@ pkgdesc="Flexible Collision Library"
 url="https://github.com/flexible-collision-library/fcl"
 arch="aarch64 x86_64"
 license="BSD-3-Clause"
-options="!check"
 source="$pkgname-$pkgver.tar.gz::https://github.com/flexible-collision-library/fcl/archive/refs/tags/$pkgver.tar.gz
 0001-Use-target_compile_features-to-specify-the-C-11-requ.patch
 0002-Add-missing-cassert-include-in-fcl-common-types.h-62.patch
@@ -33,8 +32,9 @@ build() {
 	cmake --build build
 }
 
-check(){
-	ctest --test-dir build
+check() {
+	# Some floating point errors on QNX.
+	ctest3.5 --test-dir build -E 'test_fcl_capsule_capsule|test_fcl_shape_mesh_consistency|test_fcl_signed_distance|test_fcl_octomap_collision|test_gjk_libccd-inl_epa|test_gjk_libccd-inl_gjk_doSimplex2|test_gjk_libccd-inl_signed_distance'
 }
 
 package() {
