@@ -122,7 +122,7 @@ build() {
     elif [[ $CARCH == "aarch64" ]]; then
         # mkl calls out to Arm - ComputeLibrary, which we ported, but pulls in xbyak_aarch64 (with oneDNN v3.2.1) which needs some work.
         # _extra_bazel_args="--define build_with_mkl_aarch64=true --define tensorflow_mkldnn_contraction_kernel=0 --define build_with_openmp=true"
-        _extra_bazel_args="--define build_with_mkl=false --define enable_mkl=false --define tensorflow_mkldnn_contraction_kernel=0"
+        _extra_bazel_args="--define build_with_mkl=false --define enable_mkl=false --define tensorflow_mkldnn_contraction_kernel=0 --define with_cross_compiler_support=true --copt=-DOPENSSL_AARCH64=1 --copt=-DOPENSSL_QNX=1"
     else
         die "$CARCH not supported"
     fi
@@ -229,5 +229,5 @@ sha512sums="
 1847818b97aaa3eb9184c15cc6f2eefb5c2f2d21e2e38749740738483689e58f3a1467c2cf717587c803ef707c17154e92caf84fa3a3d4ba4797ae686fa68165  python_WORKSPACE
 75575c2c2c760fd4df97d55a38004b69cb5c2ad263ade9bc10f3164d64c282d5e92b2df6020e782fc4b9236e6c8d3124d1d37f4c909ee09d02f6035474a872aa  python_qnx_BUILD.bazel
 e8e83404f5e078fdbefaef20d8f3b75371c7dab2018c5d863e2b2ad26a2b5c137f242878daaa699997a72cf8997e050fefd7b0cc32c5b9deb05f51aa0c929ee9  python_qnx_WORKSPACE
-489b507f5d72292225fb699f86ee81eaf57e09b96195df561979e90a957f5f03ea364220dd05f2f922322cb52a1e65292b7a1dae8cb796b8640de2403c0a811b  qnx.patch
+160311a08877b9b8bb7e883763dac6b9fa81aebaec6b86ec5a229cd2d752f6bb959272501f1c34317251356686c5c414246023facf10a672be56daf3fb5948a6  qnx.patch
 "
