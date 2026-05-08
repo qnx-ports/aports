@@ -1,0 +1,30 @@
+# Alpine Contributor: Jakub Jirutka <jakub@jirutka.cz>
+# Alpine Maintainer: Jakub Jirutka <jakub@jirutka.cz>
+# Maintainer: Abdulfatah Ahmoda <abahmoda@qnx.com>
+pkgname=tree-sitter-make
+pkgver=1.1.1
+pkgrel=0
+pkgdesc="Tree-sitter grammar for Make"
+url="https://github.com/tree-sitter-grammars/tree-sitter-make"
+arch="all"
+license="MIT"
+makedepends="tree-sitter-dev"
+checkdepends="tree-sitter-cli"
+install_if="tree-sitter-grammars"
+source="https://github.com/tree-sitter-grammars/tree-sitter-make/archive/v$pkgver/tree-sitter-make-$pkgver.tar.gz"
+options="!check" # requires nodejs and rust
+build() {
+	abuild-tree-sitter build
+}
+
+check() {
+	tree-sitter test
+}
+
+package() {
+	DESTDIR="$pkgdir" abuild-tree-sitter install
+}
+
+sha512sums="
+ae4d868c62c9a1b63e984f9f9acf6059e5e31b9211e283c89274c4d1e672bfd912b37abdd8af1fff2c8e25ac491b5291058d677841f834af1fb1adb5fb5a3695  tree-sitter-make-1.1.1.tar.gz
+"
