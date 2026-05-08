@@ -15,7 +15,6 @@ source="$pkgname-$pkgver.tar.gz::https://github.com/qnx-ports/pistache/archive/r
 pkgconf_version_string.patch
 "
 builddir="$srcdir/$pkgname-qnx-v$pkgver-1"
-options="!check"
 
 build() {
     LDFLAGS="-lm -lregex -lsocket -lgcc_s"
@@ -25,14 +24,11 @@ build() {
 }
 
 check() {
-    #2 from 26 test programs currently fail:
-    #run_http_server_test
-    #run_rest_server_test
     meson test -C output
 }
 
 package() {
-  DESTDIR="$pkgdir" meson install --no-rebuild -C output
+    DESTDIR="$pkgdir" meson install --no-rebuild -C output
 }
 
 
