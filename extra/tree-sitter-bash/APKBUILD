@@ -1,0 +1,26 @@
+# Alpine Contributor: Jakub Jirutka <jakub@jirutka.cz>
+# Alpine Maintainer: Jakub Jirutka <jakub@jirutka.cz>
+# Maintainer: Abdulfatah Ahmoda <abahmoda@qnx.com>
+pkgname=tree-sitter-bash
+pkgver=0.25.0
+pkgrel=0
+pkgdesc="Bash grammar for tree-sitter"
+url="https://github.com/tree-sitter/tree-sitter-bash"
+arch="all"
+license="MIT"
+makedepends="tree-sitter-dev"
+install_if="tree-sitter-grammars"
+source="https://github.com/tree-sitter/tree-sitter-bash/archive/v$pkgver/tree-sitter-bash-$pkgver.tar.gz"
+options="!check"  # no tests for shared lib
+
+build() {
+	abuild-tree-sitter build
+}
+
+package() {
+	DESTDIR="$pkgdir" abuild-tree-sitter install
+}
+
+sha512sums="
+612e505a564d07691806faaca19d1f552e2786ca8c4ed9716af62a630b91089f4e58f2139ce18373478a23a5c4807ff6bea51a2cab451c59c84d02498f31db61  tree-sitter-bash-0.25.0.tar.gz
+"
