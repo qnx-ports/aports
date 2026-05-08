@@ -1,0 +1,26 @@
+# Alpine Contributor: Jakub Jirutka <jakub@jirutka.cz>
+# Alpine Maintainer: Jakub Jirutka <jakub@jirutka.cz>
+# Maintainer: Abdulfatah Ahmoda <abahmoda@qnx.com>
+pkgname=tree-sitter-cmake
+pkgver=0.7.2
+pkgrel=0
+pkgdesc="CMake grammar for tree-sitter"
+url="https://github.com/uyha/tree-sitter-cmake"
+arch="all"
+license="MIT"
+makedepends="tree-sitter-dev"
+install_if="tree-sitter-grammars"
+source="https://github.com/uyha/tree-sitter-cmake/archive/v$pkgver/tree-sitter-cmake-$pkgver.tar.gz"
+options="!check"  # no tests for shared lib
+
+build() {
+	abuild-tree-sitter build
+}
+
+package() {
+	DESTDIR="$pkgdir" abuild-tree-sitter install
+}
+
+sha512sums="
+85dc552db14d25b4d2bbae7df59d48b9ace722c16db661e8f6ecdb38700d2f70038496c7f040e95499110f0a0c42e3e9b8f48d56136199a9cbe6846b37124cf3  tree-sitter-cmake-0.7.2.tar.gz
+"
