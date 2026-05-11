@@ -1,13 +1,6 @@
 --- a/Source/WebKit/Shared/AuxiliaryProcess.messages.in
 +++ b/Source/WebKit/Shared/AuxiliaryProcess.messages.in
-@@ -28,14 +28,14 @@
- messages -> AuxiliaryProcess WantsDispatchMessage {
-     ShutDown()
-     SetProcessSuppressionEnabled(bool flag)
- 
-     MainThreadPing() -> ()
- 
- #if ENABLE(CFPREFS_DIRECT_MODE)
+@@ -35,7 +35,7 @@
      [DeferSendingIfSuspendedWithCoalescingKeys=(domain, key)] PreferenceDidUpdate(String domain, String key, std::optional<String> encodedValue)
  #endif
  
@@ -18,14 +11,7 @@
  }
 --- a/Source/WebKit/Shared/AuxiliaryProcess.h
 +++ b/Source/WebKit/Shared/AuxiliaryProcess.h
-@@ -143,21 +143,21 @@
-     
- #if PLATFORM(MAC) && ENABLE(WEBPROCESS_NSRUNLOOP)
-     static void stopNSRunLoop();
- #endif
- 
-     void didReceiveMessage(IPC::Connection&, IPC::Decoder&) override;
-     void didReceiveSyncMessage(IPC::Connection&, IPC::Decoder&, UniqueRef<IPC::Encoder>&) override;
+@@ -150,7 +150,7 @@
      bool dispatchMessage(IPC::Connection&, IPC::Decoder&);
      bool dispatchSyncMessage(IPC::Connection&, IPC::Decoder&, UniqueRef<IPC::Encoder>&);
  
@@ -34,23 +20,9 @@
      void didReceiveMemoryPressureEvent(bool isCritical);
  #endif
  
- #if ENABLE(CFPREFS_DIRECT_MODE)
-     static RetainPtr<id> decodePreferenceValue(const std::optional<String>& encodedValue);
-     static void setPreferenceValue(const String& domain, const String& key, id value);
-     virtual void handlePreferenceChange(const String& domain, const String& key, id value);
-     virtual void dispatchSimulatedNotificationsForPreferenceChange(const String& key) { }
-     virtual void accessibilitySettingsDidChange() { }
- #endif
 --- a/Source/WebKit/Shared/AuxiliaryProcess.cpp
 +++ b/Source/WebKit/Shared/AuxiliaryProcess.cpp
-@@ -37,21 +37,21 @@
- #include <WebCore/LogInitialization.h>
- #include <pal/SessionID.h>
- #include <wtf/LogInitialization.h>
- #include <wtf/SetForScope.h>
- #include <wtf/WTFProcess.h>
- 
- #if !OS(WINDOWS)
+@@ -44,7 +44,7 @@
  #include <unistd.h>
  #endif
  
@@ -59,21 +31,7 @@
  #include <wtf/MemoryPressureHandler.h>
  #if USE(GLIB)
  #include <wtf/glib/Sandbox.h>
- #endif
- #endif
- 
- #if PLATFORM(COCOA)
- #include "CoreIPCSecureCoding.h"
- #endif
- 
-@@ -287,20 +287,20 @@
- void AuxiliaryProcess::initializeSandbox(const AuxiliaryProcessInitializationParameters&, SandboxInitializationParameters&)
- {
- }
- 
- void AuxiliaryProcess::didReceiveInvalidMessage(IPC::Connection&, IPC::MessageName messageName, const Vector<uint32_t>&)
- {
-     WTFLogAlways("Received invalid message: '%s'", description(messageName).characters());
+@@ -294,7 +294,7 @@
      CRASH();
  }
  
@@ -82,22 +40,9 @@
  void AuxiliaryProcess::didReceiveMemoryPressureEvent(bool isCritical)
  {
      MemoryPressureHandler::singleton().triggerMemoryPressureEvent(isCritical);
- }
- #endif
- 
- #endif // !PLATFORM(COCOA)
- 
- } // namespace WebKit
 --- a/Source/WebKit/UIProcess/WebProcessPool.cpp
 +++ b/Source/WebKit/UIProcess/WebProcessPool.cpp
-@@ -130,21 +130,21 @@
- #if ENABLE(GPU_PROCESS)
- #include "GPUProcessCreationParameters.h"
- #include "GPUProcessMessages.h"
- #include "GPUProcessProxy.h"
- #endif
- 
- #if ENABLE(REMOTE_INSPECTOR)
+@@ -137,7 +137,7 @@
  #include <JavaScriptCore/RemoteInspector.h>
  #endif
  
@@ -106,21 +51,7 @@
  #include "MemoryPressureMonitor.h"
  #endif
  
- #if PLATFORM(COCOA)
- #include "DefaultWebBrowserChecks.h"
- #include "WebPrivacyHelpers.h"
- #include <WebCore/GameControllerGamepadProvider.h>
- #include <WebCore/HIDGamepadProvider.h>
- #include <WebCore/MultiGamepadProvider.h>
- #include <WebCore/PowerSourceNotifier.h>
-@@ -433,36 +433,42 @@
-     WebKit::setOverrideLanguages(WTFMove(languages));
- 
-     LOG_WITH_STREAM(Language, stream << "WebProcessPool is setting OverrideLanguages: " << languages);
-     sendToAllProcesses(Messages::WebProcess::UserPreferredLanguagesChanged(overrideLanguages()));
- 
- #if ENABLE(GPU_PROCESS)
-     if (RefPtr gpuProcess = GPUProcessProxy::singletonIfCreated())
+@@ -440,9 +440,12 @@
          gpuProcess->send(Messages::GPUProcess::UserPreferredLanguagesChanged(overrideLanguages()), 0);
  #endif
  #if USE(SOUP)
@@ -133,7 +64,7 @@
  }
  
  void WebProcessPool::fullKeyboardAccessModeChanged(bool fullKeyboardAccessEnabled)
- {
+@@ -450,12 +453,15 @@
      sendToAllProcesses(Messages::WebProcess::FullKeyboardAccessModeChanged(fullKeyboardAccessEnabled));
  }
  
@@ -151,21 +82,7 @@
  }
  #endif
  
- void WebProcessPool::textCheckerStateChanged()
- {
-     sendToAllProcesses(Messages::WebProcess::SetTextCheckerState(TextChecker::state()));
- }
- 
- void WebProcessPool::setApplicationIsActive(bool isActive)
- {
-@@ -1582,30 +1588,36 @@
- void WebProcessPool::registerURLSchemeAsEmptyDocument(const String& urlScheme)
- {
-     m_schemesToRegisterAsEmptyDocument.add(urlScheme);
-     sendToAllProcesses(Messages::WebProcess::RegisterURLSchemeAsEmptyDocument(urlScheme));
- }
- 
- void WebProcessPool::registerURLSchemeAsSecure(const String& urlScheme)
+@@ -1589,16 +1595,22 @@
  {
      LegacyGlobalSettings::singleton().registerURLSchemeAsSecure(urlScheme);
      sendToAllProcesses(Messages::WebProcess::RegisterURLSchemeAsSecure(urlScheme));
@@ -188,14 +105,8 @@
  }
  
  void WebProcessPool::setDomainRelaxationForbiddenForURLScheme(const String& urlScheme)
+@@ -1611,8 +1623,11 @@
  {
-     m_schemesToSetDomainRelaxationForbiddenFor.add(urlScheme);
-     sendToAllProcesses(Messages::WebProcess::SetDomainRelaxationForbiddenForURLScheme(urlScheme));
- }
- 
- void WebProcessPool::registerURLSchemeAsLocal(const String& urlScheme)
- {
-@@ -1612,25 +1624,31 @@
      LegacyGlobalSettings::singleton().registerURLSchemeAsLocal(urlScheme);
      sendToAllProcesses(Messages::WebProcess::RegisterURLSchemeAsLocal(urlScheme));
 +
@@ -206,7 +117,7 @@
  }
  
  #if ENABLE(ALL_LEGACY_REGISTERED_SPECIAL_URL_SCHEMES)
- void WebProcessPool::registerURLSchemeAsNoAccess(const String& urlScheme)
+@@ -1620,10 +1635,13 @@
  {
      LegacyGlobalSettings::singleton().registerURLSchemeAsNoAccess(urlScheme);
      sendToAllProcesses(Messages::WebProcess::RegisterURLSchemeAsNoAccess(urlScheme));
@@ -221,21 +132,7 @@
  
  void WebProcessPool::registerURLSchemeAsDisplayIsolated(const String& urlScheme)
  {
-     m_schemesToRegisterAsDisplayIsolated.add(urlScheme);
-     sendToAllProcesses(Messages::WebProcess::RegisterURLSchemeAsDisplayIsolated(urlScheme));
- }
- 
- void WebProcessPool::registerURLSchemeAsCORSEnabled(const String& urlScheme)
- {
-     m_schemesToRegisterAsCORSEnabled.add(urlScheme);
-@@ -1637,33 +1655,39 @@
-     sendToAllProcesses(Messages::WebProcess::RegisterURLSchemeAsCORSEnabled(urlScheme));
- }
- 
- void WebProcessPool::registerGlobalURLSchemeAsHavingCustomProtocolHandlers(const String& urlScheme)
- {
-     if (!urlScheme)
-         return;
+@@ -1644,8 +1662,11 @@
  
      InitializeWebKit2();
      globalURLSchemesWithCustomProtocolHandlers().add(urlScheme);
@@ -247,9 +144,7 @@
  }
  
  void WebProcessPool::unregisterGlobalURLSchemeAsHavingCustomProtocolHandlers(const String& urlScheme)
- {
-     if (!urlScheme)
-         return;
+@@ -1655,8 +1676,11 @@
  
      InitializeWebKit2();
      globalURLSchemesWithCustomProtocolHandlers().remove(urlScheme);
@@ -261,21 +156,7 @@
  }
  
  void WebProcessPool::registerURLSchemeAsCachePartitioned(const String& urlScheme)
- {
-     m_schemesToRegisterAsCachePartitioned.add(urlScheme);
-     sendToAllProcesses(Messages::WebProcess::RegisterURLSchemeAsCachePartitioned(urlScheme));
- }
- 
- void WebProcessPool::registerURLSchemeAsCanDisplayOnlyIfCanRequest(const String& urlScheme)
- {
-@@ -1683,30 +1707,36 @@
- 
-     m_backForwardCache->setCapacity(*this, backForwardCacheCapacity);
- }
- 
- void WebProcessPool::setCacheModel(CacheModel cacheModel)
- {
-     updateBackForwardCacheCapacity();
+@@ -1690,16 +1714,22 @@
  
      sendToAllProcesses(Messages::WebProcess::SetCacheModel(cacheModel));
  
@@ -298,23 +179,9 @@
  }
  
  void WebProcessPool::setDefaultRequestTimeoutInterval(double timeoutInterval)
- {
-     sendToAllProcesses(Messages::WebProcess::SetDefaultRequestTimeoutInterval(timeoutInterval));
- }
- 
- Ref<DownloadProxy> WebProcessPool::createDownloadProxy(WebsiteDataStore& dataStore, const ResourceRequest& request, WebPageProxy* originatingPage, const std::optional<FrameInfoData>& frameInfo)
- {
-     Ref client = m_legacyDownloadClient ? Ref<API::DownloadClient>(*m_legacyDownloadClient) : adoptRef(*new API::DownloadClient);
 --- a/Source/WebKit/UIProcess/linux/MemoryPressureMonitor.h
 +++ b/Source/WebKit/UIProcess/linux/MemoryPressureMonitor.h
-@@ -18,21 +18,21 @@
-  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
-  * THE POSSIBILITY OF SUCH DAMAGE.
-  */
+@@ -25,7 +25,7 @@
  
  #pragma once
  
@@ -323,21 +190,7 @@
  
  #include <wtf/NeverDestroyed.h>
  #include <wtf/Noncopyable.h>
- #include <wtf/text/CString.h>
- 
- namespace WebKit {
- 
- class MemoryPressureMonitor {
-     WTF_MAKE_NONCOPYABLE(MemoryPressureMonitor);
-     friend NeverDestroyed<MemoryPressureMonitor>;
-@@ -76,11 +76,11 @@
-     FILE* m_cgroupV2MemoryMaxFile { nullptr };
-     FILE* m_cgroupV2MemoryHighFile { nullptr };
-     FILE* m_cgroupV2MemoryCurrentFile { nullptr };
- 
-     void disposeMemoryController();
-     size_t getCgroupFileValue(FILE*);
- };
+@@ -83,4 +83,4 @@
  
  } // namespace WebKit
  
@@ -345,14 +198,7 @@
 +#endif // OS(LINUX) || OS(QNX)
 --- a/Source/WebKit/UIProcess/WebProcessPool.h
 +++ b/Source/WebKit/UIProcess/WebProcessPool.h
-@@ -381,21 +381,21 @@
-         GameControllerFramework,
-     };
-     size_t numberOfConnectedGamepadsForTesting(GamepadType);
-     void setUsesOnlyHIDGamepadProviderForTesting(bool);
- 
- #if PLATFORM(COCOA)
-     static bool omitPDFSupport();
+@@ -388,7 +388,7 @@
  #endif
  
      void fullKeyboardAccessModeChanged(bool fullKeyboardAccessEnabled);
@@ -361,23 +207,9 @@
      void sendMemoryPressureEvent(bool isCritical);
  #endif
      void textCheckerStateChanged();
- 
- #if ENABLE(GPU_PROCESS)
-     void gpuProcessDidFinishLaunching(ProcessID);
-     void gpuProcessExited(ProcessID, ProcessTerminationReason);
- 
-     void createGPUProcessConnection(WebProcessProxy&, IPC::Connection::Handle&&, WebKit::GPUProcessConnectionParameters&&);
- 
 --- a/Source/WebKit/PlatformGTK.cmake
 +++ b/Source/WebKit/PlatformGTK.cmake
-@@ -44,21 +44,25 @@
- if (NOT DEVELOPER_MODE AND NOT CMAKE_SYSTEM_NAME MATCHES "Darwin")
-     WEBKIT_ADD_TARGET_PROPERTIES(WebKit LINK_FLAGS "-Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/webkitglib-symbols.map")
-     set_property(TARGET WebKit APPEND PROPERTY LINK_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/webkitglib-symbols.map")
- endif ()
- 
- set(WebKit_USE_PREFIX_HEADER ON)
- 
+@@ -51,7 +51,11 @@
  list(APPEND WebKit_UNIFIED_SOURCE_LIST_FILES
      "SourcesGTK.txt"
  )
@@ -390,41 +222,18 @@
  list(APPEND WebKit_LIBRARIES
      GLib::GioUnix
      GLib::Module
- )
- 
- list(APPEND WebKit_MESSAGES_IN_FILES
-     UIProcess/ViewGestureController
- 
-     UIProcess/glib/AcceleratedBackingStore
- 
 --- a/Source/WebKit/UIProcess/qnx/MemoryPressureMonitor.cpp
 +++ b/Source/WebKit/UIProcess/qnx/MemoryPressureMonitor.cpp
-@@ -0,0 +1,140 @@
+@@ -0,0 +1,124 @@
 +/*
-+ * Copyright (C) 2024 BlackBerry Limited. All rights reserved.
++ * Copyright (c) 2026, BlackBerry Limited. All rights reserved.
 + *
-+ * Redistribution and use in source and binary forms, with or without
-+ * modification, are permitted provided that the following conditions
-+ * are met:
-+ * 1. Redistributions of source code must retain the above copyright
-+ *    notice, this list of conditions and the following disclaimer.
-+ * 2. Redistributions in binary form must reproduce the above copyright
-+ *    notice, this list of conditions and the following disclaimer in the
-+ *    documentation and/or other materials provided with the distribution.
-+ *
-+ * THIS SOFTWARE IS PROVIDED BY APPLE INC. AND ITS CONTRIBUTORS ``AS IS''
-+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
-+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-+ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL APPLE INC. OR ITS CONTRIBUTORS
-+ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
-+ * THE POSSIBILITY OF SUCH DAMAGE.
++ * BlackBerry Limited and its licensors retain all intellectual property and
++ * proprietary rights in and to this software and related documentation. Any
++ * use, reproduction, disclosure or distribution of this software and related
++ * documentation without an express license agreement from BlackBerry Limited
++ * is strictly prohibited.
 + */
-+
 +#include "config.h"
 +#include "MemoryPressureMonitor.h"
 +
