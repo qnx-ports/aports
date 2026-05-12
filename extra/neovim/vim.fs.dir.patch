@@ -1,5 +1,5 @@
 diff --git a/runtime/lua/vim/fs.lua b/runtime/lua/vim/fs.lua
-index d50ce39eac..c4b1e41215 100644
+index d50ce39eac..77e32b9bf2 100644
 --- a/runtime/lua/vim/fs.lua
 +++ b/runtime/lua/vim/fs.lua
 @@ -194,7 +194,18 @@ function M.dir(path, opts)
@@ -14,12 +14,11 @@ index d50ce39eac..c4b1e41215 100644
 +      end
 +
 +      if etype == nil then
-+        local stat = vim.uv.fs_stat(M.joinpath(path, name))
++        local stat = vim.uv.fs_lstat(M.joinpath(path, name))
 +        etype = stat and stat.type or 'unknown'
 +      end
 +
 +      return name, etype
      end
    end
- 
 
