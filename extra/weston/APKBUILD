@@ -3,7 +3,7 @@
 # Maintainer: Aaron Bassett <abassett@qnx.com>
 pkgname=weston
 pkgver=14.0.2
-pkgrel=8
+pkgrel=10
 _commit="aac2fd40ef55ee09c6891276837d07faefd9b7db"
 _libname=lib$pkgname
 _libdir=$_libname-${pkgver%%.*}
