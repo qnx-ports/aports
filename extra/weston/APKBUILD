@@ -3,7 +3,7 @@
 # Maintainer: Aaron Bassett <abassett@qnx.com>
 pkgname=weston
 pkgver=14.0.2
-pkgrel=8
+pkgrel=9
 _commit="qnx-main"
 _libname=lib$pkgname
 _libdir=$_libname-${pkgver%%.*}
@@ -168,7 +168,7 @@ _sub() {
 
 
 sha512sums="
-02989af75be86a16394668f7333236e00d830f8c60332e53f0019c3571c478d82600448b2da93a42221ee21ecb8c31c2ec77e89a3b2e6161d2d8471ee70c2ccd  qnx-main.tar.gz
+0bba6c5a58afbe283619da778a21d10502df8875b2718d4832c4f27fe4d2bfe1e7eac31477fea70edc63264efd1e1833f4a8b09575fa436f2a3ec14f1f3a38af  qnx-main.tar.gz
 f8da44d844cee2b21610f7bb83222910ecb7fad5620d461f88b264d52b0308ffe78b930c414c58766ce0fa440c4edae8156a7848237b50e6e4bbf0ddd0ed5767  input.h
 df637c58711e02d865c31ccd719a435253f7eb34718b19a64a8b057cb82b40eae0ed52d0a49d0db251eeecd6197238280bd05c475883170af5e283c13f12f201  pty.h
 add868b314b3781e4d10f32d25f83b3b6e52f0a6b5fbca23b1bf1880d038d72c5b2b2deb7b3206de8b22ec3ac396d6568c7690a6ca4e0a2276f7691ae7bbeec6  xfce4-panel.patch
