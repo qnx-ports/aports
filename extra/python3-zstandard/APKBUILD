@@ -1,0 +1,42 @@
+# Alpine-Maintainer:
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=python3-zstandard
+pkgver=0.25.0
+pkgrel=0
+pkgdesc="Python bindings to the Zstandard (zstd) compression library"
+url="https://github.com/indygreg/python-zstandard"
+license="BSD-3-Clause"
+arch="all"
+# use bundled zstd, due to the system zstd may not match the actually used
+# headers.
+# https://github.com/indygreg/python-zstandard/issues/48#issuecomment-2032474718
+depends="qnx-io-sock"
+makedepends="python3-dev python3-gpep517 python3-setuptools python3-wheel python3-cffi qnx-io-sock-dev"
+checkdepends="python3-hypothesis python3-pytest"
+source="https://github.com/indygreg/python-zstandard/archive/$pkgver/python3-zstandard-$pkgver.tar.gz"
+builddir="$srcdir/python-zstandard-$pkgver"
+options="!check" # We don't have python3-hypothesis yet.
+
+build() {
+    CFLAGS="$CFLAGS -fPIC" \
+    gpep517 build-wheel \
+        --wheel-dir .dist \
+        --output-fd 3 3>&1 >&2
+}
+
+check() {
+    mv zstandard backup
+    python3 -m venv --clear --without-pip --system-site-packages .testenv
+    .testenv/bin/python3 -m installer .dist/*.whl
+    .testenv/bin/python3 -m unittest -v tests/*.py
+    mv backup zstandard
+}
+
+package() {
+    python3 -m installer -d "$pkgdir" \
+        .dist/*.whl
+}
+
+sha512sums="
+1ca492bcb39c22ec9eb1877799172de4a04033df364f4271b658243c0a9816ac584df0df85ebe967a2e2b98a10db90b66e7b050ecb8bfa9f9c7ad50f2f87921a  python3-zstandard-0.25.0.tar.gz
+"

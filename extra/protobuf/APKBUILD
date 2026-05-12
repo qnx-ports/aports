@@ -1,0 +1,122 @@
+# Alpine-Contributor: Sheila Aman <sheila@vulpine.house>
+# Alpine-Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+# Contributor: Ethan Leir <eleir@qnx.com>
+# Maintainer: Elliott Mazzuca <emazzuca@qnx.com>
+pkgname=protobuf
+pkgver=27.2
+pkgrel=0
+pkgdesc="Library for extensible, efficient structure packing"
+url="https://github.com/protocolbuffers/protobuf"
+arch="all"
+license="BSD-3-Clause"
+depends="
+    protoc=$pkgver-r$pkgrel
+    libprotoc=$pkgver-r$pkgrel
+    libprotobuf=$pkgver-r$pkgrel
+    libprotobuf-lite=$pkgver-r$pkgrel
+    abseil-cpp=20230802.1-r0
+    libc++
+    qnx-io-sock
+    "
+depends_dev="
+    protoc=$pkgver-r$pkgrel
+    zlib-dev
+    "
+makedepends="
+    $depends_dev
+    abseil-cpp-dev
+    cmake
+    libc++-dev
+    ninja
+    qnx-io-sock-dev
+    "
+checkdepends="gtest-dev"
+subpackages="
+    $pkgname-dev
+    $pkgname-vim::noarch
+    protoc
+    libprotoc
+    libprotobuf
+    libprotobuf-lite
+    "
+source="$pkgname-$pkgver.tar.gz::https://github.com/protocolbuffers/protobuf/archive/refs/tags/v$pkgver.tar.gz
+    soversion.patch
+    fix-protoc-abs-path.patch
+    "
+options="!check" # We aren't verifying this version.
+
+build() {
+    export CFLAGS="$CFLAGS -DNDEBUG -O2"
+    export CXXFLAGS="$CXXFLAGS -DNDEBUG -O2 -Wno-deprecated-declarations"
+    cmake -B build -G Ninja \
+        -DCMAKE_BUILD_TYPE=None \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DBUILD_SHARED_LIBS=ON \
+        -DCMAKE_EXE_LINKER_FLAGS="-lsocket" \
+        -Dprotobuf_BUILD_TESTS="$(want_check && echo ON || echo OFF)" \
+        -Dprotobuf_BUILD_LIBPROTOC=ON \
+        -Dprotobuf_ALLOW_CCACHE=ON \
+        -Dprotobuf_ABSL_PROVIDER="package"
+    cmake --build build
+}
+
+check() {
+    cd "$builddir"/build
+    # Use gtest filter to exclude QNX float precision tests
+    export GTEST_FILTER='-TextFormatTest.PrintFloatPrecision:TextFormatTest.PrintFieldsInIndexOrder'
+    ctest --test-dir .
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install build
+
+    sed -i \
+        -e "/Requires:/s|;| |g" \
+        -e "/Requires:/s|::|_|g" \
+        "$pkgdir"/usr/lib/pkgconfig/protobuf.pc
+
+    install -Dm644 editors/proto.vim \
+        "$pkgdir"/usr/share/vim/vimfiles/syntax/proto.vim
+}
+
+vim() {
+    pkgdesc="Vim syntax for $pkgname"
+    depends=""
+    install_if="$pkgname=$pkgver-r$pkgrel vim"
+
+    amove usr/share/vim/vimfiles/syntax/proto.vim
+}
+
+libprotoc() {
+    pkgdesc="Runtime library for Protocol Buffer compiler"
+    depends=""
+
+    amove usr/lib/libprotoc.so.*
+}
+
+protoc() {
+    pkgdesc="Protocol buffer compiler binary and library"
+    depends=""
+
+    amove usr/bin/protoc*
+}
+
+libprotobuf() {
+    pkgdesc="Runtime library for C++ users of protocol buffers"
+    depends=""
+
+    amove usr/lib/libprotobuf.so.*
+}
+
+lite() {
+    pkgdesc="Runtime library for C++ users with 'lite runtime' setting of protocol buffers"
+    depends=""
+
+    amove usr/lib/libprotobuf-lite.so.*
+}
+
+sha512sums="
+664c66b62cf1ed0c65d9b910d8e67d4d5d471113697f1b8edf1573cd5c0fc8e850ac53ce984e48e6c6b9cbbefa12f8530058384e7388e65a59c1e46d03772397  protobuf-27.2.tar.gz
+a932fdb61d8bf1ad150176dd74362313c1e7fe2862b0899caea22c4a4921c25ff05136d0e14d0528f111af73ff223e5f697a772d8fb31a630479137736110060  soversion.patch
+1a5e231f4da8f925062acbc35861755e339fb3410222b4852f74de2ac7eae2e761960b8da6f09264a7758f5d16f6a435b0e8320d02cf5199730b3a05fc33ca23  fix-protoc-abs-path.patch
+"

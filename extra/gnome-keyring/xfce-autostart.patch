@@ -1,0 +1,23 @@
+--- a/daemon/gnome-keyring-pkcs11.desktop.in.in
++++ b/daemon/gnome-keyring-pkcs11.desktop.in.in
+@@ -3,7 +3,7 @@
+Name=Certificate and Key Storage
+Comment=GNOME Keyring: PKCS#11 Component
+Exec=@bindir@/gnome-keyring-daemon --start --components=pkcs11
+-OnlyShowIn=GNOME;Unity;MATE;
++OnlyShowIn=GNOME;Unity;MATE;XFCE;
+NoDisplay=true
+X-GNOME-Autostart-Phase=PreDisplayServer
+X-GNOME-AutoRestart=false
+--- a/daemon/gnome-keyring-secrets.desktop.in.in
++++ b/daemon/gnome-keyring-secrets.desktop.in.in
+@@ -3,7 +3,7 @@
+Name=Secret Storage Service
+Comment=GNOME Keyring: Secret Service
+Exec=@bindir@/gnome-keyring-daemon --start --components=secrets
+-OnlyShowIn=GNOME;Unity;MATE;
++OnlyShowIn=GNOME;Unity;MATE;XFCE;
+NoDisplay=true
+X-GNOME-Autostart-Phase=PreDisplayServer
+X-GNOME-AutoRestart=false
+ 

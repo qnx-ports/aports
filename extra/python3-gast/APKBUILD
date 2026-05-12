@@ -1,0 +1,37 @@
+# Alpine-Contributor: Celeste <cielesti@protonmail.com>
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=python3-gast
+pkgver=0.7.0
+pkgrel=0
+pkgdesc="Python AST that abstracts the underlying Python version"
+url="https://github.com/serge-sans-paille/gast"
+arch="noarch"
+license="BSD-3-Clause"
+makedepends="
+    python3-gpep517
+    python3-setuptools
+    python3-wheel
+    "
+source="$pkgname-$pkgver.tar.gz::https://github.com/serge-sans-paille/gast/archive/refs/tags/$pkgver.tar.gz"
+builddir="$srcdir/gast-$pkgver"
+
+build() {
+    gpep517 build-wheel \
+        --wheel-dir .dist \
+        --output-fd 3 3>&1 >&2
+}
+
+check() {
+    python3 -m venv --clear --without-pip --system-site-packages .testenv
+    .testenv/bin/python3 -m installer .dist/*.whl
+    .testenv/bin/python3 -m unittest discover
+}
+
+package() {
+    python3 -m installer -d "$pkgdir" \
+        .dist/*.whl
+}
+
+sha512sums="
+94509257a15e896aeefb41bdf6a578bd5a58569fb68af874d66059acece4302d7aedddc4c204e9ba77a403f024becb90cf290595cbdb0939fe0106e22d68a752  python3-gast-0.7.0.tar.gz
+"

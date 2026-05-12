@@ -1,0 +1,70 @@
+# Alpine-Contributor: Jakub Jirutka <jakub@jirutka.cz>
+# Alpine-Maintainer: Jakub Jirutka <jakub@jirutka.cz>
+# Maintainer: Aaron Bassett <abassett@qnx.com>
+pkgname=ada
+# NOTE: The primary use of this library is for extra/nodejs and extra/nodejs-current.
+pkgver=3.4.4
+pkgrel=0
+pkgdesc="WHATWG-compliant and fast URL parser written in modern C++"
+url="https://ada-url.github.io/ada"
+arch="all"
+license="( Apache-2.0 OR MIT ) AND MPL-2.0"
+depends="$pkgname-libs fmt"
+depends_dev="$pkgname=$pkgver-r$pkgrel"
+depends_libs="libc++"
+makedepends="
+	cmake
+	cxxopts-dev
+	fmt-dev
+	gtest-dev
+	ninja
+	libc++-dev
+	"
+checkdepends="
+	simdjson-dev
+	simdjson-static
+	"
+subpackages="$pkgname-static $pkgname-dev $pkgname-libs"
+source="https://github.com/ada-url/ada/archive/v$pkgver/ada-$pkgver.tar.gz
+	use-any-simdjson-version.patch
+	"
+
+build() {
+	local shared; for shared in OFF ON; do
+		cmake -G Ninja -B build -Wno-dev \
+			-DCMAKE_BUILD_TYPE=MinSizeRel \
+			-DCMAKE_INSTALL_PREFIX=/usr \
+			-DCMAKE_INSTALL_LIBDIR=lib \
+			-DCMAKE_VERBOSE_MAKEFILE=ON \
+			-DBUILD_SHARED_LIBS=$shared \
+			-DCPM_LOCAL_PACKAGES_ONLY=ON \
+			-DADA_TESTING="$(want_check && echo ON || echo OFF)" \
+			-DADA_BENCHMARKS=OFF \
+			-DADA_TOOLS=ON \
+			-DADA_USE_SIMDUTF=OFF
+		cmake --build build
+	done
+}
+
+check() {
+	cd build
+	ctest
+}
+
+package() {
+	DESTDIR="$pkgdir" cmake --install build
+
+	install -m644 build/src/libada.a -t "$pkgdir"/usr/lib/
+}
+
+tools() {
+	pkgdesc="$pkgdesc (cli tools)"
+
+	amove usr/bin
+}
+
+
+sha512sums="
+b44b82d186d0c88e4c047434ffa2f792109e76c030f45bd4fd7324daff5f90d5eeb3172403178f39e24d6846f09ca10135446f063b61e8aab009a2dd0c65d3eb  ada-3.4.4.tar.gz
+a04aeb27309c6482ce06c81237ea50e3111fa944401da11f66b8c7a8fee3b51e6af0f13fb06fc6196d5bdbf29a39d36ab46f5cdc7cdd6b4a64ac9cb8763f20fa  use-any-simdjson-version.patch
+"

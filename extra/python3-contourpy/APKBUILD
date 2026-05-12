@@ -1,0 +1,40 @@
+# Alpine-Contributor: Aiden Grossman <agrossma154@yahoo.com>
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=python3-contourpy
+pkgver=1.3.3
+pkgrel=0
+pkgdesc="Python library for calculating contours in 2D quadrilateral grids Resources"
+url="https://github.com/contourpy/contourpy"
+arch="all"
+license="BSD-3-Clause"
+depends="libc++ python3-numpy"
+makedepends="libc++-dev python3-gpep517 python3-meson-python python3-pybind11-dev python3-dev"
+checkdepends="python3-pytest python3-matplotlib python3-wurlitzer"
+subpackages=""
+source="$pkgname-$pkgver.tar.gz::https://github.com/contourpy/contourpy/archive/refs/tags/v$pkgver.tar.gz
+    mesonpy-fix.patch
+    "
+builddir="$srcdir/contourpy-$pkgver"
+options="!check" # circular dependency with matplotlib
+
+build() {
+    gpep517 build-wheel \
+        --wheel-dir .dist \
+        --output-fd 3 3>&1 >&2
+}
+
+check() {
+    python3 -m venv --clear --without-pip --system-site-packages .testenv
+    .testenv/bin/python3 -m installer .dist/*.whl
+    .testenv/bin/python3 -m pytest
+}
+
+package() {
+    python3 -m installer -d "$pkgdir" \
+        .dist/*.whl
+}
+
+sha512sums="
+b920fc30189075cb29d6af346d0b7c9038b46b03c561388652eaf0d9647cb5246894903742c230b99fe5e3e62c6a60fcb634a24c31da6930819acd2eefb5f631  python3-contourpy-1.3.3.tar.gz
+61a8ad09b7a608f22d3102593e5b44a97679f54c9443cbc76e2d10ac08872917074fd42c15683aa2da18a442d7adde0fb9eccfbbc36ad180abf710bd26d567af  mesonpy-fix.patch
+"

@@ -1,0 +1,54 @@
+# Alpine-Contributor: Fabian Affolter <fabian@affolter-engineering.ch>
+# Alpine-Maintainer: Achill Gilgenast <achill@achill.org>
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=python3-pillow
+pkgver=12.1.1
+pkgrel=0
+pkgdesc="Python Imaging Library"
+url="https://python-pillow.org/"
+arch="all"
+license="MIT-CMU"
+depends="python3 qnx-io-sock"
+makedepends="
+    freetype-dev
+    fribidi-dev
+    lcms2-dev
+    libjpeg-turbo-dev
+    libpng-dev
+    libwebp-dev
+    libxcb-dev
+    openjpeg-dev
+    python3-gpep517
+    python3-pybind11
+    python3-setuptools
+    python3-wheel
+    python3-dev
+    tiff-dev
+    qnx-io-sock-dev
+    zlib-dev
+    "
+checkdepends="python3-pytest python3-numpy"
+source="https://files.pythonhosted.org/packages/source/p/pillow/pillow-$pkgver.tar.gz"
+builddir="$srcdir/pillow-$pkgver"
+options="!check" # todo
+
+build() {
+    export CFLAGS="$CFLAGS -O2 -lz -fPIC"
+    gpep517 build-wheel \
+        --wheel-dir .dist \
+        --output-fd 3 3>&1 >&2
+}
+
+check() {
+    python3 setup.py test
+    python3 selftest.py
+}
+
+package() {
+    python3 -m installer -d "$pkgdir" \
+        .dist/*.whl
+}
+
+sha512sums="
+89a3ddfaeff89b229b0e579aaae2ca5cd6f9ec568e78cb965b18961787493cb75bb7cdd5809a0650c97f6f252a062b1cc56ea7271ac22c195691bad9a676773b  pillow-12.1.1.tar.gz
+"

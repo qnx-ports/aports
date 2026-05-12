@@ -1,0 +1,22 @@
+diff --color -U 6 -N -r before/setuptools/_vendor/jaraco/text/__init__.py after/setuptools/_vendor/jaraco/text/__init__.py
+--- before/setuptools/_vendor/jaraco/text/__init__.py	2026-04-16 15:08:17.102378335 -0400
++++ after/setuptools/_vendor/jaraco/text/__init__.py	2026-04-16 15:08:50.986651824 -0400
+@@ -224,15 +224,15 @@
+     """
+     paragraphs = re.split(r'\n\n+', s)
+     cleaned = (para.replace('\n', ' ') for para in paragraphs)
+     return '\n'.join(cleaned)
+ 
+ 
+-lorem_ipsum: str = (
+-    files(__name__).joinpath('Lorem ipsum.txt').read_text(encoding='utf-8')
+-)
++#lorem_ipsum: str = (
++#    files(__name__).joinpath('Lorem ipsum.txt').read_text(encoding='utf-8')
++#)
+ 
+ 
+ class Splitter:
+     """object that will split a string with the given arguments for each call
+ 
+     >>> s = Splitter(',')

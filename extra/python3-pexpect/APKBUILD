@@ -1,0 +1,50 @@
+# Alpine-Contributor: Francesco Colista <fcolista@alpinelinux.org>
+# Alpine-Maintainer: Francesco Colista <fcolista@alpinelinux.org>
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=python3-pexpect
+_pkgname=pexpect
+pkgver=4.9
+pkgrel=0
+pkgdesc="Make Python a better tool for controlling and automating other programs"
+url="https://pexpect.readthedocs.io/en/stable/"
+arch="noarch"
+license="ISC"
+depends="python3 python3-ptyprocess"
+makedepends="python3-gpep517 python3-setuptools python3-wheel"
+checkdepends="python3-pytest bash coreutils"
+subpackages=""
+source="$pkgname-$pkgver.tar.gz::https://github.com/pexpect/$_pkgname/archive/$pkgver.tar.gz
+    py314.patch
+    "
+builddir="$srcdir/$_pkgname-$pkgver"
+# FIXME: Runs out of pty's, hits a number of ENOSYS errors in test orchestrator code.
+options="!check"
+
+build() {
+    gpep517 build-wheel \
+        --wheel-dir .dist \
+        --output-fd 3 3>&1 >&2
+}
+
+check() {
+    # tests that don't expect ansi colors
+    _tests_colors="not test_async_replwrap_multiline and not REPLWrapTestCase"
+    # tests that deadlock
+    _tests_hang="and not test_interrupt and not test_multiple_interrupts"
+    # test that is flaky/times out e.g. on s390x
+    _tests_flaky="and not test_100000"
+
+    python3 -m venv --clear --without-pip --system-site-packages .testenv
+    .testenv/bin/python3 -m installer .dist/*.whl
+    .testenv/bin/python3 -m pytest -v -k "$_tests_colors $_tests_hang $_tests_flaky"
+}
+
+package() {
+    python3 -m installer -d "$pkgdir" \
+        .dist/*.whl
+}
+
+sha512sums="
+222aa3a2aba174f1f9c9e5bbf71aa59fbc1c1830fce6691ecb01ec4f0613b1f2141da489a6bd7bfd226f46d98d52a16e1f5a5b7345bcf6557110bfd52cd5f31e  python3-pexpect-4.9.tar.gz
+7da559986ec5c8491191834005ac37a1bf302e9e099c2cbac2a61aa16430e7df283c21be58d07ef565a810ab43eda2a41df3db08e6344075bc7aae9bdc73e953  py314.patch
+"

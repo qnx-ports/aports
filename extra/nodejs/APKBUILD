@@ -1,0 +1,181 @@
+# Alpine-Contributor: Jose-Luis Rivas <ghostbar@riseup.net>
+# Alpine-Contributor: Jakub Jirutka <jakub@jirutka.cz>
+# Alpine-Contributor: Dave Esaias <dave@containership.io>
+# Alpine-Contributor: Tadahisa Kamijo <kamijin@live.jp>
+# Alpine-Contributor: Eivind Uggedal <eu@eju.no>
+# Alpine-Maintainer: Jakub Jirutka <jakub@jirutka.cz>
+# Maintainer: Aaron Bassett <abassett@qnx.com>
+pkgname=nodejs
+# Note: Update only to LTS versions! Other versions are supported only for
+#  9 months by upstream.
+pkgver=24.14.1
+pkgrel=0
+pkgdesc="JavaScript runtime built on V8 engine - LTS version"
+url="https://nodejs.org/"
+arch="all"
+license="MIT"
+depends="ca-certificates ada-libs brotli c-ares icu-libs libc++ libcrypto3 libssl3 libuv nghttp2 simdjson simdutf sqlite-libs zlib-ng zstd-libs"
+depends_libs="$depends"
+makedepends="
+	ada-dev
+	brotli-dev
+	c-ares-dev
+	icu-dev
+	nghttp2-dev
+	openssl-dev
+	python3-jinja2
+	python3
+	ninja
+	simdjson-dev
+	simdutf-dev
+	sqlite-dev
+	zlib-dev
+	zstd-dev
+	qnx-io-sock-dev
+	libc++-dev
+	libuv-dev
+	gyp
+	"
+subpackages="
+	$pkgname-dev
+	$pkgname-libs
+	$pkgname-doc
+	"
+provider_priority=100  # highest priority (other provider is nodejs-current)
+replaces="nodejs-current"
+source="https://github.com/qnx-ports/node/archive/refs/tags/qnx-v$pkgver.tar.gz
+	$pkgname.pc.in
+	remove-unused-openssl-config.patch
+	v8-no-static-zlib.patch
+	v8-int64-lowering-reducer.patch
+	node_sea.patch
+	node_snapshotable.patch
+	ninja-patch
+	"
+builddir="$srcdir/node-qnx-v$pkgver"
+
+prepare() {
+	default_prepare
+
+	# Remove bundled dependencies that we're not using.
+	#
+	# NOTE: nghttp3 and ngtcp2 are only used when building with OpenSSL
+	#  that supports QUIC. After the QUIC support is added to openssl, add
+	#  options --shared-nghttp3 and --shared-ngtcp2.
+	#
+	# NOTE: All bundled dependencies are described in
+	#  doc/contributing/maintaining/maintaining-dependencies.md.
+	rm -rf deps/ada \
+		deps/brotli \
+		deps/cares \
+		deps/corepack \
+		deps/nghttp2 \
+		deps/nghttp3 \
+		deps/ngtcp2 \
+		deps/openssl \
+		deps/simdjson \
+		deps/simdutf \
+		deps/sqlite \
+		deps/v8/third_party/jinja2 \
+		deps/zlib \
+		deps/zstd \
+		tools/inspector_protocol/jinja2 \
+		tools/gyp
+}
+
+build() {
+	# Add defines recommended in libuv readme.
+	local common_flags="-D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64"
+	# Disable use of OpenSSL ENGINE API - it's deprecated since OpenSSL 3.0
+	#   (https://issues.redhat.com/browse/RHEL-33743).
+	common_flags="$common_flags -DOPENSSL_NO_ENGINE"
+
+	# -Os overwrites the optimizations enabled by BUILDTYPE=Release.
+	# Compiling with O2 instead of Os increases binary size by ~10%
+	# (53.1 MiB -> 58.6 MiB), but also increases performance by ~20%
+	# according to v8/web-tooling-benchmark. Node.js is quite huge anyway;
+	# there are better options for size constrained environments.
+	export CFLAGS="${CFLAGS/-Os} $common_flags"
+	export CXXFLAGS="${CXXFLAGS/-Os} $common_flags"
+	export CPPFLAGS="${CPPFLAGS/-Os} $common_flags"
+
+	# When building shared libnode.so, the resulting package size is +15 %
+	# (~8 MiB), so we rather build it twice to keep the node binary smaller
+	# (there are currently no packages using libnode.so).
+	msg 'Building node binary'
+	_build
+	cp out/Release/node out/
+
+	msg 'Building libnode.so'
+	_build --shared
+	cp out/Release/lib/libnode.so* out/Release/
+
+	sed "s/@VERSION@/$pkgver/" "$srcdir"/$pkgname.pc.in > out/Release/$pkgname.pc
+}
+
+_build() {
+	# NOTE: We don't package the bundled npm - it's a separate project with
+	# its own release cycle and version numbering, so it's better to keep
+	# it in a standalone aport.
+	#
+	# TODO: Create aport for amaro and use --shared-builtin-amaro (amaro
+	#   contains pre-built wasm binary).
+	# TODO: enable lto
+	python3 configure.py \
+		--prefix=/usr \
+		--use-prefix-to-find-headers \
+		--ninja \
+		--shared-libuv \
+		--shared-ada \
+		--shared-brotli \
+		--shared-zlib \
+		--shared-openssl \
+		--shared-cares \
+		--shared-nghttp2 \
+		--shared-simdjson \
+		--shared-simdutf \
+		--shared-sqlite \
+		--shared-zstd \
+		--openssl-use-def-ca-store \
+		--with-icu-default-data-dir="$(icu-config --icudatadir)" \
+		--with-intl=system-icu \
+		--without-corepack \
+		--without-npm \
+		"$@"
+	patch out/Release/build.ninja < "$srcdir/ninja-patch"
+
+	make BUILDTYPE=Release
+}
+
+# TODO Run provided test suite.
+check() {
+	cd "$builddir"/out
+
+	./node -e 'console.log("Hello, world!")'
+	./node -e "require('assert').equal(process.versions.node, '$pkgver')"
+	./node -e 'require("assert").equal(
+		Buffer.from(Buffer.from("foo").toString("base64"), "base64").toString("ascii"),
+		"foo")'
+}
+
+package() {
+	make DESTDIR="$pkgdir" install
+
+	# node binary built without libnode.so.
+	install -D -m755 out/node -t "$pkgdir"/usr/bin/
+
+	install -D -m644 out/Release/$pkgname.pc -t "$pkgdir"/usr/lib/pkgconfig/
+
+	(cd "$pkgdir"/usr/lib; ln -sf libnode.so.* libnode.so)
+}
+
+sha512sums="
+9e4e5c24cb59f29252e19c232ef47cfc175b34847f1cc5afac26eec0f7b9179e69eb349679e3e88ac098353f3446b977ed8e43bf2df44fe29a90c1d248e437ca  qnx-v24.14.1.tar.gz
+1737faba6c26857bd39c75e689113bc3904c444db1345f309c054f4e6a1dda8138a41a763443f8d143b99854968736c2c4344e9b3c40035eb2799bfc2bde9d5c  nodejs.pc.in
+9953118c26b1e6d3c32994f185d92cfc2cd03cbe113f0b58332597aebc1ccc5c45c0a97d0108804937db960ee3fda22959d53b3ecc36ffa2c3f2d151435818d6  remove-unused-openssl-config.patch
+bba7558538b005b8e7ae9cf7908452b0fad948b83e157a079e48f332c1a506e189b0149ee713be36007d1846c8195d2336869c613a2829fc1cf0a799bba7f72b  v8-no-static-zlib.patch
+de41b65cb8961af333945b5e2fc691dcd16e20c9be9cd32c074507b5883874aeece0fefa5f030a4983fa163abd29096b24fc6721a34fb6074684305074f7b176  v8-int64-lowering-reducer.patch
+cb09726ea5927a5c09e07df65ab2769aa41acc2a8e3b5029e9489acf6f7a886bc85dff5b50c3ac1100520fcf1a0371d55c40d5b45aec363bbae2c07c3fb498e0  node_sea.patch
+e789744546feefa5a961b1c86bd16de8a18ebf85750be5788d58971835f2aa1cb7cf53aa36b44a80243adea521b7ec3bb65540bb102a0050f11a8f363c11af16  node_snapshotable.patch
+7f5eb196a7de1f673c739accc05733d51c84b0b1e063f3c50d4272e7c87232156409293b97db2bbb09a3990f3edd43cacd666d7934b0b1e766f680defa40958e  ninja-patch
+"

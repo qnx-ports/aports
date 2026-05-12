@@ -1,0 +1,36 @@
+# Alpine-Maintainer: Peter Shkenev <santurysim@gmail.com>
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=python3-cparser
+_pkgname=pycparser
+pkgver=3.0
+pkgrel=0
+pkgdesc="C parser written in Python3"
+url="https://github.com/eliben/pycparser"
+arch="noarch"
+license="BSD-3-Clause"
+depends="python3"
+makedepends="python3-gpep517 python3-setuptools python3-wheel"
+checkdepends="python3-pytest"
+source="https://files.pythonhosted.org/packages/source/${_pkgname:0:1}/$_pkgname/$_pkgname-$pkgver.tar.gz"
+builddir="$srcdir/$_pkgname-$pkgver"
+
+build() {
+    gpep517 build-wheel \
+        --wheel-dir .dist \
+        --output-fd 3 3>&1 >&2
+}
+
+check() {
+    python3 -m venv --clear --without-pip --system-site-packages .testenv
+    .testenv/bin/python3 -m installer .dist/*.whl
+    .testenv/bin/python3 -m pytest
+}
+
+package() {
+    python3 -m installer -d "$pkgdir" \
+        .dist/*.whl
+}
+
+sha512sums="
+333504ef076e369661823abcd1d1f0d4e01ebadd43b7039e403d80fc2418500c2ed2c42e7b997c6eaf9c56b16085dfccacc6d0be2d45f0033a90eac1a7ed49d0  pycparser-3.0.tar.gz
+"

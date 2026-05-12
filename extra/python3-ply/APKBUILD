@@ -1,0 +1,40 @@
+# Alpine-Contributor: tcely <python3-ply+aports@tcely.33mail.com>
+# Alpine-Contributor: Keith Maxwell <keith.maxwell@gmail.com>
+# Alpine-Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+# Maintainer: Ethan Leir <eleir@qnx.com>
+_pkgname=ply
+pkgname=python3-$_pkgname
+pkgver=3.11
+pkgrel=0
+pkgdesc="Python Lex & Yacc"
+url="https://www.dabeaz.com/ply/"
+arch="noarch"
+license="BSD-3-Clause"
+depends="python3"
+makedepends="python3-gpep517 python3-setuptools python3-wheel"
+checkdepends="python3-six"
+source="$_pkgname-$pkgver.tar.gz::https://github.com/dabeaz/ply/archive/$pkgver.tar.gz
+    assertTrue.patch
+    "
+builddir="$srcdir/$_pkgname-$pkgver"
+
+build() {
+    gpep517 build-wheel --wheel-dir .dist --output-fd 3 3>&1 >&2
+}
+
+check() {
+    python3 -m venv --clear --without-pip --system-site-packages .testenv
+    .testenv/bin/python3 -m installer .dist/*.whl
+    cd test
+    ../.testenv/bin/python3 testlex.py
+    ../.testenv/bin/python3 testyacc.py
+}
+
+package() {
+    python3 -m installer -d "$pkgdir" .dist/*.whl
+}
+
+sha512sums="
+c36e4ea0eb5bb7cca8cc34aa62dd711be755e44f1336a0093d7c9c1ea4d5d8cae8316416a2109ba24bb2b71f7a971b0b34a7ea45c43d4c7c63c513156945fc17  ply-3.11.tar.gz
+c00c2a513cde19b021aa81631ad4791a24c8b36a75914e945ab6ec2675e1807a491e3915fa6cc4400268b352c0f60f0c34e65cc2f547cdec8d2ca078678ae6e2  assertTrue.patch
+"

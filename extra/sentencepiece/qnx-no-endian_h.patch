@@ -1,0 +1,18 @@
+diff --color -U 6 -N -r before/src/common.h after/src/common.h
+--- before/src/common.h	2026-04-17 15:27:59.118920295 -0400
++++ after/src/common.h	2026-04-17 15:29:41.319791133 -0400
+@@ -56,13 +56,13 @@
+ #define arraysize(array) (sizeof(ArraySizeHelper(array)))
+ 
+ #if defined(_FREEBSD)
+ #include <sys/endian.h>
+ #endif
+ #if !defined(__APPLE__) && !defined(_WIN32) && !defined(_FREEBSD) && \
+-    !defined(_AIX)
++    !defined(_AIX) && !defined(__QNX__)
+ #include <endian.h>
+ #if BYTE_ORDER == __BIG_ENDIAN
+ #define IS_BIG_ENDIAN
+ #endif
+ #endif
+ 

@@ -1,0 +1,20 @@
+--- build.ninja.orig	2026-04-03 13:57:06.000000000 +0000
++++ build.ninja	2026-04-03 13:56:51.000000000 +0000
+@@ -23,11 +23,15 @@
+   depfile = $out.d
+   deps = gcc
+ rule alink
+-  command = rm -f $out && $ar rcs $arflags $out $in
++  command = rm -f $out && $ar rcs $arflags $out @$out.rsp
+   description = AR $out
++  rspfile = $out.rsp
++  rspfile_content = $in
+ rule alink_thin
+-  command = rm -f $out && $ar rcsT $arflags $out $in
++  command = rm -f $out && $ar rcsT $arflags $out @$out.rsp
+   description = AR $out
++  rspfile = $out.rsp
++  rspfile_content = $in
+ rule solink
+   command = if [ ! -e $lib -o ! -e $lib.TOC ]; then $ld -shared $ldflags -o $lib -Wl,-soname=$soname @$link_file_list $
+       && { $readelf -d $lib | grep SONAME ; $nm -gD -f p $lib | cut -f1-2 -d' '; } > $lib.TOC; else $ld -shared $

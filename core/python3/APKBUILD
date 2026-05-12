@@ -2,7 +2,7 @@
 pkgname=python3
 pkgver=3.14.0
 _basever=${pkgver%.*}
-pkgrel=3
+pkgrel=4
 pkgdesc="High-level scripting language"
 url="https://www.python.org/"
 arch="all"
@@ -59,7 +59,7 @@ tests() {
 
 sha512sums="
 46e9e205c3a084cba68bf7f267ab2fd0862a05430165e0eb713f2d6b3a1a4452f72f563de5de55caea824be9df56f66dd568f4814941667a9bb0954229772c53  Python-3.14.0.tar.xz
-403f8b275ab658bbc3f75c8e51754efda416d5c944aaab5ee8d19d3b8a8da1e29865aaa0e5e61e1709cb1298bc20aa1971ce986bce3179b8e1e167ad4742f203  fix-qnx-python.patch
+b99f6506f2bbfc4125901d4f6d54fae50dab7d6b7020720dbc757dbd3aec9f2a74b8be5ed1d21df0fe0ebfd43b1e8f221e15b23b67175a52923151b5618df843  fix-qnx-python.patch
 a1d6c60d3e0e960d80b7b5406d53196ff05adb07122255dad728c6685ff15d579b845eb467492f5cdecdeeb0c6354f441cfcd3f5f4dc1f462a70cf1f4deb63fb  fix-locale.patch
 48c2b2c42c8cd8f1071f75149556648a6bdf756a9946a6760de0eadeee9ae53c08b5a2dc9d131a8f7b734128386fd4ae7d71cdbdb53dadbd00443bfafd33639b  EXTERNALLY-MANAGED
 "

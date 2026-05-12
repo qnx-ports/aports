@@ -1,0 +1,35 @@
+# Alpine-Contributor: Dmitry Romanenko <dmitry@romanenko.in>
+# Alpine-Maintainer: Dmitry Romanenko <dmitry@romanenko.in>
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=python3-execnet
+pkgver=2.1.1
+pkgrel=0
+pkgdesc="distributed Python deployment and communication"
+url="https://execnet.readthedocs.io"
+arch="noarch"
+license="MIT"
+depends="qnx-io-sock"
+makedepends="python3-gpep517 python3-hatch-vcs python3-setuptools python3-wheel"
+checkdepends="python3-pytest"
+source="https://files.pythonhosted.org/packages/source/e/execnet/execnet-$pkgver.tar.gz"
+builddir="$srcdir"/execnet-$pkgver
+options="!check" # Net not working on packaging system.
+
+build() {
+    gpep517 build-wheel --wheel-dir .dist --output-fd 3 3>&1 >&2
+
+}
+
+check() {
+    python3 -m venv --clear --without-pip --system-site-packages .testenv
+    .testenv/bin/python3 -m installer .dist/*.whl
+    .testenv/bin/python3 -m pytest
+}
+
+package() {
+    python3 -m installer -d "$pkgdir" .dist/*.whl
+}
+
+sha512sums="
+486f906ad653d16cce7337d9085c36070fe3dd721a3723ca62ceb25862c3ff837120062df028d5aadec17f854c0d46204537e9d75d22079a677f08c50dd48d21  execnet-2.1.1.tar.gz
+"

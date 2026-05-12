@@ -1,5 +1,5 @@
 diff --git a/Include/internal/pycore_time.h b/Include/internal/pycore_time.h
-index 2331247..e42da26 100644
+index 23312471..e42da267 100644
 --- a/Include/internal/pycore_time.h
 +++ b/Include/internal/pycore_time.h
 @@ -59,7 +59,7 @@ extern "C" {
@@ -11,8 +11,21 @@ index 2331247..e42da26 100644
  struct timeval;
  #endif
  
+diff --git a/Include/pythread.h b/Include/pythread.h
+index 82247daf..28941992 100644
+--- a/Include/pythread.h
++++ b/Include/pythread.h
+@@ -42,7 +42,7 @@ PyAPI_FUNC(unsigned long) PyThread_get_thread_ident(void);
+ #if (defined(__APPLE__) || defined(__linux__) || defined(_WIN32) \
+      || defined(__FreeBSD__) || defined(__FreeBSD_kernel__) \
+      || defined(__OpenBSD__) || defined(__NetBSD__) \
+-     || defined(__DragonFly__) || defined(_AIX))
++     || defined(__DragonFly__) || defined(_AIX) || defined(__QNX__))
+ #define PY_HAVE_THREAD_NATIVE_ID
+ PyAPI_FUNC(unsigned long) PyThread_get_thread_native_id(void);
+ #endif
 diff --git a/Lib/asyncio/unix_events.py b/Lib/asyncio/unix_events.py
-index 1c14581..4468ad5 100644
+index 1c145812..4468ad56 100644
 --- a/Lib/asyncio/unix_events.py
 +++ b/Lib/asyncio/unix_events.py
 @@ -118,7 +118,8 @@ def add_signal_handler(self, sig, callback, *args):
@@ -26,7 +39,7 @@ index 1c14581..4468ad5 100644
              del self._signal_handlers[sig]
              if not self._signal_handlers:
 diff --git a/Lib/getpass.py b/Lib/getpass.py
-index 3d9bb1f..caae57a 100644
+index 3d9bb1f0..caae57a6 100644
 --- a/Lib/getpass.py
 +++ b/Lib/getpass.py
 @@ -86,6 +86,8 @@ def unix_getpass(prompt='Password: ', stream=None, *, echo_char=None):
@@ -39,7 +52,7 @@ index 3d9bb1f..caae57a 100644
                  if passwd is not None:
                      # _raw_input succeeded.  The final tcsetattr failed.  Reraise
 diff --git a/Lib/shutil.py b/Lib/shutil.py
-index 8d8fe14..4278c40 100644
+index 8d8fe145..4278c409 100644
 --- a/Lib/shutil.py
 +++ b/Lib/shutil.py
 @@ -762,7 +762,7 @@ def _rmtree_safe_fd_step(stack, onexc):
@@ -52,7 +65,7 @@ index 8d8fe14..4278c40 100644
          func = os.path.islink  # For error reporting.
          try:
 diff --git a/Lib/test/support/os_helper.py b/Lib/test/support/os_helper.py
-index 2c45fe2..882253b 100644
+index 2c45fe23..882253b8 100644
 --- a/Lib/test/support/os_helper.py
 +++ b/Lib/test/support/os_helper.py
 @@ -50,7 +50,7 @@
@@ -65,7 +78,7 @@ index 2c45fe2..882253b 100644
          # ascii and utf-8 cannot encode the byte 0xff
          b'\xff'.decode(sys.getfilesystemencoding())
 diff --git a/Modules/_localemodule.c b/Modules/_localemodule.c
-index 41e6d48..5ff2577 100644
+index 41e6d48b..5ff25776 100644
 --- a/Modules/_localemodule.c
 +++ b/Modules/_localemodule.c
 @@ -563,31 +563,31 @@ static struct langinfo_constant{
@@ -110,7 +123,7 @@ index 41e6d48..5ff2577 100644
  #endif
  #ifdef _DATE_FMT
 diff --git a/Modules/_testinternalcapi/pytime.c b/Modules/_testinternalcapi/pytime.c
-index 2b0a205..41c9aea 100644
+index 2b0a205d..41c9aeaa 100644
 --- a/Modules/_testinternalcapi/pytime.c
 +++ b/Modules/_testinternalcapi/pytime.c
 @@ -2,6 +2,9 @@
@@ -124,7 +137,7 @@ index 2b0a205..41c9aea 100644
  
  #ifdef MS_WINDOWS
 diff --git a/Modules/faulthandler.c b/Modules/faulthandler.c
-index d49ce79..4c46e2e 100644
+index d49ce794..4c46e2ed 100644
 --- a/Modules/faulthandler.c
 +++ b/Modules/faulthandler.c
 @@ -852,7 +852,9 @@ faulthandler_register(int signum, int chain, _Py_sighandler_t *previous_p)
@@ -138,7 +151,7 @@ index d49ce79..4c46e2e 100644
          /* do not prevent the signal from being received from within its
             own signal handler */
 diff --git a/Modules/posixmodule.c b/Modules/posixmodule.c
-index e1576f8..29264bb 100644
+index e1576f80..29264bb8 100644
 --- a/Modules/posixmodule.c
 +++ b/Modules/posixmodule.c
 @@ -606,6 +606,12 @@ extern char *ctermid_r(char *);
@@ -167,7 +180,7 @@ index e1576f8..29264bb 100644
  
              } else {
 diff --git a/Modules/selectmodule.c b/Modules/selectmodule.c
-index d234d50..ee062e8 100644
+index d234d504..ee062e8b 100644
 --- a/Modules/selectmodule.c
 +++ b/Modules/selectmodule.c
 @@ -37,6 +37,10 @@
@@ -182,7 +195,7 @@ index d234d50..ee062e8 100644
     64 is too small (too many people have bumped into that limit).
     Here we boost it.
 diff --git a/Modules/termios.c b/Modules/termios.c
-index efb5fcc..6597b90 100644
+index efb5fcc1..6597b90a 100644
 --- a/Modules/termios.c
 +++ b/Modules/termios.c
 @@ -11,7 +11,9 @@
@@ -197,7 +210,7 @@ index efb5fcc..6597b90 100644
  
  // On QNX 6, struct termio must be declared by including sys/termio.h
 diff --git a/Objects/mimalloc/prim/unix/prim.c b/Objects/mimalloc/prim/unix/prim.c
-index 1598eba..24b00f9 100644
+index 1598ebab..24b00f90 100644
 --- a/Objects/mimalloc/prim/unix/prim.c
 +++ b/Objects/mimalloc/prim/unix/prim.c
 @@ -51,7 +51,7 @@ terms of the MIT license. A copy of the license can be found in the file
@@ -240,7 +253,7 @@ index 1598eba..24b00f9 100644
    int err = unix_madvise(start, size, MADV_DONTNEED);
    #endif
 diff --git a/Python/fileutils.c b/Python/fileutils.c
-index 78603d4..6f5522f 100644
+index 78603d40..6f5522f3 100644
 --- a/Python/fileutils.c
 +++ b/Python/fileutils.c
 @@ -1643,6 +1643,11 @@ _Py_open_impl(const char *pathname, int flags, int gil_held)
@@ -267,8 +280,31 @@ index 78603d4..6f5522f 100644
          fd = open(pathname, flags);
          if (fd < 0)
              return -1;
+diff --git a/Python/thread_pthread.h b/Python/thread_pthread.h
+index da405824..68ae03d9 100644
+--- a/Python/thread_pthread.h
++++ b/Python/thread_pthread.h
+@@ -30,6 +30,8 @@
+ #   include <lwp.h>             /* _lwp_self() */
+ #elif defined(__DragonFly__)
+ #   include <sys/lwp.h>         /* lwp_gettid() */
++#elif defined(__QNX__)
++#   include <process.h>         /* gettid() */
+ #endif
+ 
+ /* The POSIX spec requires that use of pthread_attr_setstacksize
+@@ -409,6 +411,9 @@ PyThread_get_thread_native_id(void)
+ #elif defined(__DragonFly__)
+     lwpid_t native_id;
+     native_id = lwp_gettid();
++#elif defined(__QNX__)
++    int native_id;
++    native_id = gettid();
+ #endif
+     return (unsigned long) native_id;
+ }
 diff --git a/configure b/configure
-index d31c24d..dc82353 100755
+index d31c24df..dc823538 100755
 --- a/configure
 +++ b/configure
 @@ -7546,7 +7546,7 @@ then

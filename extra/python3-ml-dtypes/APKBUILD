@@ -1,0 +1,58 @@
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=python3-ml-dtypes
+_pkgname=ml_dtypes
+pkgver=0.5.0
+pkgrel=0
+pkgdesc="Standalone NumPy dtype extensions for machine learning"
+url="https://github.com/jax-ml/ml_dtypes"
+arch="all"
+license="Apache-2.0"
+depends="
+    libc++
+    python3-numpy
+    "
+makedepends="
+    eigen-dev
+    libc++-dev
+    python3-dev
+    python3-gpep517
+    python3-numpy-dev
+    python3-setuptools
+    python3-wheel
+    "
+checkdepends="
+    python3-absl-py
+    python3-pytest
+    python3-pytest-xdist
+    "
+source="$pkgname-$pkgver.tar.gz::https://github.com/jax-ml/$_pkgname/archive/refs/tags/v$pkgver.tar.gz"
+builddir="$srcdir/$_pkgname-$pkgver"
+
+build() {
+    CPPFLAGS="$CPPFLAGS -I/usr/include/eigen3" \
+    gpep517 build-wheel \
+        --wheel-dir .dist \
+        --output-fd 3 3>&1 >&2
+}
+
+check() {
+    python3 -m venv --clear --without-pip --system-site-packages .testenv
+    .testenv/bin/python3 -m installer .dist/*.whl
+
+
+    # ml_dtypes lives in $builddir without the compiled dynload module. We
+    # need to execute pytest somewhere else or it will be found first.
+    mkdir test
+    cd test
+    # testFInfo_float8_e8m0fnu overflows when interpreting a large value as int.
+    $builddir/.testenv/bin/python3 -m pytest $builddir -k "not testFInfo_float8_e8m0fnu"
+}
+
+package() {
+    python3 -m installer -d "$pkgdir" \
+        .dist/*.whl
+}
+
+sha512sums="
+20b2677c1e69b9ea298ac7d8ccfee3f0d19b847a805efa183ba04845e1a1697e9030abe00d6e8a4d46981df14c8d5986bcbc3b4e0f36eef2aee1cd04e3996bfe  python3-ml-dtypes-0.5.0.tar.gz
+"

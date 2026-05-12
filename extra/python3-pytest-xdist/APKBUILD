@@ -1,0 +1,42 @@
+# Alpine-Contributor: Dmitry Romanenko <dmitry@romanenko.in>
+# Alpine-Maintainer: Dmitry Romanenko <dmitry@romanenko.in>
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=python3-pytest-xdist
+pkgver=3.8.0
+pkgrel=0
+pkgdesc="pytest xdist plugin for distributed testing and loop-on-failing modes"
+url="https://pytest-xdist.readthedocs.io"
+arch="noarch"
+license="MIT"
+depends="python3-execnet python3-pytest"
+checkdepends="python3-filelock python3-py python3-pexpect python3-psutil"
+makedepends="python3-gpep517 python3-setuptools python3-setuptools_scm python3-wheel"
+source="https://files.pythonhosted.org/packages/source/p/pytest_xdist/pytest_xdist-$pkgver.tar.gz
+    pytest9.patch
+    "
+builddir="$srcdir/pytest_xdist-$pkgver"
+
+replaces="pytest-xdist" # Backwards compatibility
+provides="pytest-xdist=$pkgver-r$pkgrel" # Backwards compatibility
+
+build() {
+    gpep517 build-wheel \
+        --wheel-dir .dist \
+        --output-fd 3 3>&1 >&2
+}
+
+check() {
+    python3 -m venv --clear --without-pip --system-site-packages .testenv
+    .testenv/bin/python3 -m installer .dist/pytest_xdist*.whl
+    .testenv/bin/python3 -m pytest
+}
+
+package() {
+    python3 -m installer -d "$pkgdir" \
+        .dist/pytest_xdist*.whl
+}
+
+sha512sums="
+fedea555be872afe09409cb1a2a3e5c183efefacc2f0eb6edeb306b855ac0ebd1d0b0063186c8c434410c0c35a178f5a80133d7f4b48ad71a4e4e0110315396b  pytest_xdist-3.8.0.tar.gz
+021c1d71c5b1ef1106caea3125d711af5077fff6c336fcccf1408ffbabfa17ca1c0c565c58c5d48167cc8b73e4744b38d2d67e39a65baa4c9b5caa4d8712ea6b  pytest9.patch
+"
