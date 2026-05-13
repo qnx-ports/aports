@@ -4,7 +4,7 @@
 # Revised by: Felix Xing <fxing@qnx.com>
 pkgname=gtk4
 pkgver=4.13.6
-pkgrel=6
+pkgrel=7
 pkgdesc="The GTK Toolkit (v4)"
 url="https://www.gtk.org/"
 arch="all"
@@ -79,6 +79,7 @@ source="https://github.com/qnx-ports/gtk/archive/refs/heads/$_qnx_branch.zip
     005-fix-wayland-geometry-crash.patch
     006-fix-gtk4-window-management.patch
     007-fix-themostat-gdk-monitor-null-surface.patch
+    008-fix-gtk4-resize.patch
     "
 
 builddir="$srcdir/gtk-$_qnx_branch"
@@ -266,4 +267,5 @@ sha512sums="
 559ff17b2402716bf84c5a02f4227a8695ed66a4cae2268c1fb9d5765c4250090678fb33f8fa3403da4dc219e6b775a180dbb42f6f5d2f8a6f1f6e5798d26f82  005-fix-wayland-geometry-crash.patch
 11a183d74d4ac162093cefcbe2e848291b969ce0e2342b09d29c8b58929a2d23d8ff63dde3dfc25adaefe8065d4d00f6e7161df707bf9da31078c9779767c5d2  006-fix-gtk4-window-management.patch
 4134f5078047b6bc5d23ae14cf4e729fe5a2cc989397257ca4025927304b858ee130f9718eb8426b0692eb163f4debba16e5f26a6d123181064d9afb3c06cbd4  007-fix-themostat-gdk-monitor-null-surface.patch
+fccac75ec7c708c6a8267732dfabaf78e569b40f59a3b2194793e7dd7ad4da389b14cbb929981f89dac77bbd89bd32b8ef418012fcf8d874f7f4a12382e126bf  008-fix-gtk4-resize.patch
 "
