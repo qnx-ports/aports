@@ -122,7 +122,7 @@ build() {
     export RANLIB=llvm-ranlib
 
     # Manually specify linker flags
-    export LDFLAGS="-lsocket -Wl,--strip-debug"
+    export LDFLAGS="-lsocket"
     
     # QNX names madvise differently
     _madv_defs="-DMADV_DISCARD_NP=POSIX_MADV_DISCARD_NP \
@@ -134,11 +134,11 @@ build() {
                 -DMADV_WILLNEED=POSIX_MADV_WILLNEED \
                 -Dmadvise=posix_madvise"
 
+    _dbg_flags="-ggdb"
+
     # Do not build with debug symbols
-    #export CFLAGS="$CFLAGS $_madv_defs $_dbg_flags"
-    #export CXXFLAGS="$CXXFLAGS $_madv_defs $_dbg_flags"
-    export CFLAGS="$CFLAGS $_madv_defs"
-    export CXXFLAGS="$CXXFLAGS $_madv_defs"
+    export CFLAGS="$CFLAGS $_madv_defs $_dbg_flags"
+    export CXXFLAGS="$CXXFLAGS $_madv_defs $_dbg_flags"
 
 
     # supress some warnings
@@ -162,7 +162,6 @@ build() {
         -DUSE_LIBBACKTRACE=OFF
         -DENABLE_X11_TARGET=OFF
         -DUSE_SYSPROF_CAPTURE=OFF
-        -DENABLE_INTROSPECTION=OFF \
         "
 
     _jit="-DENABLE_JIT=ON
@@ -186,7 +185,7 @@ EOF
         chmod +x /tmp/ldwrap/ld
          _linker_flags="-B/tmp/ldwrap -Wl,--strip-debug -Wl,--reduce-memory-overheads -lsocket"
     else
-        _linker_flags="-Wl,--strip-debug -lsocket"
+        _linker_flags="-lsocket"
     fi
 
     cmake -B build -G Ninja \
@@ -215,12 +214,7 @@ EOF
         [ ! -e "$dest" ] && ln -sf "$src" "$dest"
     done || true
 
-    if [ "$CARCH" = "aarch64" ]; then
-        # Limit parallelism on aarch64 — 4 parallel clang jobs exhaust 8GB RAM during WebCore
-        ninja -C build -j2
-    else
-        ninja -C build -j$(nproc)
-    fi
+    ninja -C build -j$(nproc)
 }
 
 check() {
