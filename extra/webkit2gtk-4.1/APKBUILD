@@ -172,21 +172,17 @@ build() {
     _libcxx="-DUSE_CXX_STDLIB_ASSERTIONS=OFF"
 
 
-    if [ "$CARCH" = "aarch64" ]; then
-        cat > /tmp/qnx_setjmp_stub.s << 'EOF'
-    .globl setjmp
-    .type setjmp, %function
+     cat > /tmp/qnx_setjmp_stub.s << 'EOF'
+.globl setjmp
+.type setjmp, %function
 setjmp:
     b _setjmp
 EOF
-        /usr/bin/clang -target aarch64-unknown-qnx -fPIC -c /tmp/qnx_setjmp_stub.s -o /tmp/qnx_setjmp_stub.o
-        mkdir -p /tmp/ldwrap
-        printf '#!/bin/sh\nexec /usr/bin/ld.bfd "$@" /tmp/qnx_setjmp_stub.o\n' > /tmp/ldwrap/ld
-        chmod +x /tmp/ldwrap/ld
-         _linker_flags="-B/tmp/ldwrap -Wl,--strip-debug -Wl,--reduce-memory-overheads -lsocket"
-    else
-        _linker_flags="-lsocket"
-    fi
+    /usr/bin/clang -target aarch64-unknown-qnx -fPIC -c /tmp/qnx_setjmp_stub.s -o /tmp/qnx_setjmp_stub.o
+    mkdir -p /tmp/ldwrap
+    printf '#!/bin/sh\nexec /usr/bin/ld.bfd "$@" /tmp/qnx_setjmp_stub.o\n' > /tmp/ldwrap/ld
+    chmod +x /tmp/ldwrap/ld
+    _linker_flags="-B/tmp/ldwrap -Wl,--strip-debug -Wl,--reduce-memory-overheads -lsocket"
 
     cmake -B build -G Ninja \
         -DCMAKE_BUILD_TYPE=Release \
