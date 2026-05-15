@@ -60,7 +60,6 @@ prepare() {
     ln -s /usr/lib/python3.14 $builddir/python_qnx/lib/python3.14
     ln -s /usr/lib/libpython3.so $builddir/python_qnx/lib/libpython3.so
     ln -s /usr/lib/libpython3.14.so $builddir/python_qnx/lib/libpython3.14.so
-    ln -s /usr/share $builddir/python_qnx/share
     ln -s $builddir/python_qnx/bin/python3 $builddir/python_qnx/python
 
     # Create the toolchain to register our local clang.
