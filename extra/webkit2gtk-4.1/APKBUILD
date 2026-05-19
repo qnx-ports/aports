@@ -172,13 +172,21 @@ build() {
     _libcxx="-DUSE_CXX_STDLIB_ASSERTIONS=OFF"
 
 
-     cat > /tmp/qnx_setjmp_stub.s << 'EOF'
+    cat > /tmp/qnx_setjmp_stub.S << 'EOF'
 .globl setjmp
+#if defined(__aarch64__)
 .type setjmp, %function
 setjmp:
     b _setjmp
+#elif defined(__x86_64__)
+.type setjmp, @function
+setjmp:
+    jmp _setjmp
+#else
+#error "Unsupported architecture for setjmp stub"
+#endif
 EOF
-    /usr/bin/clang -target aarch64-unknown-qnx -fPIC -c /tmp/qnx_setjmp_stub.s -o /tmp/qnx_setjmp_stub.o
+    /usr/bin/clang -fPIC -c /tmp/qnx_setjmp_stub.S -o /tmp/qnx_setjmp_stub.o
     mkdir -p /tmp/ldwrap
     printf '#!/bin/sh\nexec /usr/bin/ld.bfd "$@" /tmp/qnx_setjmp_stub.o\n' > /tmp/ldwrap/ld
     chmod +x /tmp/ldwrap/ld
