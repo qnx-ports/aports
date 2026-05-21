@@ -1,6 +1,6 @@
 pkgname=ncurses
 pkgver=6.6
-pkgrel=0
+pkgrel=1
 pkgdesc="Console display library"
 url="https://invisible-island.net/ncurses/"
 arch="all"
