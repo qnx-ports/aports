@@ -8,6 +8,7 @@ license="AGPL-3.0"
 url="https://github.com/fnc12/sqlite_orm"
 makedepends="qnx-base-dev sqlite-static sqlite-dev cmake ninja"
 depends=""
+checkdepends="sqlite"
 subpackages="${pkgname}-dev"
 source="${pkgname}-${pkgver}.tar.gz::https://github.com/fnc12/sqlite_orm/archive/refs/tags/v${pkgver}.tar.gz"
 
@@ -23,7 +24,7 @@ build() {
 }
 
 check() {
-    ctest --verbose
+    ./tests/unit_tests --reporter JUnit --colour-mode none -o ${pkgname}-results.xml
 }
 
 package() {
