@@ -38,5 +38,5 @@ package() {
 }
 
 sha512sums="
-2227b2710f096795cc89d1b9b6d7a2c77ddaced8946334beba4abb134ce8dfca79771bfb157d4ed891d203626edcb8d08c56e636c5ab5c9753da8ce6bcfa8a56  foonathan-memory-1.4.1.tar.gz
+2227b2710f096795cc89d1b9b6d7a2c77ddaced8946334beba4abb134ce8dfca79771bfb157d4ed891d203626edcb8d08c56e636c5ab5c9753da8ce6bcfa8a56  foonathan_memory-1.4.1.tar.gz
 "
