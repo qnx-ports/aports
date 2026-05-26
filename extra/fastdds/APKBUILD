@@ -12,8 +12,8 @@ makedepends="
     cmake
     ninja
     fast-cdr-dev
-    foonathan-memory
-    foonathan-memory-vendor
+    foonathan_memory
+    foonathan_memory_vendor
     openssl-dev
     qnx-fs-notify-dev
     tinyxml2-dev
