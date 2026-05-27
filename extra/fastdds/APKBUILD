@@ -13,6 +13,7 @@ makedepends="
     ninja
     fast-cdr-dev
     foonathan_memory
+    foonathan_memory-dev
     foonathan_memory_vendor
     openssl-dev
     qnx-fs-notify-dev
