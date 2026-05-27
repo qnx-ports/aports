@@ -1,4 +1,4 @@
-# Maintainer:Ramya santoshi <rtimmaraju@qnx.com>
+# Maintainer: Ramya santoshi <rtimmaraju@qnx.com>
 pkgname=foonathan_memory_vendor
 pkgver=1.3.1
 pkgrel=0
@@ -6,8 +6,8 @@ pkgdesc="eProsima foonathan memory vendor package"
 url="https://github.com/eProsima/foonathan_memory_vendor"
 arch="all"
 license="Zlib"
-depends="foonathan-memory"
-makedepends="cmake ninja git libc++-dev"
+depends="foonathan_memory  libc++"
+makedepends="cmake ninja git libc++-dev foonathan_memory-dev"
 
 source="foonathan_memory_vendor-$pkgver.tar.gz::https://github.com/eProsima/foonathan_memory_vendor/archive/refs/tags/v$pkgver.tar.gz"
 
