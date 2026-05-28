@@ -1,0 +1,67 @@
+# Alpine-Contributor: Leo <thinkabit.ukim@gmail.com>
+# Alpine-Maintainer: Simon Zeni <simon@bl4ckb0ne.ca>
+# Maintainer: Elliott Mazzuca <emazzuca@qnx.com>
+pkgname=shaderc
+pkgver=2024.4
+pkgrel=0
+pkgdesc="Collection of tools, libraries, and tests for Vulkan shader compilation"
+options="!check" # Requires test setup from third party
+url="https://github.com/google/shaderc"
+arch="all"
+license="Apache-2.0"
+depends="
+	glslang-libs
+	libc++
+	qnx-gcc-libs
+	qnx-microkernel
+	spirv-tools
+	"
+makedepends="
+	cmake
+	glslang-dev
+	ninja
+	python3
+	spirv-tools-dev
+	"
+subpackages="$pkgname-static $pkgname-dev"
+source="$pkgname-$pkgver.tar.gz::https://github.com/google/shaderc/archive/v$pkgver.tar.gz
+	0001-use-system-dependencies-and-build-version.patch
+	"
+
+prepare() {
+	default_prepare
+}
+
+build() {
+	if [ "$CBUILD" != "$CHOST" ]; then
+		CMAKE_CROSSOPTS="-DCMAKE_SYSTEM_NAME=Linux -DCMAKE_HOST_SYSTEM_NAME=Linux"
+	fi
+	# shaderc builds with -Werror. QNX clang accepts but does not use this
+	# Alpine hardening flag, so leaving it in turns a harmless warning fatal.
+	export CFLAGS="${CFLAGS/-fstack-clash-protection/}"
+	export CXXFLAGS="${CXXFLAGS/-fstack-clash-protection/}"
+	cmake -B build -G Ninja \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DCMAKE_INSTALL_LIBDIR=lib \
+		-DCMAKE_BUILD_TYPE=MinSizeRel \
+		-DBUILD_SHARED_LIBS=ON \
+		-DSHADERC_SKIP_TESTS="$(want_check && echo OFF || echo ON)" \
+		-DSHADERC_ENABLE_TESTS="$(want_check && echo ON || echo OFF)" \
+		-DSHADERC_ENABLE_EXAMPLES=OFF \
+		-Dglslang_SOURCE_DIR=/usr/include/glslang \
+		$CMAKE_CROSSOPTS
+	cmake --build build
+}
+
+check() {
+	ctest --test-dir build
+}
+
+package() {
+	DESTDIR="$pkgdir" cmake --install build
+}
+
+sha512sums="
+d313af65e76664640020c964cbd7021e3b6f12ea839a58ef67f6052d9af684fc7fd237a687737e6483f24b89d5c85b3e0c0fafeec66b3646f77031cb0d6c9587  shaderc-2024.4.tar.gz
+fc58b0471cb0523d0152dc9375d90e96c2e170c57c650753de480168ea6236584edcf6fc83f82770dcfa83b7de39f6b7492fa9b1eb5709481c97d4773b341e8d  0001-use-system-dependencies-and-build-version.patch
+"
