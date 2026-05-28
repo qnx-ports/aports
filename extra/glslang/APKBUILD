@@ -1,0 +1,76 @@
+# Alpine-Contributor: Leo <thinkabit.ukim@gmail.com>
+# Alpine-Maintainer: Simon Zeni <simon@bl4ckb0ne.ca>
+# Maintainer: Elliott Mazzuca <emazzuca@qnx.com>
+pkgname=glslang
+pkgver=1.4.309.0
+pkgrel=0
+pkgdesc="Khronos reference front-end for GLSL, ESSL, and sample SPIR-V generator"
+url="https://github.com/KhronosGroup/glslang"
+arch="all"
+license="BSD-3-Clause AND BSD-2-Clause AND MIT AND Apache-2.0 AND GPL-3.0-or-later"
+depends="$pkgname-libs=$pkgver-r$pkgrel libc++ qnx-microkernel"
+depends_dev="$pkgname=$pkgver-r$pkgrel"
+depends_libs="libc++ qnx-microkernel spirv-tools"
+makedepends="cmake ninja python3 bison spirv-tools-dev"
+checkdepends="bash gtest-dev"
+subpackages="$pkgname-static $pkgname-libs $pkgname-dev"
+somask="
+	libSPVRemapper.so.15
+	libglslang-default-resource-limits.so.15
+	libglslang.so.15
+	"
+source="$pkgname-$pkgver.tar.gz::https://github.com/KhronosGroup/glslang/archive/refs/tags/vulkan-sdk-$pkgver.tar.gz"
+builddir="$srcdir/glslang-vulkan-sdk-$pkgver"
+
+case "$CARCH" in
+s390x) options="$options !check" ;; # testsuite seems to fail on big endian
+esac
+
+build() {
+	local cmake_crossopts=
+	if [ "$CBUILD" != "$CHOST" ]; then
+		cmake_crossopts="-DCMAKE_SYSTEM_NAME=Linux -DCMAKE_HOST_SYSTEM_NAME=Linux"
+	fi
+	export CFLAGS="${CFLAGS/-fstack-clash-protection/}"
+	export CXXFLAGS="${CXXFLAGS/-fstack-clash-protection/}"
+	cmake -B build-shared -G Ninja \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DCMAKE_INSTALL_LIBDIR=lib \
+		-DCMAKE_BUILD_TYPE=MinSizeRel \
+		-DBUILD_EXTERNAL=OFF \
+		-DBUILD_SHARED_LIBS=ON \
+		-DALLOW_EXTERNAL_SPIRV_TOOLS=YES \
+		-DGLSLANG_TESTS="$(want_check && echo ON || echo OFF)" \
+		$cmake_crossopts
+	cmake --build build-shared
+
+	cmake -B build-static -G Ninja \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DCMAKE_INSTALL_LIBDIR=lib \
+		-DCMAKE_BUILD_TYPE=MinSizeRel \
+		-DBUILD_EXTERNAL=OFF \
+		-DBUILD_SHARED_LIBS=OFF \
+		-DALLOW_EXTERNAL_SPIRV_TOOLS=YES \
+		-DGLSLANG_TESTS="$(want_check && echo ON || echo OFF)" \
+		$cmake_crossopts
+	cmake --build build-static
+}
+
+check() {
+	msg "Testing shared version of glslang"
+	ctest --test-dir build-shared
+
+	msg "Testing static version of glslang"
+	ctest --test-dir build-static
+}
+
+package() {
+	# installing static first lets shared overwrite the executables so they
+	# themselves are not statically linking the library
+	DESTDIR="$pkgdir" cmake --install build-static
+	DESTDIR="$pkgdir" cmake --install build-shared
+}
+
+sha512sums="
+89ec2ce7fc4532370234f8bc0172ba89af94b96be29aab1fca089a9209c462033d88ce9c3ce45e9d117ed75fab900037c398fc0a7eda54e95c4f80fa9d2191c5  glslang-1.4.309.0.tar.gz
+"
