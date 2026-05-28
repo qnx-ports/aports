@@ -1,0 +1,46 @@
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -247,7 +247,7 @@
+     PROPERTIES
+         PUBLIC_HEADER "${LLAMA_PUBLIC_HEADERS}")
+ 
+-install(TARGETS llama LIBRARY PUBLIC_HEADER)
++install(TARGETS llama LIBRARY DESTINATION ${LLAMA_LIB_INSTALL_DIR} PUBLIC_HEADER)
+ 
+ if (LLAMA_BUILD_COMMON)
+     install(TARGETS llama-common LIBRARY)
+--- a/ggml/CMakeLists.txt
++++ b/ggml/CMakeLists.txt
+@@ -316,6 +316,10 @@
+ # install
+ #
+ 
++if (NOT DEFINED GGML_LIB_INSTALL_DIR)
++    set(GGML_LIB_INSTALL_DIR ${CMAKE_INSTALL_LIBDIR} CACHE PATH "Location of library files")
++endif()
++
+ include(CMakePackageConfigHelpers)
+ 
+ # all public headers
+@@ -343,8 +347,8 @@
+ #if (GGML_METAL)
+ #    set_target_properties(ggml PROPERTIES RESOURCE "${CMAKE_CURRENT_SOURCE_DIR}/src/ggml-metal.metal")
+ #endif()
+-install(TARGETS ggml LIBRARY PUBLIC_HEADER)
+-install(TARGETS ggml-base LIBRARY)
++install(TARGETS ggml LIBRARY DESTINATION ${GGML_LIB_INSTALL_DIR} PUBLIC_HEADER)
++install(TARGETS ggml-base LIBRARY DESTINATION ${GGML_LIB_INSTALL_DIR})
+ 
+ if (GGML_STANDALONE)
+     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/ggml.pc.in
+--- a/tools/mtmd/CMakeLists.txt
++++ b/tools/mtmd/CMakeLists.txt
+@@ -75,7 +75,7 @@
+     PROPERTIES
+     PRIVATE_HEADER debug/mtmd-debug.h)
+ 
+-install(TARGETS mtmd LIBRARY PUBLIC_HEADER)
++install(TARGETS mtmd LIBRARY DESTINATION ${LLAMA_LIB_INSTALL_DIR} PUBLIC_HEADER)
+ 
+ if (NOT MSVC)
+     # for stb_image.h and miniaudio.h

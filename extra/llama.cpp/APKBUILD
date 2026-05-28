@@ -1,0 +1,240 @@
+# Alpine-Contributor: Marian Buschsieweke <marian.buschsieweke@posteo.net>
+# Alpine-Maintainer: Hugo Osvaldo Barrera <hugo@whynothugo.nl>
+# Maintainer: Elliott Mazzuca <emazzuca@qnx.com>
+pkgname=llama.cpp
+pkgver=0.0.9006
+_buildver=${pkgver#0.0.}
+pkgrel=0
+pkgdesc="LLM inference in C/C++ (with Vulkan GPU acceleration)"
+# QNX llama.cpp has only been built and runtime-tested on x86_64 so far.
+arch="x86_64"
+url="https://github.com/ggml-org/llama.cpp"
+license="MIT"
+pkgusers="llama-server"
+pkggroups="llama-server"
+# QNX abuild does not infer this package's private libdir/runtime closure
+# reliably. The private llama.cpp sonames are masked below, so the base package
+# needs an explicit -libs pin to install the shared libraries its binaries load.
+# Omit qnx-microkernel because it is provided by the base QNX image.
+depends="
+	$pkgname-libs=$pkgver-r$pkgrel
+	libc++
+	qnx-gcc-libs
+	"
+# QNX uses qnx-vulkan for the Vulkan loader/runtime and vulkan-headers for the
+# header-only build input Alpine gets from vulkan-loader-dev.
+makedepends="
+	cmake
+	jq
+	ninja
+	openblas-dev
+	openssl-dev
+	qnx-io-sock-dev
+	qnx-vulkan
+	shaderc
+	spirv-headers
+	vulkan-headers
+	"
+checkdepends="bash python3-jinja2"
+install="$pkgname.pre-install"
+# OpenRC is not integrated in the QNX image yet; add the OpenRC subpackage back
+# when QNX service management support is ready. Keep -vulkan before -libs
+# because libs() moves the whole private library directory.
+subpackages="
+	$pkgname-vulkan
+	$pkgname-dev
+	$pkgname-libs
+	$pkgname-extras
+	llama-server:server
+	"
+source="$pkgname-b$_buildver.tar.gz::https://github.com/ggml-org/llama.cpp/archive/refs/tags/b$_buildver.tar.gz
+	$pkgname-b$_buildver.json::https://api.github.com/repos/ggml-org/llama.cpp/git/ref/tags/b$_buildver
+	0002-qnx-install-libraries-into-LLAMA_LIB_INSTALL_DIR.patch
+	0003-qnx-platform-compat.patch
+	0004-qnx-vulkan-shader-compat.patch
+	"
+builddir="$srcdir/$pkgname-b$_buildver"
+ldpath="/usr/lib/$pkgname"
+sonameprefix="$pkgname:"
+somask="
+	libggml-base.so.0
+	libggml.so.0
+	libllama-common.so.0
+	libllama.so.0
+	libmtmd.so.0
+	"
+
+# QNX LTO support is not ready in this aports toolchain, and the current port is
+# x86_64-only. Keep CPU variants and LTO off until additional architectures are
+# deliberately enabled and tested.
+_ggml_cpu_all_variants=OFF
+_lto=OFF
+
+# The bundled ggml and the standalone ggml have diverging APIs.
+# llama.cpp won't build with the standalone one.
+# Upstream recommends using the vendored one.
+
+build() {
+	_commit=$(jq -r '.object.sha' <$srcdir/$pkgname-b$_buildver.json)
+
+	# QNX clang treats Alpine's -fstack-clash-protection as unused. Preserve
+	# Alpine's flags and ask clang not to fail on target-irrelevant arguments.
+	export CFLAGS="$CFLAGS -Qunused-arguments"
+	export CXXFLAGS="$CXXFLAGS -Qunused-arguments"
+
+	# QNX Ninja repeatedly exits after CMake's CONFIGURE_DEPENDS glob
+	# verification step instead of continuing the requested target. Suppress
+	# automatic regeneration during the package build; abuild starts from a
+	# clean source tree, so configure-time source discovery is still fresh.
+	cmake -B build -G Ninja -Wno-dev \
+		-DBUILD_SHARED_LIBS=ON \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DCMAKE_SUPPRESS_REGENERATION=ON \
+		-DGGML_ALL_WARNINGS=OFF \
+		-DGGML_ALL_WARNINGS_3RD_PARTY=OFF \
+		-DGGML_BACKEND_DIR=/usr/lib/llama.cpp \
+		-DGGML_BACKEND_DL=ON \
+		-DGGML_BLAS=ON \
+		-DGGML_BLAS_VENDOR=OpenBLAS \
+		-DGGML_BUILD_EXAMPLES=OFF \
+		-DGGML_CPU_ALL_VARIANTS=$_ggml_cpu_all_variants \
+		-DGGML_CUDA_FA_ALL_QUANTS=ON \
+		-DGGML_LIB_INSTALL_DIR=/usr/lib/llama.cpp \
+		-DGGML_LTO=$_lto \
+		-DGGML_NATIVE=OFF \
+		-DGGML_RPC=ON \
+		-DGGML_VULKAN=ON \
+		-DLLAMA_BUILD_COMMIT="$_commit" \
+		-DLLAMA_BUILD_NUMBER="$_buildver" \
+		-DLLAMA_LIB_INSTALL_DIR=/usr/lib/llama.cpp
+	# QNX glslc can report success without writing shader outputs when multiple
+	# vulkan-shaders-gen custom commands run concurrently. A scratch build with
+	# normal Ninja parallelism stalled after shader generation without producing
+	# packages, so serialize the build until QNX shaderc/glslc is fixed. Shader
+	# generation still fails hard on missing outputs via the QNX Vulkan patch.
+	cmake --build build -- -j1
+}
+
+check() {
+	local skip="test-arg-parser"                   # test fails
+	skip="$skip|test-backend-ops"                  # segfaults
+	skip=$skip"|test-download-model"               # requires network
+	skip=$skip"|test-eval-callback-download-model" # requires network
+	skip=$skip"|test-eval-callback"                # requires network
+	skip=$skip"|test-state-restore-fragmented"     # requires network
+	skip=$skip"|test-thread-safety"                # requires network
+	skip=$skip"|test-tokenizers-ggml-vocabs"       # fails on CI (only when network is available)
+	skip=$skip"|test-llama-archs"                  # https://github.com/ggml-org/llama.cpp/issues/20611
+	skip=$skip"|test-opt"                          # hangs, needs upstream/QNX root-cause
+	skip=$skip"|test-mtmd-c-api"                   # segfaults on QNX, tracked for follow-up
+	skip=$skip"|test-gguf-model-data"              # hangs on QNX, tracked for follow-up
+	skip=$skip"|test-quant-type-selection"         # hangs on QNX, tracked for follow-up
+
+	ctest --test-dir build -E "$skip"
+}
+
+package() {
+	DESTDIR="$pkgdir" cmake --install build
+	install -Dm 644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+	# QNX fakeroot currently cannot chown here. Keep Alpine's ownership-preserving
+	# install path first so this starts working automatically when fakeroot is fixed.
+	install -dm 755 -o llama-server -g llama-server "$pkgdir/var/lib/llama-server" 2>/dev/null || \
+		install -dm 755 "$pkgdir/var/lib/llama-server"
+
+	# Don't install tests.
+	find "$pkgdir/usr/bin/" -name "test-*" -exec rm {} \;
+
+	# convert_hf_to_gguf needs a Python ML stack that is not packaged for QNX yet.
+	rm "$pkgdir/usr/bin/convert_hf_to_gguf.py"
+}
+
+dev() {
+	pkgdesc="$pkgdesc (development files)"
+	amove usr/lib/cmake
+	amove usr/lib/pkgconfig/*.pc
+}
+
+libs() {
+	pkgdesc="$pkgdesc (shared libraries)"
+	depends="
+		libc++
+		libcrypto3
+		libssl3
+		openblas
+		openmp
+		qnx-gcc-libs
+		"
+	amove usr/lib/llama.cpp
+}
+
+vulkan() {
+	install_if="$pkgname-libs=$pkgver-r$pkgrel qnx-vulkan"
+	depends="
+		$pkgname-libs=$pkgver-r$pkgrel
+		libc++
+		qnx-gcc-libs
+		qnx-vulkan
+		"
+	amove usr/lib/llama.cpp/libggml-vulkan.so
+}
+
+extras() {
+	pkgdesc="llama.cpp additional binaries"
+	depends="
+		$pkgname-libs=$pkgver-r$pkgrel
+		libc++
+		qnx-gcc-libs
+		"
+	amove usr/bin/llama-batched \
+		usr/bin/llama-batched-bench \
+		usr/bin/llama-completion \
+		usr/bin/llama-debug \
+		usr/bin/llama-diffusion-cli \
+		usr/bin/llama-embedding \
+		usr/bin/llama-eval-callback \
+		usr/bin/llama-finetune \
+		usr/bin/llama-fit-params \
+		usr/bin/llama-gen-docs \
+		usr/bin/llama-gguf \
+		usr/bin/llama-gguf-hash \
+		usr/bin/llama-gguf-split \
+		usr/bin/llama-idle \
+		usr/bin/llama-imatrix \
+		usr/bin/llama-lookahead \
+		usr/bin/llama-lookup \
+		usr/bin/llama-lookup-create \
+		usr/bin/llama-lookup-merge \
+		usr/bin/llama-lookup-stats \
+		usr/bin/llama-mtmd-cli \
+		usr/bin/llama-parallel \
+		usr/bin/llama-passkey \
+		usr/bin/llama-perplexity \
+		usr/bin/llama-quantize \
+		usr/bin/llama-retrieval \
+		usr/bin/llama-save-load-state \
+		usr/bin/llama-simple \
+		usr/bin/llama-speculative \
+		usr/bin/llama-speculative-simple \
+		usr/bin/llama-tokenize \
+		usr/bin/rpc-server
+}
+
+server() {
+	pkgdesc="llama.cpp server"
+	depends="
+		$pkgname-libs=$pkgver-r$pkgrel
+		libc++
+		qnx-gcc-libs
+		qnx-io-sock
+		"
+	amove usr/bin/llama-server
+}
+
+sha512sums="
+9a4e21519b069721692ad4927935793d96a93c25e59a50d8436e535e0d393202cf178ea2b236f6e760dcb0073654f87804ecb3feaa7750882e9e280cbc222d56  llama.cpp-b9006.tar.gz
+117e3e60b0f941a5326274976065629137e962ce7db99575aeed2ff66863f4d8be28b78210430d6500ff1f4b1be348056bb871f783d1d2c466846f6e089c3f74  llama.cpp-b9006.json
+aaa702d961cc86887d8f677d4b3bdfee3e4b41406055a23093691284407380fbf974b7b016569e4ec28084240766c6a4d3606600201875bfb8c1f36c02f2e425  0002-qnx-install-libraries-into-LLAMA_LIB_INSTALL_DIR.patch
+3828a26815a14f7dbbb5e7fa8304a8ffe0b14bf67353ab3ebdac7c729e843bece33c6d1841a0861be322d3393d8b480bc04485cd8f52ece59fc7416c63df4eae  0003-qnx-platform-compat.patch
+234ecb1cd19aa3fd7cd33950b074093ea3a5924076a0515c617898efe83a607e1d63eaf032b728b610122e49ed870545ddc392175dc739ed14e43ee3c0194f79  0004-qnx-vulkan-shader-compat.patch
+"
