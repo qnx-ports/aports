@@ -1,6 +1,6 @@
 pkgname=gtk3
-pkgver=3.24.51
-pkgrel=4
+pkgver=3.24.52
+pkgrel=0
 pkgdesc="The GTK+ Toolkit (v3)"
 url="https://www.gtk.org/"
 arch="all"
@@ -131,7 +131,7 @@ icon_cache() {
 
 
 sha512sums="
-f96ee1c586284af315709ec38e841bd1b2558d09e2162834a132ffc4bbcddca272a92a828550a3accaa3e4da1964ad32b3b48291e929a108a913bd18c61cd73b  gtk-3.24.51.tar.xz
+20c119cf1a8c390c9d572729f36215fe034731d9e741a0a30c96671f4606ef8b7cdbe5d5ebe986f6f6c9ac03b3ba5cddd8d63da0ebfc5341d179ec9dea5e82eb  gtk-3.24.52.tar.xz
 16a38bc5a85a0f1a7dfca4c465cdf9477b6ef988bbe0a4eac5d214bfb4d82e5ad031d144a43ff47f82a9f0c9a0ea6d380daed9cc9d6bc6507f81871f182bea03  qnx-fix.patch
 7adc6a4adef720b0c42457874bc721f75bcf598b1a3aa4ee015e245cc4c9cacb62498eb171d2ab489ea297e7be3836202b57b25049f7d18bc6b198ec727b167f  qnx-fix-uri-opening.patch
 9769a906ac8bb810fad32936c165657bd4120300c091c7a1f47cd1e049e76a2aa262fad1d0b17aebf79bca4b302eddd0ab65f12a6b6f5c90b2a961fb140f6d94  qnx-fix-maximize.patch
