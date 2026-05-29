@@ -1,7 +1,7 @@
 pkgname=glib
-pkgver=2.86.2
+pkgver=2.88.1
 _gi_version=1.86.0
-pkgrel=1
+pkgrel=0
 pkgdesc="Low-level core library that forms the basis for projects such as GTK+ and GNOME."
 arch="all"
 license="LGPL-2.1-or-later"
@@ -42,6 +42,7 @@ source="https://download.gnome.org/sources/glib/${pkgver%.*}/glib-$pkgver.tar.xz
 	    use-freebsd-gcred.patch
         fix-faccessat-on-QNX.patch
 	    fix-printf-null-segfault.patch
+        add-fd-query-path-support.patch
     "
 builddir="$srcdir/$pkgname-$pkgver"
 
@@ -124,11 +125,12 @@ check() {
 }
 
 sha512sums="
-b9ef7ea7e1eeff142a8ab76fb0552331fd642133a31505e2939f57d7d9c5ec86dcefddc725c715925a42c348d71e2a8bf2eb399150108199b6daeca2761e08d6  glib-2.86.2.tar.xz
+74e6d6086081e5dfb5b7fd3b74f59171033be0c340ff2dd798fea9cb42e5f680e13b2ac3dde8dd423bceb9c6556103005f9542aeda166e9a3b89da8bacecca23  glib-2.88.1.tar.xz
 a9d2edbe1cea710e10ef1ea8059a45cf5689bace43b5d2a6861809e863a6de7114b4763db8df3916ad6202c9967f48f7997acd0810a86e5e88dea7e0be88b585  gobject-introspection-1.86.0.tar.xz
 131fae453c7e3426c7817ca20a56e50750251c053dd2e1b887c24f380b4cf57547b605083b3ea24c5849f95e039dd292f619452745e88a735f90b8e9a1880627  fix-atomic.patch
 e596c5d6fe5e09300fcff138e840593d3ea6a7ef6983f7ece746fb5f1633107310158097b9a3c8e88dc28eef1205b026ca3475b6e6d96fdc2ca0acc46072bd4e  fix-test-symbol-conflicts.patch
 16f16283a8f0274b5fadb1e19b391e6986298fb30e643d63c904c615ba98726885c5d33f2582f3a62a2c71811aa6e62ff05fa17f3fb5127ce54613ccb00140a5  use-freebsd-gcred.patch
-698fa46d488ecba98957ca5068a73f2c426c58067d3ab402cd110a107e4a646923ccfaa2f8a748c33c6344467cb92138ae0c650c25831d448e601a58c86b8728  fix-faccessat-on-QNX.patch
+b79ec1e18824f4bb99e3043e54dad13806eaa7ab42b96c8b2708122e0b0a6a73a32aef5a340a55b37ac69e0e7b993fa20027d9b6a8ee7601d2ad202b2ca82066  fix-faccessat-on-QNX.patch
 d04cc33e524287db07aa5569b2376f927cafb73e4a47e94c4f959323121df894e1b990c8642fc52e86a8d938118e4566164df7cd9ef22afe7c14dca988bf3321  fix-printf-null-segfault.patch
+a356666f29048e6abb9e7fbfb8934d2bca1ab3b653b39636ca38290a290484429e225ae2ecc9af460caa99ea600d17a80bcc2e7102190bb17e54f26d74dec8bd  add-fd-query-path-support.patch
 "

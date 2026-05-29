@@ -1,0 +1,15 @@
+diff -Naur glib-2.88.1.orig/glib/glib-unix.c glib-2.88.1/glib/glib-unix.c
+--- glib-2.88.1.orig/glib/glib-unix.c	2026-05-29 20:13:41.000000000 +0000
++++ glib-2.88.1/glib/glib-unix.c	2026-05-29 20:30:17.000000000 +0000
+@@ -1006,6 +1006,11 @@
+   g_set_error (error, G_FILE_ERROR, G_FILE_ERROR_NOSYS,
+                "g_unix_fd_query_path() not supported on HURD");
+   return NULL;
++#elif defined (__QNX__)
++  // QNX has nothing to offer as well
++  g_set_error (error, G_FILE_ERROR, G_FILE_ERROR_NOSYS,
++               "g_unix_fd_query_path() not supported on QNX");
++  return NULL;
+ #else
+   #error "g_unix_fd_query_path() not supported on this platform"
+ #endif
