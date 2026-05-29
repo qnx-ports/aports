@@ -22,8 +22,9 @@ makedepends="
     gtest-dev
     qnx-io-sock-dev
     libc++-dev
+    qnx-fs-gpt-dev
 "   
-depends="libc++ fast-cdr foonathan_memory openssl foonathan_memory_vendor qnx-fs-notify"
+depends="libc++ fast-cdr foonathan_memory openssl foonathan_memory_vendor qnx-fs-notify  qnx-fs-gpt"
 
 source="
     fastdds-$pkgver.tar.gz::https://github.com/eProsima/Fast-DDS/archive/refs/tags/v$pkgver.tar.gz
@@ -38,7 +39,8 @@ builddir="$srcdir/Fast-DDS-$pkgver"
 
 prepare() {
     default_prepare
-    patch -p1 -d "$builddir" < "$srcdir/fast-dds-asiofix.diff"
+    cd "$builddir"
+    patch -p1 < "$srcdir/fast-dds-asiofix.diff"
     cd "$srcdir/asio-asio-1-29-0"
     patch -p1 < "$srcdir/asio_fix.diff"
     mkdir -p "$builddir/thirdparty/asio/include"
