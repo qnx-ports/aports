@@ -1,0 +1,66 @@
+# Maintainer: Cris Sinnott <cris.sinnott@gmail.com>
+pkgname=stable-diffusion.cpp
+pkgver=0_20260601
+_gittag=master-666-7948df8
+_gitcommit=7948df8ac1070f5f6881b8d34675821893eb97d6
+pkgrel=0
+pkgdesc="Stable Diffusion and Flux in pure C/C++ with Vulkan acceleration"
+arch="all !armv7 !armhf !riscv64 !x86"
+url="https://github.com/leejet/stable-diffusion.cpp"
+license="MIT"
+_qnx_runtime_depends="
+	libc++
+	qnx-gcc-libs
+	qnx-microkernel
+	"
+depends="$_qnx_runtime_depends"
+makedepends="
+	cmake
+	ninja
+	qnx-vulkan
+	shaderc
+	spirv-headers
+	vulkan-headers
+	"
+options="!check"
+subpackages="$pkgname-dev $pkgname-vulkan"
+source="$pkgname-$_gittag.tar.gz::https://github.com/leejet/stable-diffusion.cpp/archive/refs/tags/$_gittag.tar.gz"
+builddir="$srcdir/stable-diffusion.cpp-$_gittag"
+
+build() {
+	cmake -B build -G Ninja -Wno-dev \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DSD_BUILD_EXAMPLES=ON \
+		-DSD_BUILD_SHARED_LIBS=ON \
+		-DSD_VULKAN=ON \
+		-DSD_CUDA=OFF \
+		-DSD_METAL=OFF \
+		-DSD_HIPBLAS=OFF
+
+	cmake --build build -- -j1
+}
+
+package() {
+	DESTDIR="$pkgdir" cmake --install build
+	install -Dm644 LICENSE \
+		"$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}
+
+dev() {
+	default_dev
+}
+
+vulkan() {
+	install_if="$pkgname=$pkgver-r$pkgrel qnx-vulkan"
+	depends="
+		$pkgname=$pkgver-r$pkgrel
+		$_qnx_runtime_depends
+		qnx-vulkan
+		"
+	amove usr/lib/libggml-vulkan.so
+}
+
+sha512sums="
+1b4806a10dba08034fb86a4566cc5b6c4ba68d222bc8b1e729cabffb8b49d7b843db29c88e0171a51389731dcda68bf83cabf243733c00298248249537fe5709  stable-diffusion.cpp-master-666-7948df8.tar.gz
+"
