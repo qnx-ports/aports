@@ -33,7 +33,7 @@ build() {
 }
 
 check() {
-	# Some floating point errors on QNX.
+	# Some tests are disabled due to floating point precision issues on QNX.
 	ctest3.5 --test-dir build -E 'test_fcl_capsule_capsule|test_fcl_shape_mesh_consistency|test_fcl_signed_distance|test_fcl_octomap_collision|test_gjk_libccd-inl_epa|test_gjk_libccd-inl_gjk_doSimplex2|test_gjk_libccd-inl_signed_distance'
 }
 
