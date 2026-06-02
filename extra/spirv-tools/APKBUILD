@@ -3,16 +3,13 @@
 # Maintainer: Elliott Mazzuca <emazzuca@qnx.com>
 pkgname=spirv-tools
 _pkgname=SPIRV-Tools
-pkgver=1.4.313.0
+pkgver=1.4.321.0
 pkgrel=0
 pkgdesc="API and commands for processing SPIR-V modules"
 url="https://github.com/KhronosGroup/SPIRV-Tools"
 arch="all"
 license="Apache-2.0"
-depends="
-	libc++
-	qnx-microkernel
-	"
+depends="libc++"
 depends_dev="spirv-headers $pkgname=$pkgver-r$pkgrel"
 makedepends="$depends_dev cmake ninja python3"
 subpackages="$pkgname-dev $pkgname-dbg"
@@ -20,14 +17,10 @@ source="$pkgname-$pkgver.tar.gz::https://github.com/KhronosGroup/SPIRV-Tools/arc
 builddir="$srcdir/$_pkgname-vulkan-sdk-$pkgver"
 
 build() {
-	if [ "$CBUILD" != "$CHOST" ]; then
-		cmake_crossopts="-DCMAKE_SYSTEM_NAME=Linux -DCMAKE_HOST_SYSTEM_NAME=Linux"
-	fi
-
-	# Avoid LTO on QNX: clang emits objects that the target linker rejects
-	# during CMake's compiler sanity check.
-	export CFLAGS="${CFLAGS/-fstack-clash-protection/}"
-	export CXXFLAGS="${CXXFLAGS/-fstack-clash-protection/}"
+	# QNX clang treats Alpine's -fstack-clash-protection as unused. Preserve
+	# Alpine's flags and ask clang not to fail on target-irrelevant arguments.
+	export CFLAGS="$CFLAGS -Qunused-arguments"
+	export CXXFLAGS="$CXXFLAGS -Qunused-arguments"
 	CXXFLAGS="$CXXFLAGS -g1" \
 	cmake -B build -G Ninja \
 		-DCMAKE_INSTALL_PREFIX=/usr \
@@ -36,8 +29,7 @@ build() {
 		-DBUILD_SHARED_LIBS=ON \
 		-DSPIRV_WERROR=OFF \
 		-DSPIRV-Headers_SOURCE_DIR=/usr \
-		-DSPIRV_TOOLS_BUILD_STATIC=OFF \
-		$cmake_crossopts
+		-DSPIRV_TOOLS_BUILD_STATIC=OFF
 	cmake --build build
 }
 
@@ -53,5 +45,5 @@ package() {
 }
 
 sha512sums="
-2e0cffc9550fa95da8622424012e1fa2decbc6b981e30114ac0b7a332d7a9abed9a2138dc83ff6eb0b6d3946c1f1b43679de0754ccb98380d4981e8130a5e248  spirv-tools-1.4.313.0.tar.gz
+ae133c7b27b2a4f472ecb2928120a3beec01fb306abfe5c1e315982d8ad98f67be8639e646c1172a5257d4a9010b000e6a5924b567d7878bf942a7b87cac4abc  spirv-tools-1.4.321.0.tar.gz
 "
