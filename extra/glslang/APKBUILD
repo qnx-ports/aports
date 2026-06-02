@@ -2,18 +2,24 @@
 # Alpine-Maintainer: Simon Zeni <simon@bl4ckb0ne.ca>
 # Maintainer: Elliott Mazzuca <emazzuca@qnx.com>
 pkgname=glslang
-pkgver=1.4.309.0
+pkgver=1.4.321.0
 pkgrel=0
 pkgdesc="Khronos reference front-end for GLSL, ESSL, and sample SPIR-V generator"
 url="https://github.com/KhronosGroup/glslang"
 arch="all"
 license="BSD-3-Clause AND BSD-2-Clause AND MIT AND Apache-2.0 AND GPL-3.0-or-later"
-depends="$pkgname-libs=$pkgver-r$pkgrel libc++ qnx-microkernel"
+depends="$pkgname-libs=$pkgver-r$pkgrel libc++"
 depends_dev="$pkgname=$pkgver-r$pkgrel"
-depends_libs="libc++ qnx-microkernel spirv-tools"
+# Without this, QNX abuild warns that glslang-libs is missing libc++ and
+# spirv-tools shared-object dependencies. Keep them explicit until dependency
+# tracing infers this runtime closure correctly.
+depends_libs="libc++ spirv-tools"
 makedepends="cmake ninja python3 bison spirv-tools-dev"
 checkdepends="bash gtest-dev"
 subpackages="$pkgname-static $pkgname-libs $pkgname-dev"
+# The main tools intentionally link against libraries split into glslang-libs.
+# The exact-version glslang-libs dependency above owns that relationship; these
+# masks avoid false internal subpackage soname warnings from abuild.
 somask="
 	libSPVRemapper.so.15
 	libglslang-default-resource-limits.so.15
@@ -22,17 +28,11 @@ somask="
 source="$pkgname-$pkgver.tar.gz::https://github.com/KhronosGroup/glslang/archive/refs/tags/vulkan-sdk-$pkgver.tar.gz"
 builddir="$srcdir/glslang-vulkan-sdk-$pkgver"
 
-case "$CARCH" in
-s390x) options="$options !check" ;; # testsuite seems to fail on big endian
-esac
-
 build() {
-	local cmake_crossopts=
-	if [ "$CBUILD" != "$CHOST" ]; then
-		cmake_crossopts="-DCMAKE_SYSTEM_NAME=Linux -DCMAKE_HOST_SYSTEM_NAME=Linux"
-	fi
-	export CFLAGS="${CFLAGS/-fstack-clash-protection/}"
-	export CXXFLAGS="${CXXFLAGS/-fstack-clash-protection/}"
+	# QNX clang treats Alpine's -fstack-clash-protection as unused. Preserve
+	# Alpine's flags and ask clang not to fail on target-irrelevant arguments.
+	export CFLAGS="$CFLAGS -Qunused-arguments"
+	export CXXFLAGS="$CXXFLAGS -Qunused-arguments"
 	cmake -B build-shared -G Ninja \
 		-DCMAKE_INSTALL_PREFIX=/usr \
 		-DCMAKE_INSTALL_LIBDIR=lib \
@@ -40,8 +40,7 @@ build() {
 		-DBUILD_EXTERNAL=OFF \
 		-DBUILD_SHARED_LIBS=ON \
 		-DALLOW_EXTERNAL_SPIRV_TOOLS=YES \
-		-DGLSLANG_TESTS="$(want_check && echo ON || echo OFF)" \
-		$cmake_crossopts
+		-DGLSLANG_TESTS="$(want_check && echo ON || echo OFF)"
 	cmake --build build-shared
 
 	cmake -B build-static -G Ninja \
@@ -51,8 +50,7 @@ build() {
 		-DBUILD_EXTERNAL=OFF \
 		-DBUILD_SHARED_LIBS=OFF \
 		-DALLOW_EXTERNAL_SPIRV_TOOLS=YES \
-		-DGLSLANG_TESTS="$(want_check && echo ON || echo OFF)" \
-		$cmake_crossopts
+		-DGLSLANG_TESTS="$(want_check && echo ON || echo OFF)"
 	cmake --build build-static
 }
 
@@ -72,5 +70,5 @@ package() {
 }
 
 sha512sums="
-89ec2ce7fc4532370234f8bc0172ba89af94b96be29aab1fca089a9209c462033d88ce9c3ce45e9d117ed75fab900037c398fc0a7eda54e95c4f80fa9d2191c5  glslang-1.4.309.0.tar.gz
+284c662e3902d443145e3cc9dc7d68ecadaf4a78d2d66d144624cbcb4235e1c7384712448a929b5fd4b412abddc879e9630ba0e92f62af5b57776122bf19d8cf  glslang-1.4.321.0.tar.gz
 "
