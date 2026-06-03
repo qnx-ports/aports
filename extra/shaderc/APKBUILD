@@ -12,7 +12,6 @@ license="Apache-2.0"
 depends="
 	glslang-libs
 	libc++
-	qnx-gcc-libs
 	spirv-tools
 	"
 makedepends="
