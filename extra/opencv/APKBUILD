@@ -3,7 +3,7 @@
 # Maintainer: Ethan Leir <eleir@qnx.com>
 pkgname=opencv
 pkgver=4.12.0
-pkgrel=0
+pkgrel=1
 pkgdesc="Open source computer vision and machine learning library"
 url="https://opencv.org/"
 arch="all"
@@ -40,185 +40,193 @@ makedepends="
     python3-wheel
     "
 _libopencv_aruco_depends="
-    libopencv_objdetect
-    libopencv_calib3d
-    libopencv_core
-    libopencv_dnn
-    libopencv_imgproc
-    libopencv_features2d
-    libopencv_flann
+    libopencv_objdetect=$pkgver-r$pkgrel
+    libopencv_calib3d=$pkgver-r$pkgrel
+    libopencv_core=$pkgver-r$pkgrel
+    libopencv_dnn=$pkgver-r$pkgrel
+    libopencv_imgproc=$pkgver-r$pkgrel
+    libopencv_features2d=$pkgver-r$pkgrel
+    libopencv_flann=$pkgver-r$pkgrel
     "
 _libopencv_calib3d_depends="
-    libopencv_core
-    libopencv_imgproc
-    libopencv_features2d
-    libopencv_flann
+    libopencv_core=$pkgver-r$pkgrel
+    libopencv_imgproc=$pkgver-r$pkgrel
+    libopencv_features2d=$pkgver-r$pkgrel
+    libopencv_flann=$pkgver-r$pkgrel
     "
 _libopencv_dnn_depends="
-    libopencv_core
-    libopencv_imgproc
+    libopencv_core=$pkgver-r$pkgrel
+    libopencv_imgproc=$pkgver-r$pkgrel
     "
 _libopencv_face_depends="
-    libopencv_objdetect
-    libopencv_calib3d
-    libopencv_imgproc
-    libopencv_core
-    libopencv_dnn
-    libopencv_features2d
-    libopencv_flann
+    libopencv_objdetect=$pkgver-r$pkgrel
+    libopencv_calib3d=$pkgver-r$pkgrel
+    libopencv_imgproc=$pkgver-r$pkgrel
+    libopencv_core=$pkgver-r$pkgrel
+    libopencv_dnn=$pkgver-r$pkgrel
+    libopencv_features2d=$pkgver-r$pkgrel
+    libopencv_flann=$pkgver-r$pkgrel
     "
 _libopencv_features2d_depends="
-    libopencv_imgproc
-    libopencv_core
-    libopencv_flann
+    libopencv_imgproc=$pkgver-r$pkgrel
+    libopencv_core=$pkgver-r$pkgrel
+    libopencv_flann=$pkgver-r$pkgrel
     "
 _libopencv_flann_depends="
-    libopencv_core
+    libopencv_core=$pkgver-r$pkgrel
     "
 _libopencv_highgui_depends="
-    libopencv_imgproc
-    libopencv_core
+    libopencv_imgproc=$pkgver-r$pkgrel
+    libopencv_core=$pkgver-r$pkgrel
     "
 _libopencv_imgcodecs_depends="
-    libopencv_imgproc
-    libopencv_core
+    libopencv_imgproc=$pkgver-r$pkgrel
+    libopencv_core=$pkgver-r$pkgrel
     openjpeg
     "
 _libopencv_imgproc_depends="
-    libopencv_core
+    libopencv_core=$pkgver-r$pkgrel
     "
 _libopencv_ml_depends="
-    libopencv_core
+    libopencv_core=$pkgver-r$pkgrel
     "
 _libopencv_objdetect_depends="
-    libopencv_calib3d
-    libopencv_imgproc
-    libopencv_core
-    libopencv_dnn
-    libopencv_features2d
-    libopencv_flann
+    libopencv_calib3d=$pkgver-r$pkgrel
+    libopencv_imgproc=$pkgver-r$pkgrel
+    libopencv_core=$pkgver-r$pkgrel
+    libopencv_dnn=$pkgver-r$pkgrel
+    libopencv_features2d=$pkgver-r$pkgrel
+    libopencv_flann=$pkgver-r$pkgrel
     "
 _libopencv_optflow_depends="
-    libopencv_ximgproc
-    libopencv_imgcodecs
-    libopencv_video
-    libopencv_calib3d
-    libopencv_flann
-    libopencv_imgproc
-    libopencv_core
-    libopencv_dnn
-    libopencv_features2d
+    libopencv_ximgproc=$pkgver-r$pkgrel
+    libopencv_imgcodecs=$pkgver-r$pkgrel
+    libopencv_video=$pkgver-r$pkgrel
+    libopencv_calib3d=$pkgver-r$pkgrel
+    libopencv_flann=$pkgver-r$pkgrel
+    libopencv_imgproc=$pkgver-r$pkgrel
+    libopencv_core=$pkgver-r$pkgrel
+    libopencv_dnn=$pkgver-r$pkgrel
+    libopencv_features2d=$pkgver-r$pkgrel
     "
 _libopencv_photo_depends="
-    libopencv_imgproc
-    libopencv_core
+    libopencv_imgproc=$pkgver-r$pkgrel
+    libopencv_core=$pkgver-r$pkgrel
     "
 _libopencv_plot_depends="
-    libopencv_imgproc
-    libopencv_core
+    libopencv_imgproc=$pkgver-r$pkgrel
+    libopencv_core=$pkgver-r$pkgrel
     "
 _libopencv_shape_depends="
-    libopencv_calib3d
-    libopencv_flann
-    libopencv_imgproc
-    libopencv_core
-    libopencv_features2d
+    libopencv_calib3d=$pkgver-r$pkgrel
+    libopencv_flann=$pkgver-r$pkgrel
+    libopencv_imgproc=$pkgver-r$pkgrel
+    libopencv_core=$pkgver-r$pkgrel
+    libopencv_features2d=$pkgver-r$pkgrel
     "
 _libopencv_stitching_depends="
-    libopencv_calib3d
-    libopencv_flann
-    libopencv_imgproc
-    libopencv_core
-    libopencv_features2d
+    libopencv_calib3d=$pkgver-r$pkgrel
+    libopencv_flann=$pkgver-r$pkgrel
+    libopencv_imgproc=$pkgver-r$pkgrel
+    libopencv_core=$pkgver-r$pkgrel
+    libopencv_features2d=$pkgver-r$pkgrel
     "
 _libopencv_superres_depends="
-    libopencv_videoio
-    libopencv_optflow
-    libopencv_video
-    libopencv_imgproc
-    libopencv_core
-    libopencv_imgcodecs
-    libopencv_ximgproc
-    libopencv_calib3d
-    libopencv_flann
-    libopencv_dnn
-    libopencv_features2d
+    libopencv_videoio=$pkgver-r$pkgrel
+    libopencv_optflow=$pkgver-r$pkgrel
+    libopencv_video=$pkgver-r$pkgrel
+    libopencv_imgproc=$pkgver-r$pkgrel
+    libopencv_core=$pkgver-r$pkgrel
+    libopencv_imgcodecs=$pkgver-r$pkgrel
+    libopencv_ximgproc=$pkgver-r$pkgrel
+    libopencv_calib3d=$pkgver-r$pkgrel
+    libopencv_flann=$pkgver-r$pkgrel
+    libopencv_dnn=$pkgver-r$pkgrel
+    libopencv_features2d=$pkgver-r$pkgrel
     "
 _libopencv_tracking_depends="
-    libopencv_video
-    libopencv_imgproc
-    libopencv_core
-    libopencv_dnn
-    libopencv_calib3d
-    libopencv_features2d
-    libopencv_flann
+    libopencv_video=$pkgver-r$pkgrel
+    libopencv_imgproc=$pkgver-r$pkgrel
+    libopencv_core=$pkgver-r$pkgrel
+    libopencv_dnn=$pkgver-r$pkgrel
+    libopencv_calib3d=$pkgver-r$pkgrel
+    libopencv_features2d=$pkgver-r$pkgrel
+    libopencv_flann=$pkgver-r$pkgrel
     "
 _libopencv_video_depends="
-    libopencv_dnn
-    libopencv_calib3d
-    libopencv_imgproc
-    libopencv_core
-    libopencv_features2d
-    libopencv_flann
+    libopencv_dnn=$pkgver-r$pkgrel
+    libopencv_calib3d=$pkgver-r$pkgrel
+    libopencv_imgproc=$pkgver-r$pkgrel
+    libopencv_core=$pkgver-r$pkgrel
+    libopencv_features2d=$pkgver-r$pkgrel
+    libopencv_flann=$pkgver-r$pkgrel
     "
 _libopencv_videoio_depends="
-    libopencv_imgcodecs
-    libopencv_core
+    libopencv_imgcodecs=$pkgver-r$pkgrel
+    libopencv_core=$pkgver-r$pkgrel
     gst-plugins-base
     gstreamer
     ffmpeg
     "
 _libopencv_videostab_depends="
-    libopencv_photo
-    libopencv_videoio
-    libopencv_video
-    libopencv_calib3d
-    libopencv_features2d
-    libopencv_imgproc
-    libopencv_core
-    libopencv_imgcodecs
-    libopencv_dnn
-    libopencv_flann
+    libopencv_photo=$pkgver-r$pkgrel
+    libopencv_videoio=$pkgver-r$pkgrel
+    libopencv_video=$pkgver-r$pkgrel
+    libopencv_calib3d=$pkgver-r$pkgrel
+    libopencv_features2d=$pkgver-r$pkgrel
+    libopencv_imgproc=$pkgver-r$pkgrel
+    libopencv_core=$pkgver-r$pkgrel
+    libopencv_imgcodecs=$pkgver-r$pkgrel
+    libopencv_dnn=$pkgver-r$pkgrel
+    libopencv_flann=$pkgver-r$pkgrel
     "
 _libopencv_ximgproc_depends="
-    libopencv_imgcodecs
-    libopencv_video
-    libopencv_calib3d
-    libopencv_imgproc
-    libopencv_core
-    libopencv_dnn
-    libopencv_features2d
-    libopencv_flann
+    libopencv_imgcodecs=$pkgver-r$pkgrel
+    libopencv_video=$pkgver-r$pkgrel
+    libopencv_calib3d=$pkgver-r$pkgrel
+    libopencv_imgproc=$pkgver-r$pkgrel
+    libopencv_core=$pkgver-r$pkgrel
+    libopencv_dnn=$pkgver-r$pkgrel
+    libopencv_features2d=$pkgver-r$pkgrel
+    libopencv_flann=$pkgver-r$pkgrel
     "
 subpackages="
     $pkgname-dbg
     $pkgname-dev
     $pkgname-doc
     python3-$pkgname:_py3
-    libopencv_aruco:_lib
-    libopencv_calib3d:_lib
-    libopencv_core:_lib
-    libopencv_dnn:_lib
-    libopencv_face:_lib
-    libopencv_features2d:_lib
-    libopencv_flann:_lib
-    libopencv_highgui:_lib
-    libopencv_imgcodecs:_lib
-    libopencv_imgproc:_lib
-    libopencv_ml:_lib
-    libopencv_objdetect:_lib
-    libopencv_optflow:_lib
-    libopencv_photo:_lib
-    libopencv_plot:_lib
-    libopencv_shape:_lib
-    libopencv_stitching:_lib
-    libopencv_superres:_lib
-    libopencv_tracking:_lib
-    libopencv_video:_lib
-    libopencv_videoio:_lib
-    libopencv_videostab:_lib
-    libopencv_ximgproc:_lib
     "
+_libs="
+    aruco
+    calib3d
+    core
+    dnn
+    face
+    features2d
+    flann
+    highgui
+    imgcodecs
+    imgproc
+    ml
+    objdetect
+    optflow
+    photo
+    plot
+    shape
+    stitching
+    superres
+    tracking
+    video
+    videoio
+    videostab
+    ximgproc
+    "
+
+for _lib in $_libs; do
+    subpackages="$subpackages lib${pkgname}_${_lib}:_lib"
+    depends="$depends lib${pkgname}_${_lib}=$pkgver-r$pkgrel"
+done
+
 _git_rev=1
 source="${pkgname}-${pkgver}-r${_git_rev}.tar.gz::https://github.com/qnx-ports/opencv/archive/refs/tags/qnx-$pkgver-r$_git_rev.tar.gz
     https://github.com/opencv/opencv_contrib/archive/$pkgver/opencv_contrib-$pkgver.tar.gz
@@ -344,27 +352,27 @@ _py3() {
     pkgdesc="$pkgdesc (python modules)"
     depends="
         python3-numpy
-        libopencv_aruco
-        libopencv_calib3d
-        libopencv_core
-        libopencv_dnn
-        libopencv_face
-        libopencv_features2d
-        libopencv_flann
-        libopencv_highgui
-        libopencv_imgcodecs
-        libopencv_imgproc
-        libopencv_ml
-        libopencv_objdetect
-        libopencv_optflow
-        libopencv_photo
-        libopencv_plot
-        libopencv_shape
-        libopencv_stitching
-        libopencv_tracking
-        libopencv_video
-        libopencv_videoio
-        libopencv_ximgproc
+        libopencv_aruco=$pkgver-r$pkgrel
+        libopencv_calib3d=$pkgver-r$pkgrel
+        libopencv_core=$pkgver-r$pkgrel
+        libopencv_dnn=$pkgver-r$pkgrel
+        libopencv_face=$pkgver-r$pkgrel
+        libopencv_features2d=$pkgver-r$pkgrel
+        libopencv_flann=$pkgver-r$pkgrel
+        libopencv_highgui=$pkgver-r$pkgrel
+        libopencv_imgcodecs=$pkgver-r$pkgrel
+        libopencv_imgproc=$pkgver-r$pkgrel
+        libopencv_ml=$pkgver-r$pkgrel
+        libopencv_objdetect=$pkgver-r$pkgrel
+        libopencv_optflow=$pkgver-r$pkgrel
+        libopencv_photo=$pkgver-r$pkgrel
+        libopencv_plot=$pkgver-r$pkgrel
+        libopencv_shape=$pkgver-r$pkgrel
+        libopencv_stitching=$pkgver-r$pkgrel
+        libopencv_tracking=$pkgver-r$pkgrel
+        libopencv_video=$pkgver-r$pkgrel
+        libopencv_videoio=$pkgver-r$pkgrel
+        libopencv_ximgproc=$pkgver-r$pkgrel
         "
 
     amove usr/lib/python3.*
