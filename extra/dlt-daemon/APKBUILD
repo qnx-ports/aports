@@ -7,8 +7,8 @@ url="https://github.com/COVESA/dlt-daemon"
 arch="all"
 license="MPL-2.0"
 
-makedepends="cmake make "
-
+makedepends="cmake make libc++-dev"
+depends="libc++"
 source="dlt-daemon-${pkgver}.tar.gz::https://github.com/COVESA/dlt-daemon/archive/refs/tags/v${pkgver}.tar.gz  dlt-daemon.patch"
 
 builddir="$srcdir/dlt-daemon-$pkgver"
