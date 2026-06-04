@@ -4,7 +4,7 @@ pkgver=0.7.0
 pkgrel=0
 pkgdesc="Flexible Collision Library"
 url="https://github.com/flexible-collision-library/fcl"
-arch="aarch64 x86_64"
+arch="all"
 license="BSD-3-Clause"
 source="$pkgname-$pkgver.tar.gz::https://github.com/flexible-collision-library/fcl/archive/refs/tags/$pkgver.tar.gz
 0001-Use-target_compile_features-to-specify-the-C-11-requ.patch
