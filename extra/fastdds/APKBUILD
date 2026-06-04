@@ -70,7 +70,7 @@ check() {
 
     export LD_LIBRARY_PATH=/usr/lib:$LD_LIBRARY_PATH
 
-    CTEST_TEST_TIMEOUT=30 ctest --output-on-failure -j1 || true
+    ctest --output-on-failure -j1 --timeout 30 || true
 }
 
 package() {
