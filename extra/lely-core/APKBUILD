@@ -18,7 +18,7 @@ subpackages="$pkgname-dev"
 
 source="
 https://gitlab.com/lely_industries/lely-core/-/archive/v${pkgver}/lely-core-v${pkgver}.tar.gz 
-lely-core.patch "
+lely-core.patch"
 
 builddir="$srcdir/lely-core-v$pkgver"
 
