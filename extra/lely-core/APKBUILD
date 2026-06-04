@@ -7,18 +7,17 @@ url="https://gitlab.com/lely_industries/lely-core"
 arch="all"
 license="Apache-2.0"
 
-depends=""
+depends="libc++"
 makedepends="
     automake
     qnx-io-sock-dev
-"
+    libc++-dev"
+
 CPPFLAGS="$CPPFLAGS -D_POSIX_C_SOURCE=200809 "
 subpackages="$pkgname-dev"
 
 source="
-
 https://gitlab.com/lely_industries/lely-core/-/archive/v${pkgver}/lely-core-v${pkgver}.tar.gz 
-
 lely-core.patch "
 
 builddir="$srcdir/lely-core-v$pkgver"
