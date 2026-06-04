@@ -10,6 +10,7 @@ source="$pkgname-$pkgver.tar.gz::https://github.com/OctoMap/octomap/archive/refs
 0001-Fix-test-dependencies-in-CMakeLists-374.patch"
 
 builddir="$srcdir/$pkgname-$pkgver"
+depends="libc++"
 makedepends="
 	libc++-dev
 	cmake
