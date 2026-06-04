@@ -1,0 +1,46 @@
+# Maintainer: Ramya santoshi <rtimmaraju@qnx.com>
+pkgver=1.2.2
+pkgrel=0
+pkgdesc="Fast compression/decompression library"
+url="https://github.com/google/snappy"
+arch="all"
+license="BSD-3-Clause"
+depends="libc++"
+makedepends="cmake libc++-dev "
+subpackages="$pkgname-dev"
+source="$pkgname-$pkgver.tar.gz::https://github.com/google/snappy/archive/refs/tags/$pkgver.tar.gz 
+https://github.com/google/googletest/archive/refs/tags/v1.17.0.tar.gz "
+
+builddir="$srcdir/$pkgname-$pkgver"
+makedepends="libc++-dev"
+
+prepare() {
+    default_prepare
+    rm -rf third_party/googletest
+    cp -r "$srcdir"/googletest-* third_party/googletest
+}
+
+build() {
+    cmake -B build \
+        -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DSNAPPY_BUILD_BENCHMARKS=OFF \
+        -DSNAPPY_BUILD_TESTS=ON
+
+    cmake --build build
+}
+
+check() {
+    cd "$builddir/build"
+    ctest --output-on-failure
+}
+
+package() {
+        DESTDIR="$pkgdir" cmake --install build
+}
+
+sha512sums="
+0c1e1019e1bec9281f9877996d896e59e1533456130143224acb9cbfc35c1b0dd9de0a76e4a36494844d9ec58c295eed8c50bdf6dbabe47cf679652eb24b1281  snappy-1.2.2.tar.gz
+0f57e9ef06925e5b7722df1eb92ef5850e8dce79220ea16a8aaff586a71c0b01460ef1713649ee24ffedb2e6ad5a51e9198c5a5ae1b2789e43feb1f494e7d45c  v1.17.0.tar.gz
+"
