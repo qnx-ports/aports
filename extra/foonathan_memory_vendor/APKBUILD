@@ -5,7 +5,7 @@ pkgrel=0
 pkgdesc="eProsima foonathan memory vendor package"
 url="https://github.com/eProsima/foonathan_memory_vendor"
 arch="all"
-license="Zlib"
+license=" Apache-2.0"
 depends="foonathan_memory  libc++"
 makedepends="cmake ninja git libc++-dev foonathan_memory-dev"
 
