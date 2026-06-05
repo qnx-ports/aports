@@ -6,6 +6,36 @@ pkgdesc="Library of customizable ML solutions for live and streaming multimedia"
 url="https://ai.google.dev/edge/mediapipe"
 arch="all"
 license="Apache-2.0"
+depends="python3-$pkgname=$pkgver-$pkgrel"
+py3depends="
+    python3
+    python3-absl-py
+    python3-attrs
+    python3-cffi
+    python3-contourpy
+    python3-cycler
+    python3-flatbuffers
+    python3-fonttools
+    python3-jax
+    python3-jaxlib
+    python3-kiwisolver
+    python3-matplotlib
+    python3-ml-dtypes
+    python3-numpy
+    python3-opencv
+    python3-opt-einsum
+    python3-packaging
+    python3-pillow
+    python3-protobuf=5.29.3-r0
+    python3-cparser
+    python3-parsing
+    python3-dateutil
+    python3-scipy
+    python3-sentencepiece
+    python3-six
+    python3-sounddevice
+    libc++
+    "
 makedepends="
     bazel6
     cmake
@@ -19,7 +49,8 @@ makedepends="
     python3-wheel
     "
 subpackages="
-    python3-$pkgname-cpu:py3
+    python3-$pkgname-cpu:py3cpu
+    python3-$pkgname:py3
     "
 source="$pkgname-$pkgver.tar.gz::https://github.com/google-ai-edge/$pkgname/archive/refs/tags/v$pkgver.tar.gz
     python_BUILD.bazel
@@ -34,6 +65,9 @@ source="$pkgname-$pkgver.tar.gz::https://github.com/google-ai-edge/$pkgname/arch
     qnx.patch
     "
 builddir="$srcdir/$pkgname-$pkgver"
+
+stagecpu="$builddir/stage-cpu"
+stage="$builddir/stage"
 
 prepare() {
     default_prepare
@@ -82,12 +116,23 @@ prepare() {
 }
 
 build() {
+    # We're doing an install to a custom staging directory so we can trigger a
+    # separate build during the build() phase.
+    mkdir -p "$stagecpu"
+    mkdir -p "$stage"
+
     # Preliminary build without GPU.
     # Links against the host opencv package by default.
     export BAZEL_CXXOPTS=-std=c++17
-    export MP_DISABLE_GPU=1
+    export MEDIAPIPE_DISABLE_GPU=1
     export PROTOC=/usr/bin/protoc
     python3 setup.py build_py --link-opencv
+    python3 setup.py install --skip-build --root="$stagecpu"
+
+    # Now the GPU build.
+    export MEDIAPIPE_DISABLE_GPU=0
+    python3 setup.py build_py --link-opencv
+    python3 setup.py install --skip-build --root="$stage"
 }
 
 check() {
@@ -102,42 +147,28 @@ check() {
 }
 
 package() {
-    python3 setup.py install --skip-build --root="$pkgdir"
+    # A bit hacky but... We're using the same name for both the cpu and gpu
+    # versions of mediapipe, so we need to avoid collisions
+    cp -r "$stage" "$pkgdir"
+    cp -r "$stagecpu" "$pkgdir"
 }
 
 py3() {
     pkgdesc="Python3 wrapper for $subpkgname"
-    depends="
-        python3
-        python3-absl-py
-        python3-attrs
-        python3-cffi
-        python3-contourpy
-        python3-cycler
-        python3-flatbuffers
-        python3-fonttools
-        python3-jax
-        python3-jaxlib
-        python3-kiwisolver
-        python3-matplotlib
-        python3-ml-dtypes
-        python3-numpy
-        python3-opencv
-        python3-opt-einsum
-        python3-packaging
-        python3-pillow
-        python3-protobuf=5.29.3-r0
-        python3-cparser
-        python3-parsing
-        python3-dateutil
-        python3-scipy
-        python3-sentencepiece
-        python3-six
-        python3-sounddevice
-        libc++
-        "
+    depends="$py3depends"
 
-    amove usr/lib/python*
+    mkdir -p "$subpkgdir"/usr/lib
+    mv "$pkgdir/$stagecpu"/usr/lib/python3* "$subpkgdir"/usr/lib/
+}
+
+py3cpu() {
+    pkgdesc="Python3 wrapper for $subpkgname"
+    depends="$py3depends"
+    provides="python3-$pkgname=$pkgver-r$pkgrel"
+    replaces="python3-$pkgname"
+
+    mkdir -p "$subpkgdir"/usr/lib
+    mv "$pkgdir/$stage"/usr/lib/python3* "$subpkgdir"/usr/lib/
 }
 
 sha512sums="
