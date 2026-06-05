@@ -1,4 +1,5 @@
 # Maintainer: Ramya santoshi <rtimmaraju@qnx.com>
+pkgname=snappy
 pkgver=1.2.2
 pkgrel=0
 pkgdesc="Fast compression/decompression library"
@@ -6,7 +7,7 @@ url="https://github.com/google/snappy"
 arch="all"
 license="BSD-3-Clause"
 depends="libc++"
-makedepends="cmake libc++-dev "
+makedepends="cmake libc++-dev ninja build-base"
 subpackages="$pkgname-dev"
 source="$pkgname-$pkgver.tar.gz::https://github.com/google/snappy/archive/refs/tags/$pkgver.tar.gz 
 https://github.com/google/googletest/archive/refs/tags/v1.17.0.tar.gz "
