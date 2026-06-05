@@ -10,27 +10,13 @@ arch="all"
 license="BSD-3-Clause AND BSD-2-Clause AND MIT AND Apache-2.0 AND GPL-3.0-or-later"
 depends="$pkgname-libs=$pkgver-r$pkgrel libc++"
 depends_dev="$pkgname=$pkgver-r$pkgrel"
-# Without this, QNX abuild warns that glslang-libs is missing libc++ and
-# spirv-tools shared-object dependencies. Keep them explicit until dependency
-# tracing infers this runtime closure correctly.
-depends_libs="libc++ spirv-tools"
 makedepends="cmake ninja python3 bison spirv-tools-dev"
 checkdepends="bash gtest-dev"
 subpackages="$pkgname-static $pkgname-libs $pkgname-dev"
-# The main tools intentionally link against libraries split into glslang-libs.
-# The exact-version glslang-libs dependency above owns that relationship; these
-# masks avoid false internal subpackage soname warnings from abuild.
-somask="
-	libSPVRemapper.so.15
-	libglslang-default-resource-limits.so.15
-	libglslang.so.15
-	"
 source="$pkgname-$pkgver.tar.gz::https://github.com/KhronosGroup/glslang/archive/refs/tags/vulkan-sdk-$pkgver.tar.gz"
 builddir="$srcdir/glslang-vulkan-sdk-$pkgver"
 
 build() {
-	# QNX clang treats Alpine's -fstack-clash-protection as unused. Preserve
-	# Alpine's flags and ask clang not to fail on target-irrelevant arguments.
 	export CFLAGS="$CFLAGS -Qunused-arguments"
 	export CXXFLAGS="$CXXFLAGS -Qunused-arguments"
 	cmake -B build-shared -G Ninja \
@@ -52,6 +38,15 @@ build() {
 		-DALLOW_EXTERNAL_SPIRV_TOOLS=YES \
 		-DGLSLANG_TESTS="$(want_check && echo ON || echo OFF)"
 	cmake --build build-static
+}
+
+libs() {
+	pkgdesc="$pkgdesc (shared libraries)"
+	depends="libc++ spirv-tools"
+	amove usr/lib/libSPIRV.so.* \
+		usr/lib/libSPVRemapper.so.* \
+		usr/lib/libglslang-default-resource-limits.so.* \
+		usr/lib/libglslang.so.*
 }
 
 check() {
