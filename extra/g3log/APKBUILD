@@ -16,6 +16,7 @@ build() {
     cmake -B build \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_INSTALL_PREFIX=/usr \
+        -DINSTALL_GTEST=OFF \
         -DG3_SHARED_LIB=ON 
         
     cmake --build build
