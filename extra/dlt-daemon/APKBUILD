@@ -7,8 +7,8 @@ url="https://github.com/COVESA/dlt-daemon"
 arch="all"
 license="MPL-2.0"
 
-makedepends="cmake make libc++-dev"
-depends="libc++"
+makedepends="cmake make libc++-dev zlib-dev qnx-io-sock-dev"
+depends="libc++ qnx-io-sock"
 source="dlt-daemon-${pkgver}.tar.gz::https://github.com/COVESA/dlt-daemon/archive/refs/tags/v${pkgver}.tar.gz  dlt-daemon.patch"
 
 builddir="$srcdir/dlt-daemon-$pkgver"
@@ -16,8 +16,8 @@ builddir="$srcdir/dlt-daemon-$pkgver"
 subpackages="$pkgname-dev"
 
 build() {
-    export CFLAGS="${CFLAGS/-fstack-clash-protection/}"
-    export CXXFLAGS="${CXXFLAGS/-fstack-clash-protection/}"
+    export CXXFLAGS="$CXXFLAGS -Qunused-arguments"
+    export CFLAGS="$CFLAGS -Qunused-arguments"
     cmake -B build -S "$builddir" \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_INSTALL_PREFIX=/usr \
