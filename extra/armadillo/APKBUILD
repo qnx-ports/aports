@@ -1,0 +1,51 @@
+# Contributor: Holger Jaekel <holger.jaekel@gmx.de>
+# Maintainer: Holger Jaekel <holger.jaekel@gmx.de>
+pkgname=armadillo
+pkgver=15.2.7
+pkgrel=0
+pkgdesc="C++ library for linear algebra & scientific computing"
+url="https://arma.sourceforge.net/"
+arch="all"
+license="Apache-2.0"
+
+depends="
+	openblas
+	qnx-microkernel
+"
+depends_dev="
+	${depends}
+"
+makedepends="
+	cmake
+	${depends}
+"
+
+subpackages="$pkgname-dev"
+
+source="https://downloads.sourceforge.net/project/arma/armadillo-$pkgver.tar.xz"
+
+build() {
+    cmake -B build \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DOPENBLAS_PROVIDES_LAPACK=true \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+
+    cmake --build build
+}
+
+check() {
+	build/tests1/smoke_test
+}
+
+package() {
+	DESTDIR="$pkgdir" cmake --install build
+
+	cd "$pkgdir"
+	mkdir -p usr/lib/cmake
+	mv usr/share/Armadillo/CMake/* usr/lib/cmake/
+	rm -rf usr/share
+}
+
+sha512sums="
+4339f825b10c098429774925814eb8246e1393984abf2b0d6300b946421e1df631a25a2c898ed1e8ef9bbb07f15aabf168863d01e66400ef2f7bdca6ecbe3414  armadillo-15.2.7.tar.xz
+"

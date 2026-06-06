@@ -1,0 +1,48 @@
+# Contributor: Ryan Curtin <ryan@ratml.org>
+# Contributor: Conrad Sanderson <conradsnicta@users.noreply.github.com>
+# Contributor: Marcus Edel <marcus.edel@fu-berlin.de>
+# Maintainer: Omar Shrit <omar@avontech.fr>
+pkgname=bandicoot
+pkgver=4.0.1
+pkgrel=0
+pkgdesc="C++ library for GPU accelerated linear algebra"
+url="https://coot.sourceforge.io/"
+arch="all"
+license="Apache-2.0"
+
+depends="
+    clblast
+    openblas
+    qnx-opencl
+"
+depends_dev="
+    ${pkgname}=${pkgver}-r${pkgrel}
+"
+makedepends="
+    cmake
+    ${depends}
+    clblast-dev
+    openblas-dev
+"
+options="!check" # requires armadillo to be installed but bandicoot is dependency of armadillo
+
+subpackages="$pkgname-dev"
+
+source="https://sourceforge.net/projects/coot/files/bandicoot-4.0.1.tar.xz"
+
+build() {
+    cmake -B build \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DOPENBLAS_PROVIDES_LAPACK=true \
+        -DCMAKE_INSTALL_PREFIX=/usr
+
+    cmake --build build
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install build
+}
+
+sha512sums="
+ceb1ce6fee39efb6ef4ef367e0a5fe0230afbf948a34402dcda725825c555072d72861b3c10224cebd0e3e40347a9b7db7d5fa95f2b7f2142de6272d13f8f3d2  bandicoot-4.0.1.tar.xz
+"

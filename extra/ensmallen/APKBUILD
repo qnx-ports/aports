@@ -1,0 +1,41 @@
+# Contributor: Ryan Curtin <ryan@ratml.org>
+# Contributor: Conrad Sanderson <conradsnicta@users.noreply.github.com>
+# Contributor: Marcus Edel <marcus.edel@fu-berlin.de>
+# Maintainer: Omar Shrit <omar@avontech.fr>
+pkgname=ensmallen
+pkgver=3.11.0
+pkgrel=0
+pkgdesc="Flexible C++ library for efficient numerical optimization"
+url="https://ensmallen.org/"
+arch="all"
+license="BSD-3-Clause"
+
+depends="
+    armadillo-dev
+    bandicoot-dev
+    clblast-dev
+"
+makedepends="
+    cmake
+    armadillo-dev
+    bandicoot-dev
+    clblast-dev
+"
+
+source="https://ensmallen.org/files/ensmallen-3.11.0.tar.gz"
+
+build() {
+    cmake -B build \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+
+    cmake --build build
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install build
+}
+
+sha512sums="
+9d7371b9ad503505b3558bc8410ceb171a3a9ddd74eb2ca7869448d5fdb62f915b75afb5ff0b54273c80a0bc06d613d22c6c1c64ce297a4eee06c490feaf3b4e  ensmallen-3.11.0.tar.gz
+"
