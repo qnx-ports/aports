@@ -52,19 +52,20 @@ subpackages="
     python3-$pkgname-cpu:py3cpu
     python3-$pkgname:py3
     "
-source="$pkgname-$pkgver.tar.gz::https://github.com/google-ai-edge/$pkgname/archive/refs/tags/v$pkgver.tar.gz
+_git_rev=0
+source="$pkgname-$pkgver-r$_git_rev.tar.gz::https://github.com/qnx-ports/$pkgname/archive/refs/tags/qnx-v$pkgver-r$_git_rev.tar.gz
     python_BUILD.bazel
     python_defs.bzl
     python_WORKSPACE
     python_qnx_BUILD.bazel
     python_qnx_WORKSPACE
-    cpp_qnx_BUILD.bazel.tpl
+    cpp_qnx_BUILD.bazel
     cpp_qnx_WORKSPACE
     buildbase_qnx_BUILD.bazel
     buildbase_qnx_WORKSPACE
     qnx.patch
     "
-builddir="$srcdir/$pkgname-$pkgver"
+builddir="$srcdir/$pkgname-qnx-v$pkgver-r$_git_rev"
 
 stagecpu="$builddir/stage-cpu"
 stage="$builddir/stage"
@@ -96,15 +97,8 @@ prepare() {
     ln -s /usr/lib/libpython3.14.so $builddir/python_qnx/lib/libpython3.14.so
     ln -s $builddir/python_qnx/bin/python3 $builddir/python_qnx/python
 
-    # Create the toolchain to register our local clang.
-	case "$CARCH" in
-		x86_64)	        _cpu="x64" ;;
-		aarch64)		_cpu="arm64"  ;;
-	esac
-
     mkdir $builddir/cpp_qnx
-    sed "s|%CPU%|$_cpu|" $srcdir/cpp_qnx_BUILD.bazel.tpl > $srcdir/cpp_qnx_BUILD.bazel
-    cp $srcdir/cpp_qnx_BUILD.bazel $builddir/cpp_qnx/BUILD.bazel
+    cp -L $srcdir/cpp_qnx_BUILD.bazel $builddir/cpp_qnx/BUILD.bazel
     cp -L $srcdir/cpp_qnx_WORKSPACE $builddir/cpp_qnx/WORKSPACE
 
     # Finally, toolchains for ninja and cmake to override rules_foreign_cc.
@@ -120,6 +114,18 @@ build() {
     # separate build during the build() phase.
     mkdir -p "$stagecpu"
     mkdir -p "$stage"
+
+    export CUSTOM_BAZEL_ARGS="
+        --override_repository=python=${python_toolchain}
+        --override_repository=python_qnx=${python_qnx_toolchain}
+        --extra_toolchains=@${python_qnx_toolchain}//:qnx_py_toolchain
+        --extra_toolchains=@${python_qnx_toolchain}//:qnx_py_toolchain2
+        --extra_toolchains=@${python_qnx_toolchain}//:qnx_py_cc_toolchain
+        --extra_toolchains=//${cpp_qnx_toolchain}:qnx_cc_toolchain_x64
+        --extra_toolchains=//${cpp_qnx_toolchain}:qnx_cc_toolchain_arm64
+        --extra_toolchains=//${buildbase_qnx_toolchain}:qnx_cmake_toolchain
+        --extra_toolchains=//${buildbase_qnx_toolchain}:qnx_ninja_toolchain
+        "
 
     # Preliminary build without GPU.
     # Links against the host opencv package by default.
@@ -172,15 +178,15 @@ py3cpu() {
 }
 
 sha512sums="
-f67d77752fbd786104c5a58c4301be64d346021cd032df1e5b6081f435747b25debc20527105d7da741d465c3b6b64cc04982c8cf60c01e89d038df0e05046ac  mediapipe-0.10.26.tar.gz
+00aeedacf1998d91f9bb4846dda34a8ac375163489abfbe3104723f4ac9399e0099986a044986f1be2b3fcd85709916319e2197d2f3d1a9ccbae3a830fe3f0c5  mediapipe-0.10.26-r0.tar.gz
 00adf603167661b10229297fa12a6de9f00d4bdfb864eacbd573aebcf3c05208cea543688735dcf4baa3aa3dd1854ed2b5f7e5ad04bd23309347ceaf12334eb4  python_BUILD.bazel
 5febd2bd49040fc75a2c92fc96b8b6196ec611c5bc0aca7b7c0b146f5918cc01e89259d979f54cace616bd3aa15ec1a610f4e00140d91eeeb82f2c7e6dda193f  python_defs.bzl
 1847818b97aaa3eb9184c15cc6f2eefb5c2f2d21e2e38749740738483689e58f3a1467c2cf717587c803ef707c17154e92caf84fa3a3d4ba4797ae686fa68165  python_WORKSPACE
 9e42958cac159be1025aa09737ab996513fff876685422823d23b1de5550c8b5d8a7b8d23f8e60bc806a4e7d1ffbdc98253b8b416d5e63ef49bab0a015621c0c  python_qnx_BUILD.bazel
 e8e83404f5e078fdbefaef20d8f3b75371c7dab2018c5d863e2b2ad26a2b5c137f242878daaa699997a72cf8997e050fefd7b0cc32c5b9deb05f51aa0c929ee9  python_qnx_WORKSPACE
-9f40661f2324c6646c5de9573b9420db6c4aacafeef08acdcfe776a0ee9d56dc510399ff23d5a672ae7229fb2d17a443024872e452015195ff53c69deb3e6b75  cpp_qnx_BUILD.bazel.tpl
+1d0d3aaf304c51d69a95a1759dba1ab6664970c8b352f40c2ce1cf8843f4fd2c3e261350397f448217cc07bd6c00412cea0d8a06dccfa651c9e5db3eaa274559  cpp_qnx_BUILD.bazel
 43de963a6220b632da108bf21b55cbd30a6ba37f9f76123db4716771be5d9780e48d892722d436f063096a103217f2094d8994da9f6abed0a5f905c6073cf530  cpp_qnx_WORKSPACE
 82d36aa3cc138ebd8f426e244e0b008b97ad6b98aae84a2bda3a87ef29f15563356f2b30d2cb9a80aed8d50aceae9287ccde76a0f50dd6518963f15404a118ef  buildbase_qnx_BUILD.bazel
 efb0a915934bb31b8311caeb6a0dd61b6645e917d449ba978870cb2abf50b9d93b9d1ac2245367285307330eb967629ab83d215e59ffa46fadc5670dc9caac63  buildbase_qnx_WORKSPACE
-1f2dab4c1fcdccb523ea3c04165c5733e67f91cd095db74f91f688a58de0b3025e966d5a13e2467924355d2921baf58520942f500f3898cdc78ebd9fc8e84806  qnx.patch
+97ea861ceaaebf200834ab6268abaaf4caec72139a5a8f5f930fae4228e315ef2abf69a5296269dd157fc2d834d98b63ad9b65f31707cc1659b50e30c82332a4  qnx.patch
 "

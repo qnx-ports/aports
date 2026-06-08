@@ -1,0 +1,23 @@
+toolchain(
+    name = "qnx_cc_toolchain_x64",
+    exec_compatible_with = [
+        "@platforms//cpu:x86_64",
+    ],
+    target_compatible_with = [
+        "@platforms//cpu:x86_64",
+    ],
+    toolchain = "@local_config_cc//:cc-compiler-qnx_x64",
+    toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
+)
+
+toolchain(
+    name = "qnx_cc_toolchain_arm64",
+    exec_compatible_with = [
+        "@platforms//cpu:aarch64",
+    ],
+    target_compatible_with = [
+        "@platforms//cpu:aarch64",
+    ],
+    toolchain = "@local_config_cc//:cc-compiler-qnx_arm64",
+    toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
+)
