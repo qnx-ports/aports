@@ -1,5 +1,5 @@
 diff --git a/setup.py b/setup.py
-index e5422ffb6..61663aae7 100644
+index e5422ffb6..f87af79d6 100644
 --- a/setup.py
 +++ b/setup.py
 @@ -32,6 +32,7 @@ from setuptools.command import install
@@ -10,7 +10,15 @@ index e5422ffb6..61663aae7 100644
  IS_WINDOWS = (platform.system() == 'Windows')
  IS_MAC = (platform.system() == 'Darwin')
  MP_ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
-@@ -306,6 +307,7 @@ class BuildModules(build_ext.build_ext):
+@@ -292,6 +293,7 @@ class BuildModules(build_ext.build_ext):
+     fetch_model_command = [
+         'bazel',
+         'build',
++    ] + CUSTOM_BAZEL_ARGS + [
+         external_file,
+     ]
+     _invoke_shell_command(fetch_model_command)
+@@ -306,6 +308,7 @@ class BuildModules(build_ext.build_ext):
          '--compilation_mode=opt',
          '--copt=-DNDEBUG',
          '--action_env=PYTHON_BIN_PATH=' + _normalize_path(sys.executable),
@@ -18,7 +26,7 @@ index e5422ffb6..61663aae7 100644
          binary_graph_target,
      ] + GPU_OPTIONS
  
-@@ -332,6 +334,7 @@ class GenerateMetadataSchema(build_ext.build_ext):
+@@ -332,6 +335,7 @@ class GenerateMetadataSchema(build_ext.build_ext):
            'build',
            '--compilation_mode=opt',
            '--action_env=PYTHON_BIN_PATH=' + _normalize_path(sys.executable),
@@ -26,7 +34,7 @@ index e5422ffb6..61663aae7 100644
            '//mediapipe/tasks/metadata:' + target,
        ] + GPU_OPTIONS
  
-@@ -422,6 +425,7 @@ class BuildExtension(build_ext.build_ext):
+@@ -422,6 +426,7 @@ class BuildExtension(build_ext.build_ext):
          '--copt=-DNDEBUG',
          '--keep_going',
          '--action_env=PYTHON_BIN_PATH=' + _normalize_path(sys.executable),
