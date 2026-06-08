@@ -44,6 +44,7 @@ makedepends="
     protobuf=27.2-r0
     protobuf-dev=27.2-r0
     opencv-dev
+    python3-dev
     python3-packaging
     python3-setuptools
     python3-wheel
