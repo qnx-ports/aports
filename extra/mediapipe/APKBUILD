@@ -116,15 +116,15 @@ build() {
     mkdir -p "$stage"
 
     export CUSTOM_BAZEL_ARGS="
-        --override_repository=python=${python_toolchain}
-        --override_repository=python_qnx=${python_qnx_toolchain}
-        --extra_toolchains=@${python_qnx_toolchain}//:qnx_py_toolchain
-        --extra_toolchains=@${python_qnx_toolchain}//:qnx_py_toolchain2
-        --extra_toolchains=@${python_qnx_toolchain}//:qnx_py_cc_toolchain
-        --extra_toolchains=//${cpp_qnx_toolchain}:qnx_cc_toolchain_x64
-        --extra_toolchains=//${cpp_qnx_toolchain}:qnx_cc_toolchain_arm64
-        --extra_toolchains=//${buildbase_qnx_toolchain}:qnx_cmake_toolchain
-        --extra_toolchains=//${buildbase_qnx_toolchain}:qnx_ninja_toolchain
+        --override_repository=python=python
+        --override_repository=python_qnx=python_qnx
+        --extra_toolchains=@python_qnx//:qnx_py_toolchain
+        --extra_toolchains=@python_qnx//:qnx_py_toolchain2
+        --extra_toolchains=@python_qnx//:qnx_py_cc_toolchain
+        --extra_toolchains=//cpp_qnx:qnx_cc_toolchain_x64
+        --extra_toolchains=//cpp_qnx:qnx_cc_toolchain_arm64
+        --extra_toolchains=//buildbase_qnx:qnx_cmake_toolchain
+        --extra_toolchains=//buildbase_qnx:qnx_ninja_toolchain
         "
 
     # Preliminary build without GPU.
