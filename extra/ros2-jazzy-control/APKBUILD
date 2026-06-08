@@ -1,0 +1,134 @@
+# Maintainer: jscaffidi <jscaffidi@qnx.com>
+pkgname=ros2-jazzy-control
+pkgver=20260128
+pkgrel=0
+pkgdesc="ROS 2 controller packages"
+url="https://docs.ros.org/en/jazzy/index.html"
+arch="aarch64 x86_64"
+license="Apache-2.0"
+options="!check !fhs !tracedeps" # tracedeps broken since some shared objects are in /opt/ros/jazzy/lib
+
+source="
+    control_msgs.tar.gz::https://github.com/ros-controls/control_msgs/archive/refs/tags/5.9.0.tar.gz
+    control_toolbox.tar.gz::https://github.com/ros-controls/control_toolbox/archive/refs/tags/4.10.0.tar.gz
+    kinematics_interface.tar.gz::https://github.com/ros-controls/kinematics_interface/archive/refs/tags/1.7.0.tar.gz
+    realtime_tools.tar.gz::https://github.com/ros-controls/realtime_tools/archive/refs/tags/3.11.0.tar.gz
+    ros2_control.tar.gz::https://github.com/ros-controls/ros2_control/archive/refs/tags/4.43.0.tar.gz
+    ros2_control_demos.tar.gz::https://github.com/ros-controls/ros2_control_demos/archive/4c24fcd03c94acf986c229396124ea245ece54d7.tar.gz
+    ros2_controllers.tar.gz::https://github.com/ros-controls/ros2_controllers/archive/refs/tags/4.39.0.tar.gz
+    ros2_control_cmake.tar.gz::https://github.com/ros-controls/ros2_control_cmake/archive/refs/tags/0.3.0.tar.gz
+    topic_based_hardware_interfaces.tar.gz::https://github.com/ros-controls/topic_based_hardware_interfaces/archive/refs/tags/1.0.0.tar.gz
+    backward_ros.tar.gz::https://github.com/pal-robotics/backward_ros/archive/refs/tags/1.0.8.tar.gz
+    pal_statistics.tar.gz::https://github.com/pal-robotics/pal_statistics/archive/refs/tags/2.7.0.tar.gz
+    filters.tar.gz::https://github.com/ros/filters/archive/refs/tags/2.2.2.tar.gz
+    generate_parameter_library.tar.gz::https://github.com/PickNikRobotics/generate_parameter_library/archive/refs/tags/0.7.1.tar.gz
+    RSL.tar.gz::https://github.com/PickNikRobotics/RSL/archive/refs/tags/1.3.0.tar.gz
+    cpp_polyfills.tar.gz::https://github.com/PickNikRobotics/cpp_polyfills/archive/refs/tags/2.0.1.tar.gz
+    diagnostics.tar.gz::https://github.com/ros/diagnostics/archive/refs/tags/4.2.6.tar.gz
+    angles.tar.gz::https://github.com/ros/angles/archive/refs/tags/1.16.1.tar.gz
+    ackermann_msgs.tar.gz::https://github.com/ros-drivers/ackermann_msgs/archive/refs/tags/2.0.2.tar.gz
+    xacro.tar.gz::https://github.com/ros/xacro/archive/refs/tags/2.1.1.tar.gz
+    realtime_tools.patch
+    ros_control_demo_remove_rviz.patch
+"
+
+builddir="$srcdir/ros2-control"
+depends="ros2-jazzy python3-filelock python3-numpy fmt"
+makedepends="
+        ros2-jazzy
+        boost-dev
+        asio-dev
+        tinyxml2-dev
+        eigen-dev
+        qnx-fs-notify-dev
+        qnx-fs-core-dev
+        qnx-fs-gpt-dev
+        liblocale-shim-dev
+        python3-dev
+        python3-pip
+        python3-numpy
+        python3-numpy-dev
+        python3-jinja2
+        python3-typeguard
+        cmake
+        ninja
+        fmt-dev
+        curl-dev
+        tl-expected
+"
+
+unpack() {
+    mkdir -p "$builddir"/src
+    cd "$builddir"
+    find "$srcdir" -name "*.tar.gz" -print0 | while IFS= read -r -d '' tar_f; do
+        # Extract to not have the version in the name
+        file_name=$(basename "$tar_f")
+        file_prefix=$(echo "$file_name" | sed 's/\.tar.gz//' )
+        mkdir -p src/"$file_prefix"
+        tar -xf "$tar_f" --strip-component=1 -C src/"$file_prefix"
+    done
+    
+}
+
+prepare() {
+        cd "$builddir"
+        _apply_qnx_patch() {
+                local _dir="$1"
+                local _patch="$2"
+                git -C "$builddir/$_dir" apply --whitespace=nowarn "$srcdir/$_patch"
+        }
+        _apply_qnx_patch ./src/realtime_tools realtime_tools.patch
+        _apply_qnx_patch ./src/ros2_control_demos ros_control_demo_remove_rviz.patch
+}
+
+build() {
+        cd "$builddir"
+        COLCON_CURRENT_PREFIX="/opt/ros/jazzy/" source /opt/ros/jazzy/local_setup.sh
+        colcon build --merge-install \
+                --cmake-args \
+                        -G Ninja \
+                        -DBUILD_TESTING=OFF \
+                        -DCMAKE_BUILD_TYPE=Release \
+                        -DCMAKE_C_FLAGS="-Qunused-arguments -DSA_RESTART=0 -ggdb --no-warnings" \
+                        -DCMAKE_CXX_FLAGS="-Qunused-arguments -DSA_RESTART=0 -ggdb --no-warnings" \
+                        -DCMAKE_EXE_LINKER_FLAGS="-lsocket -lfsnotify -lc++ -lc++abi -Wl,-E" \
+                        -DCMAKE_SHARED_LINKER_FLAGS="-lsocket -lfsnotify -lc++ -lc++abi -Wl,-E" \
+                        -DTRACETOOLS_TRACEPOINTS_EXCLUDED=ON \
+                        -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+                        --packages-skip kinematics_interface_pinocchio generate_parameter_module_example
+}
+
+package() {
+        dest="/opt/ros/jazzy"
+        mkdir -p "$pkgdir"/$dest
+        cp -a "$builddir"/install/. "$pkgdir"/$dest
+
+        # Remove files we don't want in our final package
+        for _f in  COLCON_IGNORE .colcon_install_layout _local_setup_util_ps1.py local_setup.ps1 setup.ps1 _local_setup_util_sh.py local_setup.bash local_setup.bash local_setup.sh local_setup.zsh setup.bash setup.sh setup.zsh; do
+            [[ -f "$pkgdir"/$dest/$_f ]] && rm "$pkgdir"/$dest/$_f
+        done
+}
+
+sha512sums="
+e837f65729d7f08ac1eaab7ce850ebd03982db09e371df49bea9939d301cb436db7b4f2ff723fe0e54a304776638bac150e3fe2ead503b964536b23b4fddc2cd  control_msgs.tar.gz
+c0943db027f3ed98fa78f990fc7b8326d302fb9f3cd44f2f096ded4e2080043f213846f5f04d16438e7b75efc73658872fb26bc5841666a5a4446cd9f701eb7a  control_toolbox.tar.gz
+429dd00a6b529fa53b3c558698619b8fc60d01e3c8e517d4ef87bf4e410e0e5bae25799456e6aaf49ce354154a50b5ec6f19e85e08369bd25e772312a6c84507  kinematics_interface.tar.gz
+c6fc8c3c5e9d67abff7855572ec3f0e3534a0901f5b4d5db96a7584beea91cb62f8963d3a112b624a4ddcc85894f95f4b41aae0dfe028d9f6e69779d66c0fcbe  realtime_tools.tar.gz
+817fb7c23b4fa7e42da1ab7456ac932eb4223fdf77232eb369db5bc6a363d78c3102e60dc8afc5c68bc87e358eae499473d711a6c5363d0646cfa0e1b490dc05  ros2_control.tar.gz
+d0498dd49e699161a7c4a9968e1c2717c5dd20dd05c30dba8aa62837d7fea4f280053804a2d931f901e62521df7b0cae4d9071cf85d43d73ad1c77641cf64220  ros2_control_demos.tar.gz
+e59dd41b03720461016ba4670dc98a502065614389cf5a42af4e28e87e9580a575a6f92e51fbd903cbe5259d37c78e7bb55f80fd0e8686aea52019edfd0bef88  ros2_controllers.tar.gz
+9033c451bc25300acffe87b055125b28b0fc78cc88886adee71c6cad7380b4566869229f08edaeeae4a6909052474084c70383686d50f14246a6c26bd981988a  ros2_control_cmake.tar.gz
+b7f5491e63915f190d27f65a635b8e808ea438aec94e879b7ee744495d16bcdd184e42279103725d90a10bb5749843085d9d1c308a4619546035af2388cd41c2  topic_based_hardware_interfaces.tar.gz
+8b9cc9a8202c8d49dbc9d5bf86b9639248dac18ac7b7815274d407901d5db16f134ee2f2c1db4bdd7870edbe4e1f46174405ac979fc4402ef4189a88457e7400  backward_ros.tar.gz
+a4576e5855caff21f6ab39cd2ae1efb8d5a2c907bc31d6dc913e4aa7249e7c128fbc57368b3469ec3d6b3580cf20b10a36f1f661c497f9e59aba939ded482d11  pal_statistics.tar.gz
+6b2f37bb9d1517bfce92da37a452ad4fdde82a13059220a6b14677f037e8af8483e6fecdb07862eb41ec8b37cfbc66df94a57d61d49cefe1898cabbd74beedbc  filters.tar.gz
+9fe0c75c46a6f0275d939da9466e9bd7a816851375560c7d81e14ade1dbaaca7d6287a54df08f2cab7392708e5180c8d32ab658aa2865d7b9f26401414026334  generate_parameter_library.tar.gz
+a95fb4fff24f13e2c22b0030573dd7ffed6e53797e5ae9f1c3d965ff5e50f3be80ba9e37c9c2c0f3015c5dceecd430bd045406459ed625d9395d7be196527531  RSL.tar.gz
+641625b834d531afcf783726a8d5c9cb946f3de02a4efbf6f2a92cd2216104cd4b03748217ca52a2d8cef2862a2620022ba1f0388af007477b5149e3a1064b72  cpp_polyfills.tar.gz
+04ac3ad18c3575962c1bfb8b61899e7144a43707e5242d66c5d7b63cf1eedf912313ca7b6e1b12c7c7762dffb8bdc6ae34bf91854856bb58aadcac6f4c05350e  diagnostics.tar.gz
+bb8781dc9e13dba6943bf288b93cc99c5d8616579678fb0cd44ae02a2b93718fa1b12d14c77fb22f4f9bfd9be9abdad725f09f95ce14e5cc0b552453309eac7a  angles.tar.gz
+c36a9554d9a934dfb4f3b7b509e28ba202d928ec2db43f31675aba733ee41c9ed07ccbadf5bdb6726413519cb00932f6d037bbd382de2e7c7865a8f093751538  ackermann_msgs.tar.gz
+c6a0824cfd7ccebc4000ec0e8459ac6daefc5b243b1a22fa224e3168999d12f9217590e947776e898db3ccd69d2ab6f463f4dd104472011de6dc8bc7aea50233  xacro.tar.gz
+1592650ad3b99cd0f04120292da25571fff8f9c1c92fb4a58219b29eb234e8c613e59998e0be651fb4546ff41a892d9e458e9e4987d98f313cfb9e7868e79bab  realtime_tools.patch
+5201fab0d08fa6c2e891b738c62651b2e7342125bcafb16ab384883ffe997b090b102c6cdd6be64ceb1d01d1ff579d6f6df335694d24f0fa741c8ae6f058703f  ros_control_demo_remove_rviz.patch
+"
