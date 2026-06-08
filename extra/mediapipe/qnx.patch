@@ -1,9 +1,12 @@
 diff --git a/WORKSPACE b/WORKSPACE
-index adeef8ea4..601fdd266 100644
+index adeef8ea4..2e3c2dcd9 100644
 --- a/WORKSPACE
 +++ b/WORKSPACE
-@@ -521,8 +521,6 @@ http_archive(
-     add_prefix = "sentencepiece",
+@@ -518,11 +518,8 @@ http_archive(
+ # Sentencepiece
+ http_archive(
+     name = "com_google_sentencepiece",
+-    add_prefix = "sentencepiece",
      build_file = "@//third_party:sentencepiece.BUILD",
      patch_args = [
 -        "-d",
