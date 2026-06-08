@@ -6,7 +6,7 @@ pkgdesc="Library of customizable ML solutions for live and streaming multimedia"
 url="https://ai.google.dev/edge/mediapipe"
 arch="all"
 license="Apache-2.0"
-depends="python3-$pkgname=$pkgver-$pkgrel"
+depends="python3-$pkgname=$pkgver-r$pkgrel"
 py3depends="
     python3
     python3-absl-py
