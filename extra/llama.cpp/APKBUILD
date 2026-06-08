@@ -6,23 +6,16 @@ pkgver=0.0.9006
 _buildver=${pkgver#0.0.}
 pkgrel=0
 pkgdesc="LLM inference in C/C++ (with Vulkan GPU acceleration)"
-# QNX llama.cpp has only been built and runtime-tested on x86_64 so far.
 arch="x86_64"
 url="https://github.com/ggml-org/llama.cpp"
 license="MIT"
 pkgusers="llama-server"
 pkggroups="llama-server"
-# QNX abuild does not infer this package's private libdir/runtime closure
-# reliably. The private llama.cpp sonames are masked below, so the base package
-# needs an explicit -libs pin to install the shared libraries its binaries load.
-# Omit qnx-microkernel because it is provided by the base QNX image.
 depends="
 	$pkgname-libs=$pkgver-r$pkgrel
 	libc++
-	qnx-gcc-libs
 	"
-# QNX uses qnx-vulkan for the Vulkan loader/runtime and vulkan-headers for the
-# header-only build input Alpine gets from vulkan-loader-dev.
+# qnx-vulkan provides the Vulkan loader; vulkan-headers replaces Alpine's vulkan-loader-dev.
 makedepends="
 	cmake
 	jq
@@ -37,9 +30,7 @@ makedepends="
 	"
 checkdepends="bash python3-jinja2"
 install="$pkgname.pre-install"
-# OpenRC is not integrated in the QNX image yet; add the OpenRC subpackage back
-# when QNX service management support is ready. Keep -vulkan before -libs
-# because libs() moves the whole private library directory.
+# -vulkan must precede -libs: libs() moves the entire private library directory.
 subpackages="
 	$pkgname-vulkan
 	$pkgname-dev
@@ -56,6 +47,8 @@ source="$pkgname-b$_buildver.tar.gz::https://github.com/ggml-org/llama.cpp/archi
 builddir="$srcdir/$pkgname-b$_buildver"
 ldpath="/usr/lib/$pkgname"
 sonameprefix="$pkgname:"
+# Suppress automatic soname provides for llama.cpp's private libraries.
+# These are internal to llama.cpp and not intended as public link targets.
 somask="
 	libggml-base.so.0
 	libggml.so.0
@@ -64,12 +57,6 @@ somask="
 	libmtmd.so.0
 	"
 
-# QNX LTO support is not ready in this aports toolchain, and the current port is
-# x86_64-only. Keep CPU variants and LTO off until additional architectures are
-# deliberately enabled and tested.
-_ggml_cpu_all_variants=OFF
-_lto=OFF
-
 # The bundled ggml and the standalone ggml have diverging APIs.
 # llama.cpp won't build with the standalone one.
 # Upstream recommends using the vendored one.
@@ -77,15 +64,11 @@ _lto=OFF
 build() {
 	_commit=$(jq -r '.object.sha' <$srcdir/$pkgname-b$_buildver.json)
 
-	# QNX clang treats Alpine's -fstack-clash-protection as unused. Preserve
-	# Alpine's flags and ask clang not to fail on target-irrelevant arguments.
 	export CFLAGS="$CFLAGS -Qunused-arguments"
 	export CXXFLAGS="$CXXFLAGS -Qunused-arguments"
 
-	# QNX Ninja repeatedly exits after CMake's CONFIGURE_DEPENDS glob
-	# verification step instead of continuing the requested target. Suppress
-	# automatic regeneration during the package build; abuild starts from a
-	# clean source tree, so configure-time source discovery is still fresh.
+	# On QNX, Ninja exits after CMake's source-glob re-check instead of building.
+	# Disable regeneration; abuild always unpacks a clean tree so globs are fresh.
 	cmake -B build -G Ninja -Wno-dev \
 		-DBUILD_SHARED_LIBS=ON \
 		-DCMAKE_BUILD_TYPE=Release \
@@ -98,21 +81,17 @@ build() {
 		-DGGML_BLAS=ON \
 		-DGGML_BLAS_VENDOR=OpenBLAS \
 		-DGGML_BUILD_EXAMPLES=OFF \
-		-DGGML_CPU_ALL_VARIANTS=$_ggml_cpu_all_variants \
+		-DGGML_CPU_ALL_VARIANTS=OFF \
 		-DGGML_CUDA_FA_ALL_QUANTS=ON \
 		-DGGML_LIB_INSTALL_DIR=/usr/lib/llama.cpp \
-		-DGGML_LTO=$_lto \
+		-DGGML_LTO=OFF \
 		-DGGML_NATIVE=OFF \
 		-DGGML_RPC=ON \
 		-DGGML_VULKAN=ON \
 		-DLLAMA_BUILD_COMMIT="$_commit" \
 		-DLLAMA_BUILD_NUMBER="$_buildver" \
 		-DLLAMA_LIB_INSTALL_DIR=/usr/lib/llama.cpp
-	# QNX glslc can report success without writing shader outputs when multiple
-	# vulkan-shaders-gen custom commands run concurrently. A scratch build with
-	# normal Ninja parallelism stalled after shader generation without producing
-	# packages, so serialize the build until QNX shaderc/glslc is fixed. Shader
-	# generation still fails hard on missing outputs via the QNX Vulkan patch.
+	# glslc concurrency bug: silently exits 0 with no output under parallel compilation.
 	cmake --build build -- -j1
 }
 
@@ -137,15 +116,14 @@ check() {
 package() {
 	DESTDIR="$pkgdir" cmake --install build
 	install -Dm 644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
-	# QNX fakeroot currently cannot chown here. Keep Alpine's ownership-preserving
-	# install path first so this starts working automatically when fakeroot is fixed.
+	# QNX fakeroot cannot chown; fall back silently if it fails.
 	install -dm 755 -o llama-server -g llama-server "$pkgdir/var/lib/llama-server" 2>/dev/null || \
 		install -dm 755 "$pkgdir/var/lib/llama-server"
 
 	# Don't install tests.
 	find "$pkgdir/usr/bin/" -name "test-*" -exec rm {} \;
 
-	# convert_hf_to_gguf needs a Python ML stack that is not packaged for QNX yet.
+	# convert_hf_to_gguf requires a Python ML stack not packaged for QNX.
 	rm "$pkgdir/usr/bin/convert_hf_to_gguf.py"
 }
 
@@ -163,7 +141,6 @@ libs() {
 		libssl3
 		openblas
 		openmp
-		qnx-gcc-libs
 		"
 	amove usr/lib/llama.cpp
 }
@@ -173,7 +150,6 @@ vulkan() {
 	depends="
 		$pkgname-libs=$pkgver-r$pkgrel
 		libc++
-		qnx-gcc-libs
 		qnx-vulkan
 		"
 	amove usr/lib/llama.cpp/libggml-vulkan.so
@@ -184,7 +160,6 @@ extras() {
 	depends="
 		$pkgname-libs=$pkgver-r$pkgrel
 		libc++
-		qnx-gcc-libs
 		"
 	amove usr/bin/llama-batched \
 		usr/bin/llama-batched-bench \
@@ -225,7 +200,6 @@ server() {
 	depends="
 		$pkgname-libs=$pkgver-r$pkgrel
 		libc++
-		qnx-gcc-libs
 		qnx-io-sock
 		"
 	amove usr/bin/llama-server
@@ -235,6 +209,6 @@ sha512sums="
 9a4e21519b069721692ad4927935793d96a93c25e59a50d8436e535e0d393202cf178ea2b236f6e760dcb0073654f87804ecb3feaa7750882e9e280cbc222d56  llama.cpp-b9006.tar.gz
 117e3e60b0f941a5326274976065629137e962ce7db99575aeed2ff66863f4d8be28b78210430d6500ff1f4b1be348056bb871f783d1d2c466846f6e089c3f74  llama.cpp-b9006.json
 aaa702d961cc86887d8f677d4b3bdfee3e4b41406055a23093691284407380fbf974b7b016569e4ec28084240766c6a4d3606600201875bfb8c1f36c02f2e425  0002-qnx-install-libraries-into-LLAMA_LIB_INSTALL_DIR.patch
-3828a26815a14f7dbbb5e7fa8304a8ffe0b14bf67353ab3ebdac7c729e843bece33c6d1841a0861be322d3393d8b480bc04485cd8f52ece59fc7416c63df4eae  0003-qnx-platform-compat.patch
-234ecb1cd19aa3fd7cd33950b074093ea3a5924076a0515c617898efe83a607e1d63eaf032b728b610122e49ed870545ddc392175dc739ed14e43ee3c0194f79  0004-qnx-vulkan-shader-compat.patch
+c1c56cba82f79630e00dc19bff0a028ad1b3f03ecd781a9de914171873b8e1e9606f164d950736a79e14c8dca85d35cb3607fbca7887c70bc3497e2fc8c2feaa  0003-qnx-platform-compat.patch
+6b4c2f704ec4934d15520332a4f61264a2bf73d928737967ffecfd5ce92740543117c0316835fde494e1e1767cc97ee3f7d6746166b8c970bdb754ccd23a55d4  0004-qnx-vulkan-shader-compat.patch
 "
