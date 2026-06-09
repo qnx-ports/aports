@@ -1,0 +1,26 @@
+# Maintainer: Deep Chordia <dchordia@blackberry.com>
+pkgname=python3-websockets
+pkgver=16.0
+pkgrel=0
+pkgdesc="Library for building WebSocket servers and clients in Python"
+url="https://websockets.readthedocs.io/"
+arch="noarch"
+license="BSD-3-Clause"
+depends="python3"
+makedepends="python3-gpep517 python3-setuptools python3-wheel"
+checkdepends="python3-pytest"
+source="https://files.pythonhosted.org/packages/source/w/websockets/websockets-$pkgver.tar.gz"
+builddir="$srcdir/websockets-$pkgver"
+options="!check" # tests require a network or running server
+
+build() {
+	gpep517 build-wheel --wheel-dir .dist --output-fd 3 3>&1 >&2
+}
+
+package() {
+	python3 -m installer -d "$pkgdir" .dist/*.whl
+}
+
+sha512sums="
+a8aa5c34eaff8fbfbf837a0bfafd949ee559db83a119417cf28ce538a54a147702b519fc0dc78f0dc53ec69006ca1c9806ca494fc150d1de1b89abb835c04e64  websockets-16.0.tar.gz
+"
