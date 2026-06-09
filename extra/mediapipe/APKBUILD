@@ -155,6 +155,7 @@ check() {
 }
 
 package() {
+    mkdir -p "$pkgdir"
     # A bit hacky but... We're using the same name for both the cpu and gpu
     # versions of mediapipe, so we need to avoid collisions
     cp -r "$stage" "$pkgdir"
