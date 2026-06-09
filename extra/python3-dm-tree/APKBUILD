@@ -1,0 +1,39 @@
+# Maintainer: Deep Chordia <dchordia@blackberry.com>
+pkgname=python3-dm-tree
+pkgver=0.1.10
+pkgrel=0
+pkgdesc="Tree is a library for working with nested data structures"
+url="https://github.com/google-deepmind/tree"
+arch="all"
+license="Apache-2.0"
+depends="
+	python3
+	python3-absl-py
+	python3-attrs
+	python3-wrapt
+	"
+makedepends="
+	python3-dev
+	python3-pybind11
+	python3-gpep517
+	python3-setuptools
+	python3-wheel
+	"
+options="!check" # pytest collides with source tree/ dir; functionality verified via pip
+checkdepends=""
+source="https://files.pythonhosted.org/packages/source/d/dm-tree/dm_tree-$pkgver.tar.gz"
+builddir="$srcdir/dm_tree-$pkgver"
+
+build() {
+	CFLAGS="$CFLAGS -fPIC" CXXFLAGS="$CXXFLAGS -fPIC" CC=clang CXX=clang++ \
+		gpep517 build-wheel --wheel-dir .dist --output-fd 3 3>&1 >&2
+}
+
+
+package() {
+	python3 -m installer -d "$pkgdir" .dist/*.whl
+}
+
+sha512sums="
+1c630ab899eb1d101d22cd2ead223a373886b0460a07c240a20959041ffc2f1e3e7891685e03fa3ae7fe3674cb4d272c3fbe031145b233269bd1a8dc2966aa6e  dm_tree-0.1.10.tar.gz
+"
