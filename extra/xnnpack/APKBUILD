@@ -15,6 +15,7 @@ makedepends="
     ninja
     clang
     libc++-dev
+    python3
     "
 subpackages="$pkgname-dev"
 _cpuinfo_git_rev=1
