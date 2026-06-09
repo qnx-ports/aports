@@ -19,8 +19,7 @@ makedepends="
 	python3-setuptools
 	python3-wheel
 	"
-options="!check" # pytest collides with source tree/ dir; functionality verified via pip
-checkdepends=""
+checkdepends="python3-pytest"
 source="https://files.pythonhosted.org/packages/source/d/dm-tree/dm_tree-$pkgver.tar.gz"
 builddir="$srcdir/dm_tree-$pkgver"
 
@@ -29,6 +28,16 @@ build() {
 		gpep517 build-wheel --wheel-dir .dist --output-fd 3 3>&1 >&2
 }
 
+
+check() {
+	python3 -m venv --clear --without-pip --system-site-packages .testenv
+	.testenv/bin/python3 -m installer .dist/*.whl
+	# Run from /tmp so pytest doesn't pick up the source tree/ dir over the installed package
+	cp tree/tree_test.py /tmp/dm_tree_test.py
+	(cd /tmp && "$builddir"/.testenv/bin/python3 -m pytest dm_tree_test.py \
+		--junitxml="$startdir/junit-$pkgname.xml")
+	rm -f /tmp/dm_tree_test.py
+}
 
 package() {
 	python3 -m installer -d "$pkgdir" .dist/*.whl
