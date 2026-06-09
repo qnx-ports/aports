@@ -1,7 +1,7 @@
 # Maintainer: Ethan Leir <eleir@qnx.com>
 pkgname=tflite-runtime
 _pkgname=tensorflow
-pkgver=2.21.0_rc0
+pkgver=2.21.0
 _pkgver=${pkgver/_/-}
 pkgrel=0
 _pthreadpool_ver=0e6ca13779b57d397a5ba6bfdcaa8a275bc8ea2e
@@ -195,7 +195,7 @@ _py3() {
 }
 
 sha512sums="
-7983866adeceddd7c867d14f9bd40df899ead255214aea5a1ce62b2b39ddfb602b6f2e3efa6572893d2d472916e0d2206f4cd404094ef49a85ce5b3294e23748  tflite-runtime-2.21.0_rc0.tar.gz
+0bf30434cf0aa72f9ceda444e51cae76bd8af9b1cc38538060b5cae9365424e5610ee95a1c7ea225c6db6e461525b800d8302839a31fd034541863603001ffcf  tflite-runtime-2.21.0.tar.gz
 0608c6f79c1a0c99e030d51e7d8bacd23cb70a86ffb992931b278751292d6c4dbf9b5c4f132bb5f9f8e7c7da482b6e9680bdf871635dec596dd1d7204af58173  qnx-tflite-r1.tar.gz
 b337d3bc38440db190a8f1fbc4eabc0098e69fcc95bfba195fe039ffb942cae2a7f0153f3094f35fa26325750d1c62e20cccaf916a41f5c7f248ec5e5d30a942  eigen-5.0.1.tar.gz
 db93e3fb726a2fe7a50e3f019e432c317958c9ccc0ef4a5cfdccd412e6ea6433b73cae3c0a511007524533f0ff795f84812fc86648957770c4d33fd77f378e0a  0e6ca13779b57d397a5ba6bfdcaa8a275bc8ea2e.zip
