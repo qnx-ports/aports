@@ -167,8 +167,8 @@ py3() {
     depends="$py3depends"
 
     mkdir -p "$subpkgdir"/usr/lib
-    mv "$pkgdir/$stagecpu"/usr/lib/python3* "$subpkgdir"/usr/lib/
-    rm -rf "$pkgdir/$stagecpu"
+    mv "$pkgdir/$stage"/usr/lib/python3* "$subpkgdir"/usr/lib/
+    rm -rf "$pkgdir/$stage"
 }
 
 py3cpu() {
@@ -178,8 +178,8 @@ py3cpu() {
     replaces="python3-$pkgname"
 
     mkdir -p "$subpkgdir"/usr/lib
-    mv "$pkgdir/$stage"/usr/lib/python3* "$subpkgdir"/usr/lib/
-    rm -rf "$pkgdir/$stage"
+    mv "$pkgdir/$stagecpu"/usr/lib/python3* "$subpkgdir"/usr/lib/
+    rm -rf "$pkgdir/$stagecpu"
 }
 
 sha512sums="
