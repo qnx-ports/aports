@@ -3,7 +3,7 @@
 # Maintainer: Marcin Sochacki <msochacki@qnx.com>
 pkgname=flann
 pkgver=1.9.2
-pkgrel=1
+pkgrel=0
 pkgdesc="Fast Library for Approximate Nearest Neighbors"
 url="https://github.com/flann-lib/flann"
 arch="all"
