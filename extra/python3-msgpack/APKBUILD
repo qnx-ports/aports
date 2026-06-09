@@ -1,0 +1,31 @@
+# Maintainer: Deep Chordia <dchordia@blackberry.com>
+pkgname=python3-msgpack
+pkgver=1.2.0
+pkgrel=0
+pkgdesc="MessagePack serializer implementation for Python"
+url="https://msgpack.org/"
+arch="all"
+license="Apache-2.0"
+depends="python3"
+makedepends="python3-dev python3-gpep517 python3-setuptools python3-wheel"
+checkdepends="python3-pytest"
+source="https://files.pythonhosted.org/packages/source/m/msgpack/msgpack-$pkgver.tar.gz"
+builddir="$srcdir/msgpack-$pkgver"
+
+build() {
+	CFLAGS="$CFLAGS -fPIC" CC=clang gpep517 build-wheel --wheel-dir .dist --output-fd 3 3>&1 >&2
+}
+
+check() {
+	python3 -m venv --clear --without-pip --system-site-packages .testenv
+	.testenv/bin/python3 -m installer .dist/*.whl
+	.testenv/bin/python3 -m pytest test/ --junitxml="$startdir/junit-$pkgname.xml"
+}
+
+package() {
+	python3 -m installer -d "$pkgdir" .dist/*.whl
+}
+
+sha512sums="
+0a0c9a83d2348354ab7f4edfef009561bba4584c07e1523fc27cb0ab3890045c91984ef9ad14b20de63a05c27753fa8037c77e3d521f1f92f86d552e62b07163  msgpack-1.2.0.tar.gz
+"
