@@ -168,6 +168,7 @@ py3() {
 
     mkdir -p "$subpkgdir"/usr/lib
     mv "$pkgdir/$stagecpu"/usr/lib/python3* "$subpkgdir"/usr/lib/
+    rm -rf "$pkgdir/$stagecpu"
 }
 
 py3cpu() {
@@ -178,6 +179,7 @@ py3cpu() {
 
     mkdir -p "$subpkgdir"/usr/lib
     mv "$pkgdir/$stage"/usr/lib/python3* "$subpkgdir"/usr/lib/
+    rm -rf "$pkgdir/$stage"
 }
 
 sha512sums="
