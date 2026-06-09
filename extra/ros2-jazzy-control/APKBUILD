@@ -4,7 +4,7 @@ pkgver=20260128
 pkgrel=0
 pkgdesc="ROS 2 controller packages"
 url="https://docs.ros.org/en/jazzy/index.html"
-arch="aarch64 x86_64"
+arch="all"
 license="Apache-2.0"
 options="!check !fhs !tracedeps" # tracedeps broken since some shared objects are in /opt/ros/jazzy/lib
 
