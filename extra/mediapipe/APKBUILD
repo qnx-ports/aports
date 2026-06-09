@@ -82,33 +82,33 @@ prepare() {
     bazel clean --expunge
 
     # Create the toolchain to register our local python.
-    mkdir $builddir/python
-    cp -L $srcdir/python_BUILD.bazel $builddir/python/BUILD.bazel
-    cp -L $srcdir/python_defs.bzl $builddir/python/defs.bzl
-    cp -L $srcdir/python_WORKSPACE $builddir/python/WORKSPACE
+    mkdir "$builddir"/python
+    cp -L $srcdir/python_BUILD.bazel "$builddir"/python/BUILD.bazel
+    cp -L $srcdir/python_defs.bzl "$builddir"/python/defs.bzl
+    cp -L $srcdir/python_WORKSPACE "$builddir"/python/WORKSPACE
     # And now... We need a lot of local paths for system files to exist here.
-    mkdir $builddir/python_qnx
-    cp -L $srcdir/python_qnx_BUILD.bazel $builddir/python_qnx/BUILD.bazel
-    cp -L $srcdir/python_qnx_WORKSPACE $builddir/python_qnx/WORKSPACE
-    ln -s /usr/bin $builddir/python_qnx/bin
-    mkdir $builddir/python_qnx/include
-    ln -s /usr/include/python3.14 $builddir/python_qnx/include/python3.14
-    mkdir $builddir/python_qnx/lib
-    ln -s /usr/lib/python3.14 $builddir/python_qnx/lib/python3.14
-    ln -s /usr/lib/libpython3.so $builddir/python_qnx/lib/libpython3.so
-    ln -s /usr/lib/libpython3.14.so $builddir/python_qnx/lib/libpython3.14.so
-    ln -s $builddir/python_qnx/bin/python3 $builddir/python_qnx/python
+    mkdir "$builddir"/python_qnx
+    cp -L $srcdir/python_qnx_BUILD.bazel "$builddir"/python_qnx/BUILD.bazel
+    cp -L $srcdir/python_qnx_WORKSPACE "$builddir"/python_qnx/WORKSPACE
+    ln -s /usr/bin "$builddir"/python_qnx/bin
+    mkdir "$builddir"/python_qnx/include
+    ln -s /usr/include/python3.14 "$builddir"/python_qnx/include/python3.14
+    mkdir "$builddir"/python_qnx/lib
+    ln -s /usr/lib/python3.14 "$builddir"/python_qnx/lib/python3.14
+    ln -s /usr/lib/libpython3.so "$builddir"/python_qnx/lib/libpython3.so
+    ln -s /usr/lib/libpython3.14.so "$builddir"/python_qnx/lib/libpython3.14.so
+    ln -s "$builddir"/python_qnx/bin/python3 "$builddir"/python_qnx/python
 
-    mkdir $builddir/cpp_qnx
-    cp -L $srcdir/cpp_qnx_BUILD.bazel $builddir/cpp_qnx/BUILD.bazel
-    cp -L $srcdir/cpp_qnx_WORKSPACE $builddir/cpp_qnx/WORKSPACE
+    mkdir "$builddir"/cpp_qnx
+    cp -L $srcdir/cpp_qnx_BUILD.bazel "$builddir"/cpp_qnx/BUILD.bazel
+    cp -L $srcdir/cpp_qnx_WORKSPACE "$builddir"/cpp_qnx/WORKSPACE
 
     # Finally, toolchains for ninja and cmake to override rules_foreign_cc.
-    mkdir -p $builddir/buildbase_qnx/bin
-    cp -L $srcdir/buildbase_qnx_BUILD.bazel $builddir/buildbase_qnx/BUILD.bazel
-    cp -L $srcdir/buildbase_qnx_WORKSPACE $builddir/buildbase_qnx/WORKSPACE
+    mkdir -p "$builddir"/buildbase_qnx/bin
+    cp -L $srcdir/buildbase_qnx_BUILD.bazel "$builddir"/buildbase_qnx/BUILD.bazel
+    cp -L $srcdir/buildbase_qnx_WORKSPACE "$builddir"/buildbase_qnx/WORKSPACE
 
-    sed -i "s|__version__ = 'dev'|__version__ = '0.10.26'|" $builddir/setup.py
+    sed -i "s|__version__ = 'dev'|__version__ = '$pkgver'|" "$builddir"/setup.py
 }
 
 build() {
