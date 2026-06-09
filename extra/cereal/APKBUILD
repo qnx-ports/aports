@@ -1,0 +1,56 @@
+# Alpine-Contributor: Adam Jensen <adam@acj.sh>
+# Alpine-Maintainer: Adam Jensen <adam@acj.sh>
+# Maintainer: Karol Frackiewicz <kfrackiewicz@qnx.com>
+pkgname=cereal
+pkgver=1.3.2
+pkgrel=0
+pkgdesc="Header-only C++11 serialization library"
+url="https://uscilab.github.io/cereal/"
+arch="noarch"
+license="BSD-3-Clause"
+depends=""
+makedepends="
+    cmake
+    boost-dev
+"
+subpackages=""
+provides="$pkgname-dev-$pkgver-r$pkgrel"
+source="
+    $pkgname-$pkgver.tar.gz::https://github.com/USCiLab/cereal/archive/v$pkgver.tar.gz
+    0001-compare-floats-using-doctest-approx.patch
+"
+
+build() {
+    cmake -B build \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DBUILD_TESTS=ON \
+        -DBUILD_SANDBOX=OFF \
+        -DSKIP_PORTABILITY_TEST=ON \
+        -DSKIP_PERFORMANCE_COMPARISON=ON \
+        -DWITH_WERROR=OFF \
+        -DCLANG_USE_LIBCPP=ON \
+        -DCMAKE_CXX_FLAGS=" \
+            -Wno-unused-command-line-argument \
+            -Wno-missing-template-arg-list-after-template-kw \
+            -Wno-deprecated-copy \
+            -Wno-error=deprecated-copy \
+            -Wno-unused-variable \
+        " \
+        -Wno-dev
+
+    cmake --build build
+}
+
+check() {
+    cmake --build build --target test
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install build
+}
+
+sha512sums="
+98d306d6292789129675f1c5c5aedcb90cfcc1029c4482893a8f9b23f3c9755e5ed4762d7a528f215345cae6392e87cd8d89467115b6f031b41c8673d6b4b109  cereal-1.3.2.tar.gz
+6731e8f9e87bf51b7e81223903f1964d8e9ba018d22e8f0d126b7cf5e036c6773ee7515cffcbd1f83feac68d1d199c2327fb9776d153a2594806715cee185a63  0001-compare-floats-using-doctest-approx.patch
+"

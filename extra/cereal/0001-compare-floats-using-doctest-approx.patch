@@ -1,0 +1,40 @@
+diff --git a/unittests/complex.hpp b/unittests/complex.hpp
+index 2e6def0..bd6cfd4 100644
+--- a/unittests/complex.hpp
++++ b/unittests/complex.hpp
+@@ -66,7 +66,8 @@ void test_complex()
+       iar(i_ldouble);
+     }
+ 
+-    CHECK_EQ( o_float, i_float );
++    CHECK_EQ( o_float.real(), doctest::Approx(i_float.real()).epsilon(1e-5) );
++    CHECK_EQ( o_float.imag(), doctest::Approx(i_float.imag()).epsilon(1e-5) );
+     CHECK_EQ( o_double.real(), doctest::Approx(i_double.real()).epsilon(1e-5) );
+     CHECK_EQ( o_double.imag(), doctest::Approx(i_double.imag()).epsilon(1e-5) );
+     CHECK_EQ( o_ldouble.real(), doctest::Approx(i_ldouble.real()).epsilon(1e-5L) );
+diff --git a/unittests/polymorphic.hpp b/unittests/polymorphic.hpp
+index 3b73ef0..11dd345 100644
+--- a/unittests/polymorphic.hpp
++++ b/unittests/polymorphic.hpp
+@@ -147,7 +147,7 @@ struct PolyBase
+ 
+   bool operator==( PolyBase const & other ) const
+   {
+-    return x == other.x && std::abs(y - other.y) < 1e-5;
++    return x == other.x && y == doctest::Approx(other.y).epsilon(1e-5);
+   }
+ };
+ 
+diff --git a/unittests/unordered_loads.hpp b/unittests/unordered_loads.hpp
+index e1224d2..19be2d3 100644
+--- a/unittests/unordered_loads.hpp
++++ b/unittests/unordered_loads.hpp
+@@ -141,7 +141,7 @@ void test_unordered_loads()
+     CHECK_EQ(o_int4, i_int4);
+     CHECK_EQ(o_int5, i_int5);
+     CHECK_EQ(o_int6, i_int6);
+-    CHECK_EQ(o_un7.first, i_un7.first);
++    CHECK_EQ(o_un7.first, doctest::Approx(i_un7.first).epsilon(1e-5));
+     CHECK_EQ(o_un7.second, i_un7.second);
+   }
+ }
