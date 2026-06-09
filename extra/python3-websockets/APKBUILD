@@ -11,10 +11,23 @@ makedepends="python3-gpep517 python3-setuptools python3-wheel"
 checkdepends="python3-pytest"
 source="https://files.pythonhosted.org/packages/source/w/websockets/websockets-$pkgver.tar.gz"
 builddir="$srcdir/websockets-$pkgver"
-options="!check" # tests require a network or running server
-
 build() {
 	gpep517 build-wheel --wheel-dir .dist --output-fd 3 3>&1 >&2
+}
+
+check() {
+	python3 -m venv --clear --without-pip --system-site-packages .testenv
+	.testenv/bin/python3 -m installer .dist/*.whl
+	# Run only pure unit tests; other tests require a live server or depend on
+	# a utils module not shipped in the sdist.
+	.testenv/bin/python3 -m pytest \
+		tests/test_datastructures.py \
+		tests/test_exports.py \
+		tests/test_headers.py \
+		tests/test_proxy.py \
+		tests/test_uri.py \
+		tests/test_utils.py \
+		--junitxml="$startdir/junit-$pkgname.xml"
 }
 
 package() {
