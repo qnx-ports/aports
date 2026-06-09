@@ -69,8 +69,8 @@ source="$pkgname-$pkgver-r$_git_rev.tar.gz::https://github.com/qnx-ports/$pkgnam
     "
 builddir="$srcdir/$pkgname-qnx-v$pkgver-r$_git_rev"
 
-stagecpu="$builddir/stage-cpu"
-stage="$builddir/stage"
+stagecpu="stage-cpu"
+stage="stage"
 
 prepare() {
     default_prepare
@@ -135,12 +135,12 @@ build() {
     export MEDIAPIPE_DISABLE_GPU=1
     export PROTOC=/usr/bin/protoc
     python3 setup.py build_py --link-opencv
-    python3 setup.py install --skip-build --root="$stagecpu"
+    python3 setup.py install --skip-build --root="$builddir/$stagecpu"
 
     # Now the GPU build.
     export MEDIAPIPE_DISABLE_GPU=0
     python3 setup.py build_py --link-opencv
-    python3 setup.py install --skip-build --root="$stage"
+    python3 setup.py install --skip-build --root="$builddir/$stage"
 }
 
 check() {
