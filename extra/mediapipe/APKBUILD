@@ -49,6 +49,7 @@ makedepends="
     python3-setuptools
     python3-wheel
     "
+checkdepends="$py3depends"
 subpackages="
     python3-$pkgname-cpu:py3cpu
     python3-$pkgname:py3
@@ -150,7 +151,7 @@ check() {
     # Module name exists under $builddir
     mkdir test
     cd test
-    ../.testenv/bin/python3 -c import mediapipe
+    ../.testenv/bin/python3 -c "import mediapipe"
 }
 
 package() {
