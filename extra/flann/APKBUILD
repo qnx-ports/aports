@@ -15,7 +15,7 @@ makedepends="
 	ninja
 	"
 depends="
-	lz4
+	lz4-libs
 	openmp
 	"
 subpackages="$pkgname-doc $pkgname-dev"
