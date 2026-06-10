@@ -1,0 +1,70 @@
+# Maintainer: Karol Frackiewicz <kfrackiewicz@qnx.com>
+pkgname=clblast
+pkgver=1.7.0
+pkgrel=0
+pkgdesc="CLBlast: The tuned OpenCL BLAS library"
+url="https://cnugteren.github.io/clblast/clblast.html"
+arch="all"
+license="Apache-2.0"
+depends="
+    qnx-opencl
+    openblas
+"
+makedepends="
+    cmake
+    opencl-headers
+    openblas-dev
+"
+options="!check" # Requires OpenCL platform registered to execute.
+subpackages="$pkgname-dev $pkgname-clients $pkgname-samples $pkgname-tuners"
+source="$pkgname-$pkgver.tar.gz::https://codeload.github.com/CNugteren/CLBlast/tar.gz/refs/tags/$pkgver"
+builddir="$srcdir/CLBlast-$pkgver"
+
+build() {
+    cmake -B build \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCLIENTS=ON \
+        -DSAMPLES=ON \
+        -DTESTS=OFF \
+        -DTUNERS=ON \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DCMAKE_CXX_FLAGS="-Wno-missing-template-arg-list-after-template-kw" \
+
+    cmake --build build
+}
+
+check() {
+    cmake --build build --target test
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install build
+}
+
+clients() {
+    depends="$pkgname=$pkgver-r$pkgrel"
+    pkgdesc="Performace testing and comparison clients for CLBlast"
+    amove usr/bin/clblast_client_*
+    #mkdir -p "$subpkgdir/usr/bin"
+    #mv "$pkgdir"/usr/bin/clblast_client_* "$subpkgdir/usr/bin"
+}
+
+samples() {
+    depends="$pkgname=$pkgver-r$pkgrel"
+    pkgdesc="Samples for CLBlast"
+    amove usr/bin/clblast_sample_*
+    #mkdir -p "$subpkgdir/usr/bin"
+    #mv "$pkgdir"/usr/bin/clblast_sample_* "$subpkgdir/usr/bin"
+}
+
+tuners() {
+    depends="$pkgname=$pkgver-r$pkgrel"
+    pkgdesc="Tuners for CLBlast"
+    amove usr/bin/clblast_tuner_*
+    #mkdir -p "$subpkgdir/usr/bin"
+    #mv "$pkgdir"/usr/bin/clblast_tuner_* "$subpkgdir/usr/bin"
+}
+
+sha512sums="
+34e8b23ed70cbfca30631e0c3ea911ae1825fa2bc5e384853f061a33608091d3ecab83e587c9c4088a88c255183c8eb3c331f3a6c3fedeb4c499d96935d2e413  clblast-1.7.0.tar.gz
+"
