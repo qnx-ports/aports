@@ -2,7 +2,7 @@
 # Alpine-Maintainer: Simon Zeni <simon@bl4ckb0ne.ca>
 # Maintainer: Elliott Mazzuca <emazzuca@qnx.com>
 pkgname=shaderc
-pkgver=2025.3
+pkgver=2026.2
 pkgrel=0
 pkgdesc="Collection of tools, libraries, and tests for Vulkan shader compilation"
 options="!check" # Requires test setup from third party
@@ -51,9 +51,6 @@ prepare() {
 }
 
 build() {
-	# shaderc builds with -Werror. QNX clang accepts Alpine hardening flags that
-	# are not meaningful for this target, so ask clang not to fail on unused
-	# arguments while preserving flags that other compilation artifacts may use.
 	export CFLAGS="$CFLAGS -Qunused-arguments"
 	export CXXFLAGS="$CXXFLAGS -Qunused-arguments"
 	cmake -B build -G Ninja \
@@ -77,5 +74,5 @@ package() {
 }
 
 sha512sums="
-4d4f0d7c37d3224e6fb38b320f1ab52e4feb2e5a1c630973c1f00171d90d8d66bef3e44faf996ec67e1568fafc7f767e147fa130d5919b05aad55a78fca7f101  shaderc-2025.3.tar.gz
+733f85a83db4b71814c7f251c44e6010b485ed03d7e2389db5c14f8426942bebf6c95a35e5eaef80e51c29f8efa28cc0577226344630a427553200c6a87349ec  shaderc-2026.2.tar.gz
 "
