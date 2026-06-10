@@ -1,3 +1,4 @@
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
 # Maintainer: Ramya santoshi <rtimmaraju@qnx.com>
 pkgname=snappy
 pkgver=1.2.2
@@ -7,7 +8,7 @@ url="https://github.com/google/snappy"
 arch="all"
 license="BSD-3-Clause"
 depends="libc++"
-makedepends="cmake libc++-dev ninja build-base"
+makedepends="cmake libc++-dev build-base"
 subpackages="$pkgname-dev"
 source="$pkgname-$pkgver.tar.gz::https://github.com/google/snappy/archive/refs/tags/$pkgver.tar.gz 
 https://github.com/google/googletest/archive/refs/tags/v1.17.0.tar.gz "
@@ -22,12 +23,14 @@ prepare() {
 }
 
 build() {
-    cmake -B build \
-        -G Ninja \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DCMAKE_INSTALL_PREFIX=/usr \
-        -DSNAPPY_BUILD_BENCHMARKS=OFF \
-        -DSNAPPY_BUILD_TESTS=ON
+   cmake -B build  \
+		-DCMAKE_BUILD_TYPE=None \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DCMAKE_INSTALL_LIBDIR=/usr/lib \
+		-DBUILD_SHARED_LIBS=ON \
+		-DBUILD_STATIC_LIBS=ON \
+		-DSNAPPY_BUILD_BENCHMARKS=OFF \
+		-DSNAPPY_BUILD_TESTS=ON 
 
     cmake --build build
 }
