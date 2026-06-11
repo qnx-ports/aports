@@ -9,7 +9,7 @@ url="https://abseil.io/"
 arch="all"
 license="Apache-2.0"
 depends="libc++"
-depends_dev="libc++-dev"
+depends_dev="libc++-dev abseil-cpp-test=$pkgver-r$pkgrel"
 makedepends="
 	$depends_dev
 	cmake
@@ -110,11 +110,6 @@ check() {
 
 package() {
 	DESTDIR="$pkgdir" cmake --install build-install
-}
-
-dev() {
-	default_dev
-	depends="$pkgname=$pkgver-r$pkgrel $pkgname-test=$pkgver-r$pkgrel libc++-dev"
 }
 
 _test() {
