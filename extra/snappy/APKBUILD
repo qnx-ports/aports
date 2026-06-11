@@ -1,4 +1,4 @@
-# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+# Alpine-Maintainer: Natanael Copa <ncopa@alpinelinux.org>
 # Maintainer: Ramya santoshi <rtimmaraju@qnx.com>
 pkgname=snappy
 pkgver=1.2.2
