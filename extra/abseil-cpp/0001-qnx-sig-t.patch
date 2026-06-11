@@ -1,0 +1,13 @@
+--- a/absl/time/clock_test.cc
++++ b/absl/time/clock_test.cc
+@@ -18,8 +18,8 @@
+ #if defined(ABSL_HAVE_ALARM)
+ #include <signal.h>
+ #include <unistd.h>
+-#ifdef _AIX
+-// sig_t is not defined in AIX.
++#if defined(_AIX) || defined(__QNX__)
++// sig_t is not defined in AIX or QNX.
+ typedef void (*sig_t)(int);
+ #endif
+ #elif defined(__linux__) || defined(__APPLE__)
