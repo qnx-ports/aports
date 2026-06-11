@@ -1,0 +1,51 @@
+# Maintainer: Karol Frackiewicz <kfrackiewicz@qnx.com>
+pkgname=ensmallen
+pkgver=3.11.0
+pkgrel=0
+pkgdesc="Flexible C++ library for efficient numerical optimization"
+url="https://ensmallen.org/"
+arch="all"
+license="BSD-3-Clause"
+depends="
+    armadillo
+    openblas
+"
+makedepends="
+    cmake
+    armadillo-dev
+    openblas-dev
+"
+subpackages=""
+provides="$pkgname-dev-$pkgver-r$pkgrel"
+source="https://ensmallen.org/files/$pkgname-$pkgver.tar.gz"
+
+build() {
+    cmake -B build \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr
+
+    cmake --build build
+    cmake --build build --target ensmallen_tests
+}
+
+check() {
+
+    cd build
+
+    # Some of the test use random values to do not converge
+    # on the result within given population sizes and generations
+    ./ensmallen_tests -d y \
+        exclude:"NSGA2_ZDTONEFunction - arma::mat" \
+        exclude:"NSGA2_ZDTONEFunction - arma::fmat" \
+        exclude:"NSGA2_FonsecaFlemingFunctionVectorBounds - arma::fmat"
+
+    cd ..
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install build
+}
+
+sha512sums="
+9d7371b9ad503505b3558bc8410ceb171a3a9ddd74eb2ca7869448d5fdb62f915b75afb5ff0b54273c80a0bc06d613d22c6c1c64ce297a4eee06c490feaf3b4e  ensmallen-3.11.0.tar.gz
+"
