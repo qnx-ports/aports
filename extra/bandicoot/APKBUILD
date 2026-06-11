@@ -21,7 +21,7 @@ makedepends="
 "
 subpackages="$pkgname-dev"
 source="
-    https://sourceforge.net/projects/coot/files/bandicoot-4.0.1.tar.xz
+    https://sourceforge.net/projects/coot/files/bandicoot-$pkgver.tar.xz
     0001-row-col-xvec-traits.patch
 "
 
@@ -63,5 +63,5 @@ package() {
 
 sha512sums="
 ceb1ce6fee39efb6ef4ef367e0a5fe0230afbf948a34402dcda725825c555072d72861b3c10224cebd0e3e40347a9b7db7d5fa95f2b7f2142de6272d13f8f3d2  bandicoot-4.0.1.tar.xz
-6312339e68c822f9fec87a53780c7c265de0a1f3a15daf6f57145cf956fec84ff9c2b50e5cb67e3653b454310fdcff089aeca43fe4d282f52b51838de6d2be48  0001-row-col-xvec-traits.patch
+4644a0012803e11d0084e487863ac1244b90ed9ffaa02cdd0382fbc6619a17812ca457bd809a77753e58f6dc856dd01ae20c4b0ba26bbc2864f99821dcbd8db2  0001-row-col-xvec-traits.patch
 "
