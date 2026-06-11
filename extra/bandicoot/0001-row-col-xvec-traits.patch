@@ -1,0 +1,78 @@
+diff --git a/include/bandicoot_bits/MatValProxy_bones.hpp b/include/bandicoot_bits/MatValProxy_bones.hpp
+index 057523a..c2af739 100644
+--- a/include/bandicoot_bits/MatValProxy_bones.hpp
++++ b/include/bandicoot_bits/MatValProxy_bones.hpp
+@@ -34,6 +34,9 @@ class MatValProxy
+   public:
+
+   typedef eT elem_type;
++  static constexpr bool is_row  = false;
++  static constexpr bool is_col  = false;
++  static constexpr bool is_xvec = false;
+
+   coot_inline MatValProxy(Mat<eT>& in_M, const uword in_index);
+   coot_inline MatValProxy(Cube<eT>& in_M, const uword in_index);
+diff --git a/include/bandicoot_bits/ProxyCast.hpp b/include/bandicoot_bits/ProxyCast.hpp
+index f698409..9832851 100644
+--- a/include/bandicoot_bits/ProxyCast.hpp
++++ b/include/bandicoot_bits/ProxyCast.hpp
+@@ -52,6 +52,10 @@ struct ProxyColCast
+   {
+   const T1& Q;
+
++  static constexpr bool is_row  = false;
++  static constexpr bool is_col  = true;
++  static constexpr bool is_xvec = true;
++
+   typedef typename T1::elem_type elem_type;
+
+   inline ProxyColCast(const T1& in_Q) : Q(in_Q) { }
+@@ -65,6 +69,9 @@ struct ProxyMatCast
+   const T1& Q;
+   const uword n_rows;
+   const uword n_cols;
++  static constexpr bool is_row  = T1::is_row;
++  static constexpr bool is_col  = T1::is_col;
++  static constexpr bool is_xvec = T1::is_xvec;
+
+   typedef typename T1::elem_type elem_type;
+
+@@ -81,6 +88,10 @@ struct ProxyCubeCast
+   const uword n_cols;
+   const uword n_slices;
+
++  static constexpr bool is_row  = false;
++  static constexpr bool is_col  = false;
++  static constexpr bool is_xvec = false;
++
+   typedef typename T1::elem_type elem_type;
+
+   inline ProxyCubeCast(const T1& in_Q, const uword in_n_rows, const uword in_n_cols, const uword in_n_slices) : Q(in_Q), n_rows(in_n_rows), n_cols(in_n_cols), n_slices(in_n_slices) { }
+diff --git a/include/bandicoot_bits/eOpCube_bones.hpp b/include/bandicoot_bits/eOpCube_bones.hpp
+index 3697217..fe3052a 100644
+--- a/include/bandicoot_bits/eOpCube_bones.hpp
++++ b/include/bandicoot_bits/eOpCube_bones.hpp
+@@ -27,6 +27,10 @@ class eOpCube : public BaseCube< typename T1::elem_type, eOpCube<T1, eop_type> >
+   typedef typename T1::elem_type                                   elem_type;
+   typedef typename get_pod_type<elem_type>::result pod_type;
+
++  static constexpr bool is_row  = false;
++  static constexpr bool is_col  = false;
++  static constexpr bool is_xvec = false;
++
+   coot_aligned const SizeProxyCube<T1> m;
+
+   coot_aligned       elem_type  aux_a;        // storage of auxiliary data, user defined format
+diff --git a/tests/eop_scalar_cube.cpp b/tests/eop_scalar_cube.cpp
+index 812e9e9..954cc3d 100644
+--- a/tests/eop_scalar_cube.cpp
++++ b/tests/eop_scalar_cube.cpp
+@@ -799,7 +799,7 @@ TEMPLATE_TEST_CASE("eop_exp10_cube", "[eop_scalar_cube]", COOT_TEST_TYPES)
+       for (uword r = 0; r < x.n_rows; ++r)
+         {
+         typedef typename arma_type<eT>::type aT;
+-        REQUIRE( eT(y(r, c, s)) == Approx(eT(exp10(aT(eT(x(r, c, s)))))).epsilon(tolerance) );
++        REQUIRE( eT(y(r, c, s)) == Approx(eT(std::pow(aT(10), aT(eT(x(r, c, s)))))).epsilon(tolerance) );
+         }
+       }
+     }
