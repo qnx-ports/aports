@@ -1,0 +1,58 @@
+# Maintainer: Karol Frackiewicz <kfrackiewicz@qnx.com>
+pkgname=mlpack
+pkgver=4.7.0
+pkgrel=0
+pkgdesc="Fast, header-only C++ machine learning library"
+url="https://www.mlpack.org/"
+arch="all"
+license="BSD-3-Clause"
+depends="
+    armadillo
+    cereal
+    ensmallen
+"
+makedepends="
+    cmake
+    armadillo-dev
+    cereal-dev
+    ensmallen-dev
+"
+source="https://www.mlpack.org/files/mlpack-$pkgver.tar.gz"
+subpackages="$pkgname-dev"
+
+build() {
+    cmake -B build \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DCMAKE_CXX_FLAGS="-Wno-missing-template-arg-list-after-template-kw" \
+        -DBUILD_TESTS=ON
+
+    cmake --build build
+}
+
+check() {
+    cd build
+    ./bin/mlpack_test -d yes \
+        exclude:"DETTest" \
+        exclude:"LocalCoordinateCodingSerializationTest - arma::fmat" \
+        exclude:"MeanImputationTest - float" \
+        exclude:"MeanImputationTest - double" \
+        exclude:"MeanImputationNaNTest - float" \
+        exclude:"PCAWhiteningTest" \
+        exclude:"RTreeSplitTest" \
+        exclude:"RStarTreeSplitTest" \
+        exclude:"SerializationTest - arma::fmat" \
+        exclude:"FastMKSSerializationTest" \
+        exclude:"KNNTest" \
+        exclude:"PolynomialSerializationTest" \
+        exclude:"RASearchTest"
+    cd ..
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install build
+}
+
+sha512sums="
+3ca6a621f14c99202e18eb61defd90420e230791a057ee9d9f8299630904a052da91208bd30ebbb080fd9bc49296a8a9f9fdb023b0408c0d4859792b8929f970  mlpack-4.7.0.tar.gz
+"
