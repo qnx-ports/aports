@@ -9,10 +9,12 @@ index 03b970640..592f275e8 100644
 +#elif defined(__QNX__)
 +  char buffer[PATH_MAX];
 +  int len = 0;
-+  int path_fd = open("/proc/self/exefile", O_RDONLY); 
++  // QNX exposes the executable path via /proc/self/exefile, not /proc/self/exe.
++  int path_fd = open("/proc/self/exefile", O_RDONLY);
 +  if (path_fd > 0) {
-+      len = read(path_fd, buffer, PATH_MAX); 
-+      close(path_fd);
++    len = read(path_fd, buffer, PATH_MAX);
++    if (len < 0) len = 0;
++    close(path_fd);
 +  }
  #else
    char buffer[PATH_MAX];

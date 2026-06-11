@@ -1,0 +1,13 @@
+diff --git a/src/google/protobuf/io/coded_stream.h b/src/google/protobuf/io/coded_stream.h
+index f8acbf2a6..726572a0f 100644
+--- a/src/google/protobuf/io/coded_stream.h
++++ b/src/google/protobuf/io/coded_stream.h
+@@ -106,7 +106,7 @@
+ #pragma runtime_checks("c", off)
+ #endif
+
+-#include "absl/log/absl_log.h"  // Replace with vlog_is_on.h after Abseil LTS 20240722
++#include "absl/log/vlog_is_on.h"  // replaced absl_log.h with vlog_is_on.h after Abseil LTS 20240722
+
+ #include "absl/log/absl_check.h"
+ #include "absl/numeric/bits.h"
