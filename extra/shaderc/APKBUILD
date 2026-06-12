@@ -17,6 +17,7 @@ depends="
 makedepends="
 	cmake
 	glslang-dev
+        libc++-dev
 	ninja
 	python3
 	spirv-tools-dev
