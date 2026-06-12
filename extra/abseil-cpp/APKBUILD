@@ -8,12 +8,11 @@ pkgdesc="Abseil Common Libraries (C++)"
 url="https://abseil.io/"
 arch="all"
 license="Apache-2.0"
-depends="libc++"
 depends_dev="
 	libc++-dev
 	"
 makedepends="
-	libc++-dev
+	$depends_dev
 	cmake
 	gtest-dev
 	ninja
@@ -124,59 +123,27 @@ for _lib in $_libs; do
 	depends="$depends $pkgname-${_lib//_/-}=$pkgver-r$pkgrel"
 done
 
-_configure() {
-	local _builddir="$1"
-	shift
-
-	cmake -B "$_builddir" -G Ninja \
+build() {
+	cmake -B build -G Ninja \
 		-DCMAKE_BUILD_TYPE=MinSizeRel \
 		-DCMAKE_CXX_STANDARD=17 \
 		-DCMAKE_INSTALL_PREFIX=/usr \
 		-DCMAKE_INSTALL_LIBDIR=lib \
 		-DCMAKE_SKIP_INSTALL_RPATH=ON \
 		-DBUILD_SHARED_LIBS=ON \
-		-DABSL_PROPAGATE_CXX_STD=ON \
-		"$@"
-}
-
-build() {
-	_configure build \
-		-DABSL_BUILD_TESTING=ON \
+		-DABSL_BUILD_TESTING="$(want_check && echo ON || echo OFF)" \
 		-DABSL_BUILD_TEST_HELPERS=ON \
 		-DABSL_USE_EXTERNAL_GOOGLETEST=ON \
+		-DABSL_PROPAGATE_CXX_STD=ON \
 		-DABSL_FIND_GOOGLETEST=ON
 	cmake --build build
-
-	# A second build directory is used for the install payload. Tests are
-	# disabled so test executables are not installed, but test-helper libraries
-	# (absl::scoped_mock_log, absl::status_matchers) are kept because downstream
-	# packages like protobuf reference those CMake targets at build time. This
-	# keeps gtest and gmock out of the normal Abseil runtime install.
-	_configure build-install \
-		-DABSL_BUILD_TESTING=OFF \
-		-DABSL_BUILD_TEST_HELPERS=ON \
-		-DABSL_USE_EXTERNAL_GOOGLETEST=ON \
-		-DABSL_FIND_GOOGLETEST=ON
-	cmake --build build-install
 }
 
 check() {
-	case "$CARCH" in
-	s390x) local _extratest="|absl_stacktrace_test" ;;
-	esac
-
 	# Add all Abseil library directories to LD_LIBRARY_PATH for tests.
 	# Use absolute paths because ctest-launched tests may run outside $builddir.
 	local libdirs=$(find "$builddir"/build/absl -name "*.so" -exec dirname {} \; | sort -u | tr '\n' ':')
 	export LD_LIBRARY_PATH="$libdirs:$LD_LIBRARY_PATH"
-
-	# QNX tzdata installs /usr/share/zoneinfo directory structure but not the
-	# individual zone files (/usr/share/zoneinfo/America/New_York,
-	# /usr/share/zoneinfo/UTC, and /etc/localtime are all absent). Abseil's
-	# named-zone tests abort without a valid timezone source. Point TZDIR at
-	# Abseil's bundled cctz testdata so named-zone tests have deterministic
-	# timezone data to load.
-	export TZDIR="$builddir/absl/time/internal/cctz/testdata/zoneinfo"
 
 	# Signal and proc tests: fail on QNX because they require Linux-specific
 	# signal delivery or /proc paths that are absent on QNX.
@@ -197,15 +164,15 @@ check() {
 	# from glibc in IEEE 754 edge cases. Same root cause as the random distribution failures.
 	qnx_exclude="$qnx_exclude|absl_numbers_test|absl_charconv_test"
 	# Concurrency: hangs or exits non-zero on QNX. Candidate root cause is QNX
-	# condvar/mutex semantics differing from Linux pthreads. JIRA: [TO FILE].
+	# condvar/mutex semantics differing from Linux pthreads.
 	qnx_exclude="$qnx_exclude|absl_blocking_counter_test"
 
 	# https://github.com/abseil/abseil-cpp/pull/1888
-	ctest --test-dir build -E "absl_str_format_convert_test|absl_raw_hash_set_test$_extratest|$qnx_exclude"
+	ctest --test-dir build -E "absl_str_format_convert_test|absl_raw_hash_set_test|$qnx_exclude"
 }
 
 package() {
-	DESTDIR="$pkgdir" cmake --install build-install
+	DESTDIR="$pkgdir" cmake --install build
 }
 
 abseillib() {
@@ -220,15 +187,11 @@ _test() {
 	pkgdesc="Abseil C++ test helper libraries"
 	depends="$pkgname=$pkgver-r$pkgrel gmock gtest"
 
-	# Abseil's CMake install rules unconditionally place two test-helper shared
-	# libraries on disk: libabsl_scoped_mock_log and libabsl_status_matchers.
-	# These are not test executables; they are libraries that downstream packages
-	# (e.g. protobuf) link their own test binaries against. Abseil's installed
-	# abslTargets.cmake always references them, so they must be present on disk
-	# for any downstream CMake configure to succeed.
-	# They are split here rather than kept in the main runtime package because
-	# they depend on gtest and gmock, which should not be transitive dependencies
-	# of a normal Abseil install.
+	# libabsl_scoped_mock_log links directly against gtest/gmock and is required
+	# by downstream CMake consumers such as protobuf that reference the
+	# absl::scoped_mock_log exported target. libabsl_status_matchers is included
+	# because downstream consumers reference absl::status_matchers at build time.
+	# Both are split out to keep gtest and gmock out of normal Abseil installs.
 	amove usr/lib/libabsl_scoped_mock_log.so.*
 	amove usr/lib/libabsl_status_matchers.so.*
 }
