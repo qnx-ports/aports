@@ -1,0 +1,25 @@
+load("@rules_foreign_cc//toolchains/native_tools:native_tools_toolchain.bzl", "native_tool_toolchain")
+
+toolchain(
+    name = "qnx_cmake_toolchain",
+    toolchain = ":qnx_cmake",
+    toolchain_type = "@rules_foreign_cc//toolchains:cmake_toolchain",
+)
+
+toolchain(
+    name = "qnx_ninja_toolchain",
+    toolchain = ":qnx_ninja",
+    toolchain_type = "@rules_foreign_cc//toolchains:ninja_toolchain",
+)
+
+native_tool_toolchain(
+    name = "qnx_cmake",
+    env = {"CMAKE": "/usr/bin/cmake3.5"},
+    path = "/usr/bin/cmake3.5",
+)
+
+native_tool_toolchain(
+    name = "qnx_ninja",
+    env = {"NINJA": "/usr/bin/ninja"},
+    path = "/usr/bin/ninja",
+)

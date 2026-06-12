@@ -1,0 +1,93 @@
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=xnnpack
+_pkgname=XNNPACK
+pkgver=1.0.0_git20251226
+_pkgver=25b42dfddb0ee22170d73ff0d4b333ea1e6edfeb
+pkgrel=0
+_pthreadpool_ver=0e6ca13779b57d397a5ba6bfdcaa8a275bc8ea2e
+pkgdesc="Efficient neural network inference accelerator for ARM, x86, WebAssembly, and RISC-V platforms"
+url="https://github.com/google/XNNPACK"
+arch="all"
+license="BSD-3-Clause"
+depends="cpuinfo pthreadpool"
+makedepends="
+    cmake
+    ninja
+    clang
+    libc++-dev
+    python3
+    "
+subpackages="$pkgname-dev"
+_cpuinfo_git_rev=1
+source="${pkgname}-${pkgver}.zip::https://github.com/google/${_pkgname}/archive/${_pkgver}.zip
+    https://github.com/qnx-ports/cpuinfo/archive/refs/tags/qnx-tflite-r$_cpuinfo_git_rev.tar.gz
+    https://github.com/google/pthreadpool/archive/$_pthreadpool_ver.zip
+    001-system-name.patch
+    002-system-processor.patch
+    cpuinfo_patch
+    pthreadpool_patch
+    "
+builddir="${srcdir}/${_pkgname}-${_pkgver}"
+_cpuinfo_builddir="${srcdir}/cpuinfo-qnx-tflite-r${_cpuinfo_git_rev}"
+_pthreadpool_builddir="${srcdir}/pthreadpool-${_pthreadpool_ver}"
+
+options="!check" # Enabling check stalls cmake.
+
+unpack() {
+    default_unpack
+
+    # Workaround for busybox bug.
+    cd $srcdir
+    for u in $source; do
+        local s
+        if is_remote "$u"; then
+            s="$SRCDEST/$(filename_from_uri $u)"
+        else
+            s="$startdir/$u"
+        fi
+        case "$s" in
+            *.zip)
+                msg "Unpacking $s..."
+				unzip -n -q "$s";;
+        esac
+    done
+}
+
+prepare() {
+    default_prepare
+
+    (cd $_cpuinfo_builddir && patch ${patch_args:--p1} -i "$srcdir/cpuinfo_patch")
+    (cd $_pthreadpool_builddir && patch ${patch_args:--p1} -i "$srcdir/pthreadpool_patch")
+}
+
+build() {
+    CC=clang \
+    CXX=clang++ \
+    cmake3.5 -B build -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DBUILD_SHARED_LIBS=ON \
+        -DXNNPACK_BUILD_TESTS=OFF \
+        -DXNNPACK_BUILD_BENCHMARKS=OFF \
+        -DCPUINFO_SOURCE_DIR=$_cpuinfo_builddir \
+        -DPTHREADPOOL_SOURCE_DIR=$_pthreadpool_builddir
+    cmake3.5 --build build
+}
+
+check() {
+    ctest3.5 --test-dir build
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake3.5 --install build
+}
+
+sha512sums="
+ad7bad6bcae85e9772ebbc1b6d0ba0bf56064419ffca026ac3af736ab3a2d2191d455cb90f974931cec3ed6e189168a0af79454a340df8bc00a15d92c235a3dd  xnnpack-1.0.0_git20251226.zip
+0608c6f79c1a0c99e030d51e7d8bacd23cb70a86ffb992931b278751292d6c4dbf9b5c4f132bb5f9f8e7c7da482b6e9680bdf871635dec596dd1d7204af58173  qnx-tflite-r1.tar.gz
+db93e3fb726a2fe7a50e3f019e432c317958c9ccc0ef4a5cfdccd412e6ea6433b73cae3c0a511007524533f0ff795f84812fc86648957770c4d33fd77f378e0a  0e6ca13779b57d397a5ba6bfdcaa8a275bc8ea2e.zip
+2f08d60e762786587e2f933e373d2d4ce2bae1b4b5b596df753c2380d59d887c77464cb53a96a11d29e25324346c8a03efd85dac862756662117273cfe65627d  001-system-name.patch
+21c12038690e1be8d24d4739a96f4580b417a64ea6286c0e20d2ac906840192210762e9e83860348ee5f7cd6b0b6c62e72f06957b7b4a4f166991ab9e0dc65c1  002-system-processor.patch
+8bf1a384d89dbdd1de5aa672c57395044e0391015267146d5cb9dede4601ae4550baba4c66f509ee632dcfd717401993a4fbd2b9c40f40d5e46e51b8e10276ae  cpuinfo_patch
+9e9d146e3c5787cdd97cdaed1246b13ccae7b1479794ba21e6a24c05d8227ecaa0ff9d228a33afe009e48ab96af88996f9b56ea147807aeae65bbc3b5715ec96  pthreadpool_patch
+"

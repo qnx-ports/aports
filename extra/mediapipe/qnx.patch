@@ -1,0 +1,71 @@
+diff --git a/WORKSPACE b/WORKSPACE
+index adeef8ea4..f32035518 100644
+--- a/WORKSPACE
++++ b/WORKSPACE
+@@ -520,19 +520,10 @@ http_archive(
+     name = "com_google_sentencepiece",
+     add_prefix = "sentencepiece",
+     build_file = "@//third_party:sentencepiece.BUILD",
+-    patch_args = [
+-        "-d",
+-        "sentencepiece",
+-        "-p1",
+-    ],
+-    patches = [
+-        "@//third_party:com_google_sentencepiece.diff",
+-        "@//third_party:com_google_sentencepiece-qnx-no-endian_h.diff",
+-    ],
+-    sha256 = "8409b0126ebd62b256c685d5757150cf7fcb2b92a2f2b98efb3f38fc36719754",
+-    strip_prefix = "sentencepiece-0.1.96",
++    sha256 = "b087308f7845fc30b6ea312fdd38a2fcfff22770f2f3d41fa7d471e1eca867a1",
++    strip_prefix = "sentencepiece-825d05db7888f1150e1de34d11a300137e66b2e0",
+     urls = [
+-        "https://github.com/google/sentencepiece/archive/refs/tags/v0.1.96.zip",
++        "https://github.com/qnx-ports/sentencepiece/archive/825d05db7888f1150e1de34d11a300137e66b2e0.tar.gz",
+     ],
+ )
+ 
+diff --git a/setup.py b/setup.py
+index e5422ffb6..f87af79d6 100644
+--- a/setup.py
++++ b/setup.py
+@@ -32,6 +32,7 @@ from setuptools.command import install
+ 
+ __version__ = 'dev'
+ MP_DISABLE_GPU = os.environ.get('MEDIAPIPE_DISABLE_GPU') != '0'
++CUSTOM_BAZEL_ARGS = [] if ((custom_args := os.environ.get('CUSTOM_BAZEL_ARGS')) is None) else custom_args.strip().split()
+ IS_WINDOWS = (platform.system() == 'Windows')
+ IS_MAC = (platform.system() == 'Darwin')
+ MP_ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
+@@ -292,6 +293,7 @@ class BuildModules(build_ext.build_ext):
+     fetch_model_command = [
+         'bazel',
+         'build',
++    ] + CUSTOM_BAZEL_ARGS + [
+         external_file,
+     ]
+     _invoke_shell_command(fetch_model_command)
+@@ -306,6 +308,7 @@ class BuildModules(build_ext.build_ext):
+         '--compilation_mode=opt',
+         '--copt=-DNDEBUG',
+         '--action_env=PYTHON_BIN_PATH=' + _normalize_path(sys.executable),
++    ] + CUSTOM_BAZEL_ARGS + [
+         binary_graph_target,
+     ] + GPU_OPTIONS
+ 
+@@ -332,6 +335,7 @@ class GenerateMetadataSchema(build_ext.build_ext):
+           'build',
+           '--compilation_mode=opt',
+           '--action_env=PYTHON_BIN_PATH=' + _normalize_path(sys.executable),
++      ] + CUSTOM_BAZEL_ARGS + [
+           '//mediapipe/tasks/metadata:' + target,
+       ] + GPU_OPTIONS
+ 
+@@ -422,6 +426,7 @@ class BuildExtension(build_ext.build_ext):
+         '--copt=-DNDEBUG',
+         '--keep_going',
+         '--action_env=PYTHON_BIN_PATH=' + _normalize_path(sys.executable),
++    ] + CUSTOM_BAZEL_ARGS + [
+         str(ext.bazel_target + '.so'),
+     ] + GPU_OPTIONS
+ 

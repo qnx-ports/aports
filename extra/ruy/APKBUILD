@@ -1,0 +1,48 @@
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=ruy
+pkgver=1.0.0_git20240321
+_pkgver=master
+pkgrel=0
+pkgdesc="A matrix multiplication library for ML inference"
+url="https://github.com/google/ruy"
+arch="all"
+license="Apache-2.0"
+depends="cpuinfo libc++ $pkgname-dev"
+makedepends="
+    cmake
+    ninja
+    clang
+    cpuinfo-dev
+    libc++-dev
+    "
+subpackages="$pkgname-dev"
+_git_rev=0
+source="${pkgname}-${pkgver}-r${_git_rev}.tar.gz::https://github.com/qnx-ports/ruy/archive/refs/tags/qnx-$_pkgver-r$_git_rev.tar.gz
+    "
+builddir="${srcdir}/${pkgname}-qnx-${_pkgver}-r${_git_rev}"
+
+options="!check"
+
+build() {
+    CC=clang \
+    CXX=clang++ \
+    cmake3.5 -B build -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DBUILD_SHARED_LIBS=ON \
+        -DRUY_FIND_CPUINFO=ON \
+        -DRUY_MINIMAL_BUILD=ON
+    cmake3.5 --build build
+}
+
+check() {
+    ctest3.5 --test-dir build
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake3.5 --install build
+}
+
+sha512sums="
+0fbc0d837e86ecad89b093622bfd0199df97e1ab482c27a9dab69e2579130d63066829c785272173e5f97d722fa6e8f8fc613f8b67b30aba798cd2fd1d5a1387  ruy-1.0.0_git20240321-r0.tar.gz
+"
