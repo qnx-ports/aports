@@ -18,14 +18,8 @@ index 03b970640..c62fab433 100644
 +#elif defined(__QNX__)
 +  char buffer[PATH_MAX];
 +  int len = 0;
-+  // Use QNX-native _cmdname() to find the executable path. /proc/self/exefile
-+  // is not guaranteed to be available on all QNX targets.
-+  {
-+    char cmdname_buf[PATH_MAX];
-+    if (_cmdname(cmdname_buf) != nullptr) {
-+      len = strlen(cmdname_buf);
-+      memcpy(buffer, cmdname_buf, len);
-+    }
++  if (_cmdname(buffer) != nullptr) {
++    len = strlen(buffer);
 +  }
  #else
    char buffer[PATH_MAX];
