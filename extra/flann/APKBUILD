@@ -9,12 +9,14 @@ url="https://github.com/flann-lib/flann"
 arch="all"
 license="BSD-3-Clause"
 makedepends="
+	libc++-dev
 	cmake
 	gtest-dev
 	lz4-dev
 	ninja
 	"
 depends="
+	libc++
 	lz4-libs
 	openmp
 	"
