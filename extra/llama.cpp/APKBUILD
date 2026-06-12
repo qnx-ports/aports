@@ -19,6 +19,7 @@ depends="
 makedepends="
 	cmake
 	jq
+        libc++-dev
 	ninja
 	openblas-dev
 	openssl-dev
