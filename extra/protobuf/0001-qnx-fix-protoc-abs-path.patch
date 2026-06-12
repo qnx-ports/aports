@@ -1,20 +1,31 @@
 diff --git a/src/google/protobuf/compiler/command_line_interface.cc b/src/google/protobuf/compiler/command_line_interface.cc
-index 03b970640..592f275e8 100644
+index 03b970640..c62fab433 100644
 --- a/src/google/protobuf/compiler/command_line_interface.cc
 +++ b/src/google/protobuf/compiler/command_line_interface.cc
-@@ -222,6 +222,14 @@ bool GetProtocAbsolutePath(std::string* path) {
+@@ -45,6 +45,8 @@
+ #include <mach-o/dyld.h>
+ #elif defined(__FreeBSD__)
+ #include <sys/sysctl.h>
++#elif defined(__QNX__)
++#include <process.h>
+ #endif
+ 
+ #include "absl/algorithm/container.h"
+@@ -222,6 +224,18 @@
    if (sysctl(mib, 4, &buffer, &len, nullptr, 0) != 0) {
      len = 0;
    }
 +#elif defined(__QNX__)
 +  char buffer[PATH_MAX];
 +  int len = 0;
-+  // QNX exposes the executable path via /proc/self/exefile, not /proc/self/exe.
-+  int path_fd = open("/proc/self/exefile", O_RDONLY);
-+  if (path_fd > 0) {
-+    len = read(path_fd, buffer, PATH_MAX);
-+    if (len < 0) len = 0;
-+    close(path_fd);
++  // Use QNX-native _cmdname() to find the executable path. /proc/self/exefile
++  // is not guaranteed to be available on all QNX targets.
++  {
++    char cmdname_buf[PATH_MAX];
++    if (_cmdname(cmdname_buf) != nullptr) {
++      len = strlen(cmdname_buf);
++      memcpy(buffer, cmdname_buf, len);
++    }
 +  }
  #else
    char buffer[PATH_MAX];
