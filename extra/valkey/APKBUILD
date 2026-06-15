@@ -3,84 +3,129 @@
 # Alpine-Contributor: TBK <alpine@jjtc.eu>
 # Alpine-Maintainer: Jakub Jirutka <jakub@jirutka.cz>
 # Maintainer: Felix Xing <fxing@qnx.com>
-
 pkgname=valkey
-pkgver=8.1.4
-pkgrel=0
+pkgver=9.0.0
+pkgrel=1
 pkgdesc="Open source high-performance key/value datastore (fork of Redis)"
 url="https://valkey.io/"
 arch="all"
-license="BSD-3-Clause"
+license="BSD-3-Clause AND BSD-2-Clause AND MIT"
 pkgusers="valkey"
 pkggroups="valkey"
-depends="qnx-io-sock libssl3 libcrypto3"
-makedepends="openssl-dev qnx-io-sock-dev cmake ninja clang libc++-dev"
+# Bundled libraries (from deps/README.md):
+#
+# Name           | Version | Customized | License
+# ---------------|---------|------------|-------------
+# jemalloc       | 5.3.0   | yes        | BSD-2-Clause
+# libvalkey      | 0.2.1   | no         | BSD-3-Clause
+# linenoise      | 1.0     | no         | BSD-2-Clause
+# lua            | 5.1     | yes        | MIT
+# hdrhistogram-c | 0.11.9  | yes        | BSD-2-Clause
+# fast_float     | ?       | ?          | (MIT OR Apache-2.0 OR BSL-1.0)
+depends="qnx-io-sock"
+makedepends="openssl-dev qnx-io-sock-dev"
+checkdepends="tcl"
+# checkdepends="tcl procps"
 install="
-    $pkgname.pre-install
-    $pkgname.post-install
-    "
+	$pkgname.pre-install
+	$pkgname-compat.pre-install
+	"
 subpackages="
-    $pkgname-benchmark
-    $pkgname-cli
-    hiredis-dev
-    "
+	$pkgname-tls
+	$pkgname-benchmark
+	$pkgname-cli
+	$pkgname-compat::noarch
+	"
 source="https://github.com/valkey-io/valkey/archive/$pkgver/valkey-$pkgver.tar.gz
-    fix-IOV_MAX.patch
-    "
+  fix-IOV_MAX.patch
+	valkey-loadmod.patch
+"
+
+export CFLAGS="$CFLAGS -DUSE_MALLOC_USABLE_SIZE -Qunused-arguments -g"
+_make_flags="
+	DEBUG=
+	OPTIMIZATION=-O3
+	V=echo
+	USE_JEMALLOC=no
+	MALLOC=libc
+	BUILD_TLS=module
+	PREFIX=/usr
+	"
+_modules_dir="usr/lib/$pkgname/modules"
+_modules_cfgdir="etc/$pkgname/modules"
 
 build() {
-    # GCC has lots of unnecessary errors.....
-    cmake3.5 -B build -G Ninja \
-        -DCMAKE_INSTALL_PREFIX="/usr" \
-        -DCMAKE_C_COMPILER=clang \
-        -DCMAKE_CXX_COMPILER=clang++ \
-        -DBUILD_MALLOC=libc \
-        -DBUILD_UNIT_TESTS=yes \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DBUILD_TLS=yes
-
-    ninja -C build -j4
+	make all $_make_flags
 }
 
 check() {
-    # unit test only
-    cd "$builddir"/build
-    ./bin/valkey-unit-tests
+	case "$CARCH" in
+		# memory overhead tracking test fails on 32-bit architectures
+		armv7|armhf|x86) rm tests/unit/tracking.tcl ;;
+	esac
+
+    # Unfortuantely, integration tests are broken by our lack of ps
+	make test-unit $_make_flags
 }
 
 package() {
-    sed 's|${DESTDIR}|${DESTDIR}/usr|' build/CreateSymlink.sh > build/CreateSymlink.sh
-    DESTDIR="$pkgdir" ninja -C build install
+	make install $_make_flags INSTALL_BIN="$pkgdir/usr/bin"
 
-    cd "$pkgdir"
-    rm -rf build
-    
-    # QNX bug, the user has been changed
-    install -d -m 750 -o valkey -g valkey \
-        etc/valkey \
-        etc/valkey/valkey.d \
-        var/lib/valkey \
-        var/lib/valkey/sentinel || true
+	install -D -m755 src/valkey-tls.so "$pkgdir/$_modules_dir/tls.so"
 
-    install -D -m 640 -o root -g valkey "$builddir"/valkey.conf etc/valkey/valkey.conf || true
-    install -D -m 640 -o valkey -g valkey "$builddir"/sentinel.conf etc/valkey/sentinel.conf || true
+	cd "$pkgdir"
+
+	# NOTE: /etc/valkey and /etc/valkey/sentinel.conf must be writable for valkey,
+	# otherwise Sentinel fails to start.
+	install -d -m 750 -o valkey -g valkey \
+		etc/valkey \
+		etc/valkey/valkey.d \
+		"$_modules_cfgdir" \
+		var/lib/valkey \
+		var/lib/valkey/sentinel || (exit 0) #non-root chown broken
+
+	install -D -m 640 -o root -g valkey "$builddir"/valkey.conf etc/valkey/valkey.conf  
+	install -D -m 640 -o valkey -g valkey "$builddir"/sentinel.conf etc/valkey/sentinel.conf || (exit 0)
+
+	echo "loadmodule /$_modules_dir/tls.so" > "$_modules_cfgdir"/tls.conf
+
+	install -d -m 750 -o valkey -g valkey \
+		var/lib/valkey \
+		var/lib/valkey/sentinel || (exit 0)
 }
 
 benchmark() {
-    depends="qnx-io-sock libssl3 libcrypto3"
-    pkgdesc="Valkey benchmarking tool"
+	pkgdesc="Valkey benchmarking tool"
+	depends="libcrypto3 libssl3 qnx-io-sock"
 
-    amove usr/bin/valkey-benchmark
+	amove usr/bin/valkey-benchmark
 }
 
 cli() {
-    depends="qnx-io-sock libssl3 libcrypto3"
-    pkgdesc="Valkey CLI client"
+	pkgdesc="Valkey CLI client"
+	depends="libcrypto3 libssl3 qnx-io-sock"
 
-    amove usr/bin/valkey-cli
+	amove usr/bin/valkey-cli
+}
+
+tls() {
+	pkgdesc="TLS module for Valkey"
+	depends="$pkgname=$pkgver-r$pkgrel libcrypto3 libssl3"
+
+	amove "$_modules_dir"/tls.so
+	amove "$_modules_cfgdir"/tls.conf
+}
+
+compat() {
+	pkgdesc="Valkey command symlinks and system group for compatibility with redis"
+	depends="!redis !redict-compat"
+
+	amove usr/bin/redis-*
+	rm "$subpkgdir"/usr/bin/redis-benchmark
 }
 
 sha512sums="
-ee44a550a0868dd42ebe3b015bdc2940b00e2e2984b6870f287605399f52986ee87e957193097a07ab5da1a1194a2b7873ed1919a74c9212903f5748d722f5f0  valkey-8.1.4.tar.gz
-35e5c203e4e56c3466cf634c81c58dce2bf0cabf832e1cc48354db09cc813db2c4102ba780c5b17d94481631df4fbad681e6977d986b1a86330f2072d7037237  fix-IOV_MAX.patch
+387e8ebf26a307940bf0f26eb4ba51f016445a618435f4c61ec4c8b8d4b7e2cbfc7a7e93b6c35b7c6832e3161981b4b2ce0d09bdc1799dbb5271052cf70654e4  valkey-9.0.0.tar.gz
+dd5780f8e15ebf9661cade2791684509f1df41d83c6e7f2a477018823cfbbad906ca22f1cff59f7c220039e0c2aa8c2b1855dc3cba0f482590861818900df22a  fix-IOV_MAX.patch
+1438969f9b06b367544a1b486a020d1d84737e9272981c69f0cf10b23e12bed08a1c02531477cdc02e9c60c84267559df40ba9957c032caba3d0ae360a8be8d9  valkey-loadmod.patch
 "

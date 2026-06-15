@@ -1,0 +1,49 @@
+From ed9371cab021ac6b227f68d65436cd43cab8c669 Mon Sep 17 00:00:00 2001
+From: felixlionardo <flionardo@blackberry.com>
+Date: Fri, 27 Feb 2026 10:12:29 -0500
+Subject: [PATCH] qnx-fix
+
+---
+ coders/gradient.c | 7 +++++++
+ magick/utility.c  | 7 +++++++
+ 2 files changed, 14 insertions(+)
+
+diff --git a/coders/gradient.c b/coders/gradient.c
+index 698013a..f0fc130 100644
+--- a/coders/gradient.c
++++ b/coders/gradient.c
+@@ -45,6 +45,13 @@
+ #include "magick/magick.h"
+ #include "magick/utility.h"
+ #include "magick/studio.h"
++
++#if defined(__QNX__) && !defined(_P_WAIT)
++#  include <process.h>
++#  if defined(P_WAIT)
++#    define _P_WAIT P_WAIT
++#  endif
++#endif
+ 
+ /*
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+diff --git a/magick/utility.c b/magick/utility.c
+index caccf93..4c235bf 100644
+--- a/magick/utility.c
++++ b/magick/utility.c
+@@ -60,6 +60,13 @@
+ #  include <process.h>
+ #endif
+ 
++#if defined(__QNX__) && !defined(_P_WAIT)
++#  include <process.h>
++#  if defined(P_WAIT)
++#    define _P_WAIT P_WAIT
++#  endif
++#endif
++
+ /*
+   Static declarations.
+ */
+-- 
+2.52.0
+

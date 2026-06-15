@@ -1,0 +1,82 @@
+# Alpine-Contributor: Sören Tempel <soeren+alpine@soeren-tempel.net>
+# Alpine-Contributor: Leonardo Arena <rnalrd@alpinelinux.org>
+# Alpine-Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+# Maintainer: jscaffidi <jscaffidi@qnx.com>
+pkgname=libuuid
+pkgver=2.41.3
+pkgrel=0
+pkgdesc="DCE compatible Universally Unique Identifier library"
+url="https://git.kernel.org/cgit/utils/util-linux/util-linux.git"
+arch="all"
+license="BSD-3-Clause"
+subpackages="
+    uuidgen
+    $pkgname-static         
+    $pkgname-dev            
+" 
+makedepends="meson bison flex"
+builddir="$srcdir/util-linux-$pkgver"
+options="!check"
+
+case $pkgver in
+	*.*.*) _v=${pkgver%.*};;
+	*.*) _v=$pkgver;;
+esac
+source="
+https://www.kernel.org/pub/linux/utils/util-linux/v$_v/util-linux-$pkgver.tar.xz
+ttydefaults.h
+00-qnx-build.patch
+"
+
+prepare() {
+	default_prepare
+
+    mkdir -p "$builddir/sys"
+
+    cp "$srcdir/ttydefaults.h" "$builddir/sys/ttydefaults.h"
+}
+
+build() {
+    export C_INCLUDE_PATH="$C_INCLUDE_PATH:$builddir" 
+
+    echo "$C_INCLUDE_PATH"
+
+    # Inspiration taken from https://cgit.freebsd.org/ports/tree/misc/libuuid since we are not linux, we don't support as much stuff
+    meson setup build  \
+        --auto-features=disabled \
+		-Dallow-32bit-time=true \
+		-Dbuild-libuuid=enabled\
+		-Ddefault_library=both \
+		-Dprogram-tests=false \
+        -Dprefix=/usr \
+        -Dsbindir=/usr/bin
+
+    meson compile -C build
+}
+
+package() {
+    DESTDIR="$pkgdir" meson install -C build
+}
+
+uuidgen() {
+	install_if="$pkgname=$pkgver-r$pkgrel"
+    license="GPL-1.0-only"
+    pkgdesc="UUID generator from util-linux"
+	depends="libuuid"
+
+	local dir; for dir in usr/bin usr/sbin bin sbin; do
+		if [ -e "$pkgdir"/$dir/uuidgen ]; then
+			amove $dir/uuidgen
+			return 0
+		fi
+	done
+	return 1
+}
+
+
+
+sha512sums="
+3d299f0e05a4c982a04dbcbaaeff1222152feedf51c56c5dbdeb75999c68269d652a994f5cdf4c1ee42bb7b28475dd0792192c299fd9bc3b45198c5b153dad00  util-linux-2.41.3.tar.xz
+feef9454b7865dc12b0f15e34b446555491f32be91ff34965ed390eddd74d6beeaea6221871a375f4b121afbe67e5eea0051a5ff5e01a6ef1d4c7ddf61d5defa  ttydefaults.h
+29d5928c5dbcafcb26f7efb8cd8019bb81109696458578b296fbd1a42b333637f85dd303c2edff54031410abbb23cddcf4b7f50c056a83a24dc3bb5ef981a9dd  00-qnx-build.patch
+"

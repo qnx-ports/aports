@@ -1,0 +1,18 @@
+--- a/os/os-qnx.h	2025-09-05 20:21:17.000000000 +0000
++++ b/os/os-qnx.h	2026-02-19 20:14:53.000000000 +0000
+@@ -12,7 +12,6 @@
+ #include <sys/syspage.h>
+ #include <sys/types.h>
+ #include <sys/stat.h>
+-#include <sys/dcmd_cam.h>
+ 
+ /* XXX hack to avoid conflicts between rbtree.h and <sys/tree.h> */
+ #undef RB_BLACK
+@@ -27,6 +26,7 @@
+ #endif
+ 
+ #define FIO_NO_HAVE_SHM_H
++#define CONFIG_NO_SHM
+ 
+ typedef uint64_t __u64;
+ typedef unsigned int __u32;

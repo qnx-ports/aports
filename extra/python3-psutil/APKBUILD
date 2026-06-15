@@ -1,0 +1,43 @@
+# Alpine-Contributor: Francesco Colista <fcolista@alpinelinux.org>
+# Alpine-Maintainer: Francesco Colista <fcolista@alpinelinux.org>
+# Maintainer: jscaffidi <jscaffidi@qnx.com>
+pkgname=python3-psutil
+_pkgname=psutil
+_pkgver=7.2.2
+pkgver="$_pkgver"_alpha
+pkgrel=0
+_portrel=1
+pkgdesc="A cross-platform process and system utilities module for Python"
+url="https://github.com/qnx-ports/psutil"
+arch="all"
+license="BSD-3-Clause"
+makedepends="python3-dev python3-gpep517 python3-setuptools python3-wheel qnx-io-sock-dev"
+source="https://github.com/qnx-ports/$_pkgname/archive/refs/tags/qnx-release-$_pkgver-r$_portrel.tar.gz"
+builddir="$srcdir/$_pkgname-qnx-release-$_pkgver-r$_portrel"
+
+# secfixes:
+#   5.6.7-r0:
+#     - CVE-2019-18874
+
+build() {
+    CFLAGS="$CFLAGS -fPIC" \
+	gpep517 build-wheel \
+		--wheel-dir .dist \
+		--output-fd 3 3>&1 >&2
+}
+
+check() {
+    # No tests implemented for QNX yet
+	default_check
+}
+
+package() {
+	python3 -m installer -d "$pkgdir" .dist/*.whl
+	rm -fr "$pkgdir"/usr/lib/python3*/site-packages/psutil/tests/
+}
+
+
+
+sha512sums="
+22b1adb01c73f529af15482e3d73f23670705ac8d974322a40c9d3628d102aecb4c5cd3e96c91e3c85474232396e8f3f432980ee74d61bba84080e2a4a4c9c07  qnx-release-7.2.2-r1.tar.gz
+"

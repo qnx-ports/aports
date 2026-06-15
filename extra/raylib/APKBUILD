@@ -1,0 +1,66 @@
+pkgname=raylib
+pkgver=5.5
+pkgrel=0
+pkgdesc="A simple and easy-to-use library to enjoy videogames programming"
+url="https://github.com/raysan5/raylib"
+arch="x86_64"
+license="Zlib"
+source="
+$pkgname-$pkgver.tar.gz::https://github.com/raysan5/raylib/archive/refs/tags/$pkgver.tar.gz
+00-libraryconfigurations.patch
+01-raylib_opengl_interop.patch
+"
+
+makedepends="
+        cmake
+        ninja
+        qnx-fd-notify-dev
+        libxkbcommon-dev
+        wayland-dev
+"
+
+depends="
+        gles-headers
+        qnx-gles
+        glfw
+        libxkbcommon
+        wayland
+        qnx-fd-notify
+"
+
+prepare() {
+    default_prepare
+}
+
+
+build() {
+    cmake \
+        -DUSE_EXTERNAL_GLFW=ON \
+        -DGLFW_BUILD_X11=OFF \
+        -DGLFW_BUILD_WAYLAND=ON \
+        -DCMAKE_BUILD_TYPE="Release" \
+        -DPLATFORM="Desktop" \
+        -DCMAKE_C_FLAGS="-DMA_USE_STDINT" \
+        -Dglfw3_DIR="/usr/lib/cmake/glfw3" \
+        -DBUILD_SHARED_LIBS=ON \
+        -G Ninja \
+        -S .
+
+        ninja -C .
+}
+
+check() {
+        #ctest
+        # There are no builtin tests and this depends on GUI
+        default_check
+}
+
+package() {
+        DESTDIR="$pkgdir" cmake --install . --prefix "/usr"
+}
+
+sha512sums="
+503483a5436e189ad67533dc6c90be592283b84fbd57c86ab457dd1507b1dd11c897767ea9efa83affaf236f2711ec59e56658cf6fcad582a790a5fdc01b5ace  raylib-5.5.tar.gz
+1099e56dadcc470a052dc6cb03f33eadb4f50fb7d86c3749c7734f92baf147cb6ca5d47d005d5f332ddf0c0a6c42f261836150da53610a605fc62f2b5a11180b  00-libraryconfigurations.patch
+a0f6dc19ca24b1a1068d64505d62a0d6716de08cbdbecb464789b874343824e51a7e76da73538691953120d24fdd6b9ddb2276a5b20ed0be66245ca3f888f9c2  01-raylib_opengl_interop.patch
+"

@@ -1,0 +1,39 @@
+# Maintainer: Felix Lionardo <flionardo@qnx.com>
+pkgname=libccd
+pkgver=2.1
+pkgrel=0
+pkgdesc="Library for collision detection between two convex shapes (libccd / ccd)"
+url="https://github.com/danfis/libccd"
+arch="all"
+license="BSD-3-Clause"
+source="$pkgname-$pkgver.tar.gz::https://github.com/danfis/libccd/archive/refs/tags/v$pkgver.tar.gz"
+builddir="$srcdir/$pkgname-$pkgver"
+depends="libc++"
+makedepends="
+	libc++-dev
+	cmake
+	ninja
+"
+subpackages="$pkgname-dev"
+
+build() {
+	cmake3.5 -B build -G Ninja \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DCMAKE_INSTALL_LIBDIR=lib \
+		-DBUILD_TESTING=ON \
+		-DBUILD_DOCUMENTATION=OFF 
+	cmake3.5 --build build
+}
+
+check() {
+	ctest3.5 --test-dir build
+}
+
+package() {
+	DESTDIR="$pkgdir" cmake3.5 --install build
+}
+
+sha512sums="
+ff037d9c4df50f09600cf9b3514b259b2850ff43f74817853f5665d22812891168f70bd3cc3969b2c9e3c706f6254991a65421476349607fbd04d894b217456d  libccd-2.1.tar.gz
+"

@@ -1,0 +1,397 @@
+# Alpine-Contributor: Marian Buschsieweke <marian.buschsieweke@posteo.net>
+# Alpine-Maintainer: Meng Zhuo <mengzhuo@iscas.ac.cn>
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=opencv
+pkgver=4.12.0
+pkgrel=1
+pkgdesc="Open source computer vision and machine learning library"
+url="https://opencv.org/"
+arch="all"
+license="Apache-2.0"
+depends_dev="
+    zlib-dev
+    eigen-dev
+    ffmpeg-dev
+    freetype-dev
+    gst-plugins-base-dev
+    gstreamer-dev
+    harfbuzz-dev
+    egl-headers
+    gles-headers
+    opencl-headers
+    qnx-screen-dev
+    qnx-opencl
+    onetbb-dev
+    openexr-dev
+    openjpeg-dev
+    openjpeg-tools
+    openblas-dev
+    python3-setuptools
+    libc++-dev
+    "
+makedepends="
+    $depends_dev
+    clang
+    cmake
+    python3-dev
+    python3-gpep517
+    python3-numpy-dev
+    python3-setuptools
+    python3-wheel
+    "
+_libopencv_aruco_depends="
+    libopencv_objdetect=$pkgver-r$pkgrel
+    libopencv_calib3d=$pkgver-r$pkgrel
+    libopencv_core=$pkgver-r$pkgrel
+    libopencv_dnn=$pkgver-r$pkgrel
+    libopencv_imgproc=$pkgver-r$pkgrel
+    libopencv_features2d=$pkgver-r$pkgrel
+    libopencv_flann=$pkgver-r$pkgrel
+    "
+_libopencv_calib3d_depends="
+    libopencv_core=$pkgver-r$pkgrel
+    libopencv_imgproc=$pkgver-r$pkgrel
+    libopencv_features2d=$pkgver-r$pkgrel
+    libopencv_flann=$pkgver-r$pkgrel
+    "
+_libopencv_dnn_depends="
+    libopencv_core=$pkgver-r$pkgrel
+    libopencv_imgproc=$pkgver-r$pkgrel
+    "
+_libopencv_face_depends="
+    libopencv_objdetect=$pkgver-r$pkgrel
+    libopencv_calib3d=$pkgver-r$pkgrel
+    libopencv_imgproc=$pkgver-r$pkgrel
+    libopencv_core=$pkgver-r$pkgrel
+    libopencv_dnn=$pkgver-r$pkgrel
+    libopencv_features2d=$pkgver-r$pkgrel
+    libopencv_flann=$pkgver-r$pkgrel
+    "
+_libopencv_features2d_depends="
+    libopencv_imgproc=$pkgver-r$pkgrel
+    libopencv_core=$pkgver-r$pkgrel
+    libopencv_flann=$pkgver-r$pkgrel
+    "
+_libopencv_flann_depends="
+    libopencv_core=$pkgver-r$pkgrel
+    "
+_libopencv_highgui_depends="
+    libopencv_imgproc=$pkgver-r$pkgrel
+    libopencv_core=$pkgver-r$pkgrel
+    "
+_libopencv_imgcodecs_depends="
+    libopencv_imgproc=$pkgver-r$pkgrel
+    libopencv_core=$pkgver-r$pkgrel
+    openjpeg
+    "
+_libopencv_imgproc_depends="
+    libopencv_core=$pkgver-r$pkgrel
+    "
+_libopencv_ml_depends="
+    libopencv_core=$pkgver-r$pkgrel
+    "
+_libopencv_objdetect_depends="
+    libopencv_calib3d=$pkgver-r$pkgrel
+    libopencv_imgproc=$pkgver-r$pkgrel
+    libopencv_core=$pkgver-r$pkgrel
+    libopencv_dnn=$pkgver-r$pkgrel
+    libopencv_features2d=$pkgver-r$pkgrel
+    libopencv_flann=$pkgver-r$pkgrel
+    "
+_libopencv_optflow_depends="
+    libopencv_ximgproc=$pkgver-r$pkgrel
+    libopencv_imgcodecs=$pkgver-r$pkgrel
+    libopencv_video=$pkgver-r$pkgrel
+    libopencv_calib3d=$pkgver-r$pkgrel
+    libopencv_flann=$pkgver-r$pkgrel
+    libopencv_imgproc=$pkgver-r$pkgrel
+    libopencv_core=$pkgver-r$pkgrel
+    libopencv_dnn=$pkgver-r$pkgrel
+    libopencv_features2d=$pkgver-r$pkgrel
+    "
+_libopencv_photo_depends="
+    libopencv_imgproc=$pkgver-r$pkgrel
+    libopencv_core=$pkgver-r$pkgrel
+    "
+_libopencv_plot_depends="
+    libopencv_imgproc=$pkgver-r$pkgrel
+    libopencv_core=$pkgver-r$pkgrel
+    "
+_libopencv_shape_depends="
+    libopencv_calib3d=$pkgver-r$pkgrel
+    libopencv_flann=$pkgver-r$pkgrel
+    libopencv_imgproc=$pkgver-r$pkgrel
+    libopencv_core=$pkgver-r$pkgrel
+    libopencv_features2d=$pkgver-r$pkgrel
+    "
+_libopencv_stitching_depends="
+    libopencv_calib3d=$pkgver-r$pkgrel
+    libopencv_flann=$pkgver-r$pkgrel
+    libopencv_imgproc=$pkgver-r$pkgrel
+    libopencv_core=$pkgver-r$pkgrel
+    libopencv_features2d=$pkgver-r$pkgrel
+    "
+_libopencv_superres_depends="
+    libopencv_videoio=$pkgver-r$pkgrel
+    libopencv_optflow=$pkgver-r$pkgrel
+    libopencv_video=$pkgver-r$pkgrel
+    libopencv_imgproc=$pkgver-r$pkgrel
+    libopencv_core=$pkgver-r$pkgrel
+    libopencv_imgcodecs=$pkgver-r$pkgrel
+    libopencv_ximgproc=$pkgver-r$pkgrel
+    libopencv_calib3d=$pkgver-r$pkgrel
+    libopencv_flann=$pkgver-r$pkgrel
+    libopencv_dnn=$pkgver-r$pkgrel
+    libopencv_features2d=$pkgver-r$pkgrel
+    "
+_libopencv_tracking_depends="
+    libopencv_video=$pkgver-r$pkgrel
+    libopencv_imgproc=$pkgver-r$pkgrel
+    libopencv_core=$pkgver-r$pkgrel
+    libopencv_dnn=$pkgver-r$pkgrel
+    libopencv_calib3d=$pkgver-r$pkgrel
+    libopencv_features2d=$pkgver-r$pkgrel
+    libopencv_flann=$pkgver-r$pkgrel
+    "
+_libopencv_video_depends="
+    libopencv_dnn=$pkgver-r$pkgrel
+    libopencv_calib3d=$pkgver-r$pkgrel
+    libopencv_imgproc=$pkgver-r$pkgrel
+    libopencv_core=$pkgver-r$pkgrel
+    libopencv_features2d=$pkgver-r$pkgrel
+    libopencv_flann=$pkgver-r$pkgrel
+    "
+_libopencv_videoio_depends="
+    libopencv_imgcodecs=$pkgver-r$pkgrel
+    libopencv_core=$pkgver-r$pkgrel
+    gst-plugins-base
+    gstreamer
+    ffmpeg
+    "
+_libopencv_videostab_depends="
+    libopencv_photo=$pkgver-r$pkgrel
+    libopencv_videoio=$pkgver-r$pkgrel
+    libopencv_video=$pkgver-r$pkgrel
+    libopencv_calib3d=$pkgver-r$pkgrel
+    libopencv_features2d=$pkgver-r$pkgrel
+    libopencv_imgproc=$pkgver-r$pkgrel
+    libopencv_core=$pkgver-r$pkgrel
+    libopencv_imgcodecs=$pkgver-r$pkgrel
+    libopencv_dnn=$pkgver-r$pkgrel
+    libopencv_flann=$pkgver-r$pkgrel
+    "
+_libopencv_ximgproc_depends="
+    libopencv_imgcodecs=$pkgver-r$pkgrel
+    libopencv_video=$pkgver-r$pkgrel
+    libopencv_calib3d=$pkgver-r$pkgrel
+    libopencv_imgproc=$pkgver-r$pkgrel
+    libopencv_core=$pkgver-r$pkgrel
+    libopencv_dnn=$pkgver-r$pkgrel
+    libopencv_features2d=$pkgver-r$pkgrel
+    libopencv_flann=$pkgver-r$pkgrel
+    "
+subpackages="
+    $pkgname-dbg
+    $pkgname-dev
+    $pkgname-doc
+    python3-$pkgname:_py3
+    "
+_libs="
+    aruco
+    calib3d
+    core
+    dnn
+    face
+    features2d
+    flann
+    highgui
+    imgcodecs
+    imgproc
+    ml
+    objdetect
+    optflow
+    photo
+    plot
+    shape
+    stitching
+    superres
+    tracking
+    video
+    videoio
+    videostab
+    ximgproc
+    "
+
+for _lib in $_libs; do
+    subpackages="$subpackages lib${pkgname}_${_lib}:_lib"
+    depends="$depends lib${pkgname}_${_lib}=$pkgver-r$pkgrel"
+done
+
+_git_rev=1
+source="${pkgname}-${pkgver}-r${_git_rev}.tar.gz::https://github.com/qnx-ports/opencv/archive/refs/tags/qnx-$pkgver-r$_git_rev.tar.gz
+    https://github.com/opencv/opencv_contrib/archive/$pkgver/opencv_contrib-$pkgver.tar.gz
+    "
+builddir="$srcdir/$pkgname-qnx-$pkgver-r${_git_rev}"
+# Tests require human interaction
+# net required to download a data file (face_landmark_model.dat)
+#
+# There are also a number of known strtod conversion issues,
+# issues due to an unsupported highgui module and a few issues
+# that may have been solved with the switch to clang.
+options="net !check"
+
+prepare() {
+    default_prepare
+
+    cd "$srcdir/opencv_contrib-$pkgver"/modules
+    # Only use modules that we care about
+    mv \
+        aruco \
+        face \
+        tracking \
+        optflow \
+        plot \
+        shape \
+        superres \
+        videostab \
+        ximgproc \
+        "$builddir"/modules/
+}
+
+build() {
+    case "$CARCH" in
+    x86_64)
+        local extra_cmake_flags="-DCPU_BASELINE_DISABLE=SSE3 -DCPU_BASELINE_REQUIRE=SSE2"
+        ;;
+    esac
+
+    # reduce size of debug syms
+    CFLAGS="$CFLAGS -g1" CXXFLAGS="$CXXFLAGS -g1" \
+    LDFLAGS="$LDFLAGS -lz" \
+    CC=clang CXX=clang++ \
+    cmake3.5 -B build \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DCMAKE_INSTALL_LIBDIR=lib \
+        -DENABLE_BUILD_HARDENING=OFF \
+        -DENABLE_THIN_LTO=$lto \
+        -DWITH_OPENCL=ON \
+        -DWITH_OPENGL=ON \
+        -DWITH_TBB=ON \
+        -DWITH_VULKAN=OFF \
+        -DWITH_QT=OFF \
+        -DWITH_ADE=OFF \
+        -DWITH_opencv_gapi=OFF \
+        -DWITH_IPP=OFF \
+        -DBUILD_WITH_DEBUG_INFO=ON \
+        -DBUILD_TESTS=OFF \
+        -DBUILD_PERF_TESTS=OFF \
+        -DBUILD_EXAMPLES=OFF \
+        -DINSTALL_C_EXAMPLES=OFF \
+        -DINSTALL_PYTHON_EXAMPLES=OFF \
+        -DOPENCV_SKIP_PYTHON_LOADER=OFF \
+        -DOPENCV_GENERATE_PKGCONFIG=ON \
+        -DOPENCV_ENABLE_NONFREE=OFF \
+        -DOPENCV_GENERATE_SETUPVARS=OFF \
+        -DEIGEN_INCLUDE_PATH=/usr/include/eigen3 \
+        -DEIGEN_WORLD_VERSION=3 \
+        -DEIGEN_MAJOR_VERSION=5 \
+        -DEIGEN_MINOR_VERSION=0 \
+        -DEIGEN_PATCH_VERSION=1 \
+        -DCMAKE_SKIP_INSTALL_RPATH=ON \
+        -DPYTHON3_INCLUDE_PATH=/usr/include/python3.14 \
+        -DOPENCV_PYTHON3_INSTALL_PATH=lib/python3.14/site-packages \
+        -DOPENCV_PYTHON3_VERSION=3.14 \
+        -DOPENBLAS_LIBRARIES=/usr/lib/libopenblas.so \
+        -DLAPACK_LIBRARIES=/usr/lib/libopenblas.so \
+        $extra_cmake_flags
+    cmake3.5 --build build
+
+    cd modules/python/package
+    gpep517 build-wheel \
+        --wheel-dir "$builddir"/.dist \
+        --output-fd 3 3>&1 >&2
+}
+
+check() {
+    cd build
+    ctest3.5
+}
+
+package() {
+    python3 -m installer -d "$pkgdir" \
+        .dist/*.whl
+    DESTDIR="$pkgdir" cmake3.5 --install build
+    python3 -m compileall -fq "$pkgdir"/usr/lib/python*
+
+    # opencv's python metainfo names it "opencv", as expected.
+    # however, people usually don't use this, they use
+    # https://github.com/opencv/opencv-python
+    # which is installed with "pip install opencv-python", is
+    # exactly the same thing, and is named differently.
+    # so, to be satisfied with a system dependency, it has to follow
+    # that same name.
+    # we can trick pip into thinking both are installed by just copying the
+    # dist-info and changing the name.
+    # the name of the .dist-info must be normalized according to the python packaging spec:
+    # https://packaging.python.org/en/latest/specifications/recording-installed-packages/#the-dist-info-directory
+    cd "$pkgdir"/usr/lib/python*/site-packages
+    cp -r opencv-*.dist-info opencv_python-$pkgver.dist-info
+    sed -i \
+        -e "s|Name: opencv|Name: opencv-python|" \
+        opencv_python-$pkgver.dist-info/METADATA
+}
+
+samples() {
+    pkgdesc="OpenCV Samples"
+    depends="$pkgname=$pkgver-r$pkgrel"
+    amove usr/share/opencv4/samples
+}
+
+_py3() {
+    pkgdesc="$pkgdesc (python modules)"
+    depends="
+        python3-numpy
+        libopencv_aruco=$pkgver-r$pkgrel
+        libopencv_calib3d=$pkgver-r$pkgrel
+        libopencv_core=$pkgver-r$pkgrel
+        libopencv_dnn=$pkgver-r$pkgrel
+        libopencv_face=$pkgver-r$pkgrel
+        libopencv_features2d=$pkgver-r$pkgrel
+        libopencv_flann=$pkgver-r$pkgrel
+        libopencv_highgui=$pkgver-r$pkgrel
+        libopencv_imgcodecs=$pkgver-r$pkgrel
+        libopencv_imgproc=$pkgver-r$pkgrel
+        libopencv_ml=$pkgver-r$pkgrel
+        libopencv_objdetect=$pkgver-r$pkgrel
+        libopencv_optflow=$pkgver-r$pkgrel
+        libopencv_photo=$pkgver-r$pkgrel
+        libopencv_plot=$pkgver-r$pkgrel
+        libopencv_shape=$pkgver-r$pkgrel
+        libopencv_stitching=$pkgver-r$pkgrel
+        libopencv_tracking=$pkgver-r$pkgrel
+        libopencv_video=$pkgver-r$pkgrel
+        libopencv_videoio=$pkgver-r$pkgrel
+        libopencv_ximgproc=$pkgver-r$pkgrel
+        "
+
+    amove usr/lib/python3.*
+}
+
+_lib() {
+    pkgdesc="$pkgdesc ($subpkgname library)"
+    depends="libc++ zlib onetbb $(getvar "_${subpkgname}_depends")"
+
+    amove usr/lib/$subpkgname.so.*
+}
+
+# Print value of the specified variable, or the default if empty or not defined.
+# From https://github.com/alpinelinux/aports/blob/3d4f2edabc7cca3a16b88a2d3795f584ae40aff5/main/nginx/APKBUILD
+getvar() {
+	eval "printf '%s\n' \"\${$1:-$2}\""
+}
+
+sha512sums="
+17103ce884b562c1d46796b3e45a41b506c676398e3c57091ce0e102de19432f60b4a6092dfebccad10198c097c773c0d765be63ae61087a27be7ec7ba2cad51  opencv-4.12.0-r1.tar.gz
+574121ca57328671741413df91fbf600cc04bb9a9beeacfb7bc20c15b2b4e8c9e031df30aafbcc34f82d85edfb098e5d008a744f4e6d833d6e47537a042045c6  opencv_contrib-4.12.0.tar.gz
+"

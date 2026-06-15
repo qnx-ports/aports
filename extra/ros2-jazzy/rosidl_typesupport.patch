@@ -1,0 +1,12 @@
+diff --git a/rosidl_typesupport_c/package.xml b/rosidl_typesupport_c/package.xml
+index 0d4d662..0c0fd9c 100644
+--- a/rosidl_typesupport_c/package.xml
++++ b/rosidl_typesupport_c/package.xml
+@@ -39,7 +39,6 @@
+ 
+   <test_depend>ament_lint_auto</test_depend>
+   <test_depend>ament_lint_common</test_depend>
+-  <test_depend>mimick_vendor</test_depend>
+   <test_depend>performance_test_fixture</test_depend>
+ 
+   <group_depend>rosidl_typesupport_c_packages</group_depend>

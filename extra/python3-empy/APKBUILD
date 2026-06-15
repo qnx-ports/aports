@@ -1,0 +1,36 @@
+# Alpine-Contributor: Russ Webber <russ@rw.id.au>
+# Alpine-Maintainer: Russ Webber <russ@rw.id.au>
+# Maintainer: jscaffidi <jscaffidi@qnx.com>
+pkgname=python3-empy
+_pkgname=empy
+pkgver=3.3.4
+pkgrel=0
+pkgdesc="A powerful and robust templating system for Python."
+url="http://www.alcyone.com/software/empy/"
+arch="noarch"
+license="LGPL-2.1-or-later"
+depends="python3"
+makedepends="python3-setuptools python3-gpep517"
+source="http://www.alcyone.com/software/empy/empy-$pkgver.tar.gz"
+builddir="$srcdir/$_pkgname-$pkgver"
+
+build() {
+	gpep517 build-wheel \
+		--wheel-dir .dist \
+		--output-fd 3 3>&1 >&2
+}
+
+check() {
+	sh test.sh python3
+}
+
+package() {
+	gpep517 install-wheel --destdir "$pkgdir" \
+		.dist/*.whl
+}
+
+sha512sums="
+5de8de26484468d180a2575bfc8302cb3d32004ed4d70768310b7564a9ed1bb880b8c1d862f419588b2b5baa8c3da8bc707eac41f3921e6136cc5bc3f47f1a3d  empy-3.3.4.tar.gz
+"
+
+

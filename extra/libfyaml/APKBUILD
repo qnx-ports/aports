@@ -1,0 +1,52 @@
+# Alpine-Contributor: Lucas Ramage <ramage.lucas@protonmail.com>
+# Alpine-maintainer="Achill Gilgenast <achill@achill.org>"
+maintainer="Elliott Mazzuca <emazzuca@qnx.com>"
+pkgname=libfyaml
+pkgver=0.9.5
+pkgrel=0
+pkgdesc="Fully feature complete YAML parser and emitter"
+url="https://github.com/pantoniou/libfyaml"
+arch="all"
+license="MIT"
+makedepends="
+	bash
+	libtool
+	m4
+	qnx-memstream-dev
+	qnx-io-sock-dev
+	"
+depends="qnx-memstream"
+checkdepends="check git"
+subpackages="$pkgname-dev $pkgname-doc"
+source="https://github.com/pantoniou/libfyaml/releases/download/v$pkgver/libfyaml-$pkgver.tar.gz
+        0001-add-qnx-endian-support.patch"
+options="!check" # assumes bash
+
+build() {
+	CFLAGS="${CFLAGS} -fPIC"
+	CXXFLAGS="${CXXFLAGS} -fPIC"
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--libdir=/usr/lib \
+		--sysconfdir=/etc \
+		--mandir=/usr/share/man \
+		--infodir=/usr/share/info \
+		--disable-static \
+		LDFLAGS="$LDFLAGS -lmemstream"
+	make
+}
+
+check() {
+	make check
+}
+
+package() {
+	make DESTDIR="$pkgdir" install
+}
+
+sha512sums="
+e4f79ceca4ff99c334d40b5afaccbdeb5200e74e2ff00140f018882cb5d21e8be7a5eb30d5e8fe8861271ab0264f03cb405f6b6a3ef76482f5cf6af9a01a4632  libfyaml-0.9.5.tar.gz
+5505c2abc6b4a05a71e5426c9e04f9897c8304212d1eed98eaf0e6ae2b5ce1f98e66be865da6b2ca7e3d87c0272768be9942f14243426e0a0d1fe52b6c7f84a0  0001-add-qnx-endian-support.patch
+"

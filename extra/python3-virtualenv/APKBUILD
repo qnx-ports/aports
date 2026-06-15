@@ -1,0 +1,50 @@
+# Alpine-Contributor: Sam Dodrill <shadowh511@gmail.com>
+# Alpine-Contributor: TBK <alpine@jjtc.eu>
+# Alpine-Maintainer: Patrycja Rosa <alpine@ptrcnull.me>
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=python3-virtualenv
+pkgver=20.32.0
+pkgrel=0
+pkgdesc="Virtual Python3 Environment builder"
+url="https://virtualenv.pypa.io/en/latest/"
+arch="noarch"
+license="MIT"
+depends="python3-platformdirs python3-distlib python3-filelock"
+makedepends="
+    python3-gpep517
+    python3-hatchling
+    python3-hatch-vcs
+    python3-wheel
+    "
+checkdepends="
+    python3-flaky
+    python3-pytest-mock
+    python3-time-machine
+    python3-dev
+    "
+subpackages=""
+source="https://files.pythonhosted.org/packages/source/v/virtualenv/virtualenv-$pkgver.tar.gz"
+builddir="$srcdir/virtualenv-$pkgver"
+options="net" # fetches stuff during tests
+
+build() {
+    gpep517 build-wheel \
+        --wheel-dir .dist \
+        --output-fd 3 3>&1 >&2
+}
+
+check() {
+    python3 -m venv --clear --without-pip --system-site-packages .testenv
+    .testenv/bin/python3 -m installer .dist/*.whl
+    .testenv/bin/python3 -m pytest -v \
+        -k "not test_can_build_c_extensions"
+}
+
+package() {
+    python3 -m installer -d "$pkgdir" \
+        .dist/*.whl
+}
+
+sha512sums="
+fe2fbedb22eb30e52c401de827107e94f66c6f5f0425f42e4d5be59bf26da670a4daa705be23799b25fef0a2031c1f84e35a5376f7de06d4fe0275434645b7c1  virtualenv-20.32.0.tar.gz
+"

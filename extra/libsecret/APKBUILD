@@ -20,7 +20,7 @@ makedepends="$depends_dev
             meson
             dbus"
 checkdepends="python3-dbus python3-gobject3"
-#options="!check" # gjs is in community now
+options="!check" # gjs is in community now
 subpackages="$pkgname-static $pkgname-dev $pkgname-doc $pkgname-lang"
 source="https://gitlab.gnome.org/GNOME/libsecret/-/archive/$pkgver/libsecret-$pkgver.tar.bz2
         fix-upstream-typo.patch"

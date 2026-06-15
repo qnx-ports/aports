@@ -1,0 +1,5 @@
+core/*/src
+core/*/pkg
+extra/*/src
+extra/*/pkg
+~

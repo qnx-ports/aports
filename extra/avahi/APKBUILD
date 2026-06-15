@@ -1,0 +1,167 @@
+# Alpine-Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+# Maintainer: Aaron Bassett <abassett@qnx.com>
+pkgname=avahi
+pkgver=0.9_rc3
+_pkgver="${pkgver/_rc/-rc}" 
+pkgrel=0
+pkgdesc="multicast/unicast DNS-SD framework"
+url="https://www.avahi.org/"
+arch="all"
+license="LGPL-2.1-or-later"
+pkgusers="avahi"
+pkggroups="avahi"
+depends="$pkgname-libs=$pkgver-r$pkgrel libexpat dbus libdaemon libevent"
+depends_openrc="dbus"
+depends_dev="gdbm-dev"
+makedepends="
+	$depends_dev
+	autoconf
+	automake
+	dbus-dev
+	expat-dev
+	gettext-dev
+	glib-dev
+	gobject-introspection-dev
+	libdaemon-dev
+	libevent-dev
+	libtool
+	xz
+	xmlto
+	expat-dev
+	qnx-io-sock-dev
+	libc++-dev
+	"
+install="$pkgname.pre-install"
+subpackages="
+	$pkgname-static
+	$pkgname-dev
+	$pkgname-doc
+	$pkgname-tools
+	$pkgname-glib
+	$pkgname-libs
+	$pkgname-compat-howl:howl
+	$pkgname-compat-libdns_sd:lidns_sd
+	$pkgname-lang
+	$pkgname-openrc
+	"
+# Since we are on a pre-release version we have to use the tag not the release
+# When 0.9 gets released we will swap back to the release archive
+source="avahi-qnx-$_pkgver.tar.gz::https://github.com/qnx-ports/avahi/archive/refs/tags/qnx-v$_pkgver.tar.gz
+	"
+builddir="$srcdir/avahi-qnx-v$_pkgver"
+prepare() {
+	default_prepare
+	autoreconf -vif
+}
+
+build() {
+	# we dont build autoipd since dhcpcd does same job
+	# we need to move gdbm to core and rebuild python with gdbm support
+	# TODO: enable man pages
+	# TODO: inotify
+	LDFLAGS="$LDFLAGS -lintl" \
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--sysconfdir=/etc \
+		--localstatedir=/var \
+		--sbindir=/usr/bin \
+    		--runstatedir=/run \
+		--disable-autoipd \
+		--disable-qt3 \
+		--disable-qt4 \
+		--disable-qt5 \
+		--disable-gtk \
+		--disable-gtk3 \
+		--disable-mono \
+		--disable-monodoc \
+		--disable-doxygen \
+		--disable-xmltoman \
+		--disable-manpages \
+		--enable-compat-libdns_sd \
+		--enable-compat-howl \
+		--disable-python \
+		--disable-libsystemd \
+		--with-distro="gentoo"
+	make
+}
+
+check() {
+	make check
+}
+
+package() {
+	make DESTDIR="$pkgdir" install
+
+	ln -s avahi-compat-howl.pc "$pkgdir"/usr/lib/pkgconfig/howl.pc
+	ln -s avahi-compat-libdns_sd.pc "$pkgdir"/usr/lib/pkgconfig/libdns_sd.pc
+	ln -s avahi-compat-libdns_sd/dns_sd.h "$pkgdir"/usr/include/
+
+	# XXX these are added since the python support, but are broken TODO: evaluate these claims on 0.9
+	#rm -v "$pkgdir"/usr/bin/avahi-bookmarks
+	#rm -v "$pkgdir"/usr/bin/avahi-discover
+	#rm -v "$pkgdir"/usr/share/applications/avahi-discover.desktop
+	#rmdir "$pkgdir"/usr/share/applications/
+
+	# we dont support systemd
+	#rm -rf -v "$pkgdir"/usr/lib/systemd
+
+	# can't install tmpfs
+	rm -r "$pkgdir"/run
+
+	#install -Dm644 "$srcdir"/avahi.nft "$pkgdir"/usr/share/nftables.avail/50_avahi.nft
+}
+
+tools() {
+	pkgdesc="Command line tools for mDNS browsing and publishing"
+	depends="$pkgname-libs=$pkgver-r$pkgrel gdbm"
+
+	amove \
+		usr/bin/avahi-browse* \
+		usr/bin/avahi-publish* \
+		usr/bin/avahi-resolve* \
+		usr/bin/avahi-set*
+}
+
+glib() {
+	pkgdesc="Glib libraries and GObject wrapper for avahi"
+	depends="$pkgname-libs=$pkgver-r$pkgrel glib"
+
+	amove usr/lib/libavahi-glib.so.* \
+		usr/lib/libavahi-gobject.so.*
+}
+
+libs() {
+	pkgdesc="Libraries for avahi run-time use"
+	depends="dbus libintl qnx-io-sock"
+
+	amove usr/lib/libavahi-common.so.* \
+		usr/lib/libavahi-client.so.*
+}
+
+howl() {
+	pkgdesc="Libraries for howl compatibility"
+	depends="$pkgname-libs=$pkgver-r$pkgrel"
+
+	amove usr/lib/libhowl.so.*
+}
+
+lidns_sd() {
+	pkgdesc="Libraries for Apple Bonjour mDNSResponder compatibility"
+	depends="$pkgname-libs=$pkgver-r$pkgrel"
+
+	amove usr/lib/libdns_sd.so.*
+}
+
+#py3() {
+#	pkgdesc="Python Avahi module"
+#	depends="python3-dbus python3"
+#
+#	amove usr/lib/python*
+#}
+
+
+sha512sums="
+eb0801fb1eab0d0dbdff4ae648e07dfd498c26e149e94be1f50e2eb27675c9a7b2cbbbf1cc7124cd48a51dc6b749e6457ddcfe258b07ba8386aa30edb0c17198  avahi-qnx-0.9-rc3.tar.gz
+"

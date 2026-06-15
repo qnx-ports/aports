@@ -1,0 +1,50 @@
+--- a/gdk/wayland/gdkwindow-wayland.c
++++ b/gdk/wayland/gdkwindow-wayland.c
+@@ -1403,13 +1403,27 @@
+                                         GdkRectangle *geometry)
+ {
+   GdkWindowImplWayland *impl = GDK_WINDOW_IMPL_WAYLAND (window->impl);
+-
+-  *geometry = (GdkRectangle) {
+-    .x = impl->margin_left,
+-    .y = impl->margin_top,
+-    .width = calculate_width_without_margin (window, window->width),
+-    .height = calculate_height_without_margin (window, window->height)
+-  };
++  
++  /* QNX fix: When maximized, don't include margins in geometry
++   * to avoid mismatch with compositor's configured size */
++  if (window->state & GDK_WINDOW_STATE_MAXIMIZED)
++    {
++      *geometry = (GdkRectangle) {
++        .x = 0,
++        .y = 0,
++        .width = window->width,
++        .height = window->height
++      };
++    }
++  else
++    {
++      *geometry = (GdkRectangle) {
++        .x = impl->margin_left,
++        .y = impl->margin_top,
++        .width = calculate_width_without_margin (window, window->width),
++        .height = calculate_height_without_margin (window, window->height)
++      };
++    }
+ }
+ 
+ static void
+@@ -1802,6 +1816,12 @@
+       GdkWindowHints geometry_mask = impl->geometry_mask;
+       int configure_width;
+       int configure_height;
++
++      /* QNX fix: When maximizing, force window to accept compositor's size */
++      if (new_state & GDK_WINDOW_STATE_MAXIMIZED)
++        {
++          geometry_mask = 0;  /* Clear all constraints */
++        }
+ 
+       /* Ignore size increments for maximized/fullscreen windows */
+       if (fixed_size)

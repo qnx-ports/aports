@@ -1,0 +1,24 @@
+--- orc-0.4.41.orig/orc/orccpu-arm.c	2025-02-17 20:02:18.000000000 +0000
++++ orc-0.4.41/orc/orccpu-arm.c	2026-01-07 22:32:16.000000000 +0000
+@@ -50,6 +50,9 @@
+ #ifdef __APPLE__
+ #include <TargetConditionals.h>
+ #endif
++#ifdef __QNX__
++#include <sys/syspage.h>
++#endif
+ 
+ /***** arm *****/
+ 
+@@ -125,6 +128,11 @@
+   ret = ORC_TARGET_ARM_EDSP | ORC_TARGET_NEON_NEON;
+ #elif defined (__APPLE__) && defined (__arm64__) && TARGET_OS_OSX
+   ret = ORC_TARGET_ARM_EDSP | ORC_TARGET_NEON_NEON;
++#elif defined(__QNX__)
++  ret = ORC_TARGET_ARM_EDSP;
++  if (SYSPAGE_ENTRY(cpuinfo)->flags & AARCH32_CPU_FLAG_NEON) {
++  	ret |= ORC_TARGET_NEON_NEON;
++  }
+ #else
+   char *cpuinfo;
+   char *cpuinfo_line;

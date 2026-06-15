@@ -1,0 +1,42 @@
+# Alpine-Contributor: Leonardo Arena <rnalrd@alpinelinux.org>
+# Alpine-Contributor: Keith Maxwell <keith.maxwell@gmail.com>
+# Alpine-Maintainer Achill Gilgenast <achill@achill.org>
+# Maintainer jscaffidi <jscaffidi@qnx.com>
+pkgname=python3-pycodestyle
+_pkgname=pycodestyle
+pkgver=2.14.0
+pkgrel=0
+pkgdesc="Check your Python code against some of the style conventions in PEP 8"
+url="https://pypi.org/project/pycodestyle/"
+arch="noarch"
+license="MIT"
+depends="python3"
+makedepends="python3-gpep517 python3-setuptools python3-wheel"
+checkdepends="python3-pytest"
+source="$pkgname-$pkgver.tar.gz::https://github.com/PyCQA/$_pkgname/archive/$pkgver.tar.gz"
+builddir="$srcdir/$_pkgname-$pkgver"
+
+build() {
+	gpep517 build-wheel \
+		--wheel-dir .dist \
+		--output-fd 3 3>&1 >&2
+}
+
+check() {
+	python3 -m venv --clear --without-pip --system-site-packages .testenv
+	.testenv/bin/python3 -m installer .dist/*.whl
+	.testenv/bin/python3 -m pytest
+}
+
+package() {
+	mkdir -p "$pkgdir"/usr/bin
+	ln -s pycodestyle "$pkgdir"/usr/bin/pycodestyle-3
+
+	python3 -m installer -d "$pkgdir" \
+		.dist/*.whl
+}
+
+sha512sums="
+0c81febffaf0f23ff4a8f7168202a05917aef913bdd92f0a45b1d595272b8206e79987c43eefbdc850b94a467f25f43067209320b60be628d46788c3cc1ad618  python3-pycodestyle-2.14.0.tar.gz
+"
+

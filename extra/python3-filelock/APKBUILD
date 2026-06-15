@@ -1,0 +1,54 @@
+# Alpine-Contributor: Dmitry Romanenko <dmitry@romanenko.in>
+# Alpine-Maintainer: Dmitry Romanenko <dmitry@romanenko.in>
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=python3-filelock
+_pkgname=filelock
+pkgver=3.18.0
+pkgrel=0
+pkgdesc="A platform independent file lock for Python3"
+url="https://github.com/tox-dev/py-filelock"
+arch="noarch"
+license="Unlicense" # Versions 3.23 and up use MIT license.
+depends="python3"
+makedepends="
+    python3-gpep517
+    python3-hatch-vcs
+    python3-hatchling
+    "
+checkdepends="
+    python3-pytest
+    python3-pytest-mock
+    "
+subpackages=""
+source="https://files.pythonhosted.org/packages/source/f/$_pkgname/$_pkgname-$pkgver.tar.gz"
+builddir="$srcdir"/$_pkgname-$pkgver
+
+prepare() {
+    default_prepare
+
+    # circular dependency with py3-virtualenv
+    rm tests/test_virtualenv.py
+}
+
+build() {
+    SETUPTOOLS_SCM_PRETEND_VERSION=$pkgver \
+    gpep517 build-wheel \
+        --wheel-dir .dist \
+        --output-fd 3 3>&1 >&2
+}
+
+check() {
+    python3 -m venv --clear --without-pip --system-site-packages .testenv
+    .testenv/bin/python3 -m installer .dist/*.whl
+    # ignore async tests as they introduce a circular dep
+    .testenv/bin/python3 -m pytest --ignore tests/test_async_filelock.py
+}
+
+package() {
+    python3 -m installer -d "$pkgdir" \
+        .dist/*.whl
+}
+
+sha512sums="
+c74684754eb2ac2b36839c12907f6a9ba7c6cb7049f991638ec910fd20cd41caafbbc67d59460e38012161d52b1a9b5966e9fa85665f9e028fef86cecd9358e0  filelock-3.18.0.tar.gz
+"

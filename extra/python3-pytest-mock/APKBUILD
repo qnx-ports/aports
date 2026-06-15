@@ -1,0 +1,40 @@
+# Alpine-Maintainer: Andy Postnikov <apostnikov@gmail.com>
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=python3-pytest-mock
+pkgver=3.10.0
+pkgrel=0
+pkgdesc="Thin-wrapper around the mock package for easier use with py.test"
+options="!check" # Fails
+url="https://github.com/pytest-dev/pytest-mock"
+arch="noarch"
+license="MIT"
+depends="
+    python3-pytest
+    "
+makedepends="
+    python3-gpep517
+    python3-setuptools
+    python3-setuptools_scm
+    "
+subpackages=""
+source="https://files.pythonhosted.org/packages/source/p/pytest-mock/pytest-mock-$pkgver.tar.gz"
+builddir="$srcdir/pytest-mock-$pkgver"
+
+build() {
+    gpep517 build-wheel \
+        --wheel-dir .dist \
+        --output-fd 3 3>&1 >&2
+}
+
+check() {
+    py.test-3
+}
+
+package() {
+    python3 -m installer -d "$pkgdir" \
+        .dist/*.whl
+}
+
+sha512sums="
+2ad6866d581a2999899e399ef5516d478a6172f52923f03703e3e3708229fb3b1178c91225b5cc90734c96abcb48fea517b11e0fc193da6fb592295395c14cd3  pytest-mock-3.10.0.tar.gz
+"

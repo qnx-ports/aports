@@ -1,0 +1,48 @@
+From 1653cd59619a613c87d3641d4634506714b38db0 Mon Sep 17 00:00:00 2001
+From: LN Liberda <lauren@selfisekai.rocks>
+Date: Sun, 11 Jan 2026 02:25:33 +0100
+Subject: [PATCH] Mark usedforsecurity=False use of hashlib
+
+Port of https://github.com/archlinux/svntogit-packages/blob/2a3fe81edf582af4e97e9954ad20408306273561/trunk/0003-gyp-fips.patch
+to gyp-next
+---
+ pylib/gyp/generator/make.py  | 3 ++-
+ pylib/gyp/generator/ninja.py | 4 ++--
+ 2 files changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/pylib/gyp/generator/make.py b/pylib/gyp/generator/make.py
+index 16b6f4e..278b3bd 100644
+--- a/pylib/gyp/generator/make.py
++++ b/pylib/gyp/generator/make.py
+@@ -2170,7 +2170,8 @@ $(obj).$(TOOLSET)/$(TARGET)/%%.o: $(obj)/%%%s FORCE_DO_CMD
+ 
+             # Hash the target name to avoid generating overlong filenames.
+             cmddigest = hashlib.sha256(
+-                (command or self.target).encode("utf-8")
++                (command or self.target).encode("utf-8"),
++                usedforsecurity=False,
+             ).hexdigest()
+             intermediate = "%s.intermediate" % cmddigest
+             self.WriteLn("{}: {}".format(" ".join(outputs), intermediate))
+diff --git a/pylib/gyp/generator/ninja.py b/pylib/gyp/generator/ninja.py
+index 4eac6cd..43518a4 100644
+--- a/pylib/gyp/generator/ninja.py
++++ b/pylib/gyp/generator/ninja.py
+@@ -809,7 +809,7 @@ class NinjaWriter:
+                 outputs = [self.GypPathToNinja(o, env) for o in outputs]
+                 if self.flavor == "win":
+                     # WriteNewNinjaRule uses unique_name to create a rsp file on win.
+-                    unique_name = hashlib.sha256(outputs[0].encode("utf-8")).hexdigest()
++                    unique_name = hashlib.sha256(outputs[0].encode("utf-8"), usedforsecurity=False).hexdigest()
+                     extra_bindings.append(("unique_name", unique_name))
+ 
+                 self.ninja.build(
+@@ -2802,7 +2802,7 @@ def GenerateOutputForConfig(target_list, target_dicts, data, params, config_name
+             build_file, name, toolset
+         )
+         qualified_target_for_hash = qualified_target_for_hash.encode("utf-8")
+-        hash_for_rules = hashlib.sha256(qualified_target_for_hash).hexdigest()
++        hash_for_rules = hashlib.sha256(qualified_target_for_hash, usedforsecurity=False).hexdigest()
+ 
+         base_path = os.path.dirname(build_file)
+         obj = "obj"

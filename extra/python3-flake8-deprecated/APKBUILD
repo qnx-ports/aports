@@ -1,0 +1,32 @@
+# Maintainer: jscaffidi <jscaffidi@qnx.com>
+pkgname=python3-flake8-deprecated
+pkgver=2.3.0
+pkgrel=0
+pkgdesc="Flake8 plugin that warns about deprecated method calls "
+url="https://github.com/gforcada/flake8-deprecated"
+arch="noarch"
+license="GPL-2.0"
+depends="python3-flake8"
+makedepends="python3-hatchling python3-gpep517 python3-setuptools"
+checkdepends="python3-pytest"
+source="flake8-deprecated-$pkgver.tar.gz::https://github.com/gforcada/flake8-deprecated/archive/refs/tags/$pkgver.tar.gz"
+builddir="$srcdir"/flake8-deprecated-$pkgver
+
+build() {
+	gpep517 build-wheel \
+		--wheel-dir .dist \
+		--output-fd 3 3>&1 >&2
+}
+
+package() {
+	gpep517 install-wheel --destdir "$pkgdir" \
+		.dist/*.whl
+}
+
+check() {
+    python3 run_tests.py
+}
+
+sha512sums="
+ec80ed20d1b8bc665ba780027bb801f67c6d7f5239f27486afdb6867de4e5b13b9265be10af7db661b4a66cbc0a8e2b66e3f705e2468b97a8218d53f36737025  flake8-deprecated-2.3.0.tar.gz
+"

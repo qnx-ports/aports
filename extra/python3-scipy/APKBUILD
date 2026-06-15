@@ -1,0 +1,69 @@
+# Alpine-Contributor: Wen Heping <wenhepingalpine@sohu.com>
+# Alpine-Contributor: Martell Malone <martellmalone@gmail.com>
+# Alpine-Maintainer: Achill Gilgenast <achill@achill.org>
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=python3-scipy
+pkgver=1.17.1
+pkgrel=0
+pkgdesc="Python library for scientific computing"
+url="https://www.scipy.org/"
+arch="all"
+license="BSD-3-Clause"
+depends="python3-numpy libc++"
+makedepends="
+    cython
+    flang
+    openblas-dev
+    python3-gpep517
+    python3-meson-python
+    python3-numpy-dev
+    python3-numpy-f2py
+    python3-pybind11-dev
+    python3-setuptools
+    python3-wheel
+    python3-dev
+    libc++-dev
+    pythran
+    qhull
+    "
+checkdepends="python3-pytest"
+subpackages="$pkgname-tests"
+source="https://pypi.io/packages/source/s/scipy/scipy-$pkgver.tar.gz
+    qnx-_EXTERN_C.patch
+    "
+builddir="$srcdir"/scipy-$pkgver
+
+build() {
+    export CFLAGS="$CFLAGS -O3"
+    export CXXFLAGS="$CXXFLAGS -O3"
+    export LDFLAGS="$LDFLAGS -Wl,--no-as-needed -lgcc_s -lm"
+
+    gpep517 build-wheel \
+        --wheel-dir .dist \
+        --output-fd 3 3>&1 >&2
+}
+
+check() {
+    python3 -m venv --clear --without-pip --system-site-packages .testenv
+    .testenv/bin/python3 -m installer .dist/*.whl
+    cd .testenv
+    # There are some failures here because we're missing python3-hypothesis and
+    # python3-pooch, which are both optional dependencies of tests.
+    bin/python -c "from scipy import test; test('full')"
+}
+
+package() {
+    python3 -m installer -d "$pkgdir" \
+        .dist/*.whl
+}
+
+tests() {
+    find "$pkgdir" -name tests -type d | while read -r p; do
+        amove "${p#"$pkgdir"}"
+    done
+}
+
+sha512sums="
+c2930d9be072057eb25394d6bee7fbe504f1b7c442b5393641ab3ff6bba590d4a76d240eb3a2ef58891bcb449af847de056a8957c591caa8fbf496ce9ce5a9e5  scipy-1.17.1.tar.gz
+f2c990a3e86bf2424ca4ad44b05e0507543934228ed20f0d5665ce809c0ab8ecd2616ea62b0ec9ecdc3323359d9a403919f02a9b1e88c3404a7111b87c65507d  qnx-_EXTERN_C.patch
+"

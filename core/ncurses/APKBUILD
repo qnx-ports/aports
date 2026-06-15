@@ -1,6 +1,6 @@
 pkgname=ncurses
-pkgver=6.4
-pkgrel=3
+pkgver=6.6
+pkgrel=1
 pkgdesc="Console display library"
 url="https://invisible-island.net/ncurses/"
 arch="all"
@@ -17,12 +17,10 @@ depends="libc++"
 makedepends="clang libc++-dev"
 source="
     https://ftp.gnu.org/gnu/ncurses/ncurses-$pkgver.tar.gz
-    ncurses-6.3-libs.patch
-    ncurses-6.3-pkgconfig.patch
-    ncurses-6.4-qnx.patch
     config.qnx
-    fix-qnx.patch
-    drop-ext-qnx-fix.patch
+    0001-drop-ext-qnx-fix.patch
+    0002-fix-qnx.patch
+    0003-tab3.patch
     "
 builddir="$srcdir/$pkgname-$pkgver"
 
@@ -93,7 +91,6 @@ build() {
         --enable-overwrite
 
     # Hack
-    sed -i "s/^LDFLAGS.*-lregex/LDFLAGS=/g" */Makefile
     make
 }
 
@@ -154,11 +151,9 @@ base() {
 }
 
 sha512sums="
-1c2efff87a82a57e57b0c60023c87bae93f6718114c8f9dc010d4c21119a2f7576d0225dab5f0a227c2cfc6fb6bdbd62728e407f35fce5bf351bb50cf9e0fd34  ncurses-6.4.tar.gz
-adb02b838c40f1e58a1b31c26d5cd0f2a1c43f3b6d68e839981764c0f6c905a9eb51dd36ff018628fdeb20747cc7467727d57135408ab4848259384077a52b28  ncurses-6.3-libs.patch
-2d2c0ec3c880e638ab4aa3dbff5e28e4cd233153e24816bd87e077f848aa3edd5114cd0f2a7f6e8869dd1861a2746e512886c18264ff1676927dcc320c5ef958  ncurses-6.3-pkgconfig.patch
-0b3880f5d1061825e062e3ab19ffebfdb04d47487c3558afc7901dd21ac09b767740dce0aa8ccc7082947070d5feaed6cbd869bcf00cfdbfce8beacd2fde5919  ncurses-6.4-qnx.patch
+02647baae53abc844fbadee5b0a2187ad073125c4e8950df6d1c4feb781cb74ba64fb838cedfee2c246c39932187f6775b1df124f18b99a4233f0d98c72191de  ncurses-6.6.tar.gz
 fcb1143a6d1ba282a699900e7f20dcdca39a31c427720b265449a1e8f9a7d575ef7f608ff71211c68321b444c37e74cf0ce7bd8f9ef25e2599a4fa5cc56aa091  config.qnx
-1d4927bce173c88b5273331f9cd753c6aa659a0bc7f524106988ced986d8b9e470394f59f10913c9fb6253a2c24c61625d4efc146aa8861329a84f86b4224eb3  fix-qnx.patch
-114198404f2b115c789081903d5d361df030424e563bfce8080c82243c92a361292b95c2c2fa8f6a54fc117731427aca059560cfc8a157683883950c6c42eeca  drop-ext-qnx-fix.patch
+114198404f2b115c789081903d5d361df030424e563bfce8080c82243c92a361292b95c2c2fa8f6a54fc117731427aca059560cfc8a157683883950c6c42eeca  0001-drop-ext-qnx-fix.patch
+b3edbc7997985963a89661537ec31814515e38fc021cccc8298f7250d3b3867ab852669ec3b88d5764b9cef4019ad67e9bc3828ffb20cc78c7d4357164317a55  0002-fix-qnx.patch
+ad8494e4f9c6353e48d3345226f1ddb4c921f6e06bd2c282371c69052b4cc21fa9843219fa5bfd28d0b71e17729c8dc9dc3ff5bc78f323620ce94d7fbbd3a417  0003-tab3.patch
 "

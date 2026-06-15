@@ -3,8 +3,7 @@
 # Maintainer: Felix Lionardo <flionardo@qnx.com>
 pkgname=godot
 pkgver=4.4.1
-pkgrel=0
-_commit="650bed9662eebf885249fe557801211448f3724d"
+pkgrel=1
 pkgdesc="Multi-platform 2D and 3D game engine"
 url="https://godotengine.org"
 license="MIT"
@@ -21,6 +20,7 @@ makedepends="
     libpng-dev
     libtheora-dev
     libvorbis-dev
+    libdecor-dev
     pcre2-dev
     zstd-dev
     zlib-dev
@@ -42,7 +42,9 @@ makedepends="
     "
 depends="
     brotli
+    dbus
     freetype
+    fontconfig
     graphite
     harfbuzz
     icu-libs
@@ -50,6 +52,7 @@ depends="
     libpng
     libtheora
     libvorbis
+    libdecor
     pcre2
     zstd
     zlib
@@ -57,23 +60,17 @@ depends="
     libwebp
     qnx-alsa
     ca-certificates-bundle
+    wayland
 "
-subpackages="$pkgname-doc $pkgname-dbg $pkgname-templates"
-source="https://github.com/qnx-ports/godot-QNX/archive/$_commit.tar.gz
-        0001-godot-wayland-build-for-qnx.patch
-        0002-openxr-library-fix.patch
-        0003-do-not-force-gcc-for-llvm.patch
-        0004-library-linking-fix.patch
-        "
-options="!check" # No tests
-builddir="$startdir"/src/godot-QNX-"$_commit"
+subpackages="$pkgname-doc $pkgname-templates"
+source="https://github.com/qnx-ports/godot-QNX/archive/refs/tags/qnx-$pkgver-r$pkgrel.tar.gz"
+builddir="$startdir/src/godot-QNX-qnx-$pkgver-r$pkgrel"
 _sconsflags="
     module_camera_enabled=false
     builtin_brotli=false
     builtin_freetype=false
     builtin_graphite=false
     builtin_harfbuzz=false
-    builtin_icu4c=false
     builtin_libogg=false
     builtin_libtheora=false
     builtin_libpng=false
@@ -85,8 +82,6 @@ _sconsflags="
     builtin_zstd=false
     engine_update_check=false
     execinfo=false
-    x11=no
-    wayland=no
     lto=none
     production=true
     system_certs_path=/etc/ssl/cert.pem
@@ -95,12 +90,15 @@ _sconsflags="
     use_static_cpp=false
     alsa=true
     use_llvm=true
+    tests=yes
     "
 
 case "$CARCH" in
 x86_64)
+    _arch=x86_64
     ;;
-*)
+aarch64)
+    _arch=arm64
     # only builds on x86_64
     _sconsflags="$_sconsflags module_denoise_enabled=false"
     ;;
@@ -115,17 +113,33 @@ build() {
         echo "ERROR: input-event-codes.h not found in $startdir"
         return 1
     fi
-
     export BUILD_NAME="qnx_self_hosted"
-    for target in template_release; do
-        scons -j$(nproc) \
-            platform=qnx \
-            target=$target \
-            arch=$CARCH \
-            CC=clang \
-            CXX=clang++ \
-            $_sconsflags 
+    for _platform in linuxbsd qnx; do
+        case "$_platform" in
+        linuxbsd)
+            _targets="editor template_debug template_release"
+            _extra="x11=no wayland=yes"
+            ;;
+        qnx)
+            _targets="template_debug template_release"
+            _extra="x11=no wayland=no"
+            ;;
+        esac
+        for target in $_targets; do
+            scons -j"$(nproc)" \
+                platform="$_platform" \
+                target="$target" \
+                arch="$CARCH" \
+                CC=clang \
+                CXX=clang++ \
+                $_sconsflags \
+                $_extra
+        done
     done
+}
+
+check() {
+    ./bin/godot.linuxbsd.editor.${_arch}.llvm --test --test-case-exclude="[JSON] Serialization,[String] Number to string,*[IP] resolve_hostname*"
 }
 
 package() {
@@ -137,29 +151,36 @@ package() {
     install -Dm644 icon.png "$pkgdir"/usr/share/icons/hicolor/256x256/apps/godot.png
     install -Dm644 icon.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/godot.svg
     install -Dm644 misc/dist/linux/godot.6 -t "$pkgdir"/usr/share/man/man6/
-    #install -Dm755 bin/godot.*.editor.* "$pkgdir"/usr/bin/godot
-    #install -Dm755 bin/godot.*.template_debug.* "$pkgdir"/usr/bin/godot-template-debug
-    install -Dm755 bin/godot.*.template_release.* "$pkgdir"/usr/bin/godot-template-release
+    install -Dm755 bin/godot.*linuxbsd.editor.* "$pkgdir"/usr/bin/godot
+    install -Dm755 bin/godot.*qnx.template_release.* "$pkgdir"/usr/bin/godot-template-release-qnxscreen
+    install -Dm755 bin/godot.*qnx.template_debug.* "$pkgdir"/usr/bin/godot-template-debug-qnxscreen
+    install -Dm755 bin/godot.*linuxbsd.template_release.* "$pkgdir"/usr/bin/godot-template-release-wayland
+    install -Dm755 bin/godot.*linuxbsd.template_debug.* "$pkgdir"/usr/bin/godot-template-debug-wayland
 }
 
 templates() {
     pkgdesc="$pkgdesc (templates)"
     depends="
+        dbus
+        fontconfig
         glib
         harfbuzz-icu
         libbz2
         libc++
+        libdecor
         libiconv
         libintl
         libpcre2-32
         libsharpyuv
         libxkbcommon
+        qnx-alsa
         qnx-egl
         qnx-gcc-libs
         qnx-gles
         qnx-io-sock
         qnx-libslog2
         qnx-screen
+        wayland
         zlib-ng
         zstd-libs
         "
@@ -167,9 +188,5 @@ templates() {
 }
 
 sha512sums="
-fa9312eb979f35d1a62cb31057a68c0b7fa3269db7e0fa72abe8d4637838bd2d1abc649b0a10071cc364c88f292266590ce2b83869a7d97d8b5047da6e11f551  650bed9662eebf885249fe557801211448f3724d.tar.gz
-127a2ef78e0534b627f902d95e7433a1ca765053bcc06ea5999a0c9b0cf5ec276b652af88cce5468627cf2dc81dedb177c40b1c07259b6cd03bf5c323416a2d7  0001-godot-wayland-build-for-qnx.patch
-ea65d9829c9331418e22d3fd7453f4ad1faf4664a4b43dfc709953ff9946d4dd41a16d3db0a09b5cddda7eb5b71e42a9edb835437b6c93b74f1d1162423259ed  0002-openxr-library-fix.patch
-c05c5e3992c386befb48783c298477b98b9b5c6cc8d95d30753bc2c06bc674916b22a47c02f642ff187b366f5f1f378c8a5150368b6fe194785d18a996a91cc9  0003-do-not-force-gcc-for-llvm.patch
-33ae6f2e8cb4f71fe1217f52e1cab0e6ac73c6e2379613acc8c84afbf1144b3c88ea4140e3004bbe2c0f37c547bfb1c9a682f9ab2b7f8dac86d9bbc8643deefd  0004-library-linking-fix.patch
+47d09f2c982c7cf233a23d2dc6cb6fa3a4764768698f29cd2ac941094cef55667d465d9ff2ec57ccd3e0bcd1d620d597745285401218ffa6b012554371215eb8  qnx-4.4.1-r1.tar.gz
 "

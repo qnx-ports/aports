@@ -1,0 +1,33 @@
+# Alpine-Maintainer: Michał Polański <michal@polanski.me>
+# Maintainer: jscaffidi <jscaffidi@qnx.com>
+pkgname=python3-tomli
+pkgver=2.4.1
+pkgrel=0
+pkgdesc="A lil' TOML parser"
+url="https://github.com/hukkin/tomli"
+license="MIT"
+arch="noarch"
+makedepends="python3-gpep517 python3-flit-core"
+source="https://github.com/hukkin/tomli/archive/$pkgver/python3-tomli-$pkgver.tar.gz"
+builddir="$srcdir/tomli-$pkgver"
+
+build() {
+	gpep517 build-wheel \
+		--wheel-dir .dist \
+		--output-fd 3 3>&1 >&2
+}
+
+check() {
+	PYTHONPATH=src python3 -m unittest
+}
+
+package() {
+	python3 -m installer -d "$pkgdir" \
+		.dist/*.whl
+}
+
+sha512sums="
+b7f79c349d5a7309452f940ac630504c52a36761bdcd2b3f451d06172641f59b48721ce15faceb70cd04f995150c9854c6725d6596bebbf06087c7ea95a3d3a4  python3-tomli-2.4.1.tar.gz
+"
+
+

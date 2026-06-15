@@ -1,0 +1,924 @@
+diff --git a/distdir_deps.bzl b/distdir_deps.bzl
+index a3cd93a44a..52bf39a1ce 100644
+--- a/distdir_deps.bzl
++++ b/distdir_deps.bzl
+@@ -97,12 +97,11 @@ DIST_DEPS = {
+     #
+     #################################################
+     "com_google_protobuf": {
+-        "archive": "v3.19.6.tar.gz",
+-        "sha256": "9a301cf94a8ddcb380b901e7aac852780b826595075577bb967004050c835056",
+-        "strip_prefix": "protobuf-3.19.6",
++        "archive": "qnx-v3.19.6.tar.gz",
++        "sha256": "06897227957e7b5b361922729a6aa02f5eb86239598c80c76c646de7347a4eb2",
++        "strip_prefix": "protobuf-qnx-v3.19.6",
+         "urls": [
+-            "https://mirror.bazel.build/github.com/protocolbuffers/protobuf/archive/v3.19.6.tar.gz",
+-            "https://github.com/protocolbuffers/protobuf/archive/v3.19.6.tar.gz",
++            "https://github.com/qnx-ports/protobuf/archive/qnx-v3.19.6.tar.gz",
+         ],
+         "patch_args": ["-p1"],
+         "patches": ["//third_party/protobuf:3.19.6.patch"],
+@@ -112,12 +111,11 @@ DIST_DEPS = {
+         ],
+     },
+     "com_github_grpc_grpc": {
+-        "archive": "v1.47.0.tar.gz",
+-        "sha256": "271bdc890bf329a8de5b65819f0f9590a5381402429bca37625b63546ed19e54",
+-        "strip_prefix": "grpc-1.47.0",
++        "archive": "qnx-v1.47.0.tar.gz",
++        "sha256": "20b641cef20249350b08da91833332b551a1f78264f626bbf21ce22efbe91b76",
++        "strip_prefix": "grpc-qnx-v1.47.0",
+         "urls": [
+-            "https://mirror.bazel.build/github.com/grpc/grpc/archive/v1.47.0.tar.gz",
+-            "https://github.com/grpc/grpc/archive/v1.47.0.tar.gz",
++            "https://github.com/qnx-ports/grpc/archive/qnx-v1.47.0.tar.gz",
+         ],
+         "patch_args": ["-p1"],
+         "patches": [
+@@ -229,16 +227,16 @@ DIST_DEPS = {
+         ],
+     },
+     "com_google_absl": {
+-        "archive": "20230802.0.tar.gz",
+-        "sha256": "59d2976af9d6ecf001a81a35749a6e551a335b949d34918cfade07737b9d93c5",
++        "archive": "qnx-20230802.0.tar.gz",
++        "sha256": "cb72959836f2c98b673a7ce66ce6b7c8a2870e191c0faa68793ddc82ebc37892",
+         "urls": [
+-            "https://github.com/abseil/abseil-cpp/archive/refs/tags/20230802.0.tar.gz",
++            "https://github.com/qnx-ports/abseil-cpp/archive/qnx-20230802.0.tar.gz",
+         ],
+         "used_in": [
+             "additional_distfiles",
+             "test_WORKSPACE_files",
+         ],
+-        "strip_prefix": "abseil-cpp-20230802.0",
++        "strip_prefix": "abseil-cpp-qnx-20230802.0",
+     },
+     "zstd-jni": {
+         "archive": "v1.5.2-3.zip",
+diff --git a/scripts/bootstrap/compile.sh b/scripts/bootstrap/compile.sh
+index 8528e431fc..b95b4f0e5b 100755
+--- a/scripts/bootstrap/compile.sh
++++ b/scripts/bootstrap/compile.sh
+@@ -140,13 +140,13 @@ function java_compilation() {
+   # Useful if your system chooses too small of a max heap for javac.
+   # We intentionally rely on shell word splitting to allow multiple
+   # additional arguments to be passed to javac.
+-  run "${JAVAC}" -classpath "${classpath}" -sourcepath "${sourcepath}" \
++  run "${JAVAC}" -proc:full -classpath "${classpath}" -sourcepath "${sourcepath}" \
+       -d "${output}/classes" -source "$JAVA_VERSION" -target "$JAVA_VERSION" \
+       -encoding UTF-8 ${BAZEL_JAVAC_OPTS} "@${paramfile}"
+ 
+   log "Extracting helper classes for $name..."
+   for f in ${library_jars} ; do
+-    run unzip -qn ${f} -d "${output}/classes"
++    run unzip -qn -d "${output}/classes" ${f}
+   done
+ }
+ 
+@@ -447,6 +447,7 @@ function run_bazel_jar() {
+       -XX:+HeapDumpOnOutOfMemoryError -Xverify:none -Dfile.encoding=ISO-8859-1 \
+       -XX:HeapDumpPath=${OUTPUT_DIR} \
+       -Djava.util.logging.config.file=${OUTPUT_DIR}/javalog.properties \
++      --add-opens=java.base/java.lang=ALL-UNNAMED \
+       ${JNI_FLAGS} \
+       -jar ${ARCHIVE_DIR}/libblaze.jar \
+       --batch \
+diff --git a/scripts/packages/template_bin.sh b/scripts/packages/template_bin.sh
+index 974a19bf01..a3a5d64267 100755
+--- a/scripts/packages/template_bin.sh
++++ b/scripts/packages/template_bin.sh
+@@ -156,7 +156,7 @@ fi
+ mkdir -p ${bin} ${base} ${base}/bin ${base}/etc
+ echo -n .
+ 
+-unzip -q "${BASH_SOURCE[0]}" bazel bazel-real bazel-complete.bash _bazel bazel.fish -d "${base}/bin"
++unzip -q -d "${base}/bin" "${BASH_SOURCE[0]}" bazel bazel-real bazel-complete.bash _bazel bazel.fish
+ echo -n .
+ chmod 0755 "${base}/bin/bazel" "${base}/bin/bazel-real"
+ echo -n .
+diff --git a/src/conditions/BUILD b/src/conditions/BUILD
+index 6fd49f313a..5cf2562af2 100644
+--- a/src/conditions/BUILD
++++ b/src/conditions/BUILD
+@@ -165,6 +165,30 @@ config_setting(
+     visibility = ["//visibility:public"],
+ )
+ 
++config_setting(
++    name = "qnx",
++    constraint_values = ["@platforms//os:qnx"],
++    visibility = ["//visibility:public"],
++)
++
++config_setting(
++    name = "qnx_x86_64",
++    constraint_values = [
++        "@platforms//os:qnx",
++        "@platforms//cpu:x86_64",
++    ],
++    visibility = ["//visibility:public"],
++)
++
++config_setting(
++    name = "qnx_arm64",
++    constraint_values = [
++        "@platforms//os:qnx",
++        "@platforms//cpu:aarch64",
++    ],
++    visibility = ["//visibility:public"],
++)
++
+ config_setting(
+     name = "windows",
+     constraint_values = ["@platforms//os:windows"],
+diff --git a/src/conditions/BUILD.tools b/src/conditions/BUILD.tools
+index aafdb4fb34..340036fc9e 100644
+--- a/src/conditions/BUILD.tools
++++ b/src/conditions/BUILD.tools
+@@ -12,6 +12,30 @@ config_setting(
+     visibility = ["//visibility:public"],
+ )
+ 
++config_setting(
++    name = "qnx",
++    constraint_values = ["@platforms//os:qnx"],
++    visibility = ["//visibility:public"],
++)
++
++config_setting(
++    name = "qnx_x86_64",
++    constraint_values = [
++        "@platforms//os:qnx",
++        "@platforms//cpu:x86_64",
++    ],
++    visibility = ["//visibility:public"],
++)
++
++config_setting(
++    name = "qnx_arm64",
++    constraint_values = [
++        "@platforms//os:qnx",
++        "@platforms//cpu:aarch64",
++    ],
++    visibility = ["//visibility:public"],
++)
++
+ config_setting(
+     name = "darwin",
+     constraint_values = ["@platforms//os:macos"],
+diff --git a/src/main/cpp/BUILD b/src/main/cpp/BUILD
+index ffe7caf6bb..7bec428d98 100644
+--- a/src/main/cpp/BUILD
++++ b/src/main/cpp/BUILD
+@@ -30,6 +30,10 @@ cc_library(
+             "blaze_util_bsd.cc",
+             "blaze_util_posix.cc",
+         ],
++        "//src/conditions:qnx": [
++            "blaze_util_bsd.cc",
++            "blaze_util_posix.cc",
++        ],
+         "//src/conditions:windows": [
+             "blaze_util_windows.cc",
+         ],
+@@ -112,6 +116,10 @@ cc_binary(
+         ],
+         "//src/conditions:openbsd": [
+         ],
++        "//src/conditions:qnx": [
++            "-lsocket",
++            "-lm",
++        ],
+         "//src/conditions:windows": [
+         ],
+         "//conditions:default": [
+diff --git a/src/main/cpp/blaze_util_bsd.cc b/src/main/cpp/blaze_util_bsd.cc
+index a2677ca1eb..ca4b052164 100644
+--- a/src/main/cpp/blaze_util_bsd.cc
++++ b/src/main/cpp/blaze_util_bsd.cc
+@@ -17,6 +17,8 @@
+ # define STANDARD_JAVABASE "/usr/local/openjdk8"
+ #elif defined(__OpenBSD__)
+ # define STANDARD_JAVABASE "/usr/local/jdk-17"
++#elif defined(__QNX__)
++# define STANDARD_JAVABASE "/usr/lib/jvm/java-25-openjdk"
+ #else
+ # error This BSD is not supported
+ #endif
+@@ -39,6 +41,9 @@
+ #include <sys/sysctl.h>
+ #include <sys/types.h>
+ #include <sys/un.h>
++#if defined(__QNX__)
++#include <sys/statvfs.h>
++#endif
+ #include <unistd.h>
+ #if defined(HAVE_PROCSTAT)
+ # include <libprocstat.h>  // must be included after <sys/...> headers
+@@ -74,6 +79,7 @@ string GetOutputRoot() {
+ }
+ 
+ void WarnFilesystemType(const blaze_util::Path &output_base) {
++#if defined(__FreeBSD__) || defined(__OpenBSD__)
+   struct statfs buf = {};
+   if (statfs(output_base.AsNativePath().c_str(), &buf) < 0) {
+     BAZEL_LOG(WARNING) << "couldn't get file system type information for '"
+@@ -87,6 +93,21 @@ void WarnFilesystemType(const blaze_util::Path &output_base) {
+                        << "' is on NFS. This may lead to surprising failures "
+                           "and undetermined behavior.";
+   }
++#elif defined(__QNX__)
++  struct statvfs buf = {};
++  if (statvfs(output_base.AsNativePath().c_str(), &buf) < 0) {
++    BAZEL_LOG(WARNING) << "couldn't get file system type information for '"
++                       << output_base.AsPrintablePath()
++                       << "': " << strerror(errno);
++    return;
++  }
++
++  if (strcmp(buf.f_basetype, "NFSv3") == 0) {
++    BAZEL_LOG(WARNING) << "Output base '" << output_base.AsPrintablePath()
++                       << "' is on NFS. This may lead to surprising failures "
++                          "and undetermined behavior.";
++  }
++#endif
+ }
+ 
+ string GetSelfPath(const char* argv0) {
+@@ -112,7 +133,7 @@ string GetSelfPath(const char* argv0) {
+   }
+   procstat_close(procstat);
+   return string(buffer);
+-#elif defined(__OpenBSD__)
++#elif defined(__OpenBSD__) || defined(__QNX__)
+   // OpenBSD does not provide a way for a running process to find a path to its
+   // own executable, so we try to figure out a path by inspecting argv[0]. In
+   // theory this is inadequate, since the parent process can set argv[0] to
+diff --git a/src/main/java/com/google/devtools/build/lib/analysis/ShellConfiguration.java b/src/main/java/com/google/devtools/build/lib/analysis/ShellConfiguration.java
+index 41a2085b89..df0c416509 100644
+--- a/src/main/java/com/google/devtools/build/lib/analysis/ShellConfiguration.java
++++ b/src/main/java/com/google/devtools/build/lib/analysis/ShellConfiguration.java
+@@ -88,6 +88,11 @@ public class ShellConfiguration extends Fragment {
+               ConstraintValueInfo.create(
+                   OS_CONSTRAINT_SETTING,
+                   Label.parseAbsoluteUnchecked("@platforms//os:openbsd")))
++          .put(
++              OS.QNX,
++              ConstraintValueInfo.create(
++                  OS_CONSTRAINT_SETTING,
++                  Label.parseAbsoluteUnchecked("@platforms//os:qnx")))
+           .put(
+               OS.UNKNOWN,
+               ConstraintValueInfo.create(
+diff --git a/src/main/java/com/google/devtools/build/lib/analysis/config/AutoCpuConverter.java b/src/main/java/com/google/devtools/build/lib/analysis/config/AutoCpuConverter.java
+index 4d5917aaaa..6c52c58f81 100644
+--- a/src/main/java/com/google/devtools/build/lib/analysis/config/AutoCpuConverter.java
++++ b/src/main/java/com/google/devtools/build/lib/analysis/config/AutoCpuConverter.java
+@@ -76,6 +76,15 @@ public class AutoCpuConverter extends Converter.Contextless<String> {
+             default:
+               return "unknown";
+           }
++        case QNX:
++          switch (CPU.getCurrent()) {
++            case X86_64:
++              return "qnx_x64";
++            case AARCH64:
++              return "qnx_arm64";
++            default:
++              return "unknown";
++          }
+         default:
+           return "unknown";
+       }
+@@ -102,6 +111,8 @@ public class AutoCpuConverter extends Converter.Contextless<String> {
+       return Pair.of(CPU.getCurrent(), OS.OPENBSD);
+     } else if (input.startsWith("x64_windows")) {
+       return Pair.of(CPU.getCurrent(), OS.WINDOWS);
++    } else if (input.startsWith("qnx")) {
++      return Pair.of(CPU.getCurrent(), OS.QNX);
+     }
+ 
+     // Handle the Linux cases.
+diff --git a/src/main/java/com/google/devtools/build/lib/bazel/repository/LocalConfigPlatformFunction.java b/src/main/java/com/google/devtools/build/lib/bazel/repository/LocalConfigPlatformFunction.java
+index 04907ba1d2..e595fa9562 100644
+--- a/src/main/java/com/google/devtools/build/lib/bazel/repository/LocalConfigPlatformFunction.java
++++ b/src/main/java/com/google/devtools/build/lib/bazel/repository/LocalConfigPlatformFunction.java
+@@ -141,6 +141,8 @@ public class LocalConfigPlatformFunction extends RepositoryFunction {
+         return "@platforms//os:linux";
+       case WINDOWS:
+         return "@platforms//os:windows";
++      case QNX:
++        return "@platforms//os:qnx";
+       default:
+         // Unknown, so skip it.
+         return null;
+diff --git a/src/main/java/com/google/devtools/build/lib/jni/JniLoader.java b/src/main/java/com/google/devtools/build/lib/jni/JniLoader.java
+index b604d06aca..ce9fbed10c 100644
+--- a/src/main/java/com/google/devtools/build/lib/jni/JniLoader.java
++++ b/src/main/java/com/google/devtools/build/lib/jni/JniLoader.java
+@@ -40,6 +40,7 @@ public final class JniLoader {
+         case LINUX:
+         case FREEBSD:
+         case OPENBSD:
++        case QNX:
+         case UNKNOWN:
+           loadLibrary("main/native/libunix_jni.so");
+           break;
+diff --git a/src/main/java/com/google/devtools/build/lib/runtime/ConfigExpander.java b/src/main/java/com/google/devtools/build/lib/runtime/ConfigExpander.java
+index 92fe5f1356..e64977788a 100644
+--- a/src/main/java/com/google/devtools/build/lib/runtime/ConfigExpander.java
++++ b/src/main/java/com/google/devtools/build/lib/runtime/ConfigExpander.java
+@@ -50,6 +50,8 @@ final class ConfigExpander {
+         return "freebsd";
+       case OPENBSD:
+         return "openbsd";
++      case QNX:
++        return "qnx";
+       default:
+         return OS.getCurrent().getCanonicalName();
+     }
+diff --git a/src/main/java/com/google/devtools/build/lib/util/OS.java b/src/main/java/com/google/devtools/build/lib/util/OS.java
+index cb8c2e3c1d..c1ddae5abb 100644
+--- a/src/main/java/com/google/devtools/build/lib/util/OS.java
++++ b/src/main/java/com/google/devtools/build/lib/util/OS.java
+@@ -23,10 +23,11 @@ public enum OS {
+   FREEBSD("freebsd", "FreeBSD"),
+   OPENBSD("openbsd", "OpenBSD"),
+   LINUX("linux", "Linux"),
++  QNX("qnx", "QNX"),
+   WINDOWS("windows", "Windows"),
+   UNKNOWN("unknown", "");
+ 
+-  private static final EnumSet<OS> POSIX_COMPATIBLE = EnumSet.of(DARWIN, FREEBSD, OPENBSD, LINUX);
++  private static final EnumSet<OS> POSIX_COMPATIBLE = EnumSet.of(DARWIN, FREEBSD, OPENBSD, LINUX, QNX);
+ 
+   private final String canonicalName;
+   private final String detectionName;
+diff --git a/src/main/native/BUILD b/src/main/native/BUILD
+index 13f0bfca68..8726b3c7fa 100644
+--- a/src/main/native/BUILD
++++ b/src/main/native/BUILD
+@@ -5,6 +5,7 @@ genrule(
+         "//src/conditions:freebsd": ["@bazel_tools//tools/jdk:jni_md_header-freebsd"],
+         "//src/conditions:openbsd": ["@bazel_tools//tools/jdk:jni_md_header-openbsd"],
+         "//src/conditions:windows": ["@bazel_tools//tools/jdk:jni_md_header-windows"],
++        "//src/conditions:qnx": ["@bazel_tools//tools/jdk:jni_md_header-qnx"],
+         "//conditions:default": ["@bazel_tools//tools/jdk:jni_md_header-linux"],
+     }),
+     outs = ["jni_md.h"],
+@@ -39,6 +40,7 @@ filegroup(
+         ],
+         "//src/conditions:freebsd": ["unix_jni_bsd.cc"],
+         "//src/conditions:openbsd": ["unix_jni_bsd.cc"],
++        "//src/conditions:qnx": ["unix_jni_bsd.cc"],
+         "//conditions:default": ["unix_jni_linux.cc"],
+     }),
+ )
+diff --git a/src/main/native/unix_jni.cc b/src/main/native/unix_jni.cc
+index 1af7983b74..f08f2de6d0 100644
+--- a/src/main/native/unix_jni.cc
++++ b/src/main/native/unix_jni.cc
+@@ -27,7 +27,9 @@
+ #include <sys/resource.h>
+ #include <sys/socket.h>
+ #include <sys/stat.h>
++#ifndef __QNX__
+ #include <sys/syscall.h>
++#endif
+ #include <sys/time.h>
+ #include <sys/types.h>
+ #include <unistd.h>
+@@ -685,6 +687,45 @@ static jobject NewDirents(JNIEnv *env,
+ static char GetDirentType(struct dirent *entry,
+                           int dirfd,
+                           bool follow_symlinks) {
++#ifdef __QNX__
++  struct dirent_extra *dex;
++  for(dex = _DEXTRA_FIRST(entry); _DEXTRA_VALID(dex, entry);
++    dex = _DEXTRA_NEXT(dex)) {
++    switch(dex->d_type) {
++      case _DTYPE_STAT:
++      case _DTYPE_LSTAT:
++        struct dirent_extra_stat *dex_stat;
++        dex_stat = (struct dirent_extra_stat *) dex;
++
++        if (S_ISDIR(dex_stat->d_stat.st_mode)) {
++          return 'd';
++        } else if (S_ISLNK(dex_stat->d_stat.st_mode)) {
++          if (!follow_symlinks) {
++            return 's';
++          }
++        } else if (S_ISREG(dex_stat->d_stat.st_mode)) {
++          return 'f';
++        }
++        break;
++      default:
++        break;
++    }
++  }
++  // Fallback to fstat()...
++  struct stat st;
++  if (fstatat(dirfd, entry->d_name, &st, 0) != -1) {
++    if (S_ISDIR(st.st_mode)) {
++      return 'd';
++    } else if (S_ISLNK(st.st_mode)) {
++      if (!follow_symlinks) {
++        return 's';
++      }
++    } else if (S_ISREG(st.st_mode)) {
++      return 'f';
++    }
++  }
++  return '?';
++#else
+   switch (entry->d_type) {
+     case DT_REG:
+       return 'f';
+@@ -706,6 +747,7 @@ static char GetDirentType(struct dirent *entry,
+     default:
+       return '?';
+   }
++#endif
+ }
+ }  // namespace
+ 
+@@ -923,10 +965,18 @@ static DIR* ForceOpendir(JNIEnv* env, const std::vector<std::string>& dir_path,
+     // descriptor, not AT_FDCWD used as the starting point of DeleteTreesBelow
+     // recursion).
+     if (errno == EACCES && dir_fd != AT_FDCWD) {
++#ifdef __QNX__
++      // fchmod() for a directory returns ENOSYS.
++      if (fchmodat(dir_fd, ".", 0700, 0) == -1) {
++        PostDeleteTreesBelowException(env, errno, "fchmodat", dir_path, ".");
++        return nullptr;
++      }
++#else
+       if (fchmod(dir_fd, 0700) == -1) {
+         PostDeleteTreesBelowException(env, errno, "fchmod", dir_path, nullptr);
+         return nullptr;
+       }
++#endif
+     }
+     if (fchmodat(dir_fd, entry, 0700, 0) == -1) {
+       PostDeleteTreesBelowException(env, errno, "fchmodat", dir_path, entry);
+@@ -934,7 +984,7 @@ static DIR* ForceOpendir(JNIEnv* env, const std::vector<std::string>& dir_path,
+     }
+     fd = openat(dir_fd, entry, flags);
+     if (fd == -1) {
+-      PostDeleteTreesBelowException(env, errno, "opendir", dir_path, entry);
++      PostDeleteTreesBelowException(env, errno, "openat", dir_path, entry);
+       return nullptr;
+     }
+   }
+@@ -963,10 +1013,18 @@ static int ForceDelete(JNIEnv* env, const std::vector<std::string>& dir_path,
+                        const bool is_dir) {
+   const int flags = is_dir ? AT_REMOVEDIR : 0;
+   if (unlinkat(dir_fd, entry, flags) == -1) {
++#ifdef __QNX__
++    // fchmod() for a directory returns ENOSYS.
++    if (fchmodat(dir_fd, ".", 0700, 0) == -1) {
++      PostDeleteTreesBelowException(env, errno, "fchmodat", dir_path, ".");
++      return -1;
++    }
++#else
+     if (fchmod(dir_fd, 0700) == -1) {
+       PostDeleteTreesBelowException(env, errno, "fchmod", dir_path, nullptr);
+       return -1;
+     }
++#endif
+     if (unlinkat(dir_fd, entry, flags) == -1) {
+       PostDeleteTreesBelowException(env, errno, "unlinkat", dir_path, entry);
+       return -1;
+@@ -990,6 +1048,37 @@ static int ForceDelete(JNIEnv* env, const std::vector<std::string>& dir_path,
+ // posts an exception.
+ static int IsSubdir(JNIEnv* env, const std::vector<std::string>& dir_path,
+                     const int dir_fd, const struct dirent* de, bool* is_dir) {
++#ifdef __QNX__
++  struct dirent_extra *dex;
++  for(dex = _DEXTRA_FIRST(de); _DEXTRA_VALID(dex, de);
++    dex = _DEXTRA_NEXT(dex)) {
++    switch(dex->d_type) {
++      case _DTYPE_STAT:
++      case _DTYPE_LSTAT:
++        struct dirent_extra_stat *dex_stat;
++        dex_stat = (struct dirent_extra_stat *) dex;
++
++        if (S_ISDIR(dex_stat->d_stat.st_mode)) {
++          *is_dir = true;
++          return 0;
++        }
++        *is_dir = false;
++        return 0;
++        break;
++      default:
++        break;
++    }
++  }
++  // Fallback to fstatat()...
++  struct stat st;
++  if (fstatat(dir_fd, de->d_name, &st, AT_SYMLINK_NOFOLLOW) == -1) {
++    PostDeleteTreesBelowException(env, errno, "fstatat", dir_path,
++                                  de->d_name);
++    return -1;
++  }
++  *is_dir = st.st_mode & S_IFDIR;
++  return 0;
++#else
+   switch (de->d_type) {
+     case DT_DIR:
+       *is_dir = true;
+@@ -1010,6 +1099,7 @@ static int IsSubdir(JNIEnv* env, const std::vector<std::string>& dir_path,
+       *is_dir = false;
+       return 0;
+   }
++#endif
+ }
+ 
+ // Recursively deletes all trees under the given path.
+diff --git a/src/main/native/unix_jni.h b/src/main/native/unix_jni.h
+index 3e231fcf65..df69881040 100644
+--- a/src/main/native/unix_jni.h
++++ b/src/main/native/unix_jni.h
+@@ -25,7 +25,7 @@
+ 
+ namespace blaze_jni {
+ 
+-#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__)
++#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__QNX__)
+ // stat64 is deprecated on OS X/BSD.
+ typedef struct stat portable_stat_struct;
+ #define portable_stat ::stat
+diff --git a/src/main/native/unix_jni_bsd.cc b/src/main/native/unix_jni_bsd.cc
+index 6dd506854d..186efd3adc 100644
+--- a/src/main/native/unix_jni_bsd.cc
++++ b/src/main/native/unix_jni_bsd.cc
+@@ -15,13 +15,14 @@
+ #if defined(__FreeBSD__)
+ # define HAVE_EXTATTR
+ # define HAVE_SYSCTLBYNAME
+-#elif defined(__OpenBSD__)
++#elif defined(__OpenBSD__) || defined(__QNX__)
+ // No sys/extattr.h or sysctlbyname on this platform.
+ #else
+ # error This BSD is not supported
+ #endif
+ 
+ #include <assert.h>
++#include <dirent.h>
+ #include <errno.h>
+ #include <fcntl.h>
+ #include <stdlib.h>
+@@ -69,6 +70,16 @@ int StatSeconds(const portable_stat_struct &statbuf, StatTimes t) {
+ }
+ 
+ int StatNanoSeconds(const portable_stat_struct &statbuf, StatTimes t) {
++#ifdef __QNX__
++  switch (t) {
++    case STAT_ATIME:
++      return statbuf.st_atim.tv_nsec;
++    case STAT_CTIME:
++      return statbuf.st_ctim.tv_nsec;
++    case STAT_MTIME:
++      return statbuf.st_mtim.tv_nsec;
++  }
++#else
+   switch (t) {
+     case STAT_ATIME:
+       return statbuf.st_atimespec.tv_nsec;
+@@ -77,6 +88,7 @@ int StatNanoSeconds(const portable_stat_struct &statbuf, StatTimes t) {
+     case STAT_MTIME:
+       return statbuf.st_mtimespec.tv_nsec;
+   }
++#endif
+ }
+ 
+ ssize_t portable_getxattr(const char *path, const char *name, void *value,
+diff --git a/src/main/tools/BUILD b/src/main/tools/BUILD
+index 8be0bb1733..061d8178a4 100644
+--- a/src/main/tools/BUILD
++++ b/src/main/tools/BUILD
+@@ -40,6 +40,7 @@ cc_binary(
+     }),
+     linkopts = select({
+         "//src/conditions:darwin": ["-lm"],
++        "//src/conditions:qnx": ["-lm"],
+         "//src/conditions:openbsd": [],
+         "//src/conditions:windows": [],
+         "//conditions:default": [
+@@ -74,6 +75,7 @@ cc_binary(
+         "//src/conditions:darwin": ["dummy-sandbox.c"],
+         "//src/conditions:freebsd": ["dummy-sandbox.c"],
+         "//src/conditions:openbsd": ["dummy-sandbox.c"],
++        "//src/conditions:qnx": ["dummy-sandbox.c"],
+         "//src/conditions:windows": ["dummy-sandbox.c"],
+         "//conditions:default": [
+             "linux-sandbox.cc",
+@@ -88,6 +90,7 @@ cc_binary(
+         "//src/conditions:darwin": [],
+         "//src/conditions:freebsd": [],
+         "//src/conditions:openbsd": [],
++        "//src/conditions:qnx": [],
+         "//src/conditions:windows": [],
+         "//conditions:default": [
+             "-lm",
+@@ -98,6 +101,7 @@ cc_binary(
+         "//src/conditions:darwin": [],
+         "//src/conditions:freebsd": [],
+         "//src/conditions:openbsd": [],
++        "//src/conditions:qnx": [],
+         "//src/conditions:windows": [],
+         "//conditions:default": [
+             ":logging",
+diff --git a/src/main/tools/process-tools-linux.cc b/src/main/tools/process-tools-linux.cc
+index 33ff97f826..7f1a25d9b3 100644
+--- a/src/main/tools/process-tools-linux.cc
++++ b/src/main/tools/process-tools-linux.cc
+@@ -33,6 +33,7 @@ int TerminateAndWaitForAll(pid_t pid) {
+     return 0;
+   }
+ 
++#ifndef __QNX__
+   // Cope with children that may have escaped the process group or that
+   // did not exit quickly enough.
+   FILE *f = fopen("/proc/thread-self/children", "r");
+@@ -50,6 +51,7 @@ int TerminateAndWaitForAll(pid_t pid) {
+     usleep(100);
+   }
+   fclose(f);
++#endif
+ 
+   return 0;
+ }
+diff --git a/src/merge_zip_files.sh b/src/merge_zip_files.sh
+index 685019689a..7d9e14a257 100755
+--- a/src/merge_zip_files.sh
++++ b/src/merge_zip_files.sh
+@@ -56,7 +56,7 @@ tmp_zip="$tmp_dir/archive.zip"
+ if [[ "$directory_prefix" == "-" ]]; then
+   for curr_zip in "$@"
+   do
+-    unzip -q -o "$curr_zip" -d "$tmp_dir"
++    unzip -q -o -d "$tmp_dir" "$curr_zip"
+   done
+ 
+   cd "$tmp_dir"
+@@ -65,7 +65,7 @@ else
+   mkdir -p "$tmp_dir/$directory_prefix"
+   for curr_zip in "$@"
+   do
+-    unzip -q -o "$curr_zip" -d "$tmp_dir/$directory_prefix"
++    unzip -q -o -d "$tmp_dir/$directory_prefix" "$curr_zip"
+   done
+ 
+   cd "$tmp_dir"
+diff --git a/src/tools/singlejar/diag.h b/src/tools/singlejar/diag.h
+index 9120911678..7f6e08285a 100644
+--- a/src/tools/singlejar/diag.h
++++ b/src/tools/singlejar/diag.h
+@@ -20,7 +20,7 @@
+  * for portability.
+  */
+ #if defined(__APPLE__) || defined(__linux__) || defined(__FreeBSD__) || \
+-    defined(__OpenBSD__)
++    defined(__OpenBSD__) || defined(__QNX__)
+ 
+ #include <err.h>
+ #define diag_err(...) err(__VA_ARGS__)
+diff --git a/src/tools/singlejar/mapped_file_posix.inc b/src/tools/singlejar/mapped_file_posix.inc
+index d59de00964..3cd02c80df 100644
+--- a/src/tools/singlejar/mapped_file_posix.inc
++++ b/src/tools/singlejar/mapped_file_posix.inc
+@@ -26,7 +26,7 @@
+ 
+ // The implementation is specific to 64-bit Linux / OS X / BSD.
+ #if !((defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) || \
+-       defined(__OpenBSD__)) &&                                            \
++       defined(__OpenBSD__) || defined(__QNX__)) &&                                            \
+       __SIZEOF_POINTER__ == 8)
+ #error This code for 64 bit Unix.
+ #endif
+diff --git a/src/tools/singlejar/zip_headers.h b/src/tools/singlejar/zip_headers.h
+index ca0e23c376..8eb8f661d1 100644
+--- a/src/tools/singlejar/zip_headers.h
++++ b/src/tools/singlejar/zip_headers.h
+@@ -37,6 +37,14 @@
+ #define htole16(x) (x)
+ #define htole32(x) (x)
+ #define htole64(x) (x)
++#elif defined(__QNX__)
++#include <gulliver.h>
++#define le16toh(x) ENDIAN_LE16(x)
++#define le32toh(x) ENDIAN_LE32(x)
++#define le64toh(x) ENDIAN_LE64(x)
++#define htole16(x) ENDIAN_LE16(x)
++#define htole32(x) ENDIAN_LE32(x)
++#define htole64(x) ENDIAN_LE64(x)
+ #else
+ #error "This platform is not supported."
+ #endif
+diff --git a/third_party/ijar/mapped_file_unix.cc b/third_party/ijar/mapped_file_unix.cc
+index 65179e3290..cf6e1c3f39 100644
+--- a/third_party/ijar/mapped_file_unix.cc
++++ b/third_party/ijar/mapped_file_unix.cc
+@@ -109,11 +109,15 @@ MappedOutputFile::MappedOutputFile(const char* name, size_t estimated_size)
+     return;
+   }
+ 
++#ifndef __QNX__
+   // Ensure that any buffer overflow in JarStripper will result in
+   // SIGSEGV or SIGBUS by over-allocating beyond the end of the file.
+   size_t mmap_length =
+       std::min(static_cast<size_t>(estimated_size + sysconf(_SC_PAGESIZE)),
+                std::numeric_limits<size_t>::max());
++#else
++  size_t mmap_length = estimated_size;
++#endif
+   void* mapped =
+       mmap(NULL, mmap_length, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+   if (mapped == MAP_FAILED) {
+diff --git a/third_party/zstd-jni/zstd-jni.BUILD b/third_party/zstd-jni/zstd-jni.BUILD
+index 5a378368e1..e564644f51 100644
+--- a/third_party/zstd-jni/zstd-jni.BUILD
++++ b/third_party/zstd-jni/zstd-jni.BUILD
+@@ -5,6 +5,7 @@ genrule(
+         "@bazel_tools//src/conditions:freebsd": ["@bazel_tools//tools/jdk:jni_md_header-freebsd"],
+         "@bazel_tools//src/conditions:openbsd": ["@bazel_tools//tools/jdk:jni_md_header-openbsd"],
+         "@bazel_tools//src/conditions:windows": ["@bazel_tools//tools/jdk:jni_md_header-windows"],
++        "@bazel_tools//src/conditions:qnx": ["@bazel_tools//tools/jdk:jni_md_header-qnx"],
+         "//conditions:default": ["@bazel_tools//tools/jdk:jni_md_header-linux"],
+     }),
+     outs = ["jni_md.h"],
+diff --git a/tools/build_rules/java_rules_skylark.bzl b/tools/build_rules/java_rules_skylark.bzl
+index 7e83dde903..85bc7d6f78 100644
+--- a/tools/build_rules/java_rules_skylark.bzl
++++ b/tools/build_rules/java_rules_skylark.bzl
+@@ -63,11 +63,11 @@ def _java_library_impl(ctx):
+         files += " @" + javalist_output
+         for file in ctx.files.srcjars:
+             cmd += "%s tf %s | grep '\\.java$' | sed 's|^|%s/|' >> %s\n" % (jar_path, file.path, java_output, javalist_output)
+-            cmd += "unzip %s -d %s >/dev/null\n" % (file.path, java_output)
++            cmd += "unzip -d %s %s >/dev/null\n" % (java_output, file.path)
+ 
+     if ctx.files.srcs or ctx.files.srcjars:
+         cmd += "%s/bin/javac" % java_runtime.java_home
+-        cmd += " " + " ".join(javac_options)
++        cmd += " " + " ".join(javac_options) + "-proc:full"
+         if compile_time_jars:
+             cmd += " -classpath '" + cmd_helper.join_paths(ctx.configuration.host_path_separator, compile_time_jars) + "'"
+         cmd += " -d " + build_output + files + "\n"
+@@ -121,7 +121,7 @@ def _java_binary_impl(ctx):
+     # Cleaning build output directory
+     cmd = "set -e;rm -rf " + build_output + ";mkdir " + build_output + "\n"
+     for jar in library_result[1].runtime_jars.to_list():
+-        cmd += "unzip -qn " + jar.path + " -d " + build_output + "\n"
++        cmd += "unzip -qn -d " + build_output + " " + jar.path + "\n"
+     cmd += (jar_path + " cmf " + manifest.path + " " +
+             deploy_jar.path + " -C " + build_output + " .\n" +
+             "touch " + build_output + "\n")
+diff --git a/tools/cpp/lib_cc_configure.bzl b/tools/cpp/lib_cc_configure.bzl
+index cedb5de173..2c2338919b 100644
+--- a/tools/cpp/lib_cc_configure.bzl
++++ b/tools/cpp/lib_cc_configure.bzl
+@@ -199,6 +199,11 @@ def get_cpu_value(repository_ctx):
+             return "arm64_windows"
+         else:
+             return "x64_windows"
++    if os_name.find("qnx") != -1:
++        if arch == "aarch64":
++            return "qnx_arm64"
++        else:
++            return "qnx_x64"
+ 
+     if arch in ["power", "ppc64le", "ppc", "ppc64"]:
+         return "ppc"
+diff --git a/tools/cpp/unix_cc_configure.bzl b/tools/cpp/unix_cc_configure.bzl
+index 1509000a0e..faf4d059fe 100644
+--- a/tools/cpp/unix_cc_configure.bzl
++++ b/tools/cpp/unix_cc_configure.bzl
+@@ -344,6 +344,7 @@ def configure_unix_toolchain(repository_ctx, cpu_value, overriden_tools):
+ 
+     repository_ctx.file("tools/cpp/empty.cc", "int main() {}")
+     darwin = cpu_value.startswith("darwin")
++    qnx = cpu_value.startswith("qnx")
+     bsd = cpu_value == "freebsd" or cpu_value == "openbsd"
+ 
+     cc = find_cc(repository_ctx, overriden_tools)
+@@ -413,7 +414,7 @@ def configure_unix_toolchain(repository_ctx, cpu_value, overriden_tools):
+         False,
+     ), ":")
+ 
+-    use_libcpp = darwin or bsd
++    use_libcpp = darwin or bsd or qnx
+     bazel_linklibs = "-lc++:-lm" if use_libcpp else "-lstdc++:-lm"
+     bazel_linkopts = ""
+ 
+@@ -474,7 +475,8 @@ def configure_unix_toolchain(repository_ctx, cpu_value, overriden_tools):
+         ),
+     )
+ 
+-    if is_clang:
++    generate_modulemap = is_clang and not qnx
++    if generate_modulemap:
+         repository_ctx.file("module.modulemap", _generate_system_module_map(
+             repository_ctx,
+             builtin_include_directories,
+@@ -488,7 +490,7 @@ def configure_unix_toolchain(repository_ctx, cpu_value, overriden_tools):
+         {
+             "%{cc_toolchain_identifier}": cc_toolchain_identifier,
+             "%{name}": cpu_value,
+-            "%{modulemap}": ("\":module.modulemap\"" if is_clang else "None"),
++            "%{modulemap}": ("\":module.modulemap\"" if generate_modulemap else "None"),
+             "%{cc_compiler_deps}": get_starlark_list([":builtin_include_directory_paths"] + (
+                 [":cc_wrapper"] if darwin else []
+             )),
+@@ -603,10 +605,6 @@ def configure_unix_toolchain(repository_ctx, cpu_value, overriden_tools):
+                     # Profile first and / or use FDO if you need better performance than this.
+                     "-O2",
+ 
+-                    # Security hardening on by default.
+-                    # Conservative choice; -D_FORTIFY_SOURCE=2 may be unsafe in some cases.
+-                    "-D_FORTIFY_SOURCE=1",
+-
+                     # Disable assertions
+                     "-DNDEBUG",
+ 
+@@ -614,6 +612,15 @@ def configure_unix_toolchain(repository_ctx, cpu_value, overriden_tools):
+                     # size in some cases?).
+                     "-ffunction-sections",
+                     "-fdata-sections",
++                ] + [
++                    "-D_QNX_SOURCE",
++                    "-Qunused-arguments",
++                    "-Wno-error",
++                    "-w",
++                ] if qnx else [
++                    # Security hardening on by default.
++                    # Conservative choice; -D_FORTIFY_SOURCE=2 may be unsafe in some cases.
++                    "-D_FORTIFY_SOURCE=1",
+                 ],
+             ),
+             "%{opt_link_flags}": get_starlark_list(
+diff --git a/tools/cpp/unix_cc_toolchain_config.bzl b/tools/cpp/unix_cc_toolchain_config.bzl
+index a7967b17a6..6d1866bd95 100644
+--- a/tools/cpp/unix_cc_toolchain_config.bzl
++++ b/tools/cpp/unix_cc_toolchain_config.bzl
+@@ -1358,7 +1358,7 @@ def _impl(ctx):
+             unfiltered_compile_flags_feature,
+             treat_warnings_as_errors_feature,
+             archive_param_file_feature,
+-        ] + layering_check_features(ctx.attr.compiler)
++        ]
+     else:
+         # macOS artifact name patterns differ from the defaults only for dynamic
+         # libraries.
+diff --git a/tools/jdk/BUILD.tools b/tools/jdk/BUILD.tools
+index 0c37719bbc..267bcaf0f3 100644
+--- a/tools/jdk/BUILD.tools
++++ b/tools/jdk/BUILD.tools
+@@ -110,6 +110,11 @@ java_runtime_files(
+     srcs = ["include/openbsd/jni_md.h"],
+ )
+ 
++java_runtime_files(
++    name = "jni_md_header-qnx",
++    srcs = ["include/qnx/jni_md.h"],
++)
++
+ # The Java native interface. Depend on this package if you #include <jni.h>.
+ #
+ # See test_jni in third_party/bazel/src/test/shell/bazel/bazel_java_test.sh for
+@@ -128,6 +133,7 @@ cc_library(
+         "//src/conditions:darwin": [":jni_md_header-darwin"],
+         "//src/conditions:freebsd": [":jni_md_header-freebsd"],
+         "//src/conditions:openbsd": [":jni_md_header-openbsd"],
++        "//src/conditions:qnx": [":jni_md_header-qnx"],
+         "//src/conditions:windows": [":jni_md_header-windows"],
+         "//conditions:default": [],
+     }),
+@@ -141,6 +147,7 @@ cc_library(
+         "//src/conditions:darwin": ["include/darwin"],
+         "//src/conditions:freebsd": ["include/freebsd"],
+         "//src/conditions:openbsd": ["include/openbsd"],
++        "//src/conditions:qnx": ["include/qnx"],
+         "//src/conditions:windows": ["include/win32"],
+         "//conditions:default": [],
+     }),
+diff --git a/tools/jdk/jdk_build_file.bzl b/tools/jdk/jdk_build_file.bzl
+index 419f3631fe..43ba30dbac 100644
+--- a/tools/jdk/jdk_build_file.bzl
++++ b/tools/jdk/jdk_build_file.bzl
+@@ -60,6 +60,12 @@ filegroup(
+     deprecation = DEPRECATION_MESSAGE,
+ )
+ 
++filegroup(
++    name = "jni_md_header-qnx",
++    srcs = ["include/qnx/jni_md.h"],
++    deprecation = DEPRECATION_MESSAGE,
++)
++
+ filegroup(
+     name = "java",
+     srcs = select({

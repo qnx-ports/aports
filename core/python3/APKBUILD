@@ -2,7 +2,7 @@
 pkgname=python3
 pkgver=3.14.0
 _basever=${pkgver%.*}
-pkgrel=1
+pkgrel=4
 pkgdesc="High-level scripting language"
 url="https://www.python.org/"
 arch="all"
@@ -14,6 +14,7 @@ provides="python"
 subpackages="$pkgname-doc $pkgname-dev $pkgname-tests::noarch"
 source="https://www.python.org/ftp/python/$pkgver/Python-$pkgver.tar.xz
 fix-qnx-python.patch
+fix-locale.patch
 EXTERNALLY-MANAGED
 "
 builddir="$srcdir/Python-$pkgver"
@@ -35,13 +36,15 @@ build() {
         --enable-loadable-sqlite-extensions \
         --without-ensurepip \
         --with-system-expat \
+        --enable-shared \
         CFLAGS="-D_QNX_SOURCE -O2 -fPIC -DTHREAD_STACK_SIZE=8388608" \
         LDFLAGS="-lsocket -lm -lgcc_s -lregex"
+
     make
 }
 
 package() {
-    make DESTDIR="$pkgdir/" install
+    make DESTDIR="$pkgdir" install 
     msg "Python basever $_basever"
     ln -s python3 "$pkgdir"/usr/bin/python
     install -Dm644 "$srcdir"/EXTERNALLY-MANAGED \
@@ -56,6 +59,7 @@ tests() {
 
 sha512sums="
 46e9e205c3a084cba68bf7f267ab2fd0862a05430165e0eb713f2d6b3a1a4452f72f563de5de55caea824be9df56f66dd568f4814941667a9bb0954229772c53  Python-3.14.0.tar.xz
-723cce2e7392db766ffb486eee0b90fbdd953eb51f7bd9986131935bb521177c0e543029a28832bb32cbf61f5442e7b184354a4958db46b7f4ddadbfcb695f97  fix-qnx-python.patch
+b99f6506f2bbfc4125901d4f6d54fae50dab7d6b7020720dbc757dbd3aec9f2a74b8be5ed1d21df0fe0ebfd43b1e8f221e15b23b67175a52923151b5618df843  fix-qnx-python.patch
+a1d6c60d3e0e960d80b7b5406d53196ff05adb07122255dad728c6685ff15d579b845eb467492f5cdecdeeb0c6354f441cfcd3f5f4dc1f462a70cf1f4deb63fb  fix-locale.patch
 48c2b2c42c8cd8f1071f75149556648a6bdf756a9946a6760de0eadeee9ae53c08b5a2dc9d131a8f7b734128386fd4ae7d71cdbdb53dadbd00443bfafd33639b  EXTERNALLY-MANAGED
 "

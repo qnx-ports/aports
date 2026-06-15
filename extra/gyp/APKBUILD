@@ -1,0 +1,34 @@
+# Alpine-Contributor: Alex Yam <alex@alexyam.com>
+# Alpine-Contributor: Leo <thinkabit.ukim@gmail.com>
+# Maintainer: Aaron Bassett <abassett@qnx.com>
+pkgname=gyp
+pkgver=0.21.1
+pkgrel=0
+pkgdesc="Generate Your Projects Meta-Build system"
+options="!check" # Tests currently fail
+url="https://gyp.gsrc.io"
+arch="noarch"
+license="BSD-3-Clause"
+depends="python3 ninja python3-packaging"
+makedepends="python3-gpep517 python3-setuptools python3-wheel"
+source="https://github.com/qnx-ports/gyp-next/archive/refs/tags/qnx-v$pkgver/gyp-next-qnx-$pkgver.tar.gz
+	fips.patch
+	"
+builddir="$srcdir/gyp-next-qnx-v$pkgver"
+
+build() {
+	gpep517 build-wheel \
+		--wheel-dir .dist \
+		--output-fd 3 3>&1 >&2
+}
+
+package() {
+	python3 -m installer -d "$pkgdir" \
+		.dist/*.whl
+}
+
+
+sha512sums="
+5a7b31c118724cb32253a6f65ae4a71d7883f779d7d86087be3ff14124262fd850bc9f10a38e1a074a83d15c5d1910951833e5f02c181b863bf0a429cf2ba811  gyp-next-qnx-0.21.1.tar.gz
+9ff0fe217163665ce2bb5474fdd2e7cbf43ee8df4489aadff806e1d938a1fba83e5cccc468f5e67221bb14e3100016aad030ab3081e7aa07fda43da14a8fadd7  fips.patch
+"

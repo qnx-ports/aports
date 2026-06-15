@@ -1,0 +1,21 @@
+diff --color -U 6 -r before/protos.h after/protos.h
+--- before/protos.h	2026-03-12 11:45:54.916685110 -0400
++++ after/protos.h	2026-03-12 11:53:51.784734412 -0400
+@@ -13,12 +13,17 @@
+ #include <byteswap.h>
+ #elif defined(HAVE_SYS_BYTEORDER_H)
+ #include <sys/byteorder.h>
+ #define bswap_16 BSWAP_16
+ #define bswap_32 BSWAP_32
+ #define bswap_64 BSWAP_64
++#elif __QNX__
++#include <gulliver.h>
++#define bswap_16(x) ENDIAN_RET16(x)
++#define bswap_32(x) ENDIAN_RET32(x)
++#define bswap_64(x) ENDIAN_RET64(x)
+ #endif
+ #if __QNX__
+ #include <sys/elf.h>
+ #define DT_RPATH DT_RPATH
+ #define DT_RUNPATH DT_RUNPATH
+ #else

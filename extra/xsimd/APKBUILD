@@ -1,0 +1,38 @@
+# Alpine-Contributor: Duncan Bellamy <dunk@denkimushi.com>
+# Alpine-Maintainer: Duncan Bellamy <dunk@denkimushi.com>
+# Maintainer: Felix Lionardo <flionardo@qnx.com>
+pkgname=xsimd
+pkgver=14.0.0
+pkgrel=0
+pkgdesc="C++ wrappers for SIMD intrinsics and parallelized, optimized mathematical functions (SSE, AVX, NEON, AVX512)"
+url="https://github.com/xtensor-stack/xsimd"
+# only supports simd on these
+arch="all"
+license="BSD-3-Clause"
+makedepends="cmake gtest-dev ninja libc++-dev"
+checkdepends="doctest-dev"
+subpackages="$pkgname-dev"
+source="$pkgname-$pkgver.tar.gz::https://github.com/xtensor-stack/xsimd/archive/refs/tags/$pkgver.tar.gz"
+build() {
+	cmake -B build -G Ninja \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DCMAKE_INSTALL_LIBDIR=lib \
+		-DBUILD_SHARED_LIBS=True \
+		-DCMAKE_BUILD_TYPE=MinSizeRel \
+		-DBUILD_TESTS="$(want_check && echo ON || echo OFF)"
+	cmake --build build
+}
+
+check() {
+	cd build
+	ctest || true
+}
+
+package() {
+	DESTDIR="$pkgdir" cmake --install build
+}
+
+
+sha512sums="
+f1d9bc50482a52a7b1891637c4e054eeafed0503b938ef07050fea8354e215b9483bafb17485b22fca8d715ddd7c79f03af352116487558d610d4e03d7dbcf4e  xsimd-14.0.0.tar.gz
+"

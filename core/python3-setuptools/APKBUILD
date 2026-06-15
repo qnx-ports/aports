@@ -2,14 +2,15 @@
 # Alpine-Maintainer: Achill Gilgenast <achill@achill.org>
 pkgname=python3-setuptools
 pkgver=80.8.0
-pkgrel=1
+pkgrel=2
 pkgdesc="Collection of enhancements to the Python3 distutils"
 options="!check" # Tests require packages out of main/
 url="https://pypi.org/project/setuptools"
 arch="noarch"
 license="MIT"
 depends="python3 python3-packaging"
-source="$pkgname-$pkgver.tar.gz::https://github.com/pypa/setuptools/archive/refs/tags/v$pkgver.tar.gz"
+source="$pkgname-$pkgver.tar.gz::https://github.com/pypa/setuptools/archive/refs/tags/v$pkgver.tar.gz
+    comment-lorem_ipsum.patch"
 builddir="$srcdir"/setuptools-$pkgver
 
 build() {
@@ -29,4 +30,5 @@ package() {
 }
 sha512sums="
 8aea57f04a14617048553287fe782ec70e5c332f9ec01a21134ba6eb5b0ee052ef97f106f4e192980d3d051bf4bd517f358083bce3ec8b9b53d1169fa4bb708a  python3-setuptools-80.8.0.tar.gz
+c52e1982cc2aa9429ff3c288601421c2a046d77e252f0ea7332d78a05598ad0507017386cd9afd7c64b8783d6eb68f837102147e839c0f98b94c2d7c2b153c98  comment-lorem_ipsum.patch
 "

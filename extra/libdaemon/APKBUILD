@@ -1,0 +1,41 @@
+# Alpine-Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+# Maintainer: Aaron Bassett <abassett@qnx.com>
+pkgname=libdaemon
+pkgver=0.14
+pkgrel=0
+_gitrel=0
+pkgdesc="A lightweight C library which eases the writing of UNIX daemons"
+url="https://0pointer.de/lennart/projects/libdaemon/"
+arch="all"
+license="MIT"
+options="!check"  # No test suite.
+depends=""
+makedepends="qnx-io-sock-dev"
+subpackages="$pkgname-dev $pkgname-doc"
+source="https://github.com/qnx-ports/libdaemon/archive/refs/tags/qnx-$pkgver-r$_gitrel.tar.gz
+	"
+builddir="$srcdir/libdaemon-qnx-$pkgver-r$_gitrel"
+prepare() {
+	update_config_sub
+	default_prepare
+}
+
+build() {
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--localstatedir=/var \
+		--disable-lynx
+	make
+}
+
+package() {
+	make DESTDIR="$pkgdir" install
+	install -Dm644 LICENSE "$pkgdir"/usr/share/licenses/$pkgname/LICENSE
+}
+
+
+sha512sums="
+9ebe88e320ef869b9095c6ecd630bcbff23376e05bec67eaca00b5145eb145aa6de48f8258995bcbae5fd262e1174041db219f9a09e333c18705dac230b54e8a  qnx-0.14-r0.tar.gz
+"

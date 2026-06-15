@@ -1,0 +1,28 @@
+# Maintainer: jscaffidi <jscaffidi@qnx.com>
+pkgname=python3-flake8-class-newline
+pkgver=1.6.0
+pkgrel=0
+pkgdesc="A flake8 extension to check if a new line is present after a class definition."
+options="!check" # No testsuite
+url="https://github.com/alexandervaneck/flake8-class-newline"
+arch="noarch"
+license="MIT"
+depends="python3-flake8"
+makedepends="python3-hatchling python3-setuptools python3-gpep517"
+source="flake8-class-newline-$pkgver.tar.gz::https://github.com/alexandervaneck/flake8-class-newline/archive/refs/tags/$pkgver.tar.gz"
+builddir="$srcdir"/flake8-class-newline-$pkgver
+
+build() {
+	gpep517 build-wheel \
+		--wheel-dir .dist \
+		--output-fd 3 3>&1 >&2
+}
+
+package() {
+	gpep517 install-wheel --destdir "$pkgdir" \
+		.dist/*.whl
+}
+
+sha512sums="
+83ea8fee354665cac61352a3356ffbe883577eb0adc9560477cad3daf021a547372cc3488a64e1bb2321265aaaa636385539edd57c07eafc3fcacc09e81801b2  flake8-class-newline-1.6.0.tar.gz
+"

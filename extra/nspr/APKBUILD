@@ -1,0 +1,61 @@
+# Apline-Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+# Maintainer: Aaron Bassett <abassett@qnx.com>
+pkgname=nspr
+pkgver=4.38.2
+pkgrel=0
+_gitrel=1
+pkgdesc="Netscape Portable Runtime"
+url="https://www.mozilla.org/projects/nspr/"
+arch="all"
+license="MPL-2.0"
+depends="qnx-io-sock"
+depends_dev="$pkgname=$pkgver-r$pkgrel"
+makedepends="autoconf automake qnx-io-sock-dev"
+subpackages="$pkgname-dev"
+source="https://github.com/qnx-ports/nspr/archive/refs/tags/qnx-v$pkgver-r$_gitrel.tar.gz
+	"
+options="!check"
+_nspr_dir="$pkgname-qnx-v$pkgver-r$_gitrel"
+prepare() {
+	mkdir "$srcdir/$pkgname-$pkgver"
+	mv "$_nspr_dir" "$builddir"/nspr
+	mkdir "$builddir"/build "$builddir"/inst
+	default_prepare
+	cp "$sharedir"/config.sub "$builddir/nspr/build/autoconf/config.sub"
+}
+
+build() {
+	cd "$builddir"/build
+	CFLAGS="$CFLAGS -D_PR_POLL_AVAILABLE -D_PR_HAVE_OFF64_T -D_PR_INET6 -D_PR_HAVE_INET_NTOP -D_PR_HAVE_GETHOSTBYNAME2 -D_PR_HAVE_GETADDRINFO -D_PR_INET6_PROBE -DHAVE_SOCKLEN_T -Wincompatible-function-pointer-types" \
+	../nspr/configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--disable-debug \
+		--enable-optimize \
+		--enable-ipv6 \
+		--enable-64bit \
+		$conf
+	make CC="${CC:-gcc}" CXX="${CXX:-g++}"
+}
+
+package() {
+	cd "$builddir"/build
+	make DESTDIR="$pkgdir" install
+
+	cd "$pkgdir"/usr/lib
+	rm -f -- *.a
+
+	cd "$builddir"/build/config
+	install -Dm755 nspr-config "$pkgdir"/usr/bin/nspr-config
+	install -Dm644 nspr.pc "$pkgdir"/usr/lib/pkgconfig/nspr.pc
+	rm -rf "$pkgdir"/usr/bin/prerr.properties \
+		"$pkgdir"/usr/bin/compile-et.pl \
+		"$pkgdir"/usr/share/aclocal/nspr.m4 \
+		"$pkgdir"/usr/include/nspr/md
+}
+
+
+sha512sums="
+e72b9699a9810ad26a8b46a4d15c25badfbd4ba14dbbc4bd9323fd54ce9499c268eeb1e0dedf6591b2955f7f1669a6f774750fa58033f5c9341ac82a9be6dd80  qnx-v4.38.2-r1.tar.gz
+"

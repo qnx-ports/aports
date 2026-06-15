@@ -33,9 +33,10 @@ build() {
     if [[ "$CARCH" == "aarch64" ]]; then
         _arch_configure="--enable-fix-cortex-a53-843419 --enable-fix-cortex-a53-835769"
     fi
-
-    CFLAGS="${CFLAGS} -O2 -D__QNXTARGET__ -Qunused-arguments" \
-    CXXFLAGS="${CXXFLAGS} -O2 -D__QNXTARGET__ -Qunused-arguments" \
+    # For some reason on arm the -fPIC is not passed to libtool with --with-pic so we just
+    # force it here in CFLAGS/CXXFLAGS
+    CFLAGS="${CFLAGS} -fPIC -O2 -D__QNXTARGET__ -Qunused-arguments" \
+    CXXFLAGS="${CXXFLAGS}-fPIC  -O2 -D__QNXTARGET__ -Qunused-arguments" \
     ./configure \
         --prefix=/usr \
         --mandir=/usr/share/man \

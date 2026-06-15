@@ -1,0 +1,48 @@
+# Alpine-Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+# Maintainer: Aaron Bassett <abassett@qnx.com>
+pkgname=libxcb
+pkgver=1.17.0
+pkgrel=0
+pkgdesc="X11 client-side library"
+url="https://xcb.freedesktop.org/"
+arch="all"
+license="MIT"
+subpackages="$pkgname-static $pkgname-dev $pkgname-dbg $pkgname-doc"
+depends_dev="libxau-dev xcb-proto libxdmcp-dev"
+checkdepends="check-dev"
+options="!check" # upstream requires an old check version (0.9.4)
+depends="qnx-io-sock libxau libxdmcp"
+makedepends="$depends_dev libxdmcp-dev libxslt python3 qnx-io-sock-dev autoconf automake libtool util-macros"
+source="https://github.com/qnx-ports/libxcb/archive/refs/tags/qnx-libxcb-$pkgver.tar.gz
+"
+builddir="$srcdir/$pkgname-qnx-$pkgname-$pkgver"
+
+prepare() {
+	default_prepare
+	autoreconf -fiv
+}
+
+build() {
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--enable-xkb \
+		--enable-xinput \
+		--disable-xprint
+	make
+}
+
+package() {
+	cd "$builddir"
+	make DESTDIR="$pkgdir" install
+}
+
+check() {
+	make check
+}
+
+
+sha512sums="
+c2a24ad3cbb15bb873e75a522cf0a4b3f9138cf27fdb1960277aab9a39e4adf3e01735234dd91bb823a340287235732d439184b448ccec44bdab4ae2f4ca116f  qnx-libxcb-1.17.0.tar.gz
+"

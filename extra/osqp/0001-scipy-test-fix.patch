@@ -1,0 +1,112 @@
+From 5f82a42eed52891954fd8812539fa141735d32a1 Mon Sep 17 00:00:00 2001
+From: felixlionardo <flionardo@blackberry.com>
+Date: Thu, 21 May 2026 10:55:50 -0400
+Subject: [PATCH] scipy-test-fix
+
+---
+ scipy-test-fix.patch                          | 28 +++++++++++++++++++
+ test.patch                                    | 28 +++++++++++++++++++
+ .../primal_infeasibility/generate_problem.py  |  9 +++---
+ 3 files changed, 60 insertions(+), 5 deletions(-)
+ create mode 100644 scipy-test-fix.patch
+ create mode 100644 test.patch
+
+diff --git a/scipy-test-fix.patch b/scipy-test-fix.patch
+new file mode 100644
+index 00000000..fa9f660c
+--- /dev/null
++++ b/scipy-test-fix.patch
+@@ -0,0 +1,28 @@
++diff --git a/tests/primal_infeasibility/generate_problem.py b/tests/primal_infeasibility/generate_problem.py
++index 42ca3bdd..f726cdea 100644
++--- a/tests/primal_infeasibility/generate_problem.py
+++++ b/tests/primal_infeasibility/generate_problem.py
++@@ -1,8 +1,7 @@
++ import numpy as np
++ from scipy import sparse
++-import scipy as sp
++ import utils.codegen_utils as cu
++-from numpy.random import Generator, PCG64
+++from numpy.random import Generator, PCG64, randn
++ 
++ # Set random seed for reproducibility
++ rg = Generator(PCG64(2))
++@@ -14,10 +13,10 @@ m = 150
++ Pt = sparse.random(n, n, random_state=rg)
++ P = Pt.T.dot(Pt) + sparse.eye(n)
++ P = sparse.triu(P, format='csc')
++-q = sp.randn(n)
+++q = randn(n)
++ A = sparse.random(m, n, random_state=rg).tolil()  # Lil for efficiency
++-u = 3 + sp.randn(m)
++-l = -3 + sp.randn(m)
+++u = 3 + randn(m)
+++l = -3 + randn(m)
++ 
++ # Make random problem primal infeasible
++ A[int(n/2), :] = A[int(n/2)+1, :]
+diff --git a/test.patch b/test.patch
+new file mode 100644
+index 00000000..fa9f660c
+--- /dev/null
++++ b/test.patch
+@@ -0,0 +1,28 @@
++diff --git a/tests/primal_infeasibility/generate_problem.py b/tests/primal_infeasibility/generate_problem.py
++index 42ca3bdd..f726cdea 100644
++--- a/tests/primal_infeasibility/generate_problem.py
+++++ b/tests/primal_infeasibility/generate_problem.py
++@@ -1,8 +1,7 @@
++ import numpy as np
++ from scipy import sparse
++-import scipy as sp
++ import utils.codegen_utils as cu
++-from numpy.random import Generator, PCG64
+++from numpy.random import Generator, PCG64, randn
++ 
++ # Set random seed for reproducibility
++ rg = Generator(PCG64(2))
++@@ -14,10 +13,10 @@ m = 150
++ Pt = sparse.random(n, n, random_state=rg)
++ P = Pt.T.dot(Pt) + sparse.eye(n)
++ P = sparse.triu(P, format='csc')
++-q = sp.randn(n)
+++q = randn(n)
++ A = sparse.random(m, n, random_state=rg).tolil()  # Lil for efficiency
++-u = 3 + sp.randn(m)
++-l = -3 + sp.randn(m)
+++u = 3 + randn(m)
+++l = -3 + randn(m)
++ 
++ # Make random problem primal infeasible
++ A[int(n/2), :] = A[int(n/2)+1, :]
+diff --git a/tests/primal_infeasibility/generate_problem.py b/tests/primal_infeasibility/generate_problem.py
+index 42ca3bdd..f726cdea 100644
+--- a/tests/primal_infeasibility/generate_problem.py
++++ b/tests/primal_infeasibility/generate_problem.py
+@@ -1,8 +1,7 @@
+ import numpy as np
+ from scipy import sparse
+-import scipy as sp
+ import utils.codegen_utils as cu
+-from numpy.random import Generator, PCG64
++from numpy.random import Generator, PCG64, randn
+ 
+ # Set random seed for reproducibility
+ rg = Generator(PCG64(2))
+@@ -14,10 +13,10 @@ m = 150
+ Pt = sparse.random(n, n, random_state=rg)
+ P = Pt.T.dot(Pt) + sparse.eye(n)
+ P = sparse.triu(P, format='csc')
+-q = sp.randn(n)
++q = randn(n)
+ A = sparse.random(m, n, random_state=rg).tolil()  # Lil for efficiency
+-u = 3 + sp.randn(m)
+-l = -3 + sp.randn(m)
++u = 3 + randn(m)
++l = -3 + randn(m)
+ 
+ # Make random problem primal infeasible
+ A[int(n/2), :] = A[int(n/2)+1, :]
+-- 
+2.52.0
+

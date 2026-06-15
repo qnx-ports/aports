@@ -1,0 +1,5 @@
+# Require a review from owners.
+*   @qnx-ports/aports-admin
+
+# Allow management to assign owners.
+CODEOWNERS  @csinnott-work @yulee-qnx

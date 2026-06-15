@@ -1,0 +1,93 @@
+# Alpine-Contributor: Rasmus Thomsen <oss@cogitri.dev>
+# Contributor: Elliott Mazzuca <emazzuca@qnx.com>
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=gnome-keyring
+pkgver=48.0
+pkgrel=0
+pkgdesc="GNOME keyring"
+url="https://gitlab.gnome.org/GNOME/gnome-keyring"
+arch="all"
+license="GPL-2.0-only AND LGPL-2.0-only"
+# the gcr binaries are needed for things to open the keyring via libsecret
+depends="gcr"
+makedepends="
+    gcr-dev
+    gobject-introspection-dev
+    gtk4-dev
+    intltool
+    libgcrypt-dev
+    libgpg-error-dev
+    libxslt
+    meson
+    openssh
+    qnx-security-dev
+    clang
+    ninja
+    "
+checkdepends="
+    dbus
+    python3
+    "
+provides="dbus:org.freedesktop.Secrets"
+# Highest priority of the bunch since it has the least deps
+provider_priority=100
+options="!check" # flaky
+subpackages="$pkgname-lang $pkgname-dbg $pkgname-openrc $pkgname-pam"
+source="https://download.gnome.org/sources/gnome-keyring/${pkgver%.*}/gnome-keyring-$pkgver.tar.xz
+    gnome-keyring.confd
+    gnome-keyring.initd
+    dbus-env.desktop
+    libgkm-source-gkm-marshal.patch
+    qnx-build.patch
+    xfce-autostart.patch
+    "
+
+build() {
+    CC="clang" \
+    CXX="clang++" \
+    CPPFLAGS="${CPPFLAGS} -D_QNX_SOURCE" \
+    LDFLAGS="${LDFLAGS} -lsocket" \
+    abuild-meson \
+        -Dsystemd=disabled \
+        -Dmanpage=false \
+        . output
+    meson compile -C output
+}
+
+check() {
+    dbus-run-session \
+    meson test --print-errorlogs -C output
+}
+
+package() {
+    DESTDIR="$pkgdir" meson install --no-rebuild -C output
+
+    # Install the OpenRC user service for gnome-keyring.
+    install -Dm755 "$srcdir"/gnome-keyring.initd \
+        "$pkgdir"/etc/user/init.d/gnome-keyring
+    install -Dm644 "$srcdir"/gnome-keyring.confd \
+        "$pkgdir"/etc/user/conf.d/gnome-keyring
+    install -Dm644 "$srcdir"/dbus-env.desktop \
+        "$pkgdir"/etc/xdg/autostart/dbus-env.desktop
+}
+
+pam() {
+    pkgdesc="PAM module for gnome-keyring"
+    depends=""
+    # Allows disabling installation of the PAM module via `apk add !gnome-keyring-pam`.
+    #
+    # See https://gitlab.alpinelinux.org/alpine/aports/-/issues/16999
+    install_if="$pkgname=$pkgver-r$pkgrel"
+
+    amove usr/lib/security/pam*
+}
+
+sha512sums="
+9eac06164c22a854a171f538467403c6764a6a6c2665959d721f5e3515bd91c8709a374c292cde93143f944b4ed7ec9b5613d28808d7e79839a9377d5aaa5daa  gnome-keyring-48.0.tar.xz
+fdd9d02daf7beda574c63d6f17e56fdbe89194c42c60802f24a090e00d83104aa126771d5bfddc2ce586488d2f512164ba610d3fb5e1a85de7f497823fa757c2  gnome-keyring.confd
+bbdf251fa87bbbc80d62ed72e4d1981a3f419572ded01d7bdc45c328a1043c9e673840b23b3d0bc9fa48a9b125de234e30c9531aefa71348707a0ca81b61bb91  gnome-keyring.initd
+67e224ef8c058570adc3c166238c19391470d91bc6b09aee0dadfbbbc58391190b37be28bd498c118ba817bf7bcb155867d0635caedab71644e29697a58ea533  dbus-env.desktop
+7e2494f11423136856813349d4c0363b3cb11f0ea147048cfce10e383f93c8901b903bdcb02581268de7cd8f2513acf169f767de860134beb4716b5ee5323410  libgkm-source-gkm-marshal.patch
+2f2bc80d3295a5b3897bc2140f3f1b5d489d68d10a678dd6ae77a384dcd3e3396ec3e6aa233d09725e0bdbea9d3195a69be962b6859a9a12785ffa1d5b3a9454  qnx-build.patch
+3684a8c7dea1d4b7ecd80f50e7060e2c813689227b1cf2cbeec8c582af087dea355060ab376036e26d089d9e377265c47e76b33658b9b922e679da99effdeeac  xfce-autostart.patch
+"

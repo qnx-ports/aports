@@ -1,0 +1,50 @@
+# Alpine-Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=chrpath
+pkgver=0.18
+pkgrel=0
+pkgdesc="Modify rpath of compiled programs"
+url="https://codeberg.org/pere/chrpath"
+arch="all"
+license="GPL-2.0-or-later"
+makedepends="clang autoconf automake"
+subpackages="$pkgname-doc"
+source="$pkgname-$pkgver.tar.gz::https://codeberg.org/pere/chrpath/archive/release-$pkgver.tar.gz
+    fix-test-rpath.patch
+    sys-elf.patch
+    add-qnx-byteswap.patch"
+builddir="$srcdir/$pkgname"
+
+prepare() {
+    default_prepare
+    sh bootstrap
+}
+
+build() {
+    CC=clang \
+    ./configure \
+        --build=$CBUILD \
+        --host=$CHOST \
+        --prefix=/usr \
+        --libdir=/usr/lib \
+        --sysconfdir=/etc \
+        --mandir=/usr/share/man \
+        --infodir=/usr/share/info \
+        --localstatedir=/var
+    make
+}
+
+check() {
+    make check
+}
+
+package() {
+    make DESTDIR="$pkgdir" docdir=/usr/share/doc/chrpath install
+}
+
+sha512sums="
+7b9d7005defc15ccec9631dcb79df1c79d701353e67fe6f733b1d80c95103d2a5852f7cd13ead6b43977682337a74db13af8f17667dd9394f3ad06eaca8bea3f  chrpath-0.18.tar.gz
+739f3b9113ab331f2275b83b3989c5a287e532661f4599acae2e07725e78ca55d283e5f9a9cb9e55533da6b80c29f992ba99cb2676b3bb99055f0b0c517219dc  fix-test-rpath.patch
+5a23181816c88d85f9e13685de5b037cee850787c045e060935f81fb8c53b2cb0536c3a4b0a25e50b44032212da75b6feeb5d4edd53d49b9ffb9d79b1c2c1717  sys-elf.patch
+74b2cfb32a05f012e5a6c12e91ee4e6ec408b84eea483fbc339c1b7c776fbbe296cfc3d9bc2adc82149b3dc10fc38a164e23fff192ace086e643ceeed6dca51c  add-qnx-byteswap.patch
+"

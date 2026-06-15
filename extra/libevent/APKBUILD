@@ -4,14 +4,14 @@
 pkgname=libevent
 pkgver=2.1.12
 _pkgver=$pkgver-stable
-pkgrel=0
+pkgrel=1
 pkgdesc="An event notification library"
 url="https://libevent.org/"
 arch="all"
 license="BSD-3-Clause"
 depends_dev="python3"
-depends="libssl3 libcrypto3"
-makedepends="$depends_dev openssl-dev>3"
+depends="libssl3 libcrypto3 qnx-io-sock qnx-fd-notify"
+makedepends="$depends_dev openssl-dev>3 qnx-io-sock-dev qnx-fd-notify-dev"
 subpackages="$pkgname-static $pkgname-dev"
 source="https://github.com/libevent/libevent/releases/download/release-$_pkgver/libevent-$_pkgver.tar.gz
     fix-qnx.patch
@@ -29,6 +29,7 @@ prepare() {
 }
 
 build() {
+    CFLAGS="$CFLAGS -ltimerfd -leventfd"
     ./configure \
         --build=$CBUILD \
         --host=$CHOST \

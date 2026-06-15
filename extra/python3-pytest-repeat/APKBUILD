@@ -1,0 +1,46 @@
+# Alpine-Contributor: Jonas <spameier+alpine@proton.me>
+# Alpine-Maintainer: Jonas <spameier+alpine@proton.me>
+# Maintainer: jscaffidi <jscaffidi@qnx.com>
+pkgname=python3-pytest-repeat
+_pyname=pytest-repeat
+pkgver=0.9.4
+pkgrel=0
+pkgdesc="pytest plugin for repeating tests"
+url="https://github.com/pytest-dev/pytest-repeat"
+arch="noarch"
+license="BSD-3-Clause"
+depends="
+	python3-pytest
+	python3
+	"
+makedepends="
+	python3-gpep517
+	python3-hatch-vcs
+	"
+checkdepends="python3-tox"
+source="$pkgname-$pkgver.tar.gz::https://github.com/pytest-dev/pytest-repeat/archive/refs/tags/v$pkgver.tar.gz"
+builddir="$srcdir/$_pyname-$pkgver"
+options="!check" # We don't have python3-tox ported yet
+
+build() {
+	export SETUPTOOLS_SCM_PRETEND_VERSION=$pkgver
+	gpep517 build-wheel \
+		--wheel-dir .dist \
+		--output-fd 3 3>&1 >&2
+}
+
+check() {
+	python3 -m venv --clear --without-pip --system-site-packages .testenv
+	.testenv/bin/python3 -m installer .dist/*.whl
+	.testenv/bin/python3 -m pytest
+}
+
+package() {
+	python3 -m installer -d "$pkgdir" .dist/*.whl
+	rm -rf "$pkgdir"/usr/lib/python3.*/site-packages/tests/ # remove tests
+}
+
+sha512sums="
+4ea193200373d7e2d28049e4e7d10673e8b71774b0c0c5a58f7e34365d9d61a6bdfcdbed09d5d5f7300c9e2e60e62b24916e0d1c9f7ff34210fc0fb1fe56aec1  python3-pytest-repeat-0.9.4.tar.gz
+"
+

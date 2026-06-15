@@ -1,0 +1,56 @@
+diff --git a/package.xml b/package.xml
+index e564876..c667408 100644
+--- a/package.xml
++++ b/package.xml
+@@ -23,7 +23,6 @@
+   <test_depend>ament_cmake_pytest</test_depend>
+   <test_depend>ament_lint_common</test_depend>
+   <test_depend>ament_lint_auto</test_depend>
+-  <test_depend>mimick_vendor</test_depend>
+   <test_depend>launch</test_depend>
+   <test_depend>launch_testing</test_depend>
+   <test_depend>launch_testing_ament_cmake</test_depend>
+diff --git a/src/find.c b/src/find.c
+index d5dbf7a..cd2728e 100644
+--- a/src/find.c
++++ b/src/find.c
+@@ -60,7 +60,7 @@ rcutils_find_lastn(const char * str, char delimiter, size_t string_length)
+     return SIZE_MAX;
+   }
+ 
+-#if defined(_GNU_SOURCE)
++#if defined(_GNU_SOURCE) && !defined(__QNX__)
+   const char * ptr = memrchr(str, delimiter, string_length);
+   if (ptr == NULL) {
+     return SIZE_MAX;
+diff --git a/src/strdup.c b/src/strdup.c
+index e769b51..fc644b1 100644
+--- a/src/strdup.c
++++ b/src/strdup.c
+@@ -26,7 +26,6 @@ extern "C"
+ #include "./common.h"
+ #include "rcutils/macros.h"
+ 
+-
+ char *
+ rcutils_strdup(const char * str, rcutils_allocator_t allocator)
+ {
+@@ -44,8 +43,18 @@ rcutils_strndup(const char * str, size_t max_length, rcutils_allocator_t allocat
+     return NULL;
+   }
+   RCUTILS_CHECK_ALLOCATOR(&allocator, return NULL);
++#if defined(__QNX__)
++  size_t string_length;
++  if (max_length == SIZE_MAX) {
++    string_length = strlen(str);
++  } else {
++    char * p = (char *)memchr(str, '\0', max_length);
++    string_length = (p == NULL) ? max_length : (size_t)(p - str);
++  }
++#else
+   char * p = memchr(str, '\0', max_length);
+   size_t string_length = p == NULL ? max_length : (size_t)(p - str);
++#endif // __QNX__
+   char * new_string = allocator.allocate(string_length + 1, allocator.state);
+   if (NULL == new_string) {
+     return NULL;

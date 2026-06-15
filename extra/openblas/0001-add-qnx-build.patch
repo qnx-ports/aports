@@ -1,0 +1,60 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 1fa4d96..3dd0a56 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -282,7 +282,7 @@ endif()
+ set_target_properties(${OpenBLAS_LIBS} PROPERTIES OUTPUT_NAME ${OpenBLAS_LIBNAME})
+ 
+ # Android needs to explicitly link against libm
+-if (${CMAKE_SYSTEM_NAME} MATCHES "AIX|Android|Linux|FreeBSD|OpenBSD|NetBSD|DragonFly|Darwin")
++if (${CMAKE_SYSTEM_NAME} MATCHES "AIX|Android|Linux|FreeBSD|OpenBSD|NetBSD|DragonFly|Darwin" OR QNX)
+   if(BUILD_STATIC_LIBS)
+     target_link_libraries(${OpenBLAS_LIBNAME}_static m)
+   endif()
+diff --git a/driver/others/memory.c b/driver/others/memory.c
+index c8415f3..7e2dbb8 100644
+--- a/driver/others/memory.c
++++ b/driver/others/memory.c
+@@ -122,6 +122,16 @@ USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ #warning BUFFER_SIZE is too small for P, Q, and R of ZGEMM - large calculations may crash !
+ #endif
+ 
++#ifdef OS_QNX
++#include <sys/syspage.h>
++
++int get_num_procs(void) {
++  static int nums = 0;
++  if (!nums) nums = _syspage_ptr->num_cpu;
++  return nums;
++}
++#endif
++
+ #if defined(COMPILE_TLS)
+ 
+ #include <errno.h>
+diff --git a/getarch.c b/getarch.c
+index 8b70248..acad4ef 100644
+--- a/getarch.c
++++ b/getarch.c
+@@ -95,6 +95,9 @@ USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ #include <sys/systemcfg.h>
+ #include <sys/sysinfo.h>
+ #endif
++#if defined(__QNX__)
++#include <sys/syspage.h>
++#endif
+ 
+ /* #define FORCE_P2		*/
+ /* #define FORCE_KATMAI		*/
+@@ -1994,6 +1997,11 @@ static int get_num_cores(void) {
+ 
+   return count;
+ 
++#elif defined(__QNX__)
++  count = _syspage_ptr->num_cpu;
++
++  return count;
++
+ #else
+   return 2;
+ #endif

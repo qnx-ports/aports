@@ -1,6 +1,6 @@
 pkgname=pqiv
 pkgver=2.13.2
-pkgrel=2
+pkgrel=3
 pkgdesc="powerful image viewer with minimal UI"
 url="http://www.pberndt.com/Programme/Linux/pqiv/index.html"
 arch="all"
@@ -13,10 +13,8 @@ remove-avclose.patch"
 options="!check" # no testsuites
 
 build() {
-    CC=gcc
+    CC="clang"
     ./configure \
-        --build=$CBUILD \
-        --host=$CHOST \
         --prefix=/usr \
         --sysconfdir=/etc \
         --mandir=/usr/share/man \

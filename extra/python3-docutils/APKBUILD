@@ -1,0 +1,35 @@
+# Alpine-Contributor: Matt Smith <mcs@darkregion.net>
+# Alpine-Maintainer: Matt Smith <mcs@darkregion.net>
+# Maintainer: Elliott Mazzuca <emazzuca@qnx.com>
+pkgname=python3-docutils
+# withhold 0.22 until https://github.com/sphinx-doc/sphinx/issues/13656 is solved
+pkgver=0.21.2
+pkgrel=0
+pkgdesc="Documentation Utilities for Python3"
+url="https://pypi.org/project/docutils"
+arch="noarch"
+license="BSD-2-Clause AND GPL-3.0-or-later AND Python-2.0"
+depends="python3"
+makedepends="python3-gpep517 python3-flit-core python3-setuptools python3-wheel"
+checkdepends="python3-pytest"
+source="https://files.pythonhosted.org/packages/source/d/docutils/docutils-$pkgver.tar.gz"
+builddir="$srcdir/docutils-$pkgver"
+options="!check" # fail
+
+build() {
+	gpep517 build-wheel --wheel-dir .dist --output-fd 3 3>&1 >&2
+}
+
+check() {
+	python3 -m venv --clear --without-pip --system-site-packages .testenv
+	.testenv/bin/python3 -m installer .dist/*.whl
+	.testenv/bin/python3 -m pytest
+}
+
+package() {
+	python3 -m installer -d "$pkgdir" .dist/*.whl
+}
+
+sha512sums="
+7fafa331f5687448e80d299c20cdccc4b49819fa471b5f586bf0ab18c694ba43a70f58e7c76b0a70a16267585548389214e11a4998ad7fdc19a27f0f7644539c  docutils-0.21.2.tar.gz
+"

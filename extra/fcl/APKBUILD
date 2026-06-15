@@ -1,0 +1,48 @@
+# Maintainer: Felix Lionardo <flionardo@qnx.com>
+pkgname=fcl
+pkgver=0.7.0
+pkgrel=0
+pkgdesc="Flexible Collision Library"
+url="https://github.com/flexible-collision-library/fcl"
+arch="all"
+license="BSD-3-Clause"
+source="$pkgname-$pkgver.tar.gz::https://github.com/flexible-collision-library/fcl/archive/refs/tags/$pkgver.tar.gz
+0001-Use-target_compile_features-to-specify-the-C-11-requ.patch
+0002-Add-missing-cassert-include-in-fcl-common-types.h-62.patch
+"
+
+builddir="$srcdir/$pkgname-$pkgver"
+depends="libccd octomap libc++"
+depends_dev="eigen-dev libccd-dev octomap-dev libc++-dev"
+makedepends="
+	$depends_dev
+	cmake
+	ninja
+"
+
+subpackages="$pkgname-dev"
+
+build() {
+	cmake -B build -G Ninja \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DCMAKE_INSTALL_LIBDIR=lib \
+		-DBUILD_TESTING=ON \
+		-DFCL_WITH_OCTOMAP=ON
+	cmake --build build
+}
+
+check() {
+	# Some tests are disabled due to floating point precision issues on QNX.
+	ctest3.5 --test-dir build -E 'test_fcl_capsule_capsule|test_fcl_shape_mesh_consistency|test_fcl_signed_distance|test_fcl_octomap_collision|test_gjk_libccd-inl_epa|test_gjk_libccd-inl_gjk_doSimplex2|test_gjk_libccd-inl_signed_distance'
+}
+
+package() {
+	DESTDIR="$pkgdir" cmake --install build
+}
+
+sha512sums="
+95612476f4706fcd60812204ec7495a956c4e318cc6ace9526ac93dc765605ddf73b2d0d9ff9f4c9c739e43c5f8e24670113c86e02868a2949ab234c3bf82374  fcl-0.7.0.tar.gz
+47d408dea6236381609d6fc968518e20e99c5cfc574bd6f898e364536d6a441e45fca4d9c3aa93f85d8b836c3fd700698d45146976126cbbf692a902b42e6187  0001-Use-target_compile_features-to-specify-the-C-11-requ.patch
+b33038e3014a26a3c17d6cdb536ed9e8513ca1f496c48e3ba08563d37c980e9d97cc2ec14c9bcd68723c635fd552e493db3f5f44da6faa6b65eea631f59e3da0  0002-Add-missing-cassert-include-in-fcl-common-types.h-62.patch
+"

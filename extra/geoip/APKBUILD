@@ -4,7 +4,7 @@
 pkgname=geoip
 _pkgname="GeoIP"
 pkgver=1.6.12
-pkgrel=0
+pkgrel=1
 pkgdesc="Lookup countries by IP addresses"
 url="http://www.maxmind.com/app/ip-location"
 arch="all"
@@ -21,7 +21,6 @@ prepare() {
 }
 
 build() {
-    CFLAGS="$LDFLAGS -Os" \
     LDFLAGS="$LDFLAGS -lsocket" \
     ./configure \
         --build=$CBUILD \

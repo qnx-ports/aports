@@ -1,0 +1,35 @@
+--- a/gdk/wayland/gdksurface-wayland.c.orig
++++ b/gdk/wayland/gdksurface-wayland.c
+@@ -124,9 +124,31 @@
+ void
+ gdk_wayland_surface_get_window_geometry (GdkSurface   *surface,
+                                          GdkRectangle *geometry)
+-{     
++{
+   GdkWaylandSurface *impl = GDK_WAYLAND_SURFACE (surface);
++  
++  /* QNX fix: Don't include shadows for maximized/fullscreen/tiled surfaces */
++  if (GDK_IS_WAYLAND_TOPLEVEL (impl))
++    {
++      GdkWaylandToplevel *toplevel = GDK_WAYLAND_TOPLEVEL (impl);
++      GdkToplevelState state = GDK_SURFACE (toplevel)->state;
+       
++      if (state & (GDK_TOPLEVEL_STATE_MAXIMIZED | 
++                   GDK_TOPLEVEL_STATE_FULLSCREEN |
++                   GDK_TOPLEVEL_STATE_TILED))
++        {
++          /* Return geometry WITHOUT shadow margins */
++          *geometry = (GdkRectangle) {
++            .x = 0,
++            .y = 0,
++            .width = surface->width,
++            .height = surface->height
++          };
++          return;
++        }
++    }
++  
++  /* Normal windowed mode: include shadows */
+   *geometry = (GdkRectangle) {
+     .x = impl->shadow_left,
+     .y = impl->shadow_top,

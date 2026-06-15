@@ -1,0 +1,176 @@
+diff -Naur g3log-2.6/Build.cmake g3log-2.6_back/Build.cmake
+--- g3log-2.6/Build.cmake	2025-06-10 20:00:15.000000000 +0530
++++ g3log-2.6_back/Build.cmake	2026-03-25 08:22:48.000000000 +0530
+@@ -101,8 +101,9 @@
+ FIND_PACKAGE(Threads REQUIRED)
+ TARGET_LINK_LIBRARIES(${G3LOG_LIBRARY} Threads::Threads )
+ 
++
+ # check for backtrace and cxa_demangle only in non-Windows dev environments
+-IF(NOT(MSVC OR MINGW))
++IF(NOT(MSVC OR MINGW OR CMAKE_SYSTEM_NAME MATCHES "QNX"))
+ 	# the backtrace module does not provide a modern cmake target
+ 	FIND_PACKAGE(Backtrace REQUIRED)
+ 	if(Backtrace_FOUND)
+diff -Naur g3log-2.6/CPackLists.txt g3log-2.6_back/CPackLists.txt
+--- g3log-2.6/CPackLists.txt	2025-06-10 20:00:15.000000000 +0530
++++ g3log-2.6_back/CPackLists.txt	2026-03-25 08:22:56.000000000 +0530
+@@ -62,6 +62,13 @@
+       FILES ${CMAKE_CURRENT_BINARY_DIR}/g3logConfig.cmake
+       DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/g3log
+    )
++   IF(INSTALL_G3LOG_TESTS)
++      FOREACH(test ${tests_to_run})
++         INSTALL( TARGETS ${test}
++                     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}/g3log_tests
++         )
++      ENDFOREACH(test)
++   ENDIF()
+ ENDIF()
+ 
+ 
+diff -Naur g3log-2.6/Options.cmake g3log-2.6_back/Options.cmake
+--- g3log-2.6/Options.cmake	2025-06-10 20:00:15.000000000 +0530
++++ g3log-2.6_back/Options.cmake	2026-03-25 08:23:08.000000000 +0530
+@@ -21,7 +21,15 @@
+ #   add_definitions(-DDEBUG_BREAK_AT_FATAL_SIGNAL)
+ #   add_definitions(-DG3_DYNAMIC_MAX_MESSAGE_SIZE)
+ 
++option (INSTALL_G3LOG_TESTS "install g3log test executable to  QNX SDP " OFF)
+ 
++# -DINSTALL_G3LOG_TESTS=ON : installs test binaries (into <prefix>/bin/g3log_tests)
++
++IF(INSTALL_G3LOG_TESTS)
++   message(STATUS "-DINSTALL_G3LOG_TESTS=ON\tInstalling g3log test executables")
++ELSE()
++   message(STATUS "-DINSTALL_G3LOG_TESTS=OFF\tNot installing test executables")
++ENDIF()
+ 
+ # Used for generating a macro definitions file  that is to be included
+ # that way you do not have to re-state the Options.cmake definitions when 
+diff -Naur g3log-2.6/src/crashhandler_unix.cpp g3log-2.6_back/src/crashhandler_unix.cpp
+--- g3log-2.6/src/crashhandler_unix.cpp	2025-06-10 20:00:15.000000000 +0530
++++ g3log-2.6_back/src/crashhandler_unix.cpp	2026-03-25 08:27:40.000000000 +0530
+@@ -16,7 +16,9 @@
+ #endif
+ 
+ #include <cxxabi.h>
++#if !defined(__QNX__)
+ #include <execinfo.h>
++#endif
+ #include <unistd.h>
+ #include <atomic>
+ #include <csignal>
+@@ -29,12 +31,16 @@
+ #include <thread>
+ 
+ // Linux/Clang, OSX/Clang, OSX/gcc
+-#if (defined(__clang__) || defined(__APPLE__))
+-#include <sys/ucontext.h>
+-#else
+-#include <ucontext.h>
++#if !defined(__QNX__)
++  #if defined(__APPLE__) || defined(__clang__)
++    #include <sys/ucontext.h>
++  #else
++    #include <ucontext.h>
++  #endif
+ #endif
+ 
++
++
+ namespace {
+ 
+    std::atomic<bool> gBlockForFatal{true};
+@@ -137,6 +143,15 @@
+          if (nullptr != rawdump && !std::string(rawdump).empty()) {
+             return {rawdump};
+          }
++         return stackdump_platform();
++      }
++#if defined(__QNX__)
++      // backtrace() and backtrace_symbols() are unavailable on QNX systems
++      std::string stackdump_platform() {
++         return "";
++      }
++#else
++      std::string stackdump_platform() {
+          const size_t max_dump_size = 50;
+          void* dump[max_dump_size];
+          const size_t size = backtrace(dump, max_dump_size);
+@@ -188,7 +203,7 @@
+          free(messages);
+          return oss.str();
+       }
+-
++#endif
+       /// string representation of signal ID
+       std::string exitReasonName(const LEVELS& level, g3::SignalType fatal_id) {
+ 
+diff -Naur g3log-2.6/src/g3log/crashhandler.hpp g3log-2.6_back/src/g3log/crashhandler.hpp
+--- g3log-2.6/src/g3log/crashhandler.hpp	2025-06-10 20:00:15.000000000 +0530
++++ g3log-2.6_back/src/g3log/crashhandler.hpp	2026-03-25 08:22:38.000000000 +0530
+@@ -73,6 +73,9 @@
+       /** return calling thread's stackdump*/
+       std::string stackdump(const char* dump = nullptr);
+ 
++       /** return calling thread's stackdump*/
++      std::string stackdump_platform ();
++
+       /** Re-"throw" a fatal signal, previously caught. This will exit the application
+        * This is an internal only function. Do not use it elsewhere. It is triggered
+        * from g3log, g3LogWorker after flushing messages to file */
+diff -Naur g3log-2.6/test_unit/Test.cmake g3log-2.6_back/test_unit/Test.cmake
+--- g3log-2.6/test_unit/Test.cmake	2025-06-10 20:00:15.000000000 +0530
++++ g3log-2.6_back/test_unit/Test.cmake	2026-03-25 08:22:16.000000000 +0530
+@@ -19,10 +19,10 @@
+    # Unit test for g3log  (cmake -DUSE_G3LOG_UNIT_TEST=ON ..)
+    option (ADD_G3LOG_UNIT_TEST "g3log unit tests" ON)
+ 
+-
+    # 4. create the unit tests for g3log --- ONLY TESTED THE UNIT TEST ON LINUX
+    # =========================
+    IF (ADD_G3LOG_UNIT_TEST)
++      IF (NOT QNX)
+       # Download and unpack googletest at configure time
+       configure_file(CMakeLists.txt.in
+             googletest-download/CMakeLists.txt)
+@@ -40,6 +40,7 @@
+       # and gmock_main
+       add_subdirectory(${CMAKE_BINARY_DIR}/googletest-src
+             ${CMAKE_BINARY_DIR}/googletest-build)
++      ENDIF(NOT QNX)
+ 
+       # The gtest/gmock targets carry header search path
+       # dependencies automatically when using CMake 2.8.11 or
+@@ -79,7 +80,12 @@
+         IF( NOT(MSVC))
+            set_target_properties(${test} PROPERTIES COMPILE_FLAGS "-isystem -pthread ")
+         ENDIF( NOT(MSVC)) 
+-        target_link_libraries(${test} g3log gtest_main)
++      if(QNX)
++         set(GTEST_LIBS gtest gtest_main)
++      else()
++         set(GTEST_LIBS gtest_main)
++      endif()
++      target_link_libraries(${test} g3log ${GTEST_LIBS})
+ 		add_test( ${test} ${test} )
+       ENDFOREACH(test)
+    
+@@ -93,8 +99,14 @@
+        add_executable(test_dynamic_loaded_shared_lib ${g3log_SOURCE_DIR}/test_main/test_main.cpp ${DIR_UNIT_TEST}/test_linux_dynamic_loaded_sharedlib.cpp)
+        set_target_properties(test_dynamic_loaded_shared_lib PROPERTIES COMPILE_DEFINITIONS "GTEST_HAS_TR1_TUPLE=0")
+        set_target_properties(test_dynamic_loaded_shared_lib PROPERTIES COMPILE_DEFINITIONS "GTEST_HAS_RTTI=0")
+-       target_link_libraries(test_dynamic_loaded_shared_lib  ${G3LOG_LIBRARY} -ldl gtest_main)
++      set(TEST_LIBS ${G3LOG_LIBRARY} gtest_main)
++      if(QNX)
++         list(APPEND TEST_LIBS gtest)
++      else()
++         list(APPEND TEST_LIBS -ldl)
++      endif()
++      target_link_libraries(test_dynamic_loaded_shared_lib ${TEST_LIBS})
+     ENDIF()
+ ELSE() 
+-  message( STATUS "-DADD_G3LOG_UNIT_TEST=OFF" ) 
++  message( STATUS "-DADD_G3LOG_UNIT_TEST=OFF" )
+ ENDIF (ADD_G3LOG_UNIT_TEST)

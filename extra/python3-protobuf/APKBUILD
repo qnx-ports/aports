@@ -1,0 +1,39 @@
+# Alpine-Contributor: Corentin Henry <corentinhenry@gmail.com>
+# Alpine-Maintainer: Patrycja Rosa <alpine@ptrcnull.me>
+# Maintainer: Deep Chordia <dchordia@blackberry.com>
+pkgname=python3-protobuf
+pkgver=5.29.3
+pkgrel=0
+pkgdesc="Google's data interchange format"
+url="https://github.com/protocolbuffers/protobuf"
+arch="all"
+license="BSD-3-Clause"
+makedepends="
+    cmake
+    ninja
+    protobuf-dev
+    python3-dev
+    python3-setuptools
+    python3-wheel
+    "
+options="!check"
+source="https://files.pythonhosted.org/packages/source/p/protobuf/protobuf-$pkgver.tar.gz"
+builddir="$srcdir/protobuf-$pkgver"
+
+build() {
+  CFLAGS="$CFLAGS -O3 -fPIC" \
+  python3 setup.py build
+}
+
+check() {
+  pytest
+}
+
+package() {
+  python3 setup.py install --skip-build --root="$pkgdir"
+  chmod +r "$pkgdir"/usr/lib/*/site-packages/*/*
+}
+
+sha512sums="
+64da5b0ee5e1424ce907af03cb48ff3fa744002ec5f5205c6b550c272e931a2a2ada30ecae2620014a04ccd5ad5e9b1f306df4f0ecea5bb37d8615988ac5187b  protobuf-5.29.3.tar.gz
+"

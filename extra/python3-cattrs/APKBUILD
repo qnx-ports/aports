@@ -1,0 +1,39 @@
+# Alpine-Contributor: Rasmus Thomsen <oss@cogitri.dev>
+# Alpine-Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=python3-cattrs
+pkgver=25.1.1
+pkgrel=0
+pkgdesc="Complex custom class converters for attrs"
+url="https://github.com/python-attrs/cattrs"
+arch="noarch"
+license="MIT"
+depends="python3 python3-attrs"
+makedepends="
+    python3-gpep517
+    python3-hatch-vcs
+    python3-hatchling
+    "
+options="!check" # loads of missing deps
+subpackages=""
+source="https://files.pythonhosted.org/packages/source/c/cattrs/cattrs-$pkgver.tar.gz"
+builddir="$srcdir/cattrs-$pkgver"
+
+build() {
+    gpep517 build-wheel \
+        --wheel-dir .dist \
+        --output-fd 3 3>&1 >&2
+}
+
+check() {
+    python3 setup.py test
+}
+
+package() {
+    python3 -m installer -d "$pkgdir" \
+        .dist/*.whl
+}
+
+sha512sums="
+1d503032e1fbd921cd28db02b05b0c6d3ec329317acc1493613ebc1fde2666727d3a57b917a6e786de3c504ad3081c21e66d47cdf38b58d695b80fb767c6fdcf  cattrs-25.1.1.tar.gz
+"

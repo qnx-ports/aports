@@ -10,7 +10,6 @@ license="Apache-2.0"
 arch="noarch"
 makedepends="python3-gpep517 python3-installer python3-setuptools python3-wheel"
 checkdepends="python3-pretend"
-subpackages="$pkgname-pyc"
 source="https://github.com/di/calver/archive/$pkgver/py3-calver-$pkgver.tar.gz
 	version-placeholder.patch"
 builddir="$srcdir/calver-$pkgver"

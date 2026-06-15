@@ -1,0 +1,31 @@
+diff --git a/libcurl_vendor/CMakeLists.txt b/libcurl_vendor/CMakeLists.txt
+index 10edd42..eeaeb82 100644
+--- a/libcurl_vendor/CMakeLists.txt
++++ b/libcurl_vendor/CMakeLists.txt
+@@ -14,6 +14,7 @@ ament_vendor(libcurl_vendor
+     -DENABLE_MANUAL:BOOL=OFF
+     -DCURL_ENABLE_SSL:BOOL=ON  # default, but just to make clear
+     -DUSE_LIBIDN2:BOOL=OFF
++  PATCHES patches
+ )
+ 
+ ament_package(
+diff --git a/libcurl_vendor/patches/qnx.patch b/libcurl_vendor/patches/qnx.patch
+new file mode 100644
+index 0000000..84b58cb
+--- /dev/null
++++ b/libcurl_vendor/patches/qnx.patch
+@@ -0,0 +1,13 @@
++diff --git a/lib/smb.c b/lib/smb.c
++index fd49cf6..44bd2bf 100644
++--- a/lib/smb.c
+++++ b/lib/smb.c
++@@ -32,7 +32,7 @@
++ #include <process.h>
++ #ifdef CURL_WINDOWS_APP
++ #define getpid GetCurrentProcessId
++-#elif !defined(MSDOS)
+++#elif !defined(MSDOS) && !defined(__QNX__)
++ #define getpid _getpid
++ #endif
++ #endif

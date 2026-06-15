@@ -1,0 +1,83 @@
+# Alpine-Contributor: Jakub Jirutka <jakub@jirutka.cz>
+# Alpine-Maintainer: Jakub Jirutka <jakub@jirutka.cz>
+# Maintainer: Felix Lionardo <flionardo@qnx.com>
+pkgname=suitesparse
+_pkgname=SuiteSparse
+pkgver=7.11.0
+pkgrel=0
+pkgdesc="A collection of sparse matrix libraries"
+url="http://faculty.cse.tamu.edu/davis/suitesparse.html"
+arch="all"
+license="BSD-3-Clause AND LGPL-2.1-or-later AND GPL-2.0-or-later"
+depends="
+	gmp
+	mpfr
+	openblas
+	libc++
+	"
+depends_dev="
+	gmp-dev
+	mpfr-dev
+	openblas-dev
+	"
+makedepends="
+	$depends_dev
+	libc++-dev
+	cmake
+	m4
+	"
+subpackages="
+	$pkgname-static
+	$pkgname-dev
+	$pkgname-graphblas
+	"
+source="$pkgname-$pkgver.tar.gz::https://github.com/qnx-ports/SuiteSparse/archive/refs/tags/v$pkgver-qnx-20260331.tar.gz"
+builddir="$srcdir/$_pkgname-$pkgver-qnx-20260331"
+
+# Disable tests on aarch64 because of llvm bug
+case "$CARCH" in
+	aarch64) options="$options !check" ;;
+esac
+
+_flags="BLAS=-lopenblas LAPACK=-lopenblas"
+
+# Do not include the Partition module (it's optional and Julia doesn't need it).
+# Do not try to override optimization level. SuiteSparse is a huge library
+# heavily optimized for performance, so compiling with -Os doesn't make sense.
+# Actually, the build scripts currently override -Os with -O3 anyway,
+# but better to not rely on it.
+export CFLAGS="${CFLAGS/-Os/} -DNPARTITION"
+export CPPFLAGS=${CPPFLAGS/-Os/}
+export CXXFLAGS=${CXXFLAGS/-Os/}
+
+build() {
+	make library $_flags CMAKE_OPTIONS="\
+		-G 'Unix Makefiles' \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DCMAKE_INSTALL_INCLUDEDIR=/usr/include \
+		-DCMAKE_INSTALL_LIBDIR=/usr/lib \
+		-DCMAKE_VERBOSE_MAKEFILE=ON \
+		"
+}
+
+check() {
+    make tests
+}
+package() {
+	make install $_flags DESTDIR="$pkgdir"
+}
+
+graphblas() {
+	pkgdesc="Graph algorithms in the language of linear algebra"
+	license="Apache-2.0 AND GPL-3.0-or-later"
+
+	amove usr/lib/libgraphblas.so.*
+	amove usr/lib/liblagraph.so.*
+	amove usr/lib/liblagraphx.so.*
+}
+
+
+
+sha512sums="
+03640df312006c2fb53c1dcaa13eceb3a0bafc5c15100aa7bb47d377d986f0175f73de537a7685995ed31b476b41718858a5ae76036e93cc1a1fd960b7627cd1  suitesparse-7.11.0.tar.gz
+"

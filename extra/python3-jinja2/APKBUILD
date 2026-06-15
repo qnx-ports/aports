@@ -1,0 +1,50 @@
+# Alpine-Contributor: Matt Smith <mcs@darkregion.net>
+# Alpine-Maintainer: Matt Smith <mcs@darkregion.net>
+# Maintainer: jscaffidi <jscaffidi@qnx.com>
+pkgname=python3-jinja2
+_pkgname=jinja2
+pkgver=3.1.6
+pkgrel=0
+pkgdesc="A small but fast and easy to use stand-alone python template engine"
+url="https://palletsprojects.com/p/jinja/"
+arch="noarch"
+license="BSD-3-Clause"
+depends="python3-markupsafe"
+checkdepends="python3-pytest"
+makedepends="python3-dev python3-gpep517 python3-flit-core python3-wheel"
+subpackages="$pkgname-doc"
+source="https://files.pythonhosted.org/packages/source/${_pkgname:0:1}/$_pkgname/$_pkgname-$pkgver.tar.gz"
+builddir="$srcdir/$_pkgname-$pkgver"
+
+build() {
+	gpep517 build-wheel --wheel-dir .dist --output-fd 3 3>&1 >&2
+}
+
+check() {
+	python3 -m venv --clear --without-pip --system-site-packages .testenv
+	.testenv/bin/python3 -m installer .dist/*.whl
+	# test_elif_deep fails on s390x
+	# async tests depend on community/python3-trio
+	.testenv/bin/python3 -m pytest -W ignore::DeprecationWarning \
+		-k "not test_elif_deep" \
+		--ignore-glob="tests/test_async*.py"
+}
+
+package() {
+	python3 -m installer -d "$pkgdir" .dist/*.whl
+
+	local docdir="$pkgdir/usr/share/doc/$pkgname"
+	# Note: The documentation in the docs directory needs to be generated
+	# by py-sphinx, however, this package (py-jinja2) is a dependency of
+	# Sphinx itself!
+	mkdir -p "$docdir"
+	cp -R docs "$docdir"/
+
+	install -m 644 -D LICENSE.txt "$pkgdir"/usr/share/licenses/$pkgname/LICENSE.txt
+}
+
+sha512sums="
+bddd5e142f1462426c57b2efafdfafdfc6b66de257668707940896feae71eabdf19e0b6e34ef49b965153baf9b1eb59bb5a97349bb287ea0921dd2a751e967ab  jinja2-3.1.6.tar.gz
+"
+
+

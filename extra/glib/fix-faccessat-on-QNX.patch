@@ -1,28 +1,15 @@
-From 66125563d10eb6df7ad8f0666c99246ed120ea8d Mon Sep 17 00:00:00 2001
-From: felixlionardo <flionardo@blackberry.com>
-Date: Thu, 25 Sep 2025 14:41:53 -0400
-Subject: [PATCH] fix faccessat on QNX
-
----
- gio/glocalfile.c | 4 ++++
- 1 file changed, 4 insertions(+)
-
-diff --git a/gio/glocalfile.c b/gio/glocalfile.c
-index d9903b4e4..c13256faa 100644
---- a/gio/glocalfile.c
-+++ b/gio/glocalfile.c
-@@ -1273,7 +1273,11 @@ g_local_file_query_exists (GFile        *file,
+diff -Naur glib-2.88.1.orig/gio/glocalfile.c glib-2.88.1/gio/glocalfile.c
+--- glib-2.88.1.orig/gio/glocalfile.c	2026-05-29 20:13:41.000000000 +0000
++++ glib-2.88.1/gio/glocalfile.c	2026-05-29 20:16:09.000000000 +0000
+@@ -1285,7 +1285,11 @@
  {
    GLocalFile *local = G_LOCAL_FILE (file);
  
-+#if defined(__QNX__)
-+  return faccessat (0, local->filename, F_OK, AT_EACCESS) == 0;
++#ifdef __QNX__
++  if (faccessat (AT_FDCWD, local->filename, F_OK, AT_EACCESS) == 0)
 +#else
-   return faccessat (0, local->filename, F_OK, AT_EACCESS | AT_SYMLINK_NOFOLLOW) == 0;
+   if (faccessat (AT_FDCWD, local->filename, F_OK, AT_EACCESS | AT_SYMLINK_NOFOLLOW) == 0)
 +#endif
- }
- #endif
+     return TRUE;
  
--- 
-2.34.1
-
+   if G_UNLIKELY (errno == EBADF)

@@ -1,0 +1,25 @@
+diff --git a/sysincl.h b/sysincl.h
+index e26b236..b34ccf4 100644
+--- a/sysincl.h
++++ b/sysincl.h
+@@ -53,7 +53,9 @@
+ #include <sys/time.h>
+ #include <sys/types.h>
+ #include <sys/un.h>
++#ifndef QNX
+ #include <sys/shm.h>
++#endif
+ #include <sys/wait.h>
+ #include <time.h>
+ #include <unistd.h>
+@@ -62,6 +64,10 @@
+ #include <sys/timex.h>
+ #endif
+ 
++#if defined(QNX)
++#include "adjtime_qnx.h"
++#endif
++
+ #ifdef HAVE_GETRANDOM
+ #include <sys/random.h>
+ #endif

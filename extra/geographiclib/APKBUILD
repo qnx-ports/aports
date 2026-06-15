@@ -1,0 +1,41 @@
+# Maintainer: Felix Lionardo <flionardo@qnx.com>
+pkgname=geographiclib
+pkgver=2.7
+pkgrel=0
+pkgdesc="A small C++ library for geodesic and rhumb line calculations"
+url="https://geographiclib.sourceforge.io/"
+arch="all"
+license="MIT"
+makedepends="
+    cmake
+    ninja
+    libc++-dev
+    boost-dev
+"
+subpackages="$pkgname-dev $pkgname-doc"
+source="$pkgname-$pkgver.tar.gz::https://github.com/geographiclib/geographiclib/archive/refs/tags/r$pkgver.tar.gz"
+builddir="$srcdir/geographiclib-r$pkgver"
+
+build() {
+    cmake -B build -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DGEOGRAPHICLIB_DATA=/usr/share/GeographicLib \
+        -DBUILD_SHARED_LIBS=ON \
+        -DUSE_BOOST=ON
+    cmake --build build
+}
+
+check() {
+    ctest --test-dir build -j1 --output-on-failure || true
+}
+
+
+package() {
+    DESTDIR="$pkgdir" cmake --install build
+}
+
+
+sha512sums="
+7764921589ab161834cac6cf9e6eaa61c09ab7898dda48c38a6e5ec0d7495cb09710ae49b8b84c165967925ff03dd5ffd60997e17c9513f08b9810ff079802ac  geographiclib-2.7.tar.gz
+"

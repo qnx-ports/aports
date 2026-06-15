@@ -1,0 +1,30 @@
+# Maintainer: jscaffidi <jscaffidi@qnx.com>
+pkgname=python3-flake8-docstrings
+pkgver=1.7.0
+pkgrel=0
+pkgdesc="Integration of pydocstyle and flake8 for combined linting and reporting "
+options="!check" # No testsuite
+url="https://github.com/PyCQA/flake8-docstrings"
+arch="noarch"
+license="MIT"
+depends="python3-flake8"
+makedepends="python3-hatchling python3-gpep517 python3-setuptools"
+source="flake8-docstrings-$pkgver.tar.gz::https://github.com/PyCQA/flake8-docstrings/archive/refs/tags/$pkgver.tar.gz"
+builddir="$srcdir"/flake8-docstrings-$pkgver
+
+build() {
+	gpep517 build-wheel \
+		--wheel-dir .dist \
+		--output-fd 3 3>&1 >&2
+}
+
+package() {
+	gpep517 install-wheel --destdir "$pkgdir" \
+		.dist/*.whl
+}
+
+
+
+sha512sums="
+6fd5fb5a2d7fceb01a7d96cfcc1db8dd046474065926aaeb1d883890f353b6ee21519a1980b6dc33a4181304d066536fa0133ff8a497320c2f1d4fb34fcca5a8  flake8-docstrings-1.7.0.tar.gz
+"

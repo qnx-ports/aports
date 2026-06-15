@@ -1,0 +1,197 @@
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=mediapipe
+pkgver=0.10.26
+pkgrel=0
+pkgdesc="Library of customizable ML solutions for live and streaming multimedia"
+url="https://ai.google.dev/edge/mediapipe"
+arch="all"
+license="Apache-2.0"
+depends="python3-$pkgname=$pkgver-r$pkgrel"
+py3depends="
+    python3
+    python3-absl-py
+    python3-attrs
+    python3-cffi
+    python3-contourpy
+    python3-cycler
+    python3-flatbuffers
+    python3-fonttools
+    python3-jax
+    python3-jaxlib
+    python3-kiwisolver
+    python3-matplotlib
+    python3-ml-dtypes
+    python3-numpy
+    python3-opencv
+    python3-opt-einsum
+    python3-packaging
+    python3-pillow
+    python3-protobuf=5.29.3-r0
+    python3-cparser
+    python3-parsing
+    python3-dateutil
+    python3-scipy
+    python3-sentencepiece
+    python3-six
+    python3-sounddevice
+    libc++
+    "
+makedepends="
+    bazel6
+    cmake
+    libc++-dev
+    ninja
+    protobuf=27.2-r0
+    protobuf-dev=27.2-r0
+    opencv-dev
+    python3-dev
+    python3-packaging
+    python3-setuptools
+    python3-wheel
+    "
+checkdepends="$py3depends"
+subpackages="
+    python3-$pkgname-cpu:py3cpu
+    python3-$pkgname:py3
+    "
+_git_rev=0
+source="$pkgname-$pkgver-r$_git_rev.tar.gz::https://github.com/qnx-ports/$pkgname/archive/refs/tags/qnx-v$pkgver-r$_git_rev.tar.gz
+    python_BUILD.bazel
+    python_defs.bzl
+    python_WORKSPACE
+    python_qnx_BUILD.bazel
+    python_qnx_WORKSPACE
+    cpp_qnx_BUILD.bazel
+    cpp_qnx_WORKSPACE
+    buildbase_qnx_BUILD.bazel
+    buildbase_qnx_WORKSPACE
+    qnx.patch
+    "
+builddir="$srcdir/$pkgname-qnx-v$pkgver-r$_git_rev"
+
+stagecpu="stage-cpu"
+stage="stage"
+
+prepare() {
+    default_prepare
+
+    # Remove the old repository cache
+    rm -rf $(bazel info repository_cache)
+
+    # Remove the old abuild cache
+    bazel clean --expunge
+
+    # Create the toolchain to register our local python.
+    mkdir "$builddir"/python
+    cp -L $srcdir/python_BUILD.bazel "$builddir"/python/BUILD.bazel
+    cp -L $srcdir/python_defs.bzl "$builddir"/python/defs.bzl
+    cp -L $srcdir/python_WORKSPACE "$builddir"/python/WORKSPACE
+    # And now... We need a lot of local paths for system files to exist here.
+    mkdir "$builddir"/python_qnx
+    cp -L $srcdir/python_qnx_BUILD.bazel "$builddir"/python_qnx/BUILD.bazel
+    cp -L $srcdir/python_qnx_WORKSPACE "$builddir"/python_qnx/WORKSPACE
+    ln -s /usr/bin "$builddir"/python_qnx/bin
+    mkdir "$builddir"/python_qnx/include
+    ln -s /usr/include/python3.14 "$builddir"/python_qnx/include/python3.14
+    mkdir "$builddir"/python_qnx/lib
+    ln -s /usr/lib/python3.14 "$builddir"/python_qnx/lib/python3.14
+    ln -s /usr/lib/libpython3.so "$builddir"/python_qnx/lib/libpython3.so
+    ln -s /usr/lib/libpython3.14.so "$builddir"/python_qnx/lib/libpython3.14.so
+    ln -s "$builddir"/python_qnx/bin/python3 "$builddir"/python_qnx/python
+
+    mkdir "$builddir"/cpp_qnx
+    cp -L $srcdir/cpp_qnx_BUILD.bazel "$builddir"/cpp_qnx/BUILD.bazel
+    cp -L $srcdir/cpp_qnx_WORKSPACE "$builddir"/cpp_qnx/WORKSPACE
+
+    # Finally, toolchains for ninja and cmake to override rules_foreign_cc.
+    mkdir -p "$builddir"/buildbase_qnx/bin
+    cp -L $srcdir/buildbase_qnx_BUILD.bazel "$builddir"/buildbase_qnx/BUILD.bazel
+    cp -L $srcdir/buildbase_qnx_WORKSPACE "$builddir"/buildbase_qnx/WORKSPACE
+
+    sed -i "s|__version__ = 'dev'|__version__ = '$pkgver'|" "$builddir"/setup.py
+}
+
+build() {
+    # We're doing an install to a custom staging directory so we can trigger a
+    # separate build during the build() phase.
+    mkdir -p "$stagecpu"
+    mkdir -p "$stage"
+
+    export CUSTOM_BAZEL_ARGS="
+        --override_repository=python=python
+        --override_repository=python_qnx=python_qnx
+        --extra_toolchains=@python_qnx//:qnx_py_toolchain
+        --extra_toolchains=@python_qnx//:qnx_py_toolchain2
+        --extra_toolchains=@python_qnx//:qnx_py_cc_toolchain
+        --extra_toolchains=//cpp_qnx:qnx_cc_toolchain_x64
+        --extra_toolchains=//cpp_qnx:qnx_cc_toolchain_arm64
+        --extra_toolchains=//buildbase_qnx:qnx_cmake_toolchain
+        --extra_toolchains=//buildbase_qnx:qnx_ninja_toolchain
+        "
+
+    # Preliminary build without GPU.
+    # Links against the host opencv package by default.
+    export BAZEL_CXXOPTS=-std=c++17
+    export MEDIAPIPE_DISABLE_GPU=1
+    export PROTOC=/usr/bin/protoc
+    python3 setup.py build_py --link-opencv
+    python3 setup.py install --skip-build --root="$builddir/$stagecpu"
+
+    # Now the GPU build.
+    export MEDIAPIPE_DISABLE_GPU=0
+    python3 setup.py build_py --link-opencv
+    python3 setup.py install --skip-build --root="$builddir/$stage"
+}
+
+check() {
+    # No actual tests, instead we're verifying importing the py package.
+    python3 -m venv --clear --without-pip --system-site-packages .testenv
+    .testenv/bin/python3 setup.py install --skip-build
+
+    # Module name exists under $builddir
+    mkdir test
+    cd test
+    ../.testenv/bin/python3 -c "import mediapipe"
+}
+
+package() {
+    mkdir -p "$pkgdir"
+    # A bit hacky but... We're using the same name for both the cpu and gpu
+    # versions of mediapipe, so we need to avoid collisions
+    cp -r "$stage" "$pkgdir"
+    cp -r "$stagecpu" "$pkgdir"
+}
+
+py3() {
+    pkgdesc="Python3 wrapper for $subpkgname"
+    depends="$py3depends"
+
+    mkdir -p "$subpkgdir"/usr/lib
+    mv "$pkgdir/$stage"/usr/lib/python3* "$subpkgdir"/usr/lib/
+    rm -rf "$pkgdir/$stage"
+}
+
+py3cpu() {
+    pkgdesc="Python3 wrapper for $subpkgname"
+    depends="$py3depends"
+    provides="python3-$pkgname=$pkgver-r$pkgrel"
+    replaces="python3-$pkgname"
+
+    mkdir -p "$subpkgdir"/usr/lib
+    mv "$pkgdir/$stagecpu"/usr/lib/python3* "$subpkgdir"/usr/lib/
+    rm -rf "$pkgdir/$stagecpu"
+}
+
+sha512sums="
+00aeedacf1998d91f9bb4846dda34a8ac375163489abfbe3104723f4ac9399e0099986a044986f1be2b3fcd85709916319e2197d2f3d1a9ccbae3a830fe3f0c5  mediapipe-0.10.26-r0.tar.gz
+00adf603167661b10229297fa12a6de9f00d4bdfb864eacbd573aebcf3c05208cea543688735dcf4baa3aa3dd1854ed2b5f7e5ad04bd23309347ceaf12334eb4  python_BUILD.bazel
+5febd2bd49040fc75a2c92fc96b8b6196ec611c5bc0aca7b7c0b146f5918cc01e89259d979f54cace616bd3aa15ec1a610f4e00140d91eeeb82f2c7e6dda193f  python_defs.bzl
+1847818b97aaa3eb9184c15cc6f2eefb5c2f2d21e2e38749740738483689e58f3a1467c2cf717587c803ef707c17154e92caf84fa3a3d4ba4797ae686fa68165  python_WORKSPACE
+9e42958cac159be1025aa09737ab996513fff876685422823d23b1de5550c8b5d8a7b8d23f8e60bc806a4e7d1ffbdc98253b8b416d5e63ef49bab0a015621c0c  python_qnx_BUILD.bazel
+e8e83404f5e078fdbefaef20d8f3b75371c7dab2018c5d863e2b2ad26a2b5c137f242878daaa699997a72cf8997e050fefd7b0cc32c5b9deb05f51aa0c929ee9  python_qnx_WORKSPACE
+1d0d3aaf304c51d69a95a1759dba1ab6664970c8b352f40c2ce1cf8843f4fd2c3e261350397f448217cc07bd6c00412cea0d8a06dccfa651c9e5db3eaa274559  cpp_qnx_BUILD.bazel
+43de963a6220b632da108bf21b55cbd30a6ba37f9f76123db4716771be5d9780e48d892722d436f063096a103217f2094d8994da9f6abed0a5f905c6073cf530  cpp_qnx_WORKSPACE
+82d36aa3cc138ebd8f426e244e0b008b97ad6b98aae84a2bda3a87ef29f15563356f2b30d2cb9a80aed8d50aceae9287ccde76a0f50dd6518963f15404a118ef  buildbase_qnx_BUILD.bazel
+efb0a915934bb31b8311caeb6a0dd61b6645e917d449ba978870cb2abf50b9d93b9d1ac2245367285307330eb967629ab83d215e59ffa46fadc5670dc9caac63  buildbase_qnx_WORKSPACE
+14defa4979ebc67e02c3658fa895ff10e97ef82e21abe1ebc4c47aa6a1a20b51767fa82c22a88b1afb4b7c7ae2c0c08426e7f606a693c838be8cd668c75acaf2  qnx.patch
+"

@@ -1,0 +1,6 @@
+#!/bin/sh
+
+chown chrony:chrony /etc/chrony
+chown root:root     /etc/chrony/*
+chown chrony:chrony /var/lib/chrony
+touch /var/lib/chrony/chrony.drift

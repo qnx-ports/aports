@@ -1,0 +1,37 @@
+# Alpine-Maintainer: Andy Postnikov <apostnikov@gmail.com>
+# Maintainer: jscaffidi <jscaffidi@qnx.com>
+pkgname=python3-bracex
+_pkgname=bracex
+pkgver=2.6
+pkgrel=0
+pkgdesc="brace expanding library (à la Bash) for Python"
+url="https://facelessuser.github.io/bracex/"
+arch="noarch"
+license="MIT"
+depends="python3-hatchling"
+makedepends="python3-gpep517 python3-setuptools python3-wheel"
+checkdepends="python3-pytest"
+source="https://files.pythonhosted.org/packages/source/${_pkgname:0:1}/$_pkgname/$_pkgname-$pkgver.tar.gz"
+builddir="$srcdir"/$_pkgname-$pkgver
+
+build() {
+	gpep517 build-wheel \
+		--wheel-dir .dist \
+		--output-fd 3 3>&1 >&2
+}
+
+check() {
+	python3 -m venv --clear --without-pip --system-site-packages .testenv
+	.testenv/bin/python3 -m installer .dist/*.whl
+	.testenv/bin/python3 -m pytest
+}
+
+package() {
+	python3 -m installer -d "$pkgdir" .dist/*.whl
+}
+
+sha512sums="
+2cd9967751a904d766a07817348727ae913c250b61696e75979c1873f5fe4ef0590a2b78998a784d847f3b6bbbd17b9d5d284b685f642df9f6504bf90233abc0  bracex-2.6.tar.gz
+"
+
+

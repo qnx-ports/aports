@@ -1,0 +1,51 @@
+# Alpine-Contributor: k0r10n <k0r10n.dev@gmail.com>
+# Alpine-Contributor: Jose-Luis Rivas <ghostbar@riseup.net>
+# Alpine-Contributor: Carlo Landmeter <clandmeter@alpinelinux.org>
+# Alpine-Maintainer: Celeste <cielesti@protonmail.com>
+# Maintainer: Leo Shen <yishen@qnx.com>
+pkgname=libzip
+pkgver=1.11.4
+pkgrel=0
+pkgdesc="C library for manipulating zip archives"
+url="https://libzip.org/"
+arch="all"
+license="BSD-3-Clause"
+depends="libbz2 xz-libs zlib zstd-libs"
+depends_dev="$pkgname-tools=$pkgver-r$pkgrel bzip2-dev xz-dev zlib-dev zstd-dev"
+makedepends="$depends_dev cmake openssl-dev perl ninja"
+#checkdepends="nihtest"
+subpackages="$pkgname-dev $pkgname-doc $pkgname-tools"
+source="https://libzip.org/download/libzip-$pkgver.tar.xz"
+options="!check"
+
+build() {
+    cmake -B build -G Ninja \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DCMAKE_INSTALL_LIBDIR=lib \
+        -DBUILD_EXAMPLES=OFF \
+        -DENABLE_BZIP2=ON \
+        -DENABLE_LZMA=ON \
+        -DENABLE_OPENSSL=ON \
+        -DENABLE_ZSTD=ON \
+        -DCMAKE_BUILD_TYPE=MinSizeRel
+    cmake --build build
+}
+
+check() {
+    ctest --test-dir build
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install build
+}
+
+tools() {
+    pkgdesc="$pkgname cmp and merge tools"
+
+    amove usr/bin
+}
+
+sha512sums="
+dc7929ed7a0f43e793041fc3f0639649233d4ecbe59f90b0275582b51d2951e240ce5182220fb14ade7dcccc08dab90fda22c87dc7365fec4fe70ee4f14eaa37  libzip-1.11.4.tar.xz
+"
+

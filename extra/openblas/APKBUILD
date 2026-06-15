@@ -1,0 +1,61 @@
+# Alpine-Contributor: Isaac Dunham <ibid.ag@gmail.com>
+# Alpine-Contributor: Jakub Jirutka <jakub@jirutka.cz>
+# Maintainer: Deep Chordia <dchordia@blackberry.com>
+pkgname=openblas
+pkgver=0.3.31
+pkgrel=0
+pkgdesc="OpenBLAS is an optimized BLAS library based on GotoBLAS2 1.13 BSD version."
+url="http://www.openmathlib.org/OpenBLAS/"
+arch="all"
+license="BSD-3-Clause"
+depends_dev="
+    flang-dev
+    openmp-dev
+    "
+makedepends="
+    $depends_dev
+    cmake
+    ninja
+    clang
+    flang
+    openmp
+    libc++-dev
+"
+subpackages="$pkgname-dev"
+source="$pkgname-$pkgver.tar.gz::https://github.com/OpenMathLib/OpenBLAS/archive/refs/tags/v$pkgver.tar.gz
+        0001-add-qnx-build.patch
+        "
+builddir="$srcdir/OpenBLAS-$pkgver"
+
+build() {
+  CC=clang \
+  CXX=clang++ \
+  CFLAGS="-Wno-unused" \
+  LDFLAGS="-lgcc_s" \
+  cmake -B build -G Ninja \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=/usr \
+    -DCMAKE_INSTALL_DATADIR=/usr/lib \
+    -DCMAKE_Fortran_COMPILER=flang \
+    -DOpenMP_Fortran_LIB_NAMES=omp \
+    -DBUILD_SHARED_LIBS=ON \
+    -DBUILD_TESTING=ON \
+    -DUSE_OPENMP=ON \
+    -DCPP_THREAD_SAFETY_TEST=ON \
+    -DUSE_TLS=ON \
+    -DQNX=ON
+  cmake --build build
+}
+
+check() {
+  ctest --test-dir build -j1
+}
+
+package() {
+  DESTDIR="$pkgdir" cmake --install build
+}
+
+sha512sums="
+703b84c476c148a0922a04b1c33c9c4c452f478d608d93e59204b8f0f2c516344301ff0a4dbb3750a2449db0d28cc2df001c295898e859b41ecb8381f9c2eab8  openblas-0.3.31.tar.gz
+662d6039c53e866fb923d08b69c819b4d04f616b28d9142953a18b9a8b852f818b9a2a1b466580fb8dc62096d22cab26d6d3181c488fd380f846ee9682cceda1  0001-add-qnx-build.patch
+"

@@ -1,7 +1,8 @@
 # Alpine-Contributor: Jose-Luis Rivas <ghostbar@riseup.net>
 # Alpine-Contributor: Sören Tempel <soeren+alpine@soeren-tempel.net>
 # Alpine-Maintainer: Natanael Copa <ncopa@alpinelinux.org>
-# Maintainer: Ethan Leir <eleir@qnx.com>
+# Contributor: Ethan Leir <eleir@qnx.com>
+# Maintainer: Deep Chordia <dchordia@qnx.com>
 pkgname=libuv
 pkgver=1.51.0
 pkgrel=0

@@ -1,8 +1,9 @@
-# Contributor: Daniel Sabogal <dsabogalcc@gmail.com>
-# Maintainer: Jakub Jirutka <jakub@jirutka.cz>
+# Alpine-Contributor: Daniel Sabogal <dsabogalcc@gmail.com>
+# Alpine-Maintainer: Jakub Jirutka <jakub@jirutka.cz>
+# Maintianer: Aaron Bassett <abassett@qnx.com>
 pkgname=neovim
 pkgver=0.11.4
-pkgrel=0
+pkgrel=1
 pkgdesc="Vim-fork focused on extensibility and agility"
 url="https://neovim.io/"
 arch="all"
@@ -30,6 +31,7 @@ checkdepends="
 	xdg-utils
 	"
 makedepends="
+	qnx-io-sock-dev
 	cmake
 	gettext-dev
 	gperf

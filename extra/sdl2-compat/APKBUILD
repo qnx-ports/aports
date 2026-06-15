@@ -1,0 +1,65 @@
+# Alpine-Maintainer: Achill Gilgenast <achill@achill.org>
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=sdl2-compat
+pkgver=2.32.60
+pkgrel=0
+pkgdesc="An SDL2 compatibility layer that uses SDL3 behind the scenes."
+url="https://libsdl.org/"
+arch="all"
+license="Zlib"
+depends="sdl3"
+makedepends="
+    sdl3-dev
+    sdl3-static
+    qnx-alsa-dev
+    qnx-screen-dev
+    wayland-dev
+    qnx-usb-dev
+    qnx-usb-static
+    libxkbcommon-dev
+    libxkbcommon-static
+    clang
+    cmake
+    ninja"
+subpackages="$pkgname-static $pkgname-dev $pkgname-dbg $pkgname-doc"
+_git_rev=3
+source="$pkgname-$pkgver-r$_git_rev.tar.gz::https://www.github.com/qnx-ports/$pkgname/archive/refs/tags/qnx-release-$pkgver-r$_git_rev.tar.gz"
+builddir="$srcdir/$pkgname-qnx-release-$pkgver-r$_git_rev"
+
+build() {
+    export CPPFLAGS="${CPPFLAGS} -D_QNX_SOURCE"
+    cmake -B build-shared -G Ninja \
+        -DCMAKE_C_COMPILER=clang \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DBUILD_SHARED_LIBS=True \
+        -DCMAKE_SKIP_INSTALL_RPATH=ON \
+        -DSDL2COMPAT_X11=OFF \
+        -DSDL2COMPAT_INSTALL=ON \
+        -DSDL2COMPAT_STATIC=OFF \
+        -DSDL2COMPAT_TESTS=ON
+    cmake --build build-shared
+
+    cmake -B build-static -G Ninja \
+        -DCMAKE_C_COMPILER=clang \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DBUILD_SHARED_LIBS=False \
+        -DCMAKE_SKIP_INSTALL_RPATH=ON \
+        -DSDL2COMPAT_X11=OFF \
+        -DSDL2COMPAT_INSTALL=ON \
+        -DSDL2COMPAT_STATIC=ON
+    cmake --build build-static
+}
+
+check() {
+    # Known issue - Broken strtod conversions.
+    cd build-shared && ctest -E "testautomation"
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install build-static
+    DESTDIR="$pkgdir" cmake --install build-shared
+}
+
+sha512sums="
+7672bc072158592a8d1de8ae7c0ae0c953eab15ac937eae0a4c84307898fb39bdfde4a9adf82abd1913d48b120604d344508847a65ff9e7116b9324e84226bce  sdl2-compat-2.32.60-r3.tar.gz
+"

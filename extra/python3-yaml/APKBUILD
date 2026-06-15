@@ -1,0 +1,63 @@
+# Alpine-Contributor: Fabian Affolter <fabian@affolter-engineering.ch>
+# Alpine-Contributor: Jakub Jirutka <jakub@jirutka.cz>
+# Alpine-Contributor: Celeste <cielesti@protonmail.com>
+# Alpine-Maintainer: Achill Gilgenast <achill@achill.org>
+# Maintainer: jscaffidi <jscaffidi@qnx.com>
+pkgname=python3-yaml
+_pkgname=PyYAML
+pkgver=6.0.3
+pkgrel=0
+pkgdesc="Python3 bindings for YAML"
+url="https://pyyaml.org/"
+arch="all"
+license="MIT"
+makedepends="
+	cython
+	python3-gpep517
+	python3-setuptools
+	python3-wheel
+	python3-dev
+	yaml-dev
+	"
+checkdepends="
+	python3-pytest
+	"
+source="$_pkgname-$pkgver.tar.gz::https://github.com/yaml/pyyaml/archive/$pkgver.tar.gz"
+builddir="$srcdir/pyyaml-$pkgver"
+
+replaces="py-yaml" # Backwards compatibility
+provides="py-yaml=$pkgver-r$pkgrel" # Backwards compatibility
+
+# secfixes:
+#   5.4-r0:
+#     - CVE-2020-14343
+#   5.3.1-r0:
+#     - CVE-2020-1747
+
+prepare() {
+	default_prepare
+	rm -f ext/_yaml.c
+}
+
+build() {
+	gpep517 build-wheel \
+		--wheel-dir .dist \
+		--output-fd 3 3>&1 >&2
+}
+
+check() {
+	python3 -m venv --clear --without-pip --system-site-packages .testenv
+	.testenv/bin/python3 -m installer .dist/*.whl
+	.testenv/bin/python3 -m pytest
+}
+
+package() {
+	python3 -m installer -d "$pkgdir" \
+		.dist/*.whl
+}
+
+sha512sums="
+a0da43e32d127409ad61b11dc1d733b2e9c743977b3d72c05c81fc2ab183b40bc284452b0874dbeae1a736e1cd4a34f0df641ceefd5e9df38b3e53155fc5f633  PyYAML-6.0.3.tar.gz
+"
+
+

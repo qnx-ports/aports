@@ -1,0 +1,45 @@
+# Alpine-Contributor: Russ Webber <russ@rw.id.au>
+# Alpine-Maintainer: Russ Webber <russ@rw.id.au>
+# Maintainer: jscaffidi <jscaffidi@qnx.com>
+pkgname=python3-catkin-pkg
+_pkgname=catkin_pkg
+pkgver=1.1.0
+pkgrel=0
+pkgdesc="Standalone Python library for the catkin build system."
+url="http://wiki.ros.org/catkin_pkg"
+arch="noarch"
+license="BSD-3-Clause"
+depends="python3 python3-docutils python3-dateutil python3-parsing python3-packaging"
+makedepends="python3-setuptools python3-gpep517"
+checkdepends="python3-pytest"
+source="https://github.com/ros-infrastructure/catkin_pkg/archive/refs/tags/$pkgver/catkin-pkg-$pkgver.tar.gz"
+builddir="$srcdir/$_pkgname-$pkgver"
+
+prepare() {
+	default_prepare
+	# skip lint checks
+	rm test/test_flake8.py
+}
+
+build() {
+	gpep517 build-wheel \
+		--wheel-dir .dist \
+		--output-fd 3 3>&1 >&2
+}
+
+check() {
+	python3 -m venv --clear --without-pip --system-site-packages .testenv
+	gpep517 install-wheel --destdir .testenv --prefix '' .dist/*.whl
+	.testenv/bin/python3 -m pytest
+}
+
+package() {
+	gpep517 install-wheel --destdir "$pkgdir" \
+		.dist/*.whl
+}
+
+sha512sums="
+39a0f463a86528bfa4071da84e8d899c96d3cf10103a0308190eaad018ead0ea60cc173ac8fcbb0d31d100ffcbcf68c3e11d9c722aefbc7143f9807906de180b  catkin-pkg-1.1.0.tar.gz
+"
+
+

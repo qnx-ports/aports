@@ -14,6 +14,7 @@ makedepends="
 	cmake
 	libuv-dev
 	lua-compat53-dev
+	qnx-io-sock-dev
 	ninja
 	"
 subpackages="

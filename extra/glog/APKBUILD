@@ -1,0 +1,49 @@
+# Alpine-Contributor: David Huffman <storedbox@outlook.com>
+# Alpine-Maintainer: Luca Weiss <luca@lucaweiss.eu>
+# Maintainer: Felix Lionardo <flionardo@qnx.com>
+pkgname=glog
+pkgver=0.6.0
+pkgrel=0
+pkgdesc="C++ implementation of the Google logging module"
+url="https://github.com/google/glog"
+arch="all"
+license="BSD-3-Clause"
+depends="gflags"
+depends_dev="gflags-dev libc++-dev"
+makedepends="$depends_dev cmake gtest-dev libucontext-dev ninja"
+subpackages="$pkgname-dev"
+source="https://github.com/qnx-ports/glog/archive/refs/heads/qnx-v$pkgver.tar.gz"
+builddir="$srcdir/glog-qnx-v$pkgver"
+
+# Known test failures:
+# https://github.com/google/glog/issues/813
+# https://github.com/google/glog/issues/887
+options="!check"
+
+build() {
+	cmake3.5 -B build -G Ninja \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DCMAKE_INSTALL_LIBDIR=lib \
+		-DBUILD_SHARED_LIBS=True \
+		-DCMAKE_BUILD_TYPE=None \
+		-DWITH_GFLAGS=ON \
+		-DWITH_THREADS=ON \
+		-DWITH_TLS=ON \
+		-DWITH_PKGCONFIG=ON \
+		-DPRINT_UNSYMBOLIZED_STACK_TRACES=OFF
+	cmake --build build
+}
+
+check() {
+	cd build
+	ctest --output-on-failure
+}
+
+package() {
+	DESTDIR="$pkgdir" cmake --install build
+}
+
+
+sha512sums="
+34e70919c5768547f5961249c003eb92ab0253a1b79e5cbd5f857770f0aaddc56661ad2d54b302ad290c82356bed9f1ca0a74dd5356fb8763b5c17dee99b6103  qnx-v0.6.0.tar.gz
+"

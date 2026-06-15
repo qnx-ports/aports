@@ -2,7 +2,7 @@
 # Maintainer: Aaron Bassett <abassett@qnx.com>
 pkgname=geany-plugins
 pkgver=2.1
-pkgrel=0
+pkgrel=1
 pkgdesc="Plugins for Geany"
 url="https://plugins.geany.org/"
 arch="all"
@@ -15,7 +15,7 @@ makedepends="
 	intltool
 	libtool
 	libxml2-dev
-	lua-dev
+	lua5.1-dev
 	python3-dev
 	vala
 	vte3-dev
@@ -71,6 +71,7 @@ prepare() {
 }
 
 build() {
+	CFLAGS="$CFLAGS -Qunused-arguments"
 	./configure \
 		--build=$CBUILD \
 		--host=$CHOST \
@@ -156,5 +157,5 @@ lsp() { _plugin lsp "LSP plugin for the Geany editor"; }
 
 sha512sums="
 aed8998c9fd7467b08c05cdf7a066c701b8ef73917e78f674d547282513be418063f37651d2fa0d345c4fdc5b8db3371837f3498263fa73c41497beb364294c6  geany-plugins-2.1.tar.bz2
-14a7dcb2bb4118b69cfa308bea60963eef031e5eae4eb030da06f12279d92c5cae2da1a7476a1308900db45cafb2dee48c1ef32c0da7098ab95bbc30bb26a95f  fix-qnx.patch
+7d16425bc2f395cb25df1fa5374cbc9f9258a8c3dd5763a512875e77191cf95aacb017e37eb0e3c948ad17f02c91997be94b9bebbc4e17a7d7258fb73ac46226  fix-qnx.patch
 "

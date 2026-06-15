@@ -1,0 +1,14 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index bf30a70..7e4a65e 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -89,6 +89,9 @@ target_compile_definitions(SDL2_net PRIVATE
+     SDL_BUILD_MICRO_VERSION=${MICRO_VERSION}
+ )
+ target_link_libraries(SDL2_net PRIVATE $<BUILD_INTERFACE:${sdl2_target_name}>)
++if(QNX)
++    target_link_libraries(SDL2_net PRIVATE socket)
++endif()
+ if(WIN32)
+     if (MSVC)
+         target_compile_options(SDL2_net PRIVATE /W3 /wd4244)

@@ -1,0 +1,42 @@
+# Alpine-Contributor: Leo <thinkabit.ukim@gmail.com>
+# Alpine-Maintainer: Jakub Jirutka <jakub@jirutka.cz>
+# Maintainer: jscaffidi <jscaffidi@qnx.com>
+pkgname=cjson
+pkgver=1.7.19
+pkgrel=1
+pkgdesc="Lighweight JSON parser in C"
+url="https://github.com/DaveGamble/cJSON"
+arch="all"
+license="MIT"
+makedepends="cmake ninja"
+subpackages="$pkgname-static $pkgname-dev"
+source="
+$pkgname-$pkgver.tar.gz::https://github.com/DaveGamble/cJSON/archive/v$pkgver.tar.gz
+00-c99.patch
+"
+builddir="$srcdir/cJSON-$pkgver"
+
+build() {
+	cmake3.5 -B build -G Ninja \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DCMAKE_INSTALL_LIBDIR=lib \
+		-DBUILD_SHARED_AND_STATIC_LIBS=True \
+		-DCMAKE_BUILD_TYPE=MinSizeRel 
+
+	cmake --build build
+}
+
+check() {
+	cd build
+	ctest
+}
+
+package() {
+	DESTDIR="$pkgdir" cmake --build build --target install
+}
+
+
+sha512sums="
+7b22bdd05b8e0bf8b24ab79db128dbab9f8c2c167f4b1d3073922b8ff1e0f0e8917322283d6d4091002f014f42692984f4f641761f05965d3b66fb3eca14dc46  cjson-1.7.19.tar.gz
+3775d24a9fddac4f434b4647b252b270992e4765454f17ceea4444c57f3dcf6b81ebcbe4f6435b8d2a81ab7483da7263df8bffcb96cac47cc6a4ee9b1f28c7fd  00-c99.patch
+"

@@ -1,0 +1,62 @@
+# Alpine-Contributor: Danct12 <danct12@disroot.org>
+# Alpine-Contributor: Asriel Dreemurr <asriel.danctnix@gmail.com>
+# Alpine-Maintainer: Danct12 <danct12@disroot.org>
+# Maintainer: Felix Lionardo <flionardo@qnx.com>
+pkgname=bullet
+pkgver=3.25
+pkgrel=0
+pkgdesc="A 3D Collision Detection and Rigid Body Dynamics Library for games and animation"
+url="https://pybullet.org/Bullet/phpBB3/"
+arch="all"
+license="Zlib"
+depends="libc++ libsysv-ipc-shim qnx-io-sock graphviz"
+makedepends="
+	libc++-dev
+	libsysv-ipc-shim-dev
+	qnx-io-sock-dev
+	cmake
+	font-dejavu
+	graphviz-dev
+	ninja
+	"
+options="!check" # cannot build tests
+subpackages="$pkgname-dev $pkgname-doc"
+source="bullet3-$pkgver.tar.gz::https://github.com/bulletphysics/bullet3/archive/$pkgver.tar.gz
+	"
+builddir="$srcdir/bullet3-$pkgver"
+
+build() {
+	export CFLAGS="$CFLAGS -Qunused-arguments"
+	export CXXFLAGS="$CXXFLAGS -Qunused-arguments"
+	cmake3.5 -B build -G Ninja -Wno-dev \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DCMAKE_BUILD_TYPE=None \
+		-DBUILD_PYBULLET=OFF \
+		-DBUILD_PYBULLET_NUMPY=OFF \
+		-DBUILD_SHARED_LIBS=True \
+		-DBUILD_UNIT_TESTS=OFF \
+		-DBULLET2_MULTITHREADING=ON \
+		-DCMAKE_SKIP_RPATH=ON \
+		-DINSTALL_EXTRA_LIBS=ON \
+		-DINSTALL_LIBS=ON \
+		-DUSE_DOUBLE_PRECISION=ON \
+		-DCMAKE_EXE_LINKER_FLAGS="-lsocket -lsysv-ipc" \
+		-DCMAKE_SHARED_LINKER_FLAGS="-lsocket -lsysv-ipc"
+
+	cmake3.5 --build build
+}
+
+package() {
+	DESTDIR="$pkgdir" cmake --install build
+
+	# Install LICENSE
+	install -Dm644 "$builddir"/LICENSE.txt "$pkgdir"/usr/share/licenses/$pkgname/LICENSE
+	install -Dm644 "$builddir"/docs/GPU_rigidbody_using_OpenCL.pdf "$pkgdir"/usr/share/doc/bullet/GPU_rigidbody_using_OpenCL.pdf
+	install -Dm644 "$builddir"/docs/Bullet_User_Manual.pdf "$pkgdir"/usr/share/doc/bullet/Bullet_User_Manual.pdf
+	install -Dm644 "$builddir"/docs/BulletQuickstart.pdf "$pkgdir"/usr/share/doc/bullet/BulletQuickstart.pdf
+}
+
+
+sha512sums="
+7086e5fcf69635801bb311261173cb8d173b712ca1bd78be03df48fad884674e85512861190e45a1a62d5627aaad65cde08c175c44a3be9afa410d3dfd5358d4  bullet3-3.25.tar.gz
+"

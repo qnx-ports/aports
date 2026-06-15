@@ -1,0 +1,69 @@
+# Maintainer: Felix Lionardo <flionardo@qnx.com>
+pkgname=ceres-solver
+pkgver=2.2.0
+pkgrel=1
+pkgdesc="C++ library for large-scale nonlinear least squares problems"
+url="http://ceres-solver.org"
+arch="all"
+license="BSD-3-Clause"
+subpackages="$pkgname-dev"
+depends="
+  suitesparse
+  suitesparse-graphblas
+  glog
+  eigen
+  libc++
+"
+depends_dev="
+  suitesparse-dev
+  glog-dev
+  eigen-dev
+"
+makedepends="
+  $depends_dev
+  cmake
+  ninja
+  libc++-dev
+  gtest-dev
+"
+
+source="$pkgname-$pkgver.tar.gz::https://github.com/ceres-solver/ceres-solver/archive/refs/tags/$pkgver.tar.gz
+eigen-fix.patch"
+builddir="$srcdir/ceres-solver-$pkgver"
+
+# Disable tests on aarch64 because of llvm bug
+case "$CARCH" in
+	aarch64) options="$options !check" ;;
+esac
+
+build() {
+    cd "$builddir"
+
+    cmake -B build -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DBUILD_SHARED_LIBS=ON \
+        -DBUILD_TESTING=ON \
+        -DBUILD_EXAMPLES=OFF \
+        -DBUILD_BENCHMARKS=OFF \
+        -DSUITESPARSE=ON \
+        -DLAPACK=OFF \
+        -DUSE_CUDA=OFF \
+        -DEIGENSPARSE=ON
+
+    cmake --build build
+}
+
+check() {
+    ctest --test-dir build -j1 --output-on-failure
+}
+
+package() {
+    cd "$builddir"
+    DESTDIR="$pkgdir" cmake --install build
+}
+
+sha512sums="
+d4cefe5851e25bd3c7b76352092d8d549eb371af2e35a325736554c54fe58a3523658697c3e2d65af660fe6895ae3d96fe31bd1875870474fc4b6fed3bbdfae9  ceres-solver-2.2.0.tar.gz
+64966e9dcfd65e5ef93ba97c892c1966b7652efc8bbaccf268de4d6b50536b0ecf003ab134d2b7883f30dc75cac93aa0c2273b4d61b4ecab3c7d77036a289342  eigen-fix.patch
+"

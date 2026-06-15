@@ -1,0 +1,28 @@
+# Maintainer: jscaffidi <jscaffidi@qnx.com>
+pkgname=python3-flake8-comprehensions
+pkgver=3.17.0
+pkgrel=0
+pkgdesc="A flake8 plugin to help you write better list/set/dict comprehensions."
+options="!check" # No testsuite
+url="https://github.com/adamchainz/flake8-comprehensions"
+arch="noarch"
+license="MIT"
+depends="python3-flake8"
+makedepends="python3-hatchling python3-setuptools python3-gpep517"
+source="flake8-comprehensions-$pkgver.tar.gz::https://github.com/adamchainz/flake8-comprehensions/archive/refs/tags/$pkgver.tar.gz"
+builddir="$srcdir"/flake8-comprehensions-$pkgver
+
+build() {
+	gpep517 build-wheel \
+		--wheel-dir .dist \
+		--output-fd 3 3>&1 >&2
+}
+
+package() {
+	gpep517 install-wheel --destdir "$pkgdir" \
+		.dist/*.whl
+}
+
+sha512sums="
+77aef7facb8cedf0a6506b85d9c8bd0fd6c61025d559fb3b3a7394dd1f5629a2938e525f24ffc0978ec96e2c312ceba72458bbfc469326d6809890b907ae7513  flake8-comprehensions-3.17.0.tar.gz
+"

@@ -1,0 +1,54 @@
+diff --git a/Makefile.in b/Makefile.in
+index 2153c35..57744c9 100644
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -68,7 +68,6 @@ chronyc : $(CLI_OBJS)
+ getdate.o: CFLAGS += $(GETDATE_CFLAGS)
+ 
+ distclean : clean
+-	$(MAKE) -C doc distclean
+ 	$(MAKE) -C test/unit distclean
+ 	-rm -f .DS_Store
+ 	-rm -f Makefile config.h config.log
+@@ -101,13 +100,6 @@ install: chronyd chronyc
+ 	chmod 755 $(DESTDIR)$(SBINDIR)/chronyd
+ 	cp chronyc $(DESTDIR)$(BINDIR)/chronyc
+ 	chmod 755 $(DESTDIR)$(BINDIR)/chronyc
+-	$(MAKE) -C doc install
+-
+-docs :
+-	$(MAKE) -C doc docs
+-
+-install-docs :
+-	$(MAKE) -C doc install-docs
+ 
+ %.o : %.c
+ 	$(CC) $(CFLAGS) $(CPPFLAGS) -c $<
+diff --git a/configure b/configure
+index 195b1ed..701e091 100755
+--- a/configure
++++ b/configure
+@@ -447,6 +447,23 @@ case $OPERATINGSYSTEM in
+         add_def NETBSD
+         echo "Configuring for $SYSTEM"
+     ;;
++    QNX)
++        EXTRA_OBJECTS="sys_generic.o sys_qnx.o sys_posix.o"
++        LIBS="$LIBS -lsocket"
++        try_setsched=1
++        try_lockmem=1
++        feat_refclock=0
++        try_recvmmsg=0 # Freebsd "bug" which we inherited. using regular recvmsg makes things work
++        CFLAGS="-O2 -g -fPIE -fstack-protector-strong --param=ssp-buffer-size=4 -Wmissing-prototypes -Wshadow -Wall -pthread -I/usr/include/p11-kit-1"
++        add_def QNX
++        if [ $feat_droproot = "1" ]; then
++          add_def FEAT_PRIVDROP
++          priv_ops="ADJUSTTIME SETTIME BINDSOCKET"
++        fi
++        # QNX doesn't have SA_RESTART
++        add_def SA_RESTART 0
++        echo "Configuring for $SYSTEM"
++    ;;                                                                        
+     Darwin)
+         EXTRA_OBJECTS="sys_macosx.o"
+         LIBS="$LIBS -lresolv"

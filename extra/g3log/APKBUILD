@@ -1,0 +1,37 @@
+# Maintainer:Ramya santoshi <rtimmaraju@qnx.com>
+pkgname=g3log
+pkgver=2.6
+pkgrel=0
+pkgdesc="Asynchronous crash-safe logging library for C++"
+url="https://github.com/KjellKod/g3log"
+arch="all"
+license="Unlicense"
+depends="libc++"
+makedepends="cmake  libc++-dev"
+source="$pkgname-$pkgver.tar.gz::https://github.com/KjellKod/g3log/archive/refs/tags/2.6.tar.gz g3log-2.6_qnx.patch"
+builddir="$srcdir/g3log-$pkgver"
+subpackages="$pkgname-dev"
+
+build() {
+    cmake -B build \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DINSTALL_GTEST=OFF \
+        -DG3_SHARED_LIB=ON 
+        
+    cmake --build build
+}
+
+check() {
+    cd "$builddir"/build
+    ctest --output-on-failure -j1
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install build
+}
+
+sha512sums="
+94074247811d2811bad634714549f59ca4826976e0129160a007229fdc39b6abdb36a5a3f851de64bf9df11fde5838f200c6d5b171004c5c2f2cd5ae4e0eb3ed  g3log-2.6.tar.gz
+5997247f3d3d7cce162641a4dc4338632c17eee8c5120c1c17f3832b495740a5c9d1ab7a689ab12f875459d2a4ffe5aba74b6bdc757fca1aecf8d9ca6349c3d3  g3log-2.6_qnx.patch
+"

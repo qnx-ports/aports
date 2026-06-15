@@ -1,0 +1,428 @@
+# Contributor: Justin Scaffidi <jscaffidi@qnx.com>
+# Maintainer: Felix Lionardo <flionardo@qnx.com>
+pkgname=ros2-jazzy
+pkgver=20260128
+pkgrel=0
+pkgdesc="ROS 2 Jazzy desktop package"
+url="https://docs.ros.org/en/jazzy/index.html"
+arch="aarch64 x86_64"
+license="Apache-2.0"
+options="!check !tracedeps !fhs"
+
+source="
+    ament_cmake.tar.gz::https://github.com/ament/ament_cmake/archive/refs/tags/2.5.5.tar.gz
+    ament_index.tar.gz::https://github.com/ament/ament_index/archive/refs/tags/1.8.2.tar.gz
+    ament_lint.tar.gz::https://github.com/ament/ament_lint/archive/refs/tags/0.17.4.tar.gz
+    ament_package.tar.gz::https://github.com/ament/ament_package/archive/refs/tags/0.16.5.tar.gz
+    google_benchmark_vendor.tar.gz::https://github.com/ament/google_benchmark_vendor/archive/refs/tags/0.5.1.tar.gz
+    googletest.tar.gz::https://github.com/ament/googletest/archive/refs/tags/1.14.9000.tar.gz
+    uncrustify_vendor.tar.gz::https://github.com/ament/uncrustify_vendor/archive/refs/tags/3.0.1.tar.gz
+    CDR.tar.gz::https://github.com/eProsima/Fast-CDR/archive/refs/tags/v2.2.5.tar.gz
+    DDS.tar.gz::https://github.com/eProsima/Fast-DDS/archive/refs/tags/v2.14.5.tar.gz
+    foonathan_memory_vendor.tar.gz::https://github.com/eProsima/foonathan_memory_vendor/archive/refs/tags/v1.4.1.tar.gz
+    cyclonedds.tar.gz::https://github.com/eclipse-cyclonedds/cyclonedds/archive/refs/tags/0.10.5.tar.gz
+    iceoryx.tar.gz::https://github.com/eclipse-iceoryx/iceoryx/archive/refs/tags/v2.0.6.tar.gz
+    gz_cmake_vendor.tar.gz::https://github.com/gazebo-release/gz_cmake_vendor/archive/refs/tags/0.0.10.tar.gz
+    gz_math_vendor.tar.gz::https://github.com/gazebo-release/gz_math_vendor/archive/refs/tags/0.0.8.tar.gz
+    gz_utils_vendor.tar.gz::https://github.com/gazebo-release/gz_utils_vendor/archive/refs/tags/0.0.5.tar.gz
+    osrf_pycommon.tar.gz::https://github.com/osrf/osrf_pycommon/archive/refs/tags/2.1.7.tar.gz
+    osrf_testing_tools_cpp.tar.gz::https://github.com/osrf/osrf_testing_tools_cpp/archive/refs/tags/2.0.0.tar.gz
+    image_common.tar.gz::https://github.com/ros-perception/image_common/archive/refs/tags/5.1.7.tar.gz
+    laser_geometry.tar.gz::https://github.com/ros-perception/laser_geometry/archive/refs/tags/2.7.2.tar.gz
+    point_cloud_transport.tar.gz::https://github.com/ros-perception/point_cloud_transport/archive/refs/tags/4.0.7.tar.gz
+    navigation_msgs.tar.gz::https://github.com/ros-planning/navigation_msgs/archive/refs/tags/2.4.1.tar.gz
+    keyboard_handler.tar.gz::https://github.com/ros-tooling/keyboard_handler/archive/refs/tags/0.3.2.tar.gz
+    libstatistics_collector.tar.gz::https://github.com/ros-tooling/libstatistics_collector/archive/refs/tags/1.7.4.tar.gz
+    interactive_markers.tar.gz::https://github.com/ros-visualization/interactive_markers/archive/refs/tags/2.5.5.tar.gz
+    python_qt_binding.tar.gz::https://github.com/ros-visualization/python_qt_binding/archive/refs/tags/2.2.2.tar.gz
+    qt_gui_core.tar.gz::https://github.com/ros-visualization/qt_gui_core/archive/refs/tags/2.7.5.tar.gz
+    rqt.tar.gz::https://github.com/ros-visualization/rqt/archive/refs/tags/1.6.3.tar.gz
+    rqt_action.tar.gz::https://github.com/ros-visualization/rqt_action/archive/refs/tags/2.2.1.tar.gz
+    rqt_bag.tar.gz::https://github.com/ros-visualization/rqt_bag/archive/refs/tags/1.5.6.tar.gz
+    rqt_console.tar.gz::https://github.com/ros-visualization/rqt_console/archive/refs/tags/2.2.2.tar.gz
+    rqt_graph.tar.gz::https://github.com/ros-visualization/rqt_graph/archive/refs/tags/1.5.6.tar.gz
+    rqt_msg.tar.gz::https://github.com/ros-visualization/rqt_msg/archive/refs/tags/1.5.2.tar.gz
+    rqt_plot.tar.gz::https://github.com/ros-visualization/rqt_plot/archive/refs/tags/1.4.5.tar.gz
+    rqt_publisher.tar.gz::https://github.com/ros-visualization/rqt_publisher/archive/refs/tags/1.7.3.tar.gz
+    rqt_py_console.tar.gz::https://github.com/ros-visualization/rqt_py_console/archive/refs/tags/1.2.3.tar.gz
+    rqt_reconfigure.tar.gz::https://github.com/ros-visualization/rqt_reconfigure/archive/refs/tags/1.6.3.tar.gz
+    rqt_service_caller.tar.gz::https://github.com/ros-visualization/rqt_service_caller/archive/refs/tags/1.2.2.tar.gz
+    rqt_shell.tar.gz::https://github.com/ros-visualization/rqt_shell/archive/refs/tags/1.2.3.tar.gz
+    rqt_srv.tar.gz::https://github.com/ros-visualization/rqt_srv/archive/refs/tags/1.2.3.tar.gz
+    rqt_topic.tar.gz::https://github.com/ros-visualization/rqt_topic/archive/refs/tags/1.7.5.tar.gz
+    tango_icons_vendor.tar.gz::https://github.com/ros-visualization/tango_icons_vendor/archive/refs/tags/0.3.1.tar.gz
+    class_loader.tar.gz::https://github.com/ros/class_loader/archive/refs/tags/2.7.0.tar.gz
+    kdl_parser.tar.gz::https://github.com/ros/kdl_parser/archive/refs/tags/2.11.0.tar.gz
+    pluginlib.tar.gz::https://github.com/ros/pluginlib/archive/refs/tags/5.4.4.tar.gz
+    resource_retriever.tar.gz::https://github.com/ros/resource_retriever/archive/refs/tags/3.4.4.tar.gz
+    robot_state_publisher.tar.gz::https://github.com/ros/robot_state_publisher/archive/refs/tags/3.3.3.tar.gz
+    ros_environment.tar.gz::https://github.com/ros/ros_environment/archive/refs/tags/4.2.1.tar.gz
+    ros_tutorials.tar.gz::https://github.com/ros/ros_tutorials/archive/refs/tags/1.8.3.tar.gz
+    urdfdom.tar.gz::https://github.com/ros/urdfdom/archive/refs/tags/4.0.2.tar.gz
+    urdfdom_headers.tar.gz::https://github.com/ros/urdfdom_headers/archive/refs/tags/1.1.2.tar.gz
+    ament_cmake_ros.tar.gz::https://github.com/ros2/ament_cmake_ros/archive/refs/tags/0.12.0.tar.gz
+    common_interfaces.tar.gz::https://github.com/ros2/common_interfaces/archive/refs/tags/5.3.6.tar.gz
+    console_bridge_vendor.tar.gz::https://github.com/ros2/console_bridge_vendor/archive/refs/tags/1.7.1.tar.gz
+    demos.tar.gz::https://github.com/ros2/demos/archive/refs/tags/0.33.9.tar.gz
+    eigen3_cmake_module.tar.gz::https://github.com/ros2/eigen3_cmake_module/archive/refs/tags/0.3.0.tar.gz
+    example_interfaces.tar.gz::https://github.com/ros2/example_interfaces/archive/refs/tags/0.12.0.tar.gz
+    examples.tar.gz::https://github.com/ros2/examples/archive/refs/tags/0.19.7.tar.gz
+    geometry2.tar.gz::https://github.com/ros2/geometry2/archive/refs/tags/0.36.19.tar.gz
+    launch.tar.gz::https://github.com/ros2/launch/archive/refs/tags/3.4.10.tar.gz
+    launch_ros.tar.gz::https://github.com/ros2/launch_ros/archive/refs/tags/0.26.11.tar.gz
+    libyaml_vendor.tar.gz::https://github.com/ros2/libyaml_vendor/archive/refs/tags/1.6.3.tar.gz
+    message_filters.tar.gz::https://github.com/ros2/message_filters/archive/refs/tags/4.11.10.tar.gz
+    mimick_vendor.tar.gz::https://github.com/ros2/mimick_vendor/archive/refs/tags/0.6.2.tar.gz
+    orocos_kdl_vendor.tar.gz::https://github.com/ros2/orocos_kdl_vendor/archive/refs/tags/0.5.1.tar.gz
+    performance_test_fixture.tar.gz::https://github.com/ros2/performance_test_fixture/archive/refs/tags/0.2.1.tar.gz
+    pybind11_vendor.tar.gz::https://github.com/ros2/pybind11_vendor/archive/refs/tags/3.1.3.tar.gz
+    python_cmake_module.tar.gz::https://github.com/ros2/python_cmake_module/archive/refs/tags/0.11.1.tar.gz
+    rcl.tar.gz::https://github.com/ros2/rcl/archive/refs/tags/9.2.9.tar.gz
+    rcl_interfaces.tar.gz::https://github.com/ros2/rcl_interfaces/archive/refs/tags/2.0.3.tar.gz
+    rcl_logging.tar.gz::https://github.com/ros2/rcl_logging/archive/refs/tags/3.1.1.tar.gz
+    rclcpp.tar.gz::https://github.com/ros2/rclcpp/archive/refs/tags/28.1.16.tar.gz
+    rclpy.tar.gz::https://github.com/ros2/rclpy/archive/refs/tags/7.1.9.tar.gz
+    rcpputils.tar.gz::https://github.com/ros2/rcpputils/archive/refs/tags/2.11.3.tar.gz
+    rcutils.tar.gz::https://github.com/ros2/rcutils/archive/refs/tags/6.7.5.tar.gz
+    realtime_support.tar.gz::https://github.com/ros2/realtime_support/archive/refs/tags/0.17.1.tar.gz
+    rmw.tar.gz::https://github.com/ros2/rmw/archive/refs/tags/7.3.3.tar.gz
+    rmw_connextdds.tar.gz::https://github.com/ros2/rmw_connextdds/archive/refs/tags/0.22.3.tar.gz
+    rmw_cyclonedds.tar.gz::https://github.com/ros2/rmw_cyclonedds/archive/refs/tags/2.2.3.tar.gz
+    rmw_dds_common.tar.gz::https://github.com/ros2/rmw_dds_common/archive/refs/tags/3.1.1.tar.gz
+    rmw_fastrtps.tar.gz::https://github.com/ros2/rmw_fastrtps/archive/refs/tags/8.4.3.tar.gz
+    rmw_implementation.tar.gz::https://github.com/ros2/rmw_implementation/archive/refs/tags/2.15.6.tar.gz
+    ros2_tracing.tar.gz::https://github.com/ros2/ros2_tracing/archive/refs/tags/8.2.5.tar.gz
+    ros2cli.tar.gz::https://github.com/ros2/ros2cli/archive/refs/tags/0.32.8.tar.gz
+    ros2cli_common_extensions.tar.gz::https://github.com/ros2/ros2cli_common_extensions/archive/refs/tags/0.3.1.tar.gz
+    ros_testing.tar.gz::https://github.com/ros2/ros_testing/archive/refs/tags/0.6.0.tar.gz
+    rosbag2.tar.gz::https://github.com/ros2/rosbag2/archive/refs/tags/0.26.9.tar.gz
+    rosidl.tar.gz::https://github.com/ros2/rosidl/archive/refs/tags/4.6.7.tar.gz
+    rosidl_core.tar.gz::https://github.com/ros2/rosidl_core/archive/refs/tags/0.2.0.tar.gz
+    rosidl_dds.tar.gz::https://github.com/ros2/rosidl_dds/archive/refs/tags/0.11.1.tar.gz
+    rosidl_defaults.tar.gz::https://github.com/ros2/rosidl_defaults/archive/refs/tags/1.6.0.tar.gz
+    rosidl_dynamic_typesupport.tar.gz::https://github.com/ros2/rosidl_dynamic_typesupport/archive/refs/tags/0.1.2.tar.gz
+    rosidl_dynamic_typesupport_fastrtps.tar.gz::https://github.com/ros2/rosidl_dynamic_typesupport_fastrtps/archive/refs/tags/0.1.0.tar.gz
+    rosidl_python.tar.gz::https://github.com/ros2/rosidl_python/archive/refs/tags/0.22.2.tar.gz
+    rosidl_runtime_py.tar.gz::https://github.com/ros2/rosidl_runtime_py/archive/refs/tags/0.13.1.tar.gz
+    rosidl_typesupport.tar.gz::https://github.com/ros2/rosidl_typesupport/archive/refs/tags/3.2.2.tar.gz
+    rosidl_typesupport_fastrtps.tar.gz::https://github.com/ros2/rosidl_typesupport_fastrtps/archive/refs/tags/3.6.3.tar.gz
+    rpyutils.tar.gz::https://github.com/ros2/rpyutils/archive/refs/tags/0.4.2.tar.gz
+    rviz.tar.gz::https://github.com/ros2/rviz/archive/refs/tags/14.1.19.tar.gz
+    spdlog_vendor.tar.gz::https://github.com/ros2/spdlog_vendor/archive/refs/tags/1.6.1.tar.gz
+    sros2.tar.gz::https://github.com/ros2/sros2/archive/refs/tags/0.13.5.tar.gz
+    system_tests.tar.gz::https://github.com/ros2/system_tests/archive/refs/tags/0.20.4.tar.gz
+    test_interface_files.tar.gz::https://github.com/ros2/test_interface_files/archive/refs/tags/0.11.0.tar.gz
+    tinyxml2_vendor.tar.gz::https://github.com/ros2/tinyxml2_vendor/archive/refs/tags/0.9.2.tar.gz
+    tlsf.tar.gz::https://github.com/ros2/tlsf/archive/refs/tags/0.9.0.tar.gz
+    unique_identifier_msgs.tar.gz::https://github.com/ros2/unique_identifier_msgs/archive/refs/tags/2.5.0.tar.gz
+    urdf.tar.gz::https://github.com/ros2/urdf/archive/refs/tags/2.10.0.tar.gz
+    yaml_cpp_vendor.tar.gz::https://github.com/ros2/yaml_cpp_vendor/archive/refs/tags/9.0.1.tar.gz
+    class_loader.patch
+    cyclonedds.patch
+    libcurl_vendor.patch
+    rcl.patch
+    rclcpp.patch
+    rcutils.patch
+    rosidl_typesupport.patch
+"
+
+unpack() {
+    mkdir -p "$builddir"/src
+    cd "$builddir"
+    find "$srcdir" -name "*.tar.gz" -print0 | while IFS= read -r -d '' tar_f; do
+        # Extract to not have the version in the name
+        file_name=$(basename "$tar_f")
+        file_prefix=$(echo "$file_name" | sed 's/\.tar.gz//' )
+        mkdir -p src/"$file_prefix"
+        tar -xf "$tar_f" --strip-component=1 -C src/"$file_prefix"
+    done
+    
+}
+
+builddir="$srcdir/ros2-release-jazzy-$pkgver"
+depends="
+        boost
+        eigen
+        tinyxml2
+        liblocale-shim
+        qnx-fs-notify
+        qnx-fs-core
+        qnx-fs-gpt
+        python3-numpy
+        python3-pip
+        python3-argcomplete
+        python3-catkin-pkg
+        python3-colcon-bash
+        python3-colcon-cd
+        python3-colcon-cmake
+        python3-colcon-common-extensions
+        python3-colcon-core
+        python3-colcon-defaults
+        python3-colcon-devtools
+        python3-colcon-library-path
+        python3-colcon-metadata
+        python3-colcon-mixin
+        python3-colcon-notification
+        python3-colcon-output
+        python3-colcon-package-information
+        python3-colcon-package-selection
+        python3-colcon-parallel-executor
+        python3-colcon-pkg-config
+        python3-colcon-powershell
+        python3-colcon-python-setup-py
+        python3-colcon-recursive-crawl
+        python3-colcon-ros
+        python3-colcon-test-result
+        python3-colcon-zsh
+        python3-docutils
+        python3-empy
+        python3-flake8
+        python3-flake8-blind-except
+        python3-flake8-builtins
+        python3-flake8-class-newline
+        python3-flake8-comprehensions
+        python3-flake8-deprecated
+        python3-flake8-docstrings
+        python3-flake8-import-order
+        python3-flake8-quotes
+        python3-lark
+        python3-mccabe
+        python3-parsing
+        python3-psutil
+        python3-pycodestyle
+        python3-pyflakes
+        python3-pytest-repeat
+        python3-pytest-rerunfailures
+        python3-tomli
+        python3-yaml
+"
+makedepends="
+        boost-dev
+        asio-dev
+        tinyxml2-dev
+        eigen-dev
+        qnx-fs-notify-dev
+        qnx-fs-core-dev
+        qnx-fs-gpt-dev
+        liblocale-shim-dev
+        python3-dev
+        python3-pip
+        python3-numpy-dev
+        python3-argcomplete
+        python3-catkin-pkg
+        python3-colcon-bash
+        python3-colcon-cd
+        python3-colcon-cmake
+        python3-colcon-common-extensions
+        python3-colcon-core
+        python3-colcon-defaults
+        python3-colcon-devtools
+        python3-colcon-library-path
+        python3-colcon-metadata
+        python3-colcon-mixin
+        python3-colcon-notification
+        python3-colcon-output
+        python3-colcon-package-information
+        python3-colcon-package-selection
+        python3-colcon-parallel-executor
+        python3-colcon-pkg-config
+        python3-colcon-powershell
+        python3-colcon-python-setup-py
+        python3-colcon-recursive-crawl
+        python3-colcon-ros
+        python3-colcon-test-result
+        python3-colcon-zsh
+        python3-docutils
+        python3-empy
+        python3-flake8
+        python3-flake8-blind-except
+        python3-flake8-builtins
+        python3-flake8-class-newline
+        python3-flake8-comprehensions
+        python3-flake8-deprecated
+        python3-flake8-docstrings
+        python3-flake8-import-order
+        python3-flake8-quotes
+        python3-lark
+        python3-mccabe
+        python3-parsing
+        python3-pycodestyle
+        python3-pyflakes
+        python3-pytest-repeat
+        python3-pytest-rerunfailures
+        python3-tomli
+        python3-yaml
+        cmake
+        ninja
+        vcstool
+"
+
+prepare() {
+    cd "$builddir"
+    mkdir -p src
+
+    _apply_qnx_patch() {
+        local _dir="$1"
+            local _patch="$2"
+            git -C "$builddir/$_dir" apply --whitespace=nowarn "$srcdir/$_patch"
+    }
+
+    _apply_qnx_patch src/cyclonedds cyclonedds.patch
+    _apply_qnx_patch src/class_loader class_loader.patch 
+    _apply_qnx_patch src/resource_retriever libcurl_vendor.patch
+    _apply_qnx_patch src/rcutils rcutils.patch
+    _apply_qnx_patch src/rcl rcl.patch
+    _apply_qnx_patch src/rclcpp rclcpp.patch
+    _apply_qnx_patch src/rosidl_typesupport rosidl_typesupport.patch
+}
+
+build() {
+	cd "$builddir"
+	export CXXFLAGS="${CXXFLAGS//-fstack-clash-protection/}"
+	export CFLAGS="${CFLAGS//-fstack-clash-protection/}"
+	export LDFLAGS="-lsocket -lfsnotify -lc++ -lc++abi -Wl,-E"
+	export CMAKE_COMMAND=/usr/bin/cmake3.5
+	colcon build --merge-install \
+		--cmake-args \
+			-G Ninja \
+			-DBUILD_TESTING=OFF \
+			-DCMAKE_BUILD_TYPE=Release \
+			-DCMAKE_C_FLAGS="$CFLAGS -fvisibility=default -frtti -DSA_RESTART=0 -Wno-error=deprecated-literal-operator -Wno-error=old-style-cast" \
+			-DCMAKE_CXX_FLAGS="$CXXFLAGS -fvisibility=default -frtti -DSA_RESTART=0 -Wno-error=deprecated-literal-operator -Wno-error=old-style-cast" \
+			-DCMAKE_EXE_LINKER_FLAGS="$LDFLAGS" \
+			-DCMAKE_SHARED_LINKER_FLAGS="$LDFLAGS" \
+			-DTRACETOOLS_TRACEPOINTS_EXCLUDED=ON \
+		--packages-skip-by-dep qt_gui rttest lttngpy rviz2 my-test-package \
+			rviz_ogre_vendor rviz_assimp_vendor tf2_bullet \
+		--packages-skip qt_gui mimick_vendor rttest lttngpy intra_process_demo \
+			turtlesim image_tools rviz2 my-test-package rviz_ogre_vendor \
+			rviz_assimp_vendor tf2_bullet
+}
+
+package() {
+        dest="/opt/ros/jazzy"
+        mkdir -p "$pkgdir"/$dest
+        cp -a "$builddir"/install/. "$pkgdir"/$dest
+
+        # Remove files we don't want in our final package
+        for _f in  COLCON_IGNORE .colcon_install_layout _local_setup_util_ps1.py local_setup.ps1 setup.ps1; do
+            [[ -f "$pkgdir"/$dest/$_f ]] && rm "$pkgdir"/$dest/$_f
+        done
+}
+
+sha512sums="
+06fcd2e85e8400767ffc44a3e3b7ef06ee3ea330361b169032d36f5e78de287945f4aee97c6a092af038cbf2526a1c46e0198fb3884dc235835f871004461957  ament_cmake.tar.gz
+b110841cf32e68a936451fdb58bebf2d0a546b997e23177390d7b62ca4ef4a689e9867664246dcb27d804b453aa959f3b726cbdc03a09cbb1c032dec90e61b7a  ament_index.tar.gz
+d3fe42e1ce121b7ba19c7809de5a1b03db49daada10f9feba2854105743f31b24dff6e760fe96897c25aa248a870d9e9ff172ed45eed205d8d712bb0e509fec9  ament_lint.tar.gz
+96449f2c1d27afbd1ed3912be744c640fc1d94d9080ba6d560ca8c69d129d82a7c6dc1069387fa1b0e3dd7868f5fea7ea09d91908a5633181a8c3b19afc7377f  ament_package.tar.gz
+6bacc17a25f30668bfa63dac4f993e4ba10cd060a994c298695144cacce61cae5b29273809058eec6b18bf8efe33fe57876d69358861006fab54748c0ddd5813  google_benchmark_vendor.tar.gz
+1589d00d092be75a03a655f5654f00328c5b50b048cba94dd9fea17c466d40f2497157b91572a85c59728c1932dc36aa8061a8927b82386afcd8f8a7b18a9fd5  googletest.tar.gz
+57f148b13f757aa9088643b678cfcd52aa264812e13563a436d0fc7b39255258703cd5f4adfd1d82f89b8254f043f25ee0f6d50e9cd17b6ecad3dca9001112c2  uncrustify_vendor.tar.gz
+4abe8dea1da721deaa6256e4a481d89a3a30f973920c40a2112405f7c4df52d3128afe93ab7262491bebceea03a73c171e9dca87f635cd9749e47059ed88e80f  CDR.tar.gz
+f70e6e0a030345d062cc5d0f531c143e8f21ba9664a5df0e09dda541cc06cc6f4f5eb2799a449435e1ee554ddf8a938f346db86be29e908efb30a906c12660d8  DDS.tar.gz
+4524b13e88139c5a20f695e49b69f81a6095d481942625a3eaa0d9cbaf6e077941b6f07c5389135d3897300a1a92fec3308d7027655b34acc0e54bc5659ad54a  foonathan_memory_vendor.tar.gz
+de63a7207c36ff1b185b1a108d697d37675078ac15c34a940429b619b048593056dd8c4c920fb708235b972f94536452973eb40a8e66da1d57cb9b9b03005f30  cyclonedds.tar.gz
+708c113f8b4e5a23830172cd67414cb6fa389f9bc34a5979b27131c3180d6758ca50257baa86cb6f74bcff71b24237cffc0e697964a7c0326e9018fbf7885c09  iceoryx.tar.gz
+6424161b664be5ba6b51f9dd8a6a169916fab67459b2096ce022984eac1cec1765c7c2823e55d217a83615ddd9b53a80a5f5b6c1d4bce90752ce1380893775e6  gz_cmake_vendor.tar.gz
+ad3eee8564b9c28bd9d25e9107175d0a50433a8e122a7bd28e21de970318721ff00307687a5308f4bd628da4c4c11d95c3575c75735e02d89dff1477fb78ccf0  gz_math_vendor.tar.gz
+1c7a07fdd0c75df5008c5ee4ffe868f3f6ef09619f8d056773c11f061cff28dd6dc0dafbc49d060ca4f1d4781e243ad636e361359c54b82cdcb35c7365760e0a  gz_utils_vendor.tar.gz
+2a0669e140eaacc5dd4ea9295814ce07f32af15a66274e8924828e175549febfe2c561de99571fc6f78d9454faf23757255ae601a0fddfccf8102419a96f3350  osrf_pycommon.tar.gz
+95b2b179a3d1341fb7b4587652c25f595a799ced1e0da68384caa1faaff175708e70eebb6156712a4d112216085ad02d03e82c7a5419b48d338776be9319ee0b  osrf_testing_tools_cpp.tar.gz
+134004d003a725cca2e4fb0a3acbaa536f5673fec413fcb05178a22fd0d78e4122bfc1f4787950c55e20ecc50a0631bedcf3a1edb46130fda88d6b588fe00c06  image_common.tar.gz
+0ddd91d50b9200261fb5e42d4cc8d80609d7bf1b55a461c82d6111a5cd050dd845c4d64389144c6ea449be23bccb65cc0a4106cbba743cbec0ce5b6af39e5cec  laser_geometry.tar.gz
+76ac2177a7519ec26fa1ca94fce3ca9f2a00a790fddcdfdcf811b8a8dfa2c5c3989e0943c259acfea5a4fd67dc4a5b9a579a6e34ab178140a58f1243aacd3621  point_cloud_transport.tar.gz
+89d16d655cafdb577ac3ee47601940562a83609bbaf6cbb1b259c54850142a93f8e8a3ffe4cd4ac8659901872e700703a42cb96a8cd4d8caea27b6fe69b0cbb8  navigation_msgs.tar.gz
+d7e1bc23d17cbeecc204b1c3fd45a08330c6e7bba8400c3756d6a8f019af59ca7a2fe9f645f186a7f07b888108625e6150514fa255a3b8b950584c820d5fa90b  keyboard_handler.tar.gz
+12621c26ea078a9e4724979388d38a1a0a74dac2e92f36702c2f0fc7f699e5af189deb5d498b0c2b37ce7bcff914853db4807c3ba608bd214097f24c429b9068  libstatistics_collector.tar.gz
+7b18f6088c58b4ff62defdd82ef1542bb21db03119628def572e9860d444b35b569b103202ed6a7d94e37f0447c0086a6b479b64ffe89ef51377531941d15f5c  interactive_markers.tar.gz
+405b24f0ffd7d9e0ccd5343d82df5962ac1963ad766ac7e6f5aedd8ee38d78bbe852452ea737c5f35379ad2691387a2d1e2bf3678e1aad9fa2aeb40d15f62476  python_qt_binding.tar.gz
+a02d7e5cc0af47dca589cc0d8c9ca7e8454dc3b6391fcd3368a7fe1a5acac00c67cf40f2d33b5c378313bf2ad74e178465e7c69eeb0fc75a3b5c0e828d3875f9  qt_gui_core.tar.gz
+72a4a95bc92bb8e29ea3b6693148e59edecc5da37a8fc7aefd6bdd3a65f85333c976130a48e1ffe47988304e35bece82a663c6f0f5907aaabd185318e815e19c  rqt.tar.gz
+80cf5a551f5878cf41f5404c8cdbcd2fc239a68c9c335bec6aaf35b8a54a1830151539cdea5443c8651182481c0e28cb77a3e151a4ab0f52d572deb9cbe85595  rqt_action.tar.gz
+017e13f9844274a3cc93eaf629bc0bf87add325f514a5e855b925b6010f74330ca972a9bae4745ece12f173673572cfcabec2ed5678b4021b1c11019d8ed8c88  rqt_bag.tar.gz
+397ad63588cf6ffbb4f9a4807ff80ffda6fe6dcfd0a517b232daf36da2b53a1c6eed810a38742228b00d6406c6576af830baef149672a3844150bdb27330eae1  rqt_console.tar.gz
+a2299b89d45e0c6bd2d58a91bf8803601dd44b1cc8b7156dfcefbdeddb3b9f7d049d12d847eff220b7fb450835f0acb099485610ce61eee6ce8b219528a33403  rqt_graph.tar.gz
+80a1b74959810ef286b8d7dcb6ccd8d9307bdfb094cf573d1727de0e230aa80569ed1982049e06f7fd8078f56b73f16d0cf99ecddf7924e867832220ff62c2c0  rqt_msg.tar.gz
+ee5fda4c1538c0a56296d219531d3aea6516fb510551679e5bd3c805e0bdf9c0ed6665666323c617923efe8c0ac5dfc066d249ce46bc2b9e67ef3fda1920269b  rqt_plot.tar.gz
+6c5110a7d5a7cb3bfffa00cce8c200071d9c13de07ea72909d019cc30ac9c66a1128cfb2b50758077ae66b790aac47f8982d67bfb476b7b9812c846547d74db3  rqt_publisher.tar.gz
+39c4ce0559d1ea115baff49142e83c8b680bc3c97405ef9966c2759409d82e08bb9fcf9089b1469f79aa3d156a4a9990a7971cbe651f45cdfa7dd24d034b070e  rqt_py_console.tar.gz
+08a7a45b8bed7c1d52a70c462ccd8a8bdf675b577f2130f213313ef8aefbb7a1646b89a7ad624d255aee1ea640902dcfbc198e67944fe01f67b78921cb4e327f  rqt_reconfigure.tar.gz
+d9f8b72ec32f585cb239b9ca07ac8a30d562898a253f8ea99cf1b35b7a94b2a19e9d8fe2f607bc7d2bffb321e6cbf0b39825470e91e21ca276f4c49086c392fa  rqt_service_caller.tar.gz
+558344ddc3df89343eda47b37b3047d0c6595b836e8b8f401c8ecb386e96245a101150cd3817dea93c837206bbb5d0d091a8c3ad9e297e0ad433038710aba0e9  rqt_shell.tar.gz
+6932ed21af4faef0d874e215cb655b0562fe6f6aca059109f03a88dab12444b73a84e118de3217e5d2e09f6190b76644204be5905cfb766c60c787899d608fc5  rqt_srv.tar.gz
+ab119df5d988a088b88e2abcee01a2aa5079efda46bca0d6f2914fc859963ea3f7439d11dd18c1aa07013b42e31c8ca33e23a452b55e207893736b84e24d286f  rqt_topic.tar.gz
+3d71befcaa35514fcaa0d859b30d4ffef3053720ca6fc8fed33d122b967463c37a54784c6f00ee03a0314260fd281ee066853e30c4cce448010a51e68a78af0b  tango_icons_vendor.tar.gz
+5902fcf77cc8bc0733cf9a864d98dc6b44c7ff1966f18889c39c718fe65bbd63c8009a20699e44470218622c4a92fe37b6d923d4a23d28556bd9166ec176aaba  class_loader.tar.gz
+1efe9cf64b87c4a7a3064edc8be41af163ce32f37f122195df427b3026f3649c4d2241caab5e6a4479ec92ffe25af6a603fe086d59d652a1e66c9ecd5a6c58e7  kdl_parser.tar.gz
+f31128dd6fe76cb77381039609dd7d7acaf7822e99d789ea8abed18cad2e5fc5736813912165f1dd64bdbb9ac4955ef05e40a17afd139a03983842f4ea85753a  pluginlib.tar.gz
+103ce3459377b8c7e3fb1ef13a261b38aef8a6177b0253df20708795aeb69b9509462753316e2215e546cfd75fe48cfb113223f1f7b295bac04ff5098027b28f  resource_retriever.tar.gz
+88a0c08f5ba95f896d2499aeb794d190609b2a6a5a5752b2a5062c8c3d70e52bc0c8f34714cd26c8a9415efe9eabefbcd26de5efc1e4d385505f6f3b2683ad8a  robot_state_publisher.tar.gz
+1d0f9abf90eaf6279a56b1418a2e2e95391e75609a986df90a7e5cdc5ac4d2ed19ca46376c15cab64aa883e06d78b080a4b1c18aee96a51006c89997e6b3c671  ros_environment.tar.gz
+7d62d03fac40cee3c3f29bde4813ce87227b35a057fb4dc04eda7d2ba59911bb0f64c89bb839c06910a73c00aacd3f67b51b47363b0b10fdbdba7aa7e7195aa0  ros_tutorials.tar.gz
+5100884d2c1e778b667a3b5d2e87f70efc3da4d01b6329640c48c686aafc96cd778eae8da5c1df903eaf6cb2f258a2512d842d905adc3d7db02ac1faa9482eba  urdfdom.tar.gz
+5636865ab93e92dd99851a4e19b18552b51131a0fa39c83fd64aa020060237ae0c8bbfd361ddec5abcd4c2300d92c3e78da20e3b599c882ea148e82e9abc1603  urdfdom_headers.tar.gz
+6030a3ec1b063d34b63fe9676394a736acb12588be28799feaf2b2fb5c75b9625406d48db3a5fc4dac03f430db978ec232402935b61eea94ce0c07dd97bc610c  ament_cmake_ros.tar.gz
+fb6855905dc0b93a80f0b979d3f847c7fbc74c7b5e546ac4efa7e3b8cba6727ccd4250a5be1837094260a095e5362bd399405b677c65b144750d2c34a300fb34  common_interfaces.tar.gz
+a64aa4ae235a42b9929b575c956a1a0b8ba0f217be5425a031ca4f9082f392b5670521ad2815f6c0aaca105b3aac223051f79410d0caa9196b7c6cc026b16ab9  console_bridge_vendor.tar.gz
+edf2fa103996f86b1c883a190adb88447767eecf441d6493394d15bb6f83171e2fa1eaa18831fa0b94f0348fb626722c76907f40b1285c3d26ca6e047dbc6642  demos.tar.gz
+754c7494fd84ce08d475f6c008c2c913f1fbdd080bb31c0c8210973af7491220847fdd60afc6f80bf6a01e772b79436e13dad8aebfa6167d81c60d38f2022f45  eigen3_cmake_module.tar.gz
+fab6c6c1e6b95e8bb49b70e1a5464573a3d1a294cbf62414669a193690a63255172e53d84f56d25f0ce5aae48a5dfceff680e6542ec4487002143c0f4e47e580  example_interfaces.tar.gz
+31db282cb6cac958c97b0b972f0d633f175ee44f970e6809da82d5c0098b7eaf2d363406357104726f03313f7d4aeaa8315cadb1e48598d706f2ab2edc8094a0  examples.tar.gz
+7c5e3dd11466088d3673a5d79df69fe38442b17c36be940b2814c182c6d624f7f76ffeec559c3654fd87761795d70e5effb8c5a7623a2d79a9c1a2a001c10755  geometry2.tar.gz
+86af8a87e7390c592e1aa5aa9d6063850ba7f4ce48e8572b6c7a4f97f3f6629e6b0b38d9d3283fe428488695b0abfdc306d67ae1c3a2e40ca541c75a32a043c5  launch.tar.gz
+e0acfb09a991d2ae276563e209b5a9067154b268dfd5f3e31f5c9ed763a8bac405cea639c2ac06df1d111d5a2c27378de9744332015d170127767dc89b1c7c41  launch_ros.tar.gz
+953306859170fdb47838a1f9fe6c2a7f0e1805ebea6502c94ba178d6d4ff304cb20e515de44aff50cba7dc771447321c3ac8c13bc99d429b719a569d8e2298ad  libyaml_vendor.tar.gz
+4b2d3bbd3dade3dff46d01ecee4563c5487033e729be450a88cb230de79eccb7394b03b3dedfaaa6624749f8250f70efdbbf558a68847f476f4f88cb711b78f4  message_filters.tar.gz
+528b09e8428628768b44b2948700f1ca6c99c0007b5e0e4846e578cccfc66936d96e7a73f8abb433a40b90fad5768b1f18fe5d86b8eea7abc906a77fbc856bda  mimick_vendor.tar.gz
+3543a9f51983bea6f0e4b54769713bc967179b89c5cc87533e35fb0d4547e9a55a7ee7d0a0f2dd48618c6abd8c5537430055361cfa0b61906e3ccbfefedc65ec  orocos_kdl_vendor.tar.gz
+4eb7538cbd13b088fbd9f501443188cea4270c4c5c5125905829e625fd996f24df3959c0c8e33f0935dde8fc179d829cbfd5ecf1c57e78d5a439861ca191dd22  performance_test_fixture.tar.gz
+4372cc5b6268a8430530defcb4531abb2948e7ac5f72cb3f95d2ec02763f78a7ae4885a5d9d260638ab396c5f0f865f2f919904bb5048465af371a82bc6dc126  pybind11_vendor.tar.gz
+092f66c3c57f1da5106582cd70b14da6163d03a0d6e4b935619a7c22dc952b6c2a9370d1e1ff862ba3c6a60000108fdba2d8f2cdeaa5835b16e29d9a15dee8ff  python_cmake_module.tar.gz
+8aba880b74b3e8d10ac2c3ce1ea88aeb41eea0f1c7ddff1d2b81dcea96f1737c4a82337734775dd9107a4bc0f52486f0d4186ea53d9681b4ef18e33b57d8a8be  rcl.tar.gz
+e0b7775ea9922b2ca7151754e4cc94be92297bad450ea3871e9e82183cb4966bdb30da39ea461042ad8949e351f4f5961877b4d44a9d421a08210d042fc42e9f  rcl_interfaces.tar.gz
+a07008fe9f46eb484aef425a548d683e1dcd61e8022a21b1da12903542d7e456f568a8c52488d59973c067a06360e081310e1192115a486653456d41703d5a2b  rcl_logging.tar.gz
+97dd580b22183a09c2ee4937e486aadb890f7b4183c6d225016b7e8bc7a10ff4b4285d8a4725964150afe4a60d7006695465c78756d90eaf2373245e223799c9  rclcpp.tar.gz
+1650622d1a0800274201f88b724663514e91d4e8531b9aef48703a2cd050667e45a6e1f2244eb3c0882b07ea887793d7f912d38f303eba60f836adcf8cd3b25a  rclpy.tar.gz
+9c414e8383305284bbb805dcee49eb4f7e967de271460cc4572ba55fe0a785b985d389ce58dbcf3a8c211b7ae9efb677663f592587c8a3a0d78dbca545017059  rcpputils.tar.gz
+a7392a8cb36285e42e56ab24fa480588304f7938048db07c3b1d4d9dbe8c5cec4cc340c00a0f48527564d51daa5160c5a33b304205d30b3aaf67af1f50177a67  rcutils.tar.gz
+55a523c0972f5a515cc74ff1255db224f01ba61462e7c4de3c5e2eef4e21d4d9203985ca1ce0474c567ca300c6e72587818f731f5972d552ff6c7372a3927a5e  realtime_support.tar.gz
+39f07ae770ef19ffac4d4b6509ffbe5e6aff02bf5f90abb17416a8f1920bb857133bf89d3263c44aa835218fe2f089d5ce79735b134818e6e548e1a8f7d787ed  rmw.tar.gz
+c95a09652edfdc50cf873754818952bc71e2f2317d51bad65a504d6b9b08b737603780d171cf79c94a12568adf1df5aa2e69b374e9435d123aa7871885548da8  rmw_connextdds.tar.gz
+1c9042043cf7b7036ec607b18a5a31ba97767fa81ad61754ffdb4b22495df21c3e2851bc3c7d574e246ae88e7dd72ef094b9e6853b873e01258174123aa67a52  rmw_cyclonedds.tar.gz
+8edfc9b2a95eb65bc722ea5fdbe444ca0827be4decb9fffc109bd94a72cb410b1e4e1eb2ea4aa4dea0f6d6c2a77f736375686d9952b7a998c630e9a3b8939818  rmw_dds_common.tar.gz
+f6f8932addd80140a24ca40045e72db85a6c37b4cf10f7ca447ca638e7847448d86457494ce2384f40ed48c9d2be5da11485712d4caa1ce5896268d6c6748de7  rmw_fastrtps.tar.gz
+566886c27a0396926f5b09e4b883a27e30c960c3d6ac4f41f6e62d32ac72ad9f2dbc875374c77d581b7ddd7e77625e464d5c7961057edf1929a0a437a7c32c6f  rmw_implementation.tar.gz
+f8aaf68cfb46a0b31df790f94c7b3d12ca03ce38c6a4c252b977b2f2d32b9e620696deb8b1cadd0bbe131f6e9ab98858fcfe9927a402a5ef852fb9c63a75338a  ros2_tracing.tar.gz
+e28962d96528f6ff29b47864758bf5c89b974e5e01f9c46fc07e44eacb2cfce3c6a5567d598f35feccf783a8242c08115b45437d649d8cc18d3ffd9bd2e7df07  ros2cli.tar.gz
+7f987f487e7a64678a0ddb7f602687795954e8e105fd7ad82fb3e2768d310a161d75263c02ef831a55280eb2bb5389848f41b58042a62e579933e1c1f3842459  ros2cli_common_extensions.tar.gz
+43c671e6809a5c01f0cafa942776c45036c5f9472ae73284587f59351802c8f4052c858f6dfdb2c125dd3249e47708bed68031114452fc35a6136f0e0049b2f1  ros_testing.tar.gz
+31567703c315e819bf92d533a17e749fee21953e3f64b86fcf98f3c83c6d2d925eab673d39ee91f7445954c002395ca7d2c05cde2074750b453b4980a71a37b0  rosbag2.tar.gz
+25334ce35f4d907e3282c0af60f2b31437c32b628459187d186ad187e5dda64d4bec15711492c9e8027dd0e5b04ba1dbf9cd64dde8a09731658f61b85fafe09e  rosidl.tar.gz
+1cafe372654cca96dd90cd00c8578fcfbb0288fcb733d88a0362b9226da6101ac05649bf2e79363450808aab9675b5452ccf2f99dbd78f73799c46593badebf1  rosidl_core.tar.gz
+0f9a4313a937445be7aa0bd7848601e20037294358156654427ac4ca71967f1891198a913863b07b152f2f52e4c7dce8fa99733c5760f677029c857334224bf3  rosidl_dds.tar.gz
+95ae5f6aadffa31a3b4f2dc0b1622d554af2b496eb1fd35de50fdcf08973b713efce8780b4f9ea57029abbfb546415b81064348a5c652a3d1b9f1ae6b77d366b  rosidl_defaults.tar.gz
+cfa89f04bfae8ce96499f4ebf04c741ed18535f40d8235ef302b55a0f622c7449ab91a761beb3d4279aae641cfff78d36eecc9fe862e5b760bf6031650b917b4  rosidl_dynamic_typesupport.tar.gz
+3f68eff4043abc802941a53a19d16e284bcbcb2e04755601d78e9d82063f83967e3ca76ec7e3d1d98c167c1a5242219b482d3ea78138de13754a2c14795d86bc  rosidl_dynamic_typesupport_fastrtps.tar.gz
+52835d287d910b57d2205c058981ebd937d897e4f17f58e2b209cb4e05e55d8608ebc6bccfe7f2c1e2e189e2f7875e8bd6109c7f4a68b8351009fd4c40aeaf29  rosidl_python.tar.gz
+293f5fa35cc7764a84c04bd6e879b7d86d864572a85f01a6992db0605a77b696a362009d45c0d21ccdcda1b9de1464b06df73169f96b77dd84d780f8aac2974f  rosidl_runtime_py.tar.gz
+f8db2be823d9ccfb600d80842940430a90a8828d154f13d364f7b16340b8763f51e120275339e4e34f250f0aecc3170f1dded177ddc1e9f372d2e408bac738ec  rosidl_typesupport.tar.gz
+9497a1e34fcfee070b00190f6d2474bc9e370468b7c714082585e497b6b84595ed0b77c6a5d5e70001fc775d38a3857b427ed2eb655d421c4d2568228197a56d  rosidl_typesupport_fastrtps.tar.gz
+d5cdf160430661dccde8aaafddf76560e383139c33d4f4abc9e7229a72d23c9ea59a71923f47dcd25f02b4fbe2e021649ec7f8e5a8f1b2e1e832e66db5f78d46  rpyutils.tar.gz
+e976571860d8195df5619f00cca1b4a8b314de44377420abbad573defad223540ba57e95b5728a6d3e6da550eff4b0fea967aa234db93386f4e2bb22b991c956  rviz.tar.gz
+d7aecd0204aac2fdd06b7c1b1aa24f38f1b9125886a92f49c3319d44b23292e966651b6e604037c183ca7952b5c5399c39e885a539e4c7e3001f9f3a50121d41  spdlog_vendor.tar.gz
+485a3ba6c70f67ed3cb590adb0bee73cb90dd54cb374a3b5bd6840e3a8173fbb2bff9d72208632556be9df11c5c6b5608fdb6bbce56f4c18834ea03102f5d51d  sros2.tar.gz
+0bc39bfc4371b227d3436de735e71edaaeda2e8f7abafd156317b8b5c93d76ca72c16975a2070a86def307d677a57d17f0fdc37e9606f716688d0b2bede12ef4  system_tests.tar.gz
+a496d658096271aa1efa26124061392764c67da983e499585c3084d970861a2ae3e6cbf27fd46ae10303d7304dfe2b5d90d1bb078d2afe19b83721bd8b1eb9ff  test_interface_files.tar.gz
+c2e864a5c5ab55f5ec205c83477959bbe06d45807af270106b7485e65ebece189cd91d57201a507ec85094a9ca2be24cf0ff7e2b789441b08c2acde57f27459b  tinyxml2_vendor.tar.gz
+1a84abc7debafb05fe9891243175bf8988e3078f85b5f6d8a3ffc184198d44d0f286af0624e18fc091644b77e5f0ebe25d2ac72ff4f2466e6995f182234a8196  tlsf.tar.gz
+4f48ce41c7de2a36cb9108e4ca0217b49f224d3bbb830ded1bb8b626952c445f737a79801e4f56090b58f01476af46f1db532555294a914eff4b9290b6d8796b  unique_identifier_msgs.tar.gz
+281dc797ecdf312c4188b3d8d36ae93f1bb0860c60847a44e8d23b980ab85b9ecd729a8bd168a9e00b2517b7bc7732179bbcc3cbb0cf78f0ce97fd8352610d73  urdf.tar.gz
+5f6e18e124162eab21035109ef6406225a0f6e9d280dd8722535a5520519a736b10e9181db1d0eb3cb2e0737f4214579acb04fb841cb2f356346de5a74160a7b  yaml_cpp_vendor.tar.gz
+00b925bbf4c7058fcc0bee0f3d7ad6e710cb024e1ae9cfcc6925215ed02bb9b7990e39cf9b0fe41a6942b8a28d718c4ac82c1e3070bdc2904a4bf4926ffac9ec  class_loader.patch
+6cb086c12a59409323a66b238891d2cb5bd7112eb28fd68c2a652263ee5527149db3dc97cac64549644854d5917e0b87f658ac6dd4663c2c585e34035c0d4624  cyclonedds.patch
+2f8100683eb9885bb783214fbd4ce1627a586a4fe381bbf27c84b2f7e6b8b763bb8ce79a6de598fc9325f4abe5aa2d8f11b68fafb299391aac0dc28aa90fa9c7  libcurl_vendor.patch
+d1dd3d0b2b52af53ec0d4a3ba96f671e9f9e07efb0f070737c9748e7d52ab38f864ed7a4c13874e5d20f0ed8454641b95a31dcd458f969a3859a1bf347175ef4  rcl.patch
+bc7bb061d162c8cc321e49ad65bc9b72f76be3df0c87b135e333c166bdd1307af8f016cc18160107fd1d95fe16518aa2b79899173cd8e2bb4b5c27614db250f2  rclcpp.patch
+436e16a841ee5f88da1ac82bd70cf4e7f9020e4388180763baec89de6bb9ced2ff970569a97880a50ed59717a327bfbe872493977e287811afe3009348bab337  rcutils.patch
+c44bec9bd0f89f5da1e0dba6a9623c44da238a2a990ae6bbda7b3eec19b20e31ffa793adfd057608c0728c4032e1585ac2867e2b517706543f6114970fd71f8d  rosidl_typesupport.patch
+"

@@ -1,0 +1,11 @@
+--- a/Src/Modules/langinfo.c
++++ zsh-5.9/Src/Modules/langinfo.c
+@@ -37,6 +37,8 @@
+ /**/
+ #ifdef HAVE_NL_LANGINFO
+ 
++#define CODESET CODESET
++
+ static char *nl_names[] = {
+ #ifdef CODESET
+     "CODESET",

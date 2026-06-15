@@ -1,0 +1,37 @@
+# Alpine-Maintainer: Simon Zeni <simon@bl4ckb0ne.ca>
+# Maintainer: Felix Lionardo <flionardo@qnx.com>
+pkgname=xtl
+pkgver=0.7.7
+pkgrel=0
+pkgdesc="The x template library"
+url="https://github.com/xtensor-stack/xtl"
+arch="noarch"
+license="BSD-3-Clause"
+depends="qnx-io-sock"
+makedepends="cmake ninja doctest-dev qnx-io-sock-dev libc++-dev"
+source="$pkgname-qnx-$pkgver.tar.gz::https://github.com/qnx-ports/xtl/archive/refs/heads/qnx-$pkgver.tar.gz"
+builddir=$srcdir/$pkgname-qnx-$pkgver
+build() {
+	cmake -B build -G Ninja \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DCMAKE_INSTALL_LIBDIR=lib \
+		-DCMAKE_BUILD_TYPE=MinSizeRel \
+		-DBUILD_TESTS="$(want_check && echo ON || echo OFF)" \
+		-DCMAKE_EXE_LINKER_FLAGS="-lsocket" \
+		-DCMAKE_SHARED_LINKER_FLAGS="-lsocket" \
+		-DCMAKE_POLICY_VERSION_MINIMUM=3.5
+	cmake --build build
+}
+
+check() {
+	cd build
+	ctest
+}
+
+package() {
+	DESTDIR="$pkgdir" cmake --install build
+}
+
+sha512sums="
+07873f343ef84147085d081e7b5f05134482626c99a90107f7adc12e7b54597a2a999e4dee2018bfb663e7bb88a594d8a5fd0f587a78d9368ce54c1622938dcd  xtl-qnx-0.7.7.tar.gz
+"

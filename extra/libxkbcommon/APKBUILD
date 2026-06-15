@@ -1,6 +1,6 @@
 pkgname=libxkbcommon
 pkgver=1.8.0
-pkgrel=1
+pkgrel=2
 pkgdesc="keyboard handling library"
 url="https://xkbcommon.org/"
 arch="all"
@@ -35,17 +35,14 @@ source="https://github.com/xkbcommon/libxkbcommon/archive/refs/tags/xkbcommon-$p
 builddir="$srcdir/libxkbcommon-xkbcommon-$pkgver"
 
 build() {
-    meson setup build \
-        -Dprefix=/usr \
+    abuild-meson  \
         -Dc_link_args="-Wl,-lm" \
         -Denable-wayland=true \
         -Denable-docs=false \
         -Denable-x11=false \
         -Ddefault_library=both \
         -Ddefault-rules=hidut \
-        -Dxkb-config-root=/usr/share/xkb \
-        -Dx-locale-root=/usr/share/locale \
-        -Dxkb-config-extra-path=/usr/local/etc/xkb
+	build
 
     meson compile -C build
 }
@@ -66,7 +63,7 @@ xkbcli() {
     pkgdesc="xkb command-line tool with interactive debugger"
 
     amove usr/bin/xkbcli
-    amove usr/libexec/xkbcommon/xkbcli*
+    amove usr/lib/xkbcommon/xkbcli*
 }
 
 xkbcli_doc() {

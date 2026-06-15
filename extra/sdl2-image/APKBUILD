@@ -1,0 +1,54 @@
+# Alpine-Contributor: Francesco Colista <fcolista@alpinelinux.org>
+# Alpine-Maintainer: Francesco Colista <fcolista@alpinelinux.org>
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=sdl2-image
+pkgver=2.8.8
+pkgrel=0
+pkgdesc="A simple library to load images of various formats as SDL surfaces"
+url="https://github.com/libsdl-org/SDL_image"
+arch="all"
+license="Zlib"
+depends="
+    sdl2-compat
+    "
+makedepends="
+    cmake
+    clang
+    libjpeg-turbo-dev
+    libpng-dev
+    libwebp-dev
+    ninja
+    sdl3-dev
+    sdl3-static
+    sdl2-compat-dev
+    sdl2-compat-static
+    tiff-dev
+    zlib-dev
+    "
+subpackages="$pkgname-dev $pkgname-doc $pkgname-dbg"
+source="$pkgname-$pkgver.tar.gz::https://github.com/libsdl-org/SDL_image/archive/refs/tags/release-$pkgver.tar.gz"
+builddir="$srcdir/SDL_image-release-$pkgver"
+
+build() {
+    export CPPFLAGS="${CPPFLAGS} -D_QNX_SOURCE"
+    cmake -B build-shared -G Ninja \
+        -DCMAKE_C_COMPILER=clang \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DCMAKE_SKIP_INSTALL_RPATH=ON \
+        -DBUILD_SHARED_LIBS=ON \
+        -DSDL2IMAGE_TESTS=ON
+    cmake --build build-shared
+}
+
+check() {
+    ctest --test-dir build-shared
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install build-shared
+}
+
+sha512sums="
+3fef846eb0ad51a8b346bb421c87eb81f0e2f186d700a219ebf17146397da404b3683853322989ed939b1672cc36b799582f24bc58a0393fc6c698a65cda2b82  sdl2-image-2.8.8.tar.gz
+"

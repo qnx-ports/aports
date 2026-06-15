@@ -1,0 +1,233 @@
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=jax
+pkgver=0.4.30
+pkgrel=0
+_commit=f4158ace933482844c145a6b919bf5dc86e084ba
+pkgdesc="High performance array computation and program transformation"
+url="https://docs.jax.dev"
+arch="all"
+license="Apache-2.0"
+depends="
+    python3-jax=$pkgver-r$pkgrel
+    python3-jaxlib=$pkgver-r$pkgrel
+    "
+makedepends="
+    bazel6
+    cython
+    c-ares-dev
+    libc++-dev
+    openmp-dev
+    python3-build
+    python3-dev
+    python3-installer
+    python3-gpep517
+    python3-numpy-dev
+    python3-packaging
+    python3-pip
+    python3-pyproject-metadata
+    python3-setuptools
+    python3-wheel
+    python3-zstandard
+    qnx-fd-notify-dev
+    sqlite-dev
+    sqlite-libs
+    zlib-ng-dev
+    xz-dev
+    readline-dev
+    libffi-dev
+    expat-dev
+    bzip2-dev
+    libbz2
+    lz4-dev
+    openssl-dev
+    ncurses-dev
+    qnx-crypto-dev
+    qnx-io-sock-dev
+    python3-meson-python
+    python3-pyproject-metadata
+    qnx-libqh-dev
+    libc++-dev
+    liblocale-shim-dev
+    abuild-meson
+    meson-bash-completion
+    meson
+    ninja
+    "
+checkdepends="
+    python3-pytest
+    python3-pytest-xdist
+    "
+subpackages="
+    python3-jax:py3
+    python3-jaxlib:py3
+    "
+_python3_jax_depends="python3-jaxlib=$pkgver-r$pkgrel"
+_python3_jaxlib_depends="
+    c-ares
+    libc++
+    openmp
+    python3-absl-py
+    python3-filelock
+    python3-numpy
+    python3-opt-einsum
+    python3-scipy
+    python3-flatbuffers
+    python3-matplotlib
+    python3-ml-dtypes
+    qnx-fd-notify
+    "
+source="$pkgname-$pkgver.tar.gz::https://github.com/jax-ml/$pkgname/archive/refs/tags/$pkgname-v$pkgver.tar.gz
+    python_BUILD.bazel
+    python_defs.bzl
+    python_WORKSPACE
+    python_qnx_BUILD.bazel
+    python_qnx_WORKSPACE
+    qnx.patch
+    "
+builddir="$srcdir/$pkgname-$pkgname-v$pkgver"
+options="!check" # We don't have any of the checkdepends yet.
+
+prepare() {
+    default_prepare
+
+    # Remove the old repository cache
+    rm -rf $(bazel info repository_cache)
+
+    # Remove the old bazel cache
+    bazel clean --expunge
+
+    # Create the toolchain to register our local python.
+    mkdir $builddir/python
+    cp -L $srcdir/python_BUILD.bazel $builddir/python/BUILD.bazel
+    cp -L $srcdir/python_defs.bzl $builddir/python/defs.bzl
+    cp -L $srcdir/python_WORKSPACE $builddir/python/WORKSPACE
+    # And now... We need a lot of local paths for system files to exist here.
+    mkdir $builddir/python_qnx
+    cp -L $srcdir/python_qnx_BUILD.bazel $builddir/python_qnx/BUILD.bazel
+    cp -L $srcdir/python_qnx_WORKSPACE $builddir/python_qnx/WORKSPACE
+    ln -s /usr/bin $builddir/python_qnx/bin
+    mkdir $builddir/python_qnx/include
+    ln -s /usr/include/python3.14 $builddir/python_qnx/include/python3.14
+    mkdir $builddir/python_qnx/lib
+    ln -s /usr/lib/python3.14 $builddir/python_qnx/lib/python3.14
+    ln -s /usr/lib/libpython3.so $builddir/python_qnx/lib/libpython3.so
+    ln -s /usr/lib/libpython3.14.so $builddir/python_qnx/lib/libpython3.14.so
+    ln -s /usr/share $builddir/python_qnx/share
+    ln -s $builddir/python_qnx/bin/python3 $builddir/python_qnx/python
+}
+
+build() {
+    if [[ $CARCH == "x86_64" ]]; then
+        _extra_bazel_args="--define build_with_mkl=true --define build_with_openmp=true"
+    elif [[ $CARCH == "aarch64" ]]; then
+        # mkl calls out to Arm - ComputeLibrary, which we ported, but pulls in xbyak_aarch64 (with oneDNN v3.2.1) which needs some work.
+        # _extra_bazel_args="--define build_with_mkl_aarch64=true --define tensorflow_mkldnn_contraction_kernel=0 --define build_with_openmp=true"
+        _extra_bazel_args="--define build_with_mkl=false --define enable_mkl=false --define tensorflow_mkldnn_contraction_kernel=0 --define with_cross_compiler_support=true --copt=-DOPENSSL_AARCH64=1 --copt=-DOPENSSL_QNX=1"
+    else
+        die "$CARCH not supported"
+    fi
+
+    export LLVM_PATH=/usr/include/llvm
+    # Without BAZEL_CXXOPTS, -std=c++14 is automatically added to the compile
+    # command, which causes problems when jax tries to compile llvm from source.
+    export BAZEL_CXXOPTS=-std=c++17
+
+    # Setuptools with bazel6 has a known bug which we need to work-around.
+    # For bazel6, the fetch command is vastly inferior to the build command.
+    bazel \
+        --host_jvm_args=-Djavax.net.ssl.trustStore=/usr/lib/jvm/java-25-openjdk/lib/security/cacerts \
+        run \
+        //jaxlib/tools:build_wheel \
+        --copt="-DEIGEN_DONT_VECTORIZE=1" \
+        --copt="-DFARMHASH_LITTLE_ENDIAN=1" \
+        --copt="-D_STRUCT_IOVEC=1" \
+        --copt="-Wno-c++11-narrowing" \
+        --copt="-Wno-invalid-specialization" \
+        --linkopt="-lcares" \
+        --linkopt="-lomp" \
+        --repo_env=HERMETIC_PYTHON_VERSION=3.14 \
+        --repo_env=TF_NEED_CUDA=0 \
+        --@xla//xla/python:enable_gpu=False \
+        --extra_toolchains=@python_qnx//:qnx_py_toolchain \
+        --extra_toolchains=@python_qnx//:qnx_py_toolchain2 \
+        --extra_toolchains=@python_qnx//:qnx_py_cc_toolchain \
+        --subcommands --verbose_failures \
+        ${_extra_bazel_args} \
+        -- \
+        --output_path="$builddir/.dist" \
+        --jaxlib_git_hash="$_commit" \
+        --cpu="$CARCH" || true
+    sed -i "s|files(__name__).joinpath('Lorem ipsum.txt').read_text(encoding='utf-8')|''|" $(bazel info output_base)/external/pypi__setuptools/setuptools/_vendor/jaraco/text/__init__.py
+    sed -i "s|files(__name__).joinpath('Lorem ipsum.txt').read_text(encoding='utf-8')|''|" $(bazel info output_base)/external/pypi_setuptools/site-packages/setuptools/_vendor/jaraco/text/__init__.py
+
+    bazel \
+        --host_jvm_args=-Djavax.net.ssl.trustStore=/usr/lib/jvm/java-25-openjdk/lib/security/cacerts \
+        run \
+        //jaxlib/tools:build_wheel \
+        --copt="-DEIGEN_DONT_VECTORIZE=1" \
+        --copt="-DFARMHASH_LITTLE_ENDIAN=1" \
+        --copt="-D_STRUCT_IOVEC=1" \
+        --copt="-Wno-c++11-narrowing" \
+        --copt="-Wno-invalid-specialization" \
+        --linkopt="-lcares" \
+        --linkopt="-lomp" \
+        --repo_env=HERMETIC_PYTHON_VERSION=3.14 \
+        --repo_env=TF_NEED_CUDA=0 \
+        --@xla//xla/python:enable_gpu=False \
+        --extra_toolchains=@python_qnx//:qnx_py_toolchain \
+        --extra_toolchains=@python_qnx//:qnx_py_toolchain2 \
+        --extra_toolchains=@python_qnx//:qnx_py_cc_toolchain \
+        --subcommands --verbose_failures \
+        ${_extra_bazel_args} \
+        -- \
+        --output_path="$builddir/.dist" \
+        --jaxlib_git_hash="$_commit" \
+        --cpu="$CARCH"
+
+    gpep517 build-wheel \
+        --wheel-dir .dist \
+        --output-fd 3 3>&1 >&2
+}
+
+check() {
+    python3 -m venv --clear --without-pip --system-site-packages .testenv
+    for f in $(ls .dist/*.whl); do
+        .testenv/bin/python3 -m installer $f
+    done
+
+    # Module name exists under $builddir
+    mkdir test
+    cd test
+    ../.testenv/bin/python3 -m pytest ..
+}
+
+package() {
+    for f in $(ls .dist/*.whl); do
+        python3 -m installer -d "$pkgdir" $f
+    done
+}
+
+py3() {
+    pkgdesc="Python3 wrapper for $subpkgname"
+    depends="python3 $(getvar "_${subpkgname/-/_}_depends")"
+
+    amove usr/lib/python3.14/site-packages/"${subpkgname/python3-/}"
+    # amove the egginfo file as well
+    amove usr/lib/python3.14/site-packages/"${subpkgname/python3-/}"-*
+}
+
+# Print value of the specified variable, or the default if empty or not defined.
+# From https://github.com/alpinelinux/aports/blob/3d4f2edabc7cca3a16b88a2d3795f584ae40aff5/main/nginx/APKBUILD
+getvar() {
+	eval "printf '%s\n' \"\${$1:-$2}\""
+}
+
+sha512sums="
+31d681c00275fd7b911e59dc36ddaf4f9b352ea9b6fdfb40d9a548b251382185639987200206fd4594c319d8c3140854ada080d75a51232528205102196b5bad  jax-0.4.30.tar.gz
+00adf603167661b10229297fa12a6de9f00d4bdfb864eacbd573aebcf3c05208cea543688735dcf4baa3aa3dd1854ed2b5f7e5ad04bd23309347ceaf12334eb4  python_BUILD.bazel
+5febd2bd49040fc75a2c92fc96b8b6196ec611c5bc0aca7b7c0b146f5918cc01e89259d979f54cace616bd3aa15ec1a610f4e00140d91eeeb82f2c7e6dda193f  python_defs.bzl
+1847818b97aaa3eb9184c15cc6f2eefb5c2f2d21e2e38749740738483689e58f3a1467c2cf717587c803ef707c17154e92caf84fa3a3d4ba4797ae686fa68165  python_WORKSPACE
+75575c2c2c760fd4df97d55a38004b69cb5c2ad263ade9bc10f3164d64c282d5e92b2df6020e782fc4b9236e6c8d3124d1d37f4c909ee09d02f6035474a872aa  python_qnx_BUILD.bazel
+e8e83404f5e078fdbefaef20d8f3b75371c7dab2018c5d863e2b2ad26a2b5c137f242878daaa699997a72cf8997e050fefd7b0cc32c5b9deb05f51aa0c929ee9  python_qnx_WORKSPACE
+fff4cc896bb263500083a44e53b0dac3e325b1ecec7d2a09a46ad798fa7ade15858c6e723b89bdec1394a6465f7b89742d2c0a6bb79d5f73fee65506556bc395  qnx.patch
+"

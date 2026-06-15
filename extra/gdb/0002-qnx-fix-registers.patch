@@ -1,0 +1,93 @@
+From 17eb91b6a7656f8dd39a6f47ce51e5f99ac1da84 Mon Sep 17 00:00:00 2001
+From: Bjoern Weber <bweber@blackberry.com>
+Date: Tue, 15 Jul 2025 20:21:28 +0000
+Subject: [PATCH] fix nto_procfs::fetch_registers
+
+CLT-10000
+---
+ gdb/nto-procfs.c | 55 ++++++++++++++++++++++++++++++------------------
+ 1 file changed, 35 insertions(+), 20 deletions(-)
+
+diff --git a/gdb/nto-procfs.c b/gdb/nto-procfs.c
+index 26e5907233b..08fe24b8f2d 100644
+--- a/gdb/nto-procfs.c
++++ b/gdb/nto-procfs.c
+@@ -994,9 +994,8 @@ nto_procfs::wait (ptid_t ptid, struct target_waitstatus *ourstatus, target_wait_
+   return ptid_t (status.pid, status.tid, 0);
+ }
+ 
+-/* Read the current values of the inferior's registers, both the
+-   general register set and floating point registers (if supported)
+-   and update gdb's idea of their current values.  */
++/* Read the inferior's register set for the requested register
++   and update gdb's idea of it's current values.  */
+ void
+ nto_procfs::fetch_registers (struct regcache *regcache, int regno)
+ {
+@@ -1009,29 +1008,45 @@ nto_procfs::fetch_registers (struct regcache *regcache, int regno)
+   reg;
+   int regsize;
+   ptid_t ptid=regcache->ptid ();
++  int regset = nto_regset_id (regno);
+ 
+   nto_trace(0)("nto_procfs::fetch_registers (#%i) for %s\n", regno, nto_pid_to_str(ptid).c_str());
+   procfs_set_thread (ptid);
+-  int rv = devctl (ctl_fd, DCMD_PROC_GETGREG, &reg, sizeof (reg), &regsize);
+-  if ( rv == EOK)
+-    {
+-      nto_supply_gregset (regcache, (const gdb_byte *) &reg.greg, regsize);
+-    }
+-  else
+-    {
+-      warning("Could not fetch general registers: %s!", strerror(rv));
+-    }
+-  if (devctl (ctl_fd, DCMD_PROC_GETFPREG, &reg, sizeof (reg), &regsize) == EOK)
+-    {
+-      nto_supply_fpregset (regcache, (const gdb_byte *) &reg.fpreg, regsize);
+-    }
+-  if (devctl (ctl_fd, DCMD_PROC_GETALTREG, &reg, sizeof (reg), &regsize) == EOK)
++
++  switch (regset)
+     {
+-      nto_supply_altregset (regcache, (const gdb_byte*) &reg.altreg, regsize);
+-    }
++      int rv;
++      case NTO_REG_GENERAL:
++        rv = devctl (ctl_fd, DCMD_PROC_GETGREG, &reg, sizeof (reg), &regsize);
++        if ( rv == EOK)
++          {
++            nto_supply_gregset (regcache, (const gdb_byte *) &reg.greg, regsize);
++          }
++        else
++          {
++            error("Could not fetch general registers: %s!", strerror(rv));
++          }
++        break;
++      case NTO_REG_FLOAT:
++        if (devctl (ctl_fd, DCMD_PROC_GETFPREG, &reg, sizeof (reg), &regsize) == EOK)
++          {
++            nto_supply_fpregset (regcache, (const gdb_byte *) &reg.fpreg, regsize);
++          }
++        break;
++      case NTO_REG_ALT:
++        if (devctl (ctl_fd, DCMD_PROC_GETALTREG, &reg, sizeof (reg), &regsize) == EOK)
++          {
++            nto_supply_altregset (regcache, (const gdb_byte*) &reg.altreg, regsize);
++          }
++        break;
+ #if (__aarch64__)
+-  nto_supply_regset (regcache, NTO_REG_PAUTH_MASK, nullptr, 0);
++      case NTO_REG_PAUTH_MASK:
++        nto_supply_regset (regcache, NTO_REG_PAUTH_MASK, nullptr, 0);
++        break;
+ #endif
++      default:
++        error ("Unknown regset %i for register %i", regset, regno);
++    }
+ }
+ 
+ /* Helper for procfs_xfer_partial that handles memory transfers.
+-- 
+GitLab
+
+

@@ -2,7 +2,7 @@
 # Maintainer: Felix Xing <fxing@qnx.com>
 pkgname=gdb
 pkgver=14.2
-pkgrel=0
+pkgrel=1
 pkgdesc="The GNU Debugger"
 url="https://www.gnu.org/software/gdb/"
 arch="all"
@@ -39,11 +39,13 @@ makedepends="
     zlib-dev
     zstd-dev
     qnx-io-sock-dev
+    libc++-dev
     "
 options="!check"
 subpackages="$pkgname-dbg $pkgname-doc"
 source="https://ftp.gnu.org/gnu/gdb/gdb-$pkgver.tar.xz
         0001-qnx-gdb-changes.patch
+	0002-qnx-fix-registers.patch
     "
 
 build() {
@@ -104,4 +106,5 @@ package() {
 sha512sums="
 7e07941f1fe661288cc571b4964012ceabc1760624fce20320db2f470c01439b2386f859b5288da13204b758e2e3b22a74c68c012178db93b9529b06f1e22ede  gdb-14.2.tar.xz
 6141849a31f052de2688f40de6935ee32ae1dcdddf0b5938c76dd9d5aec784cb56adabd596a60c06956f3a768fcc00796d3dde9c8b3d49214c8777d4540d7ee6  0001-qnx-gdb-changes.patch
+47f90e01cf083b4db1f4403e7876e3887e4fcbc4a3623332fe44868c44ea85283a531b2a989174db7293c80e55bfa8ae65a61e43caf5750fbf7a0ff1bebdb3a3  0002-qnx-fix-registers.patch
 "

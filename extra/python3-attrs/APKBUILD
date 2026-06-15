@@ -1,0 +1,49 @@
+# Alpine-Contributor: Jean-Louis Fuchs <safe.pen2857@rhizoome.ch>
+# Alpine-Maintainer: Jean-Louis Fuchs <safe.pen2857@rhizoome.ch>
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=python3-attrs
+pkgver=25.3.0
+pkgrel=0
+pkgdesc="Python classes without boilerplate"
+url="http://www.attrs.org"
+arch="noarch"
+license="MIT"
+depends="python3"
+makedepends="
+    python3-gpep517
+    python3-hatch-vcs
+    python3-hatchling
+    "
+checkdepends="
+    python3-hypothesis
+    python3-pytest
+    "
+subpackages=""
+source="py-attrs-$pkgver.tar.gz::https://github.com/python-attrs/attrs/archive/$pkgver.tar.gz
+    no-fancy.patch
+    "
+builddir="$srcdir/attrs-$pkgver"
+options="!check" # circular dependency with py3-hypothesis
+
+build() {
+    SETUPTOOLS_SCM_PRETEND_VERSION=$pkgver \
+    gpep517 build-wheel \
+        --wheel-dir .dist \
+        --output-fd 3 3>&1 >&2
+}
+
+check() {
+    python3 -m venv --clear --without-pip --system-site-packages .testenv
+    .testenv/bin/python3 -m installer .dist/*.whl
+    .testenv/bin/python3 -m pytest
+}
+
+package() {
+    python3 -m installer -d "$pkgdir" \
+        .dist/*.whl
+}
+
+sha512sums="
+99b65320d970db46f1340cb99bc3a559b4f4f4d7f80583a17ae8649caefb168e60c2cee426347a327cfc5ad5b45237eef1c55713ff3f4d7a2610b32f05f89778  py-attrs-25.3.0.tar.gz
+f9ea0734a87cdc08265ae8e03f1656f5ad9e8065c93aa5642d2b87f01449940ad27283546b10bcd0afd63b8aceb39691ce7c33f8a3b8b4ed9290089f6f75b99b  no-fancy.patch
+"

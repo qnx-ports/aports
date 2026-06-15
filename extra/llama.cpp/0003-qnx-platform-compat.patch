@@ -1,0 +1,135 @@
+QNX platform compatibility patches for the self-hosted APK build.
+---
+diff --git a/common/arg.cpp b/common/arg.cpp
+index c21598e..398c9cc 100644
+--- a/common/arg.cpp
++++ b/common/arg.cpp
+@@ -44,6 +44,8 @@
+ #   endif
+ #elif defined(_AIX)
+ #include <sys/limits.h>
++#elif defined(__QNX__)
++#include <limits.h> // QNX defines PATH_MAX in <limits.h>, not <sys/syslimits.h>
+ #else
+ #include <sys/syslimits.h>
+ #endif
+diff --git a/common/common.cpp b/common/common.cpp
+index 793b8fe..e8f8950 100644
+--- a/common/common.cpp
++++ b/common/common.cpp
+@@ -950,7 +950,7 @@ std::string fs_get_cache_directory() {
+         cache_directory = std::getenv("LLAMA_CACHE");
+     } else {
+ #if defined(__linux__) || defined(__FreeBSD__) || defined(_AIX) || \
+-        defined(__OpenBSD__) || defined(__NetBSD__)
++        defined(__OpenBSD__) || defined(__NetBSD__) || defined(__QNX__) // QNX has HOME and uses the same Unix cache directory path as Linux/BSD.
+         if (std::getenv("XDG_CACHE_HOME")) {
+             cache_directory = std::getenv("XDG_CACHE_HOME");
+         } else if (std::getenv("HOME")) {
+diff --git a/common/download.cpp b/common/download.cpp
+index d6d47b2..1290ae0 100644
+--- a/common/download.cpp
++++ b/common/download.cpp
+@@ -32,6 +32,8 @@
+ #   endif
+ #elif defined(_AIX)
+ #include <sys/limits.h>
++#elif defined(__QNX__)
++#include <limits.h> // QNX defines PATH_MAX in <limits.h>, not <sys/syslimits.h>
+ #else
+ #include <sys/syslimits.h>
+ #endif
+diff --git a/ggml/cmake/common.cmake b/ggml/cmake/common.cmake
+index cb66388..77ecc51 100644
+--- a/ggml/cmake/common.cmake
++++ b/ggml/cmake/common.cmake
+@@ -36,6 +36,21 @@ function(ggml_get_system_arch)
+             (NOT CMAKE_OSX_ARCHITECTURES AND NOT CMAKE_GENERATOR_PLATFORM_LWR AND
+             CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|i686|AMD64|amd64)$"))
+         set(GGML_SYSTEM_ARCH "x86" PARENT_SCOPE)
++    elseif (CMAKE_SYSTEM_NAME MATCHES "QNX")
++        # CMAKE_SYSTEM_PROCESSOR, CMAKE_C_COMPILER_TARGET, and
++        # CMAKE_HOST_SYSTEM_PROCESSOR all return "unknown" or empty in the
++        # self-hosted QNX toolchain. Use uname -m to get the actual processor;
++        # QNX x86_64 returns "x86pc".
++        execute_process(
++            COMMAND uname -m
++            OUTPUT_VARIABLE GGML_QNX_UNAME_PROCESSOR
++            OUTPUT_STRIP_TRAILING_WHITESPACE
++            ERROR_QUIET
++        )
++        string(TOLOWER "${GGML_QNX_UNAME_PROCESSOR}" GGML_QNX_UNAME_PROCESSOR)
++        if (GGML_QNX_UNAME_PROCESSOR MATCHES "^(x86_64|x86pc|i686|amd64)")
++            set(GGML_SYSTEM_ARCH "x86" PARENT_SCOPE)
++        endif()
+     elseif (${CMAKE_SYSTEM_PROCESSOR} MATCHES "ppc|power")
+         set(GGML_SYSTEM_ARCH "PowerPC" PARENT_SCOPE)
+     elseif (${CMAKE_SYSTEM_PROCESSOR} MATCHES "loongarch64")
+diff --git a/ggml/src/ggml-cpu/ggml-cpu.cpp b/ggml/src/ggml-cpu/ggml-cpu.cpp
+index 128883b..d46b8b3 100644
+--- a/ggml/src/ggml-cpu/ggml-cpu.cpp
++++ b/ggml/src/ggml-cpu/ggml-cpu.cpp
+@@ -37,6 +37,13 @@
+ #    include <sys/types.h>
+ #endif
+ 
++#if defined(__QNX__)
++// Required for QNX memory manager message passing (_MEM_INFO via MsgSend).
++#    include <sys/memmsg.h>
++#    include <sys/mman.h>
++#    include <sys/neutrino.h>
++#endif
++
+ // ggml-backend interface
+ 
+ std::vector<ggml_backend_buffer_type_t> & ggml_backend_cpu_get_extra_buffer_types() {
+@@ -369,6 +375,22 @@ static void ggml_backend_cpu_device_get_memory(ggml_backend_dev_t dev, size_t *
+     GlobalMemoryStatusEx(&status);
+     *total = status.ullTotalPhys;
+     *free = status.ullAvailPhys;
++#elif defined(__QNX__)
++    // sysconf(_SC_PHYS_PAGES) returns -1 on QNX (unsupported); query the
++    // memory manager directly via _MEM_INFO for total and available physical memory.
++    *total = 0;
++    *free = 0;
++    {
++        mem_info_t msg;
++        msg.i.type = _MEM_INFO;
++        msg.i.zero = 0;
++        msg.i.flags = 0;
++        msg.i.fd = NOFD;
++        if (MsgSend(MEMMGR_COID, &msg.i, sizeof(msg.i), &msg.o, sizeof(msg.o)) == 0) {
++            *total = (size_t) msg.o.info.__posix_tmi_total;
++            *free  = (size_t) msg.o.info.posix_tmi_length;
++        }
++    }
+ #else
+     long pages = sysconf(_SC_PHYS_PAGES);
+     long page_size = sysconf(_SC_PAGE_SIZE);
+diff --git a/tools/rpc/rpc-server.cpp b/tools/rpc/rpc-server.cpp
+index 08e6803..feddbe3 100644
+--- a/tools/rpc/rpc-server.cpp
++++ b/tools/rpc/rpc-server.cpp
+@@ -136,7 +136,7 @@ static std::string fs_get_cache_directory() {
+         cache_directory = std::getenv("LLAMA_CACHE");
+     } else {
+ #if defined(__linux__) || defined(__FreeBSD__) || defined(_AIX) || \
+-    defined(__OpenBSD__) || defined(__NetBSD__)
++    defined(__OpenBSD__) || defined(__NetBSD__) || defined(__QNX__) // QNX has HOME and uses the same Unix cache directory path as Linux/BSD.
+         if (std::getenv("XDG_CACHE_HOME")) {
+             cache_directory = std::getenv("XDG_CACHE_HOME");
+         } else if (std::getenv("HOME")) {
+diff --git a/tools/server/CMakeLists.txt b/tools/server/CMakeLists.txt
+index 71cc0e7..dbc7c65 100644
+--- a/tools/server/CMakeLists.txt
++++ b/tools/server/CMakeLists.txt
+@@ -72,4 +72,9 @@ target_include_directories(${TARGET} PRIVATE ../mtmd)
+ target_include_directories(${TARGET} PRIVATE ${CMAKE_SOURCE_DIR})
+ target_link_libraries(${TARGET} PRIVATE server-context PUBLIC llama-common cpp-httplib ${CMAKE_THREAD_LIBS_INIT})
+ 
++if (CMAKE_SYSTEM_NAME MATCHES "QNX")
++    # QNX keeps socket APIs in libsocket rather than libc.
++    target_link_libraries(${TARGET} PRIVATE socket)
++endif()
++
+ target_compile_features(${TARGET} PRIVATE cxx_std_17)

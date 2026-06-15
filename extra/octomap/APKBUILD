@@ -1,0 +1,52 @@
+# Maintainer: Felix Lionardo <flionardo@qnx.com>
+pkgname=octomap
+pkgver=1.9.8
+pkgrel=0
+pkgdesc="An Efficient Probabilistic 3D Mapping Framework Based on Octrees"
+url="https://github.com/OctoMap/octomap"
+arch="aarch64 x86_64"
+license="BSD-3-Clause"
+source="$pkgname-$pkgver.tar.gz::https://github.com/OctoMap/octomap/archive/refs/tags/v$pkgver.tar.gz
+0001-Fix-test-dependencies-in-CMakeLists-374.patch"
+
+builddir="$srcdir/$pkgname-$pkgver"
+depends="libc++"
+makedepends="
+	libc++-dev
+	cmake
+	ninja
+"
+
+subpackages="$pkgname-dev"
+
+build() {
+	cmake3.5 -B build -G Ninja \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DCMAKE_INSTALL_LIBDIR=lib \
+		-DBUILD_TESTING=ON \
+		-DOCTOVIS_QT5=OFF
+	cmake3.5 --build build
+}
+
+check() {
+	# test_color_tree fails on aarch64
+	# https://github.com/OctoMap/octomap/issues/168
+	case "$CARCH" in
+	aarch64)
+		ctest3.5 --test-dir build -E test_color_tree
+		;;
+	*)
+		ctest3.5 --test-dir build
+		;;
+	esac
+}
+
+package() {
+	DESTDIR="$pkgdir" cmake3.5 --install build
+}
+
+sha512sums="
+60afeecc36a190f136dcbe33cb9cd6c06c16233988b383b0b010f65f81e6a3630b55902c5b5ad756ac35dee4c4ec26ec5722d6bd9b8e079f70b7d286293c518e  octomap-1.9.8.tar.gz
+53508f4d0c35fe4940700d3fb1e0d80760ede10f922ca34356d76198adf0bde73b2c1fbfd131c2524f6e029e0c566df99e0fe5e4ddfd8bb4114c29c1c8ea3348  0001-Fix-test-dependencies-in-CMakeLists-374.patch
+"

@@ -1,0 +1,29 @@
+diff --git a/src/ddsrt/src/ifaddrs/posix/ifaddrs.c b/src/ddsrt/src/ifaddrs/posix/ifaddrs.c
+index 2afbdc7b..6c0fd24a 100644
+--- a/src/ddsrt/src/ifaddrs/posix/ifaddrs.c
++++ b/src/ddsrt/src/ifaddrs/posix/ifaddrs.c
+@@ -104,7 +104,7 @@ static enum ddsrt_iftype guess_iftype (const struct ifaddrs *sys_ifa)
+     switch (IFM_TYPE (ifmr.ifm_active))
+     {
+       case IFM_ETHER:
+-#if !defined __FreeBSD__
++#if !defined __FreeBSD__ && !defined __QNXNTO__
+       case IFM_TOKEN:
+       case IFM_FDDI:
+ #endif
+diff --git a/src/idl/src/string.c b/src/idl/src/string.c
+index 26e8e4cb..8642d572 100644
+--- a/src/idl/src/string.c
++++ b/src/idl/src/string.c
+@@ -31,6 +31,11 @@
+ #endif
+ 
+ #define _GNU_SOURCE
++#if defined(__QNX__)
++  #include <shims/qnx_xlocale/qnx_ctype_l.h>
++  #include <shims/qnx_xlocale/qnx_string_l.h>
++  #include <shims/qnx_xlocale/qnx_stdlib_l.h>
++#endif
+ #include <assert.h>
+ #include <ctype.h>
+ #include <stdio.h>

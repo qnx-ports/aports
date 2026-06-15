@@ -1,0 +1,32 @@
+# Alpine-Contributor: Fabian Affolter <fabian@affolter-engineering.ch>
+# Alpine-Maintainer: Fabian Affolter <fabian@affolter-engineering.ch>
+# Maintainer: jscaffidi <jscaffidi@qnx.com>
+pkgname=python3-flake8-import-order
+_pkgname=flake8-import-order
+pkgver=0.18.2
+pkgrel=0
+pkgdesc="Extension for flake8 which checks for the ordering of import statements"
+options="!check" # Requires unpackaged pylama
+url="https://github.com/PyCQA/flake8-import-order"
+arch="noarch"
+license="MIT"
+depends="python3-flake8 python3-setuptools"
+makedepends="python3-gpep517 python3-wheel"
+source="https://files.pythonhosted.org/packages/source/${_pkgname:0:1}/$_pkgname/$_pkgname-$pkgver.tar.gz"
+builddir="$srcdir"/$_pkgname-$pkgver
+
+build() {
+	gpep517 build-wheel \
+		--wheel-dir .dist \
+		--output-fd 3 3>&1 >&2
+}
+
+package() {
+	gpep517 install-wheel --destdir "$pkgdir" \
+		.dist/*.whl
+}
+
+sha512sums="
+a0367a5ae834fc0d0ee8d65bfec4eb4bdf1039806a69e0be2fc9e9d37b6b413ecc81275f8ecf6bb33b42e31603b02ff0c3c7baefe812dd5c443df54d8fc0d1cd  flake8-import-order-0.18.2.tar.gz
+"
+

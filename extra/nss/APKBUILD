@@ -1,0 +1,155 @@
+# Alpine-Contributor: Łukasz Jendrysik <scadu@yandex.com>
+# Alpine-Contributor: Rasmus Thomsen <oss@cogitri.dev>
+# Alpine-Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+# Maintainer: Aaron Bassett <abassett@qnx.com>
+pkgname=nss
+pkgver=3.120
+pkgrel=0
+_gitrel=1
+pkgdesc="Mozilla Network Security Services"
+url="https://developer.mozilla.org/docs/Mozilla/Projects/NSS"
+arch="all"
+license="MPL-2.0"
+depends_dev="nspr-dev"
+depends="libc++ nspr sqlite-libs"
+makedepends="
+	$depends_dev
+	bash
+	gyp
+	perl
+	sqlite-dev
+	zlib-dev
+	qnx-io-sock-dev
+	libc++-dev
+	"
+subpackages="$pkgname-dev $pkgname-tools"
+_tagname="qnx-NSS_${pkgver//./_}_RTM-r$_gitrel"
+source="https://github.com/qnx-ports/nss/archive/refs/tags/$_tagname.tar.gz
+	nss.pc.in
+	nss-util.pc.in
+	nss-softokn.pc.in
+	nss-config.in
+	"
+builddir="$srcdir/$pkgname-$_tagname/nss"
+
+prepare() {
+    default_prepare
+
+    # we need to make this look like the release archive
+    mkdir "$srcdir"/nss
+    mv "$srcdir/$pkgname-$_tagname"/* "$srcdir"/nss/
+    mv "$srcdir"/nss "$builddir"
+
+    mkdir "$srcdir/$pkgname-$_tagname"/dist
+}
+
+build() {
+	CFLAGS="$CFLAGS -O2 -Wno-tautological-unsigned-char-zero-compare" \
+	CXXFLAGS="$CXXFLAGS -O2 -Wno-character-conversion" \
+	./build.sh \
+		--opt \
+		--system-nspr \
+		--system-sqlite \
+		--enable-libpkix
+}
+
+check() {
+	cd tests
+	# other tests are failing for some reason and prompt an interactive password
+	export NSS_TESTS="cipher lowhash libpkix"
+	export NSS_CYCLES=standard
+	HOST=localhost DOMSUF=localdomain bash ./all.sh
+}
+
+package() {
+	replaces="nss-dev libnss"
+
+	local nss_vmajor=$(awk '/#define.*NSS_VMAJOR/ {print $3}' lib/nss/nss.h)
+	local nss_vminor=$(awk '/#define.*NSS_VMINOR/ {print $3}' lib/nss/nss.h)
+	local nss_vpatch=$(awk '/#define.*NSS_VPATCH/ {print $3}' lib/nss/nss.h)
+	local nspr_version="$(pkg-config --modversion nspr)"
+
+	# pkgconfig files
+	mkdir -p "$pkgdir"/usr/lib/pkgconfig
+	local _pc; for _pc in nss.pc nss-util.pc nss-softokn.pc; do
+		sed "$srcdir"/$_pc.in \
+			-e "s,%libdir%,/usr/lib,g" \
+			-e "s,%prefix%,/usr,g" \
+			-e "s,%exec_prefix%,/usr/bin,g" \
+			-e "s,%includedir%,/usr/include/nss,g" \
+			-e "s,%SOFTOKEN_VERSION%,$pkgver,g" \
+			-e "s,%NSPR_VERSION%,$nspr_version,g" \
+			-e "s,%NSS_VERSION%,$pkgver,g" \
+			-e "s,%NSSUTIL_VERSION%,$pkgver,g" \
+			> "$pkgdir"/usr/lib/pkgconfig/$_pc
+	done
+	ln -sf nss.pc "$pkgdir"/usr/lib/pkgconfig/mozilla-nss.pc
+	chmod 644 "$pkgdir"/usr/lib/pkgconfig/*.pc
+
+	# nss-config
+	mkdir -p "$pkgdir"/usr/bin
+	sed "$srcdir"/nss-config.in \
+		-e "s,@libdir@,/usr/lib,g" \
+		-e "s,@prefix@,/usr/bin,g" \
+		-e "s,@exec_prefix@,/usr/bin,g" \
+		-e "s,@includedir@,/usr/include/nss,g" \
+		-e "s,@MOD_MAJOR_VERSION@,${nss_vmajor},g" \
+		-e "s,@MOD_MINOR_VERSION@,${nss_vminor},g" \
+		-e "s,@MOD_PATCH_VERSION@,${nss_vpatch},g" \
+		> "$pkgdir"/usr/bin/nss-config
+	chmod 755 "$pkgdir"/usr/bin/nss-config
+
+	cd ..
+
+	local minor=${pkgver#*.}
+	minor=${minor%.*}
+	find dist/Release/lib -name "*.so" | while IFS= read -r file; do
+		install -Dm755 $file \
+			"$pkgdir"/usr/lib/${file##*/}.$minor
+		ln -s ${file##*/}.$minor "$pkgdir"/usr/lib/${file##*/}
+	done
+
+	for file in certutil cmsutil crlutil modutil pk12util shlibsign \
+			signtool signver ssltap; do
+		install -Dm755 dist/Release/bin/$file -t "$pkgdir"/usr/bin/
+	done
+
+	install -Dm644 dist/public/nss/*.h -t "$pkgdir"/usr/include/nss/
+	install -Dm644 dist/private/nss/blapi.h dist/private/nss/alghmac.h -t "$pkgdir"/usr/include/nss/private/
+}
+
+dev() {
+	# we cannot use default_dev because we need the .so symlinks in main package
+	local i
+	pkgdesc="Development files for nss"
+	depends="$pkgname=$pkgver-r$pkgrel $depends_dev"
+
+	amove usr/bin/nss-config
+
+	cd "$pkgdir"
+	for i in usr/include usr/lib/pkgconfig; do
+		if [ -e "$pkgdir/$i" ] || [ -L "$pkgdir/$i" ]; then
+			d="$subpkgdir/${i%/*}"  # dirname $i
+			mkdir -p "$d"
+			mv "$pkgdir/$i" "$d"
+			rmdir "$pkgdir/${i%/*}" 2>/dev/null || true
+		fi
+	done
+}
+
+tools() {
+	pkgdesc="Tools for the Network Security Services"
+	replaces="nss"
+	depends="nss zlib-ng nspr"
+
+	amove usr/bin
+}
+
+
+sha512sums="
+28bb8d496c816a06265046dc609507f638c7fbfe08530f5d01f1db2220536887c1d426f0ba814b50efb843a04eb8cf9f5392fadd0b12648cf9359563c2c5446e  qnx-NSS_3_120_RTM-r1.tar.gz
+8650b41e19a84712dab9dd9af6188c6feca32c7e7f4dd4623b1be72606cc7ae4940821bb8c2a838c63b1f2996d8f2d4cedab1be93cf092f2e8ed4ef6d4fdef30  nss.pc.in
+223e7e4f638dde7b77a2e3ca64349ccd7a79be23a7fb6c74eac92b095acd5d8b445d0f82b5905d2e638ead2fbb3388149cdf2c91d7353f9055e0a3dccc950171  nss-util.pc.in
+e0f1807c10bf04152a67aa4f04b1a1b0306dc86508af60a781a46389fb147dee1b359721b567d1c00c45c73434299a792a3d435346e8d230c8413518af1eff6d  nss-softokn.pc.in
+5c5533a4f81955415696faadb042607f901765b986447f74af5a74fd69cf04b41cedc55a7c87b8409939f49e50f0c9ea91cf81e709287ef02c30ce161cd8b4ba  nss-config.in
+"

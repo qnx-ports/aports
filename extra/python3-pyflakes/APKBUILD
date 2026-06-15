@@ -1,0 +1,42 @@
+# Alpine-Contributor: Peter Bui <pnutzh4x0r@gmail.com>
+# Alpine-Contributor: Fabian Affolter <fabian@affolter-engineering.ch>
+# Alpine-Maintainer Achill Gilgenast <achill@achill.org>
+# Maintainer jscaffidi <jscaffidi@qnx.com>
+# NOTE: ensure compatibility with python3-flake8! (#11378)
+pkgname=python3-pyflakes
+pkgver=3.4.0
+pkgrel=0
+pkgdesc="passive checker of Python programs"
+url="https://github.com/PyCQA/pyflakes"
+arch="noarch"
+license="MIT"
+depends="python3"
+makedepends="python3-gpep517 python3-setuptools python3-wheel"
+checkdepends="python3-pytest"
+source="https://files.pythonhosted.org/packages/source/p/pyflakes/pyflakes-$pkgver.tar.gz"
+builddir="$srcdir/pyflakes-$pkgver"
+
+build() {
+	gpep517 build-wheel \
+		--wheel-dir .dist \
+		--output-fd 3 3>&1 >&2
+}
+
+check() {
+	python3 -m venv --clear --without-pip --system-site-packages .testenv
+	.testenv/bin/python3 -m installer .dist/*.whl
+	.testenv/bin/python3 -m pytest
+}
+
+package() {
+	mkdir -p "$pkgdir"/usr/bin
+	ln -s pyflakes "$pkgdir"/usr/bin/pyflakes-3
+
+	python3 -m installer -d "$pkgdir" .dist/*.whl
+}
+
+sha512sums="
+d2c48d2b3a1024af27f8fa1b304b9839d65d63d4a5d1db408e8546396b5150627dc9d84189716624f228a70ab0b2343d8c66b2ab154d4c6042362c9f6ed1b8c7  pyflakes-3.4.0.tar.gz
+"
+
+

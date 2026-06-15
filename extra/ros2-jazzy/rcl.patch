@@ -1,0 +1,24 @@
+diff --git a/rcl/package.xml b/rcl/package.xml
+index 3599878..a9d686d 100644
+--- a/rcl/package.xml
++++ b/rcl/package.xml
+@@ -39,7 +39,6 @@
+   <test_depend>launch</test_depend>
+   <test_depend>launch_testing</test_depend>
+   <test_depend>launch_testing_ament_cmake</test_depend>
+-  <test_depend>mimick_vendor</test_depend>
+   <test_depend>osrf_testing_tools_cpp</test_depend>
+   <test_depend>rmw</test_depend>
+   <test_depend>rmw_implementation_cmake</test_depend>
+diff --git a/rcl_yaml_param_parser/package.xml b/rcl_yaml_param_parser/package.xml
+index 137737a..c5198ff 100644
+--- a/rcl_yaml_param_parser/package.xml
++++ b/rcl_yaml_param_parser/package.xml
+@@ -25,7 +25,6 @@
+   <test_depend>ament_cmake_gtest</test_depend>
+   <test_depend>ament_lint_common</test_depend>
+   <test_depend>ament_lint_auto</test_depend>
+-  <test_depend>mimick_vendor</test_depend>
+   <test_depend>osrf_testing_tools_cpp</test_depend>
+   <test_depend>performance_test_fixture</test_depend>
+ 

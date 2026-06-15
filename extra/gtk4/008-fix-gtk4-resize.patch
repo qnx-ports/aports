@@ -1,0 +1,59 @@
+--- a/gtk/gtkwindow.c
++++ b/gtk/gtkwindow.c
+@@ -4296,6 +4296,26 @@
+   if (height < min_height)
+     height = min_height;
+ 
++#ifdef __QNX__
++#define QNX_MIN_WINDOW_RESIZE_HANDLE_MULTIPLIER 4
++  /* Cap content to (bounds - shadow_margins) so that after CSD shadows
++   * are added back by gtk_window_update_csd_size, total surface fits
++   * within monitor bounds. Without this cap, GTK requests an oversized
++   * surface and Weston's configure events get ignored. Also lower the
++   * minimum window size below GTK's default to permit small windows. */
++  {
++    GtkBorder qnx_shadow = {0};
++    if (priv->use_client_shadow)
++      get_shadow_width (window, &qnx_shadow);
++    int max_w = bounds_width  - qnx_shadow.left - qnx_shadow.right;
++    int max_h = bounds_height - qnx_shadow.top  - qnx_shadow.bottom;
++    if (width  > max_w) width  = max_w;
++    if (height > max_h) height = max_h;
++  }
++  min_width  = RESIZE_HANDLE_SIZE * QNX_MIN_WINDOW_RESIZE_HANDLE_MULTIPLIER;
++  min_height = RESIZE_HANDLE_SIZE * QNX_MIN_WINDOW_RESIZE_HANDLE_MULTIPLIER;
++#undef QNX_MIN_WINDOW_RESIZE_HANDLE_MULTIPLIER
++#endif
+   if (should_remember_size (window))
+     gtk_window_set_default_size_internal (window, TRUE, width, TRUE, height);
+ 
+--- a/gdk/wayland/gdktoplevel-wayland.c
++++ b/gdk/wayland/gdktoplevel-wayland.c
+@@ -386,6 +386,27 @@
+       bounds_height = display_geometry.height;
+     }
+ 
++#ifdef __QNX__
++#define QNX_MIN_STABLE_SURFACE_SIZE 200
++  /* Use Weston's configured size as bounds during active resize, or the
++   * current stable surface size when no configure is pending. Without
++   * this, gdk_toplevel_size_init always uses monitor bounds and resize
++   * configure events are silently dropped. The QNX_MIN_STABLE_SURFACE_SIZE
++   * threshold avoids firing on cursor surfaces (48x48). */
++  if (wayland_surface->next_layout.configured_width > 0 &&
++      wayland_surface->next_layout.configured_height > 0)
++    {
++      bounds_width  = wayland_surface->next_layout.configured_width;
++      bounds_height = wayland_surface->next_layout.configured_height;
++    }
++  else if (surface->width > QNX_MIN_STABLE_SURFACE_SIZE &&
++           surface->height > QNX_MIN_STABLE_SURFACE_SIZE)
++    {
++      bounds_width  = surface->width;
++      bounds_height = surface->height;
++    }
++#undef QNX_MIN_STABLE_SURFACE_SIZE
++#endif
+   gdk_toplevel_size_init (&size, bounds_width, bounds_height);
+   gdk_toplevel_notify_compute_size (GDK_TOPLEVEL (surface), &size);
+   g_warn_if_fail (size.width > 0);

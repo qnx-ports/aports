@@ -366,3 +366,14 @@ index 3ddc69b3..c5131dcc 100644
  static int
  load_jpeg_icc(struct jpeg_decompress_struct *cinfo,
  	      struct icc_profile_data **icc_profile_data)
+ 
+--- a/qnx/build/backends/qnx-screen/qnx-screen.c	2026-05-01 15:48:18.000000000 +0000
++++ b/qnx/build/backends/qnx-screen/qnx-screen.c	2026-05-01 15:51:03.000000000 +0000
+@@ -1024,6 +1024,7 @@
+ 	weston_event.value = weston_event.discrete * b->scroll_speed;
+ 	if (b->invert_scroll) {
+ 		weston_event.value = -weston_event.value;
++		weston_event.discrete = -weston_event.discrete;
+ 	}
+ 	weston_compositor_get_time(&time);
+ 

@@ -1,0 +1,35 @@
+# Alpine-Contributor: Sören Tempel <soeren+alpine@soeren-tempel.net>
+# Alpine-Maintainer: Patrycja Rosa <alpine@ptrcnull.me>
+# Maintainer: Felix Lionardo <flionardo@qnx.com>
+pkgname=python3-argcomplete
+_pyname=argcomplete
+pkgver=2.0.0
+pkgrel=0
+pkgdesc="Easy, extensible command line tab completion of arguments for your Python script"
+options="!check" # Tests are py2 dependent
+url="https://github.com/kislyuk/argcomplete"
+arch="noarch"
+license="Apache-2.0"
+depends="python3"
+makedepends="python3-setuptools"
+checkdepends="python3-coverage python3-flake8 python3-pexpect bash"
+source="$pkgname-$pkgver.tar.gz::https://github.com/kislyuk/$_pyname/archive/v$pkgver.tar.gz
+	"
+builddir="$srcdir/$_pyname-$pkgver"
+
+build() {
+	python3 setup.py build
+}
+
+check() {
+	python3 setup.py test
+}
+
+package() {
+	python3 setup.py install --prefix=/usr --root="$pkgdir" --optimize=1
+}
+
+
+sha512sums="
+3253b8d08875959b4d55ef20d9b31fd598ce54ad583b91758d662d883818348ebb1d3185c4c2364c453e3c6a79c202e087adde1c75d1c15f1c50b47723a3d226  python3-argcomplete-2.0.0.tar.gz
+"

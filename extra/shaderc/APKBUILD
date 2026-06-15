@@ -1,0 +1,79 @@
+# Alpine-Contributor: Leo <thinkabit.ukim@gmail.com>
+# Alpine-Maintainer: Simon Zeni <simon@bl4ckb0ne.ca>
+# Maintainer: Elliott Mazzuca <emazzuca@qnx.com>
+pkgname=shaderc
+pkgver=2026.2
+pkgrel=0
+pkgdesc="Collection of tools, libraries, and tests for Vulkan shader compilation"
+options="!check" # Requires test setup from third party
+url="https://github.com/google/shaderc"
+arch="all"
+license="Apache-2.0"
+depends="
+	glslang-libs
+	libc++
+	spirv-tools
+	"
+makedepends="
+	cmake
+	glslang-dev
+        libc++-dev
+	ninja
+	python3
+	spirv-tools-dev
+	"
+subpackages="$pkgname-static $pkgname-dev"
+source="$pkgname-$pkgver.tar.gz::https://github.com/google/shaderc/archive/v$pkgver.tar.gz"
+
+prepare() {
+	default_prepare
+
+	# Disable third party dependencies
+	sed -i -e '/add_subdirectory(third_party)/d' CMakeLists.txt
+
+	# Fix glslc test generation depending on third-party SPIRV-tools
+	sed -i -e "s|\$<TARGET_FILE:spirv-dis>|spirv-dis|" \
+		glslc/test/CMakeLists.txt
+
+	# Disable git versioning
+	sed -i -e '/build-version/d' glslc/CMakeLists.txt
+
+	# Create our own build-version.inc since we disabled git versioning
+	# need to keep this in sync with glslang and SPIRV-Tools versions
+	# this is displayed with 'glslc --version'
+	_glslang_ver="$( . $startdir/../../*/glslang/APKBUILD; echo $pkgver)"
+	_spirv_ver="$( . $startdir/../../*/spirv-tools/APKBUILD; echo $pkgver)"
+
+	cat <<- EOF > glslc/src/build-version.inc
+		"shaderc $pkgver\n"
+		"SPIRV-Tools $_spirv_ver\n"
+		"glslang $_glslang_ver\n"
+	EOF
+}
+
+build() {
+	export CFLAGS="$CFLAGS -Qunused-arguments"
+	export CXXFLAGS="$CXXFLAGS -Qunused-arguments"
+	cmake -B build -G Ninja \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DCMAKE_INSTALL_LIBDIR=lib \
+		-DCMAKE_BUILD_TYPE=MinSizeRel \
+		-DBUILD_SHARED_LIBS=ON \
+		-DSHADERC_SKIP_TESTS="$(want_check && echo OFF || echo ON)" \
+		-DSHADERC_ENABLE_TESTS="$(want_check && echo ON || echo OFF)" \
+		-DSHADERC_ENABLE_EXAMPLES=OFF \
+		-Dglslang_SOURCE_DIR=/usr/include/glslang
+	cmake --build build
+}
+
+check() {
+	ctest --test-dir build
+}
+
+package() {
+	DESTDIR="$pkgdir" cmake --install build
+}
+
+sha512sums="
+733f85a83db4b71814c7f251c44e6010b485ed03d7e2389db5c14f8426942bebf6c95a35e5eaef80e51c29f8efa28cc0577226344630a427553200c6a87349ec  shaderc-2026.2.tar.gz
+"

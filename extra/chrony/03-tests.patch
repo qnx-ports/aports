@@ -1,0 +1,82 @@
+diff --git a/test/system/test.common b/test/system/test.common
+index d089419..2dafc06 100644
+--- a/test/system/test.common
++++ b/test/system/test.common
+@@ -53,6 +53,21 @@ test_start() {
+ 	echo "Testing $*:"
+ }
+ 
++check_pid_running() {
++  if [[ $(uname) = "QNX" ]];
++  then
++    if [[ $(pidin -p $1 | wc -l) -eq 1 ]];
++    then 
++      (exit 1)
++    else
++      (exit 0)
++    fi
++  else
++    ps -p $1 > /dev/null
++  fi
++}
++
++
+ test_pass() {
+ 	echo "PASS"
+ 	exit 0
+@@ -287,7 +302,7 @@ start_chronyd() {
+ 	$CHRONYD_WRAPPER $wrapper_options \
+ 		"$chronyd" $(get_chronyd_options) > "$TEST_DIR/chronyd.out" 2>&1
+ 
+-	[ $? -eq 0 ] && [ -f "$pidfile" ] && ps -p "$(cat "$pidfile")" > /dev/null && test_ok || test_error
++ 	[ $? -eq 0 ] && [ -f "$pidfile" ] && check_pid_running "$(cat "$pidfile")" && test_ok || test_error
+ }
+ 
+ wait_for_sync() {
+@@ -327,7 +342,7 @@ stop_chronyd() {
+ 	fi
+ 
+ 	# Wait for the process to terminate (we cannot use "wait")
+-	while ps -p "$pid" > /dev/null; do
++  while check_pid_running "$pid"; do
+ 		sleep 0.1
+ 	done
+ 
+diff --git a/test/unit/quantiles.c b/test/unit/quantiles.c
+index a6e3dbb..4332dd2 100644
+--- a/test/unit/quantiles.c
++++ b/test/unit/quantiles.c
+@@ -18,6 +18,8 @@
+  **********************************************************************
+  */
+ 
++#include <config.h>
++
+ #include <local.h>
+ #include "test.h"
+ 
+diff --git a/test/unit/samplefilt.c b/test/unit/samplefilt.c
+index 19d2f70..8d034cd 100644
+--- a/test/unit/samplefilt.c
++++ b/test/unit/samplefilt.c
+@@ -18,6 +18,8 @@
+  **********************************************************************
+  */
+ 
++#include <config.h>
++
+ #include <local.h>
+ #include "test.h"
+
+diff --git a/test/unit/socket.c b/test/unit/socket.c
+index 8630f38..dc2875a 100644
+--- a/test/unit/socket.c
++++ b/test/unit/socket.c
+@@ -70,6 +70,7 @@ send_and_recv(int type, int is_stream, int is_client_bound, int server_fd, int c
+   UTI_GetRandomBytes(buf1, sizeof (buf1));
+ 
+   TEST_CHECK(SCK_Send(client_fd, buf1, sizeof (buf1), 0) == sizeof (buf1));
++  usleep(250); // very flaky without wait, and we call this function a lot during this test
+   msg1 = SCK_ReceiveMessage(server_fd, 0);
+ 
+   TEST_CHECK(msg1);

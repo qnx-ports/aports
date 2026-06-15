@@ -1,0 +1,39 @@
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=python3-absl-py
+_pkgname=abseil-py
+pkgver=2.4.0
+pkgrel=0
+pkgdesc="Python bindings for the abseil-cpp library"
+url="https://abseil.io/"
+arch="all"
+license="Apache-2.0"
+depends="python3"
+makedepends="
+    python3-dev
+    python3-gpep517
+    python3-hatchling
+    python3-wheel
+    "
+checkdepends="bazel8"
+source="$pkgname-$pkgver.tar.gz::https://github.com/abseil/$_pkgname/archive/refs/tags/v$pkgver.tar.gz"
+builddir="$srcdir/$_pkgname-$pkgver"
+options="!check" # No bazel8 yet.
+
+build() {
+    gpep517 build-wheel \
+        --wheel-dir .dist \
+        --output-fd 3 3>&1 >&2
+}
+
+check() {
+    bazel test absl/
+}
+
+package() {
+    python3 -m installer -d "$pkgdir" \
+        .dist/*.whl
+}
+
+sha512sums="
+26278e1b64e803f3a171cb7cbe4e188df0d1e27c69042b932a97160b77778e72af518b62564f5682b0a6d506ec74f8491015e37dcd1b1e1a305ac19b1505a935  python3-absl-py-2.4.0.tar.gz
+"

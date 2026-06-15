@@ -1,13 +1,20 @@
+# Alpine-Contributor: prspkt <prspkt@protonmail.com>
+# Alpine-Maintainer: prspkt <prspkt@protonmail.com>
+# Maintainer: Ethan Leir <eleir@qnx.com>
 pkgname=brotli
 pkgver=1.1.0
-pkgrel=0
+pkgrel=1
 pkgdesc="Brotli compression format"
 arch="all"
 license="MIT"
 url="https://github.com/google/brotli"
-makedepends="cmake ninja"
+makedepends_build="cmake ninja"
 depends=""
 subpackages="${pkgname}-static ${pkgname}-dev"
+if [ -z "$BOOTSTRAP" ]; then
+    makedepends_host="python3-dev python3-gpep517 python3-setuptools python3-wheel"
+    subpackages="$subpackages python3-$pkgname:py3"
+fi
 source="${pkgname}-${pkgver}.tar.gz::https://github.com/google/brotli/archive/refs/tags/v${pkgver}.tar.gz"
 sha512sums="
 6eb280d10d8e1b43d22d00fa535435923c22ce8448709419d676ff47d4a644102ea04f488fc65a179c6c09fee12380992e9335bad8dfebd5d1f20908d10849d9  brotli-1.1.0.tar.gz
@@ -43,9 +50,25 @@ build() {
     BUILD_ROOT=${CBUILDROOT} \
     cmake ${cmake_args} -G Ninja -B ./build/shared
     ninja -C build/shared
+
+    if [ -z "$BOOTSTRAP" ]; then
+        gpep517 build-wheel \
+            --wheel-dir .dist \
+            --output-fd 3 3>&1 >&2
+    fi
 }
 
 package() {
     DESTDIR=${pkgdir} ninja -C build/static install
     DESTDIR=${pkgdir} ninja -C build/shared install
+
+    if [ -z "$BOOTSTRAP" ]; then
+        python3 -m installer -d "$pkgdir" .dist/*.whl
+    fi
+}
+
+py3() {
+    pkgdesc="$pkgdesc (python bindings)"
+
+    amove usr/lib/python3*
 }

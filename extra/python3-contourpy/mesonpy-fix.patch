@@ -1,0 +1,18 @@
+diff --color -U 6 -r before/lib/contourpy/util/meson.build after/lib/contourpy/util/meson.build
+--- before/lib/contourpy/util/meson.build	2026-03-23 14:53:46.079366090 -0400
++++ after/lib/contourpy/util/meson.build	2026-03-23 14:54:29.351744533 -0400
+@@ -25,13 +25,13 @@
+ # package versions
+ conf_data.set('contourpy_version', meson.project_version())
+ conf_data.set('meson_version', meson.version())
+ conf_data.set('mesonpy_version',
+   run_command(
+     py3,
+-    ['-c', 'import importlib.metadata as im; print(im.version("meson-python"))'],
++    ['-c', 'import mesonpy; print(mesonpy.__version__)'],
+     check: true
+   ).stdout().strip()
+ )
+ conf_data.set('pybind11_version', pybind11_dep.version())
+ 
+ # Misc meson settings

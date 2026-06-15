@@ -1,0 +1,33 @@
+# Alpine-Maintainer: Marian Buschsieweke <marian.buschsieweke@posteo.net>
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=python3-kiwisolver
+_pkgname=kiwisolver
+pkgver=1.4.8
+pkgrel=0
+pkgdesc="Efficient implementation of the Cassowary constraint solving algorithm"
+url="https://github.com/nucleic/kiwi"
+arch="all"
+license="BSD-3-Clause-Attribution"
+depends="python3 qnx-io-sock"
+makedepends="python3-dev python3-setuptools python3-cppy python3-setuptools_scm libc++-dev qnx-io-sock-dev"
+checkdepends="python3-pytest"
+source="$pkgname-$pkgver.tar.gz::https://github.com/nucleic/kiwi/archive/$pkgver.tar.gz"
+builddir="$srcdir"/kiwi-$pkgver
+
+build() {
+    export SETUPTOOLS_SCM_PRETEND_VERSION=$pkgver
+    CPPFLAGS="$CPPFLAGS -fPIC" \
+    python3 setup.py build
+}
+
+check() {
+    PYTHONPATH="$(echo build/lib.*-3*)" pytest
+}
+
+package() {
+    python3 setup.py install --skip-build --root="$pkgdir"
+}
+
+sha512sums="
+487bfd8c59b85b67724da81e2c758e2800b4bf8e76929fc7ea75fe03a3759cc8a57943c8d8940b8d5e75d6e748e236250129bc929303e999a5431f4212b753f2  python3-kiwisolver-1.4.8.tar.gz
+"

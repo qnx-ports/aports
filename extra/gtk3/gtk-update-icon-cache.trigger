@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -e
 
 for i in "$@"; do
 	[ -d "$i" ] || continue

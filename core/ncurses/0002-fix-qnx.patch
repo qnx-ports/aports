@@ -1,0 +1,31 @@
+diff --git a/configure b/configure
+index 48ad381..5d3a0f7 100755
+--- a/configure
++++ b/configure
+@@ -3827,7 +3827,7 @@ echo $ECHO_N "checking if $CXX works... $ECHO_C" >&6
+ 
+ 		save_CPPFLAGS="$CPPFLAGS"
+ 		eval cf_includedir=${includedir}
+-		CPPFLAGS="$CPPFLAGS -I${cf_includedir}"
++		CPPFLAGS="$CPPFLAGS"
+ 
+ cat >"conftest.$ac_ext" <<_ACEOF
+ #line 3833 "configure"
+@@ -7123,7 +7123,7 @@ echo "${ECHO_T}$cf_cv_ldflags_search_paths_first" >&6
+ 		fi
+ 		cf_cv_rm_so_locs=yes
+ 		;;
+-	(linux*|gnu*|k*bsd*-gnu)
++	(linux*|gnu*|k*bsd*-gnu|nto-qnx*)
+ 		if test "$DFT_LWR_MODEL" = "shared" && test -n "$LD_RPATH_OPT" ; then
+ 			LOCAL_LDFLAGS="${LD_RPATH_OPT}\$(LOCAL_LIBDIR)"
+ 			LOCAL_LDFLAGS2="$LOCAL_LDFLAGS"
+@@ -7301,7 +7301,7 @@ CF_EOF
+ 		CC_SHARED_OPTS=
+ 		MK_SHARED_LIB='${LD} -Wshared -Wxld=-export_all -o $@'
+ 		;;
+-	(nto-qnx*|openbsd*|freebsd[12].*)
++	(openbsd*|freebsd[12].*)
+ 		CC_SHARED_OPTS="$CC_SHARED_OPTS -DPIC"
+ 		MK_SHARED_LIB='${LD} ${LDFLAGS} -Bshareable -o $@'
+ 		test "$cf_cv_shlib_version" = auto && cf_cv_shlib_version=rel

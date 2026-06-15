@@ -1,0 +1,63 @@
+# Alpine-Contributor: Alex Raschi <raschi.alex@gmail.com>
+# Alpine-Maintainer: Clayton Craft <clayton@craftyguy.net>
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=sdl2-net
+_pkgname=SDL_net
+pkgver=2.2.0
+pkgrel=0
+pkgdesc="A simple, cross-platform wrapper over TCP/IP sockets."
+url="https://libsdl.org/"
+arch="all"
+license="Zlib"
+depends="
+    qnx-io-sock
+    sdl2-compat
+    "
+makedepends="
+    qnx-io-sock-dev
+    sdl3-dev
+    sdl3-static
+    sdl2-compat-dev
+    sdl2-compat-static
+    autoconf
+    clang
+    cmake
+    ninja
+    "
+subpackages="$pkgname-static $pkgname-dev $pkgname-dbg $pkgname-doc"
+source="$pkgname-$pkgver.tar.gz::https://www.github.com/libsdl-org/$_pkgname/archive/refs/tags/release-$pkgver.tar.gz
+    SDL_net-iosock.patch"
+builddir="$srcdir/$_pkgname-release-$pkgver"
+
+options="!check"
+
+build() {
+    export CPPFLAGS="${CPPFLAGS} -D_QNX_SOURCE"
+    cmake -B build-shared -G Ninja \
+        -DCMAKE_C_COMPILER=clang \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DBUILD_SHARED_LIBS=ON \
+        -DCMAKE_SKIP_INSTALL_RPATH=ON \
+        -DSDL2NET_INSTALL=ON \
+        -DQNX=ON
+    cmake --build build-shared
+
+    cmake -B build-static -G Ninja \
+        -DCMAKE_C_COMPILER=clang \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DBUILD_SHARED_LIBS=OFF \
+        -DCMAKE_SKIP_INSTALL_RPATH=ON \
+        -DSDL2NET_INSTALL=ON \
+        -DQNX=ON
+    cmake --build build-static
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install build-static
+    DESTDIR="$pkgdir" cmake --install build-shared
+}
+
+sha512sums="
+eb9be264857b763291acf72fbbc7e72c612aa3555fb563e8d91d11dec64883f1911bcf3312e78edc9d64b3531e0ab35270a4b75a324411431be13db7e85471f1  sdl2-net-2.2.0.tar.gz
+1ef24aa4f6f75e6b5b283a2e7521c2cef841a0a68c0af57d35eeb3674413b60ab09327075f640b659a47423c9d37cad8f4f4eb1ba12298074591a531390afa7e  SDL_net-iosock.patch
+"

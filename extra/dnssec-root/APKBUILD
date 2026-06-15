@@ -1,0 +1,46 @@
+# Alpine-Contributor: Sören Tempel <soeren+alpine@soeren-tempel.net>
+# Alpine-Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+# Maintainer: jscaffidi <jscaffidi@qnx.com>
+pkgname=dnssec-root
+pkgver=20260205
+pkgrel=0
+# There are no releases or tags. This is just a tool to generate a keyfile
+_commit=179765e80ebde71594b0e14cc6d6a506d911699a
+pkgdesc="The DNSSEC root key(s)"
+url="https://www.iana.org/dnssec/"
+arch="noarch"
+license="LicenseRef-scancode-public-domain"
+makedepends="python3 openssl"
+source="$pkgname-$pkgver.tar.gz::https://github.com/iana-org/get-trust-anchor/archive/$_commit.tar.gz
+  trusted-key.key
+	"
+options="!check" # No tests
+builddir="$srcdir/get-trust-anchor-$_commit"
+
+# To update the package, you will need to run 
+# - `rm trusted-key.key`
+# - create an empty file `touch trusted-key.key`
+# - then `abuild checksum` so you can 
+# - run `abuild snapshot` to generate a new `trusted-key.key` file
+# - You can then regenerate the checksums with `abuild checksum` (again) and then you can package again.
+
+# If you're just building the package, you can package it as is, we will keep the generated key in our aports repo, just as alpine does
+# This snapshot function is non-reproducible
+
+snapshot() {
+	unpack
+	cd "$builddir"
+	python3 "$builddir"/get_trust_anchor.py
+	sort -k 6 ksk-as-dnskey.txt* > "$startdir"/trusted-key.key
+	abump "$pkgname-$(date "+%Y%m%d")"
+}
+
+package() {
+	install -Dm644 "$srcdir"/trusted-key.key \
+		"$pkgdir"/usr/share/$pkgname/trusted-key.key
+}
+
+sha512sums="
+cb83a880e215ea5565b123d531360de1783e92f7f6aed893bab360f9376d37fbae046a0c4477f7b2c8d8fbd67ccc35812673e137ab275bbe501f9804942f5f8a  dnssec-root-20260205.tar.gz
+af8301d96592b947b27245ce8c8d29f38e8bf27dd88c28023d9539cee2396d97ef94a80295dcee2c3139036672f749af2affbcc59735d841c4b19c852097de94  trusted-key.key
+"

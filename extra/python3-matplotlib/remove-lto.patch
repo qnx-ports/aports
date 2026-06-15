@@ -1,0 +1,17 @@
+diff --color -U 6 -r before/meson.build after/meson.build
+--- before/meson.build	2026-04-02 09:11:19.601981697 -0400
++++ after/meson.build	2026-04-02 09:11:37.490299966 -0400
+@@ -22,13 +22,12 @@
+     'LICENSE/LICENSE_SOLARIZED',
+     'LICENSE/LICENSE_STIX',
+     'LICENSE/LICENSE_YORICK',
+   ],
+   meson_version: '>=1.1.0',
+   default_options: [
+-    'b_lto=true',
+     'cpp_std=c++17',
+     'auto_features=disabled',  # Force FreeType to avoid extra dependencies.
+   ],
+ )
+ 
+ cc = meson.get_compiler('c')

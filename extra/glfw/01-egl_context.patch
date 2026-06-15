@@ -1,0 +1,13 @@
+diff --git a/src/egl_context.c b/src/egl_context.c
+index 921d5c6e..3db91b4e 100644
+--- a/src/egl_context.c
++++ b/src/egl_context.c
+@@ -793,7 +793,7 @@ GLFWbool _glfwCreateContextEGL(_GLFWwindow* window,
+             "libGLESv2.dylib",
+ #elif defined(__CYGWIN__)
+             "libGLESv2-2.so",
+-#elif defined(__OpenBSD__) || defined(__NetBSD__)
++#elif defined(__OpenBSD__) || defined(__NetBSD__) || defined(__QNX__)
+             "libGLESv2.so",
+ #else
+             "libGLESv2.so.2",

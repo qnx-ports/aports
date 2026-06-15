@@ -1,0 +1,86 @@
+# Alpine-Contributor: Łukasz Jendrysik <scadu@yandex.com>
+# Alpine-Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=portaudio
+pkgver=19.7.0_alpha
+_pkgver=${pkgver/_alpha/}
+pkgrel=0
+pkgdesc="A cross-platform, open-source C language library for real-time audio input and output"
+url="http://www.portaudio.com/"
+license="MIT"
+arch="all"
+depends="qnx-alsa qnx-io-sock"
+makedepends="
+    libc++-dev
+    qnx-alsa-dev
+    qnx-io-sock-dev
+    autoconf
+    automake
+    libtool
+    "
+subpackages="$pkgname-dev libportaudiocxx:_cxx"
+source="https://github.com/PortAudio/portaudio/archive/v$_pkgver/portaudio-v$_pkgver.tar.gz
+    portaudio-pkgconfig-alsa.patch
+    "
+builddir="$srcdir/$pkgname-$_pkgver"
+options="!check" # No unit tests, requires hardware to execute tests
+
+prepare() {
+    default_prepare
+
+    update_config_sub
+    autoreconf -if
+
+    cd bindings/cpp
+    autoreconf -if
+}
+
+build() {
+    ./configure \
+        --build=$CBUILD \
+        --host=$CHOST \
+        --prefix=/usr \
+        --disable-static \
+        --with-alsa \
+        --without-oss \
+        --enable-cxx
+    # race conditions in build cause build failures otherwise
+    # https://github.com/PortAudio/portaudio/issues/540
+    make -j1
+}
+
+check() {
+    cd "$builddir"/bin
+    local t1
+    for t1 in pa_devs pa_fuzz pa_minlat paex_pink paex_read_write_wire paex_record \
+        paex_saw paex_sine paex_write_sine paex_write_sine_nonint paqa_devs paqa_errs \
+        paqa_latency patest1; do
+        msg "$t1":
+        ./"$t1"
+    done
+
+    local t2
+    for t2 in buffer callbackstop clip dither hang in_overflow latency leftright \
+        longsine many maxsines mono multi_sine out_underflow prime ringmix sine8 \
+        sine_channelmaps sine_formats sine_srate sine_time start_stop stop stop_playout \
+        toomanysines two_rates underflow wire; do
+        msg patest_"$t2":
+        ./patest_"$t2"
+    done
+}
+
+package() {
+    make -j1 DESTDIR="$pkgdir" install
+}
+
+_cxx() {
+    pkgdesc="C++ bindings library for portaudio"
+    depends="$pkgname libc++ qnx-alsa qnx-io-sock"
+
+    amove usr/lib/libportaudiocpp*
+}
+
+sha512sums="
+7e347a174109b661a685bcd617cc8fe00929c6fbf28f142fd7709a8ddbb9b5ed6e805be6647a44b4b9441b79e3474561de6f8e351b4ffc024952ed3e0e27ac1c  portaudio-v19.7.0.tar.gz
+d58e7f8717f9d451535546e16939a959f63ccdd21bcbbc8e08efde2722382b068603bae6d93449476b206c85160d8084d39b39748b4fb43ab2b6eaee704ba1f8  portaudio-pkgconfig-alsa.patch
+"

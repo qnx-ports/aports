@@ -1,0 +1,21 @@
+diff --color -U 6 -r before/Lib/locale.py Python-3.14.0/Lib/locale.py
+--- before/Lib/locale.py	2026-02-26 09:04:45.218099612 -0500
++++ Python-3.14.0/Lib/locale.py	2026-02-26 09:11:15.646320602 -0500
+@@ -489,15 +489,15 @@
+             # since some systems may use other encodings for these
+             # locales. Also, we ignore other modifiers.
+             return code, 'iso-8859-15'
+ 
+     if '.' in code:
+         return tuple(code.split('.')[:2])
+-    elif code == 'C':
++    elif code.startswith('C;') or code == 'C':
+         return None, None
+-    elif code == 'UTF-8':
++    elif code.startswith('UTF-8;') or code == 'UTF-8':
+         # On macOS "LC_CTYPE=UTF-8" is a valid locale setting
+         # for getting UTF-8 handling for text.
+         return None, 'UTF-8'
+     raise ValueError('unknown locale: %s' % localename)
+ 
+ def _build_localename(localetuple):

@@ -1,0 +1,71 @@
+# Alpine-Contributor: Francesco Colista <fcolista@alpinelinux.org>
+# Alpine-Contributor: Jakub Jirutka <jakub@jirutka.cz>
+# Alpine-Contributor: Martell Malone <martellmalone@gmail.com>
+# Alpine-Maintainer: Francesco Colista <fcolista@alpinelinux.org>
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=python3-numpy
+pkgver=2.4.1
+pkgrel=0
+pkgdesc="Scientific tools for Python"
+url="https://www.numpy.org/"
+arch="all"
+license="BSD-3-Clause"
+options="!check"
+makedepends="
+    cython
+    meson
+    python3-gpep517
+    python3-setuptools
+    python3-wheel
+    python3-dev
+    python3-meson-python
+    python3-pyproject-metadata
+    qnx-libqh-dev
+    libc++-dev
+    "
+depends_dev="$pkgname=$pkgver-r$pkgrel"
+subpackages="
+    $pkgname-dev
+    $pkgname-tests
+    $pkgname-f2py::noarch
+    "
+source="https://github.com/numpy/numpy/releases/download/v$pkgver/numpy-$pkgver.tar.gz
+"
+builddir="$srcdir/numpy-$pkgver"
+
+export Atlas=None
+# numpy is a huge library (~26 MiB) optimized for performance, so compiling
+# with -Os to sacrifice performance for ~1 MiB doesn't make sense.
+export CC=clang
+export CXX=clang++
+export CPPFLAGS="${CPPFLAGS/-Os/-O3} -D_QNX_SOURCE -Wno-error"
+
+build() {
+    gpep517 build-wheel \
+        --wheel-dir .dist \
+        --output-fd 3 3>&1 >&2
+}
+
+package() {
+    python3 -m installer -d "$pkgdir" \
+        .dist/*.whl
+}
+
+f2py() {
+    pkgdesc="f2py for numpy (for python3)"
+    depends="python3-numpy=$pkgver-r$pkgrel python3-dev"
+
+    amove usr/bin/f2py*
+}
+
+tests() {
+    pkgdesc="Tests for $pkgname"
+    install_if="$pkgname=$pkgver-r$pkgrel"
+    find "$pkgdir" -name tests -type d | while read -r p; do
+        amove "${p#"$pkgdir"}"
+    done
+}
+
+sha512sums="
+3168d9cf6286f8590cb7a3e58a6f4b51ebda906c5a3cff900bcab20962721684bd65b929fe24cc238c46934f9bf7fd8c2ae091d624b03d44652f49ad61ccab32  numpy-2.4.1.tar.gz
+"

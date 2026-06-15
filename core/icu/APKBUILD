@@ -3,13 +3,13 @@
 # Maintainer: Felix Xing <fxing@qnx.com>
 pkgname=icu
 pkgver=76.1
-pkgrel=6
+pkgrel=7
 arch="all"
 pkgdesc="International Components for Unicode library"
 url="https://icu.unicode.org"
 license="ICU"
 options="!check"
-depends="libc++"
+depends="libc++ icu-libs"
 makedepends="cmake ninja clang libc++-dev"
 subpackages="
     $pkgname-static
@@ -101,7 +101,7 @@ dev() {
 
 libs() {
     pkgdesc="$pkgdesc (libraries)"
-    depends="$pkgname-data=$pkgver-r$pkgrel"
+    depends="$pkgname-data=$pkgver-r$pkgrel libc++"
     replaces="icu"
 
     # Data stub required by the Common and I18n libraries.

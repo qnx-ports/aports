@@ -1,0 +1,56 @@
+pkgname=glfw
+pkgver=3.4
+pkgrel=0
+pkgdesc="A multi-platform library for OpenGL, OpenGL ES, Vulkan, window and input "
+url="https://github.com/glfw/glfw"
+arch="x86_64"
+license="Zlib"
+source="
+$pkgname-$pkgver.tar.gz::https://github.com/glfw/glfw/archive/refs/tags/$pkgver.tar.gz
+00-cmake.patch
+01-egl_context.patch
+input.h
+"
+makedepends="cmake ninja qnx-fd-notify-dev libxkbcommon-dev wayland-dev"
+depends="libxkbcommon wayland qnx-fd-notify qnx-hid"
+
+
+prepare() {
+    default_prepare
+
+	mkdir -p src/linux
+	cp $srcdir/input.h src/linux
+	ln -sf input.h src/linux/input-event-codes.h
+}
+
+
+build() {
+    cmake \
+        -DGLFW_BUILD_X11=OFF \
+        -DGLFW_BUILD_WAYLAND=ON \
+        -DCMAKE_BUILD_TYPE=RELEASE \
+        -DGLFW_INSTALL=ON \
+        -DBUILD_SHARED_LIBS=ON \
+        -DGLFW_BUILD_TESTS=OFF \
+        -DGLFW_BUILD_EXAMPLES=OFF \
+        -G Ninja \
+        -S . 
+
+        ninja -C .
+}
+
+check() {
+	default_check
+}
+
+package() {
+	DESTDIR="$pkgdir" cmake --install . --prefix "/usr"
+}
+
+sha512sums="
+39ad7a4521267fbebc35d2ff0c389a56236ead5fa4bdff33db113bd302f70f5f2869ff4e6db1979512e1542813292dff5a482e94dfce231750f0746c301ae9ed  glfw-3.4.tar.gz
+605170e5801aa6dab81559d3e515dee41f85d9679e08335b9062865f1a6530dce2fcc9605e73721cff693d701ea212ae63fd1844d5725999656ff5732597fdb9  00-cmake.patch
+01b8da7431387c983c3004d55ccf2ce3c4371e9fb2ea32437c4189d757546d254d48506c734771bcc4c0c63b99458045aeba25292b24673c300780094a4a762f  01-egl_context.patch
+c68f89e75ac175cd33cd553bfc5718d0f77d2ce6e91430abec0e47024d957865e00b77a763c30473ab5209a0b4b7b3982a842fa1403a3506ce507458b271cafa  input.h
+"
+

@@ -1,0 +1,190 @@
+# Alpine-Maintainer: Taner Tas <taner76@gmail.com>
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=mame
+pkgver=0.281
+_pkgver=${pkgver/.}
+pkgrel=0
+pkgdesc="Multi Arcade Machine Emulator."
+url="https://mamedev.org"
+arch="all"
+license="GPL-2.0-or-later"
+depends="
+    $pkgname-common
+    sdl2-compat
+    sdl2-ttf
+    fontconfig
+    freetype
+    zlib
+    libc++
+    qnx-screen
+    qnx-egl
+    qnx-gles
+    qnx-io-sock
+    "
+# MAME doesn't seem to have the option for a static build.
+makedepends="
+    brotli-dev
+    bzip2-dev
+    libiconv-dev
+    expat-dev
+    fontconfig-dev
+    freetype-dev
+    libpng-dev
+    sdl3-dev
+    sdl2-compat-dev
+    sdl2-ttf-dev
+    zlib-dev
+    qnx-screen-dev
+    egl-headers
+    gles-headers
+    ncurses-dev
+    qnx-io-sock-dev
+    qnx-fs-core-dev
+    qnx-fs-gpt-dev
+    libc++-dev
+    python3
+    clang
+    grep
+    "
+subpackages="
+    $pkgname-common::noarch
+    $pkgname-plugins::noarch
+    $pkgname-doc
+    $pkgname-lang
+    $pkgname-data::noarch
+    "
+    #$pkgname-tools
+_git_rev=1
+source="
+    ${pkgname}-${pkgver}-r${_git_rev}.tar.gz::https://github.com/qnx-ports/${pkgname}/archive/refs/tags/qnx-${pkgname}${_pkgver}-r${_git_rev}.tar.gz
+    mame.patch
+    mame.ini
+    "
+builddir="${srcdir}/${pkgname}-qnx-${pkgname}${_pkgver}-r${_git_rev}"
+
+options="!check"
+
+build() {
+    if [[ $CARCH == "x86_64" ]]; then
+    _arch=x64
+    elif [[ $CARCH == "aarch64" ]]; then
+    _arch=arm64
+    else
+    die "$CARCH not supported"
+    fi
+
+    export CC=clang
+    export CXX=clang++
+
+    JLEVEL=$(echo $MAKEFLAGS | grep -oE "\-j[0-9]+")
+    JLEVEL=${JLEVEL/\-j}
+    JLEVEL=${JLEVEL:-1}
+
+    JLEVEL=${JLEVEL} \
+    TESTS=0 \
+    REGENIE=1 \
+    ARCHOPTS="-D_QNX_SOURCE -DSDL_DISABLE_IMMINTRIN_H -w" \
+    LDOPTS="-lsocket" \
+    TARGETOS=qnx \
+    SYMBOLS=0 \
+    OSD=sdl \
+    SDL_INI_PATH=/etc/mame \
+    USE_QTDEBUG=0 \
+    USE_TAPTUN=1 \
+    NO_USE_XINPUT=1 \
+    NO_X11=1 \
+    NO_USE_MIDI=1 \
+    USE_SYSTEM_LIB_ZLIB=1 \
+    VERBOSE=1 \
+    DEBUG=0 \
+    make qnx_$_arch
+}
+
+package() {
+    install -D -m755 mame "$pkgdir"/usr/bin/mame
+    install -D -m644 docs/man/mame.6 "$pkgdir"/usr/share/man/man6/mame.6
+    # We need tools=1 for this, but that causes build errors and is not a
+    # priority.
+    #for i in castool.1 \
+    #    chdman.1 \
+    #    floptool.1 \
+    #    imgtool.1 \
+    #    jedutil.1 \
+    #    ldresample.1 \
+    #    ldverify.1 \
+    #    romcmp.1
+    #do
+    #    install -D -m644 docs/man/"$i" "$pkgdir"/usr/share/man/man1/"$i"
+    #done
+
+    install -D -m644 "$srcdir"/mame.ini "$pkgdir"/etc/mame/mame.ini
+    install -d -m755 "$pkgdir"/usr/share/mame/roms
+
+    for i in artwork \
+        bgfx \
+        hash \
+        hlsl \
+        ini \
+        keymaps \
+        language \
+        plugins \
+        samples
+    do
+        cp -r "$i" "$pkgdir"/usr/share/mame
+    done
+
+    #for i in castool \
+    #    chdman \
+    #    floptool \
+    #    imgtool \
+    #    jedutil \
+    #    ldresample \
+    #    ldverify \
+    #    romcmp
+    #do
+    #    install -Dm755 "$i" -t "$pkgdir"/usr/bin
+    #done
+}
+
+common() {
+    pkgdesc="MAME - Common configuration files"
+    amove etc/mame/mame.ini \
+    usr/share/mame/roms
+}
+
+data() {
+    pkgdesc="Distribution data files for MAME"
+
+    amove usr/share/mame
+}
+
+plugins() {
+    pkgdesc="Distribution plugins for MAME"
+
+    amove usr/share/mame/plugins
+}
+
+#tools() {
+#    pkgdesc="Tools for MAME"
+#
+#    amove usr/bin/castool \
+#    usr/bin/chdman \
+#    usr/bin/floptool \
+#    usr/bin/imgtool \
+#    usr/bin/jedutil \
+#    usr/bin/ldresample \
+#    usr/bin/ldverify \
+#    usr/bin/romcmp
+#}
+
+lang() {
+    pkgdesc="Localization files for MAME"
+
+    amove usr/share/mame/language
+}
+
+sha512sums="
+23db675f15da1007683779a92d8e181d4961cc46dd871a2f061ae48835c6cfb559212aed3e2191c0f4bc52cf6fb4b1ca6cfa1b62f1e8a2e3aea2b4045474f397  mame-0.281-r1.tar.gz
+be6b2bd1c35ba098448437c600fdbb8241f4ce81078ec703770c23da675ffd3149e45ebb75f4f62d7cdc6b9c87a2dd73231684a87787d8a3512c85b270d13519  mame.patch
+3a1ec9902bdd11e4a55e06c401258d31ef95638f931dbc3ba7e95bac7280a35e54664e261a2daa28c3b32524e3f9f1244f724b92729badcc12b0d09561ce0bf0  mame.ini
+"

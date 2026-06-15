@@ -1,0 +1,72 @@
+diff --color -U 6 -r before/acinclude.m4 after/acinclude.m4
+--- before/acinclude.m4	2026-03-12 12:48:54.604720127 -0400
++++ after/acinclude.m4	2026-03-12 12:43:50.322155043 -0400
+@@ -19,13 +19,13 @@
+ esac
+ ])
+ 
+ AC_DEFUN([CHRPATH_LDRPATH_OPTION],
+ [AC_REQUIRE([AC_CANONICAL_TARGET])[]dnl
+ case "$target" in
+-	*-linux*|*-gnu*|*-k*bsd*-gnu)
++	*-linux*|*-gnu*|*-k*bsd*-gnu|*-qnx*)
+ 		LDRPATH=-Wl,-rpath,
+ 		;;
+ 	*-*-irix*|*-*-osf*)
+ 		LDRPATH="-rpath "
+ 		;;
+ 	*-*-hpux*)
+diff --color -U 6 -r before/testsuite/Makefile.am after/testsuite/Makefile.am
+--- before/testsuite/Makefile.am	2026-03-12 12:48:54.604720127 -0400
++++ after/testsuite/Makefile.am	2026-03-12 12:43:50.322155043 -0400
+@@ -1,11 +1,11 @@
+ CHRPATH = ../chrpath
+ 
+ # This test fail on some archs.  Not sure how to write it in a portable
+ # way. [pere 2004-09-18]
+-RPATH = $(LDRPATH)/usr/local/lib
++RPATH = $(LDRPATH)/usr/lib
+ 
+ noinst_PROGRAMS = prog
+ 
+ prog_SOURCES = \
+ 	prog.c
+ 
+diff --color -U 6 -r before/testsuite/runtest.sh after/testsuite/runtest.sh
+--- before/testsuite/runtest.sh	2026-03-12 12:48:54.604720127 -0400
++++ after/testsuite/runtest.sh	2026-03-12 12:47:53.520205209 -0400
+@@ -34,30 +34,30 @@
+     echo "error: chrpath on non-existant file worked."
+     retval=1
+ else
+     echo "success: chrpath on non-existant file failed."
+ fi
+ 
+-if $CHRPATH -l prog | grep -q 'R.*PATH=.*/usr/local/lib' ; then
++if $CHRPATH -l prog | grep -q 'R.*PATH=.*/usr/lib' ; then
+     echo "success: chrpath listed current rpath."
+ else
+     echo "error: chrpath unable to list current rpath."
+     retval=1
+ fi
+ 
+-$CHRPATH -r '/usr/lib' prog > /dev/null
++$CHRPATH -r '/usr/bin' prog > /dev/null
+ 
+-if $CHRPATH -l prog | grep -q 'R.*PATH=/usr/lib' ; then
++if $CHRPATH -l prog | grep -q 'R.*PATH=/usr/bin' ; then
+     echo "success: chrpath changed rpath."
+ else
+     echo "error: chrpath unable to change rpath."
+     retval=1
+ fi
+ 
+ # I wish inserting a larger path would work, but it doesn't yet
+-if $CHRPATH -r '/usr/lib:/usr/local/lib' prog > /dev/null ; then
++if $CHRPATH -r '/usr/lib:/usr/bin' prog > /dev/null ; then
+     echo "success: chrpath changed rpath to larger path."
+ else
+     echo "error: chrpath unable to change rpath to larger path."
+ fi
+ 
+ $CHRPATH -c prog > /dev/null

@@ -1,0 +1,32 @@
+# Alpine-Contributor: Leo <thinkabit.ukim@gmail.com>
+# Alpine-Maintainer: Simon Zeni <simon@bl4ckb0ne.ca>
+# Maintainer: Elliott Mazzuca <emazzuca@qnx.com>
+pkgname=spirv-headers
+_pkgname=SPIRV-Headers
+pkgver=1.4.321.0
+pkgrel=0
+pkgdesc="Machine-readable files for the SPIR-V Registry"
+options="!check" # No testsuite
+url="https://github.com/KhronosGroup/SPIRV-Headers"
+arch="noarch"
+license="MIT-Khronos-old AND MIT"
+makedepends="cmake ninja"
+source="$pkgname-$pkgver.tar.gz::https://github.com/KhronosGroup/SPIRV-Headers/archive/refs/tags/vulkan-sdk-$pkgver.tar.gz"
+builddir="$srcdir/$_pkgname-vulkan-sdk-$pkgver"
+
+build() {
+	cmake -B build -G Ninja \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DCMAKE_BUILD_TYPE=MinSizeRel \
+		-DCMAKE_INSTALL_LIBDIR=lib
+	cmake --build build
+}
+
+package() {
+	DESTDIR="$pkgdir" cmake --install build
+	install -Dm644 LICENSE -t "$pkgdir"/usr/share/licenses/$pkgname/
+}
+
+sha512sums="
+ea28714ba07d98e8a2baca482f9c483ae525f40d03aa7987b56c1561e1f0a2c66782b620b41fc8782c7cbb4979d5125c28a20f706a25909aacca6ebee184d467  spirv-headers-1.4.321.0.tar.gz
+"

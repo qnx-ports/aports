@@ -1,0 +1,351 @@
+--- a/Source/WebKit/Shared/AuxiliaryProcess.messages.in
++++ b/Source/WebKit/Shared/AuxiliaryProcess.messages.in
+@@ -35,7 +35,7 @@
+     [DeferSendingIfSuspendedWithCoalescingKeys=(domain, key)] PreferenceDidUpdate(String domain, String key, std::optional<String> encodedValue)
+ #endif
+ 
+-#if OS(LINUX)
++#if OS(LINUX) || OS(QNX)
+     void DidReceiveMemoryPressureEvent(bool isCritical)
+ #endif
+ }
+--- a/Source/WebKit/Shared/AuxiliaryProcess.h
++++ b/Source/WebKit/Shared/AuxiliaryProcess.h
+@@ -150,7 +150,7 @@
+     bool dispatchMessage(IPC::Connection&, IPC::Decoder&);
+     bool dispatchSyncMessage(IPC::Connection&, IPC::Decoder&, UniqueRef<IPC::Encoder>&);
+ 
+-#if OS(LINUX)
++#if OS(LINUX) || OS(QNX)
+     void didReceiveMemoryPressureEvent(bool isCritical);
+ #endif
+ 
+--- a/Source/WebKit/Shared/AuxiliaryProcess.cpp
++++ b/Source/WebKit/Shared/AuxiliaryProcess.cpp
+@@ -44,7 +44,7 @@
+ #include <unistd.h>
+ #endif
+ 
+-#if OS(LINUX)
++#if OS(LINUX) || OS(QNX)
+ #include <wtf/MemoryPressureHandler.h>
+ #if USE(GLIB)
+ #include <wtf/glib/Sandbox.h>
+@@ -294,7 +294,7 @@
+     CRASH();
+ }
+ 
+-#if OS(LINUX)
++#if OS(LINUX) || OS(QNX)
+ void AuxiliaryProcess::didReceiveMemoryPressureEvent(bool isCritical)
+ {
+     MemoryPressureHandler::singleton().triggerMemoryPressureEvent(isCritical);
+--- a/Source/WebKit/UIProcess/WebProcessPool.cpp
++++ b/Source/WebKit/UIProcess/WebProcessPool.cpp
+@@ -137,7 +137,7 @@
+ #include <JavaScriptCore/RemoteInspector.h>
+ #endif
+ 
+-#if OS(LINUX)
++#if OS(LINUX) || OS(QNX)
+ #include "MemoryPressureMonitor.h"
+ #endif
+ 
+@@ -440,9 +440,12 @@
+         gpuProcess->send(Messages::GPUProcess::UserPreferredLanguagesChanged(overrideLanguages()), 0);
+ #endif
+ #if USE(SOUP)
++
++#if OS(LINUX)
+     for (Ref networkProcess : NetworkProcessProxy::allNetworkProcesses())
+         networkProcess->send(Messages::NetworkProcess::UserPreferredLanguagesChanged(overrideLanguages()), 0);
+ #endif
++#endif
+ }
+ 
+ void WebProcessPool::fullKeyboardAccessModeChanged(bool fullKeyboardAccessEnabled)
+@@ -450,12 +453,15 @@
+     sendToAllProcesses(Messages::WebProcess::FullKeyboardAccessModeChanged(fullKeyboardAccessEnabled));
+ }
+ 
+-#if OS(LINUX)
++#if OS(LINUX) || OS(QNX)
+ void WebProcessPool::sendMemoryPressureEvent(bool isCritical)
+ {
+     sendToAllProcesses(Messages::AuxiliaryProcess::DidReceiveMemoryPressureEvent(isCritical));
++
++#if OS(LINUX)
+     for (Ref networkProcess : NetworkProcessProxy::allNetworkProcesses())
+-        networkProcess->send(Messages::AuxiliaryProcess::DidReceiveMemoryPressureEvent(isCritical), 0);
++        networkProcess->send(Messages::AuxiliaryProcess::DidReceiveMemoryPressureEvent(isCritical), (uint64_t)0);
++#endif
+ }
+ #endif
+ 
+@@ -1589,16 +1595,22 @@
+ {
+     LegacyGlobalSettings::singleton().registerURLSchemeAsSecure(urlScheme);
+     sendToAllProcesses(Messages::WebProcess::RegisterURLSchemeAsSecure(urlScheme));
++
++#if OS(LINUX)
+     for (Ref networkProcess : NetworkProcessProxy::allNetworkProcesses())
+         networkProcess->send(Messages::NetworkProcess::RegisterURLSchemeAsSecure(urlScheme), 0);
++#endif
+ }
+ 
+ void WebProcessPool::registerURLSchemeAsBypassingContentSecurityPolicy(const String& urlScheme)
+ {
+     LegacyGlobalSettings::singleton().registerURLSchemeAsBypassingContentSecurityPolicy(urlScheme);
+     sendToAllProcesses(Messages::WebProcess::RegisterURLSchemeAsBypassingContentSecurityPolicy(urlScheme));
++
++#if OS(LINUX)
+     for (Ref networkProcess : NetworkProcessProxy::allNetworkProcesses())
+         networkProcess->send(Messages::NetworkProcess::RegisterURLSchemeAsBypassingContentSecurityPolicy(urlScheme), 0);
++#endif
+ }
+ 
+ void WebProcessPool::setDomainRelaxationForbiddenForURLScheme(const String& urlScheme)
+@@ -1611,8 +1623,11 @@
+ {
+     LegacyGlobalSettings::singleton().registerURLSchemeAsLocal(urlScheme);
+     sendToAllProcesses(Messages::WebProcess::RegisterURLSchemeAsLocal(urlScheme));
++
++#if OS(LINUX)
+     for (Ref networkProcess : NetworkProcessProxy::allNetworkProcesses())
+         networkProcess->send(Messages::NetworkProcess::RegisterURLSchemeAsLocal(urlScheme), 0);
++#endif
+ }
+ 
+ #if ENABLE(ALL_LEGACY_REGISTERED_SPECIAL_URL_SCHEMES)
+@@ -1620,10 +1635,13 @@
+ {
+     LegacyGlobalSettings::singleton().registerURLSchemeAsNoAccess(urlScheme);
+     sendToAllProcesses(Messages::WebProcess::RegisterURLSchemeAsNoAccess(urlScheme));
++
++#if OS(LINUX)
+     for (Ref networkProcess : NetworkProcessProxy::allNetworkProcesses())
+         networkProcess->send(Messages::NetworkProcess::RegisterURLSchemeAsNoAccess(urlScheme), 0);
+-}
+ #endif
++#endif
++}
+ 
+ void WebProcessPool::registerURLSchemeAsDisplayIsolated(const String& urlScheme)
+ {
+@@ -1644,8 +1662,11 @@
+ 
+     InitializeWebKit2();
+     globalURLSchemesWithCustomProtocolHandlers().add(urlScheme);
++
++#if OS(LINUX)
+     for (Ref networkProcess : NetworkProcessProxy::allNetworkProcesses())
+         networkProcess->registerSchemeForLegacyCustomProtocol(urlScheme);
++#endif
+ }
+ 
+ void WebProcessPool::unregisterGlobalURLSchemeAsHavingCustomProtocolHandlers(const String& urlScheme)
+@@ -1655,8 +1676,11 @@
+ 
+     InitializeWebKit2();
+     globalURLSchemesWithCustomProtocolHandlers().remove(urlScheme);
++
++#if OS(LINUX)
+     for (Ref networkProcess : NetworkProcessProxy::allNetworkProcesses())
+         networkProcess->unregisterSchemeForLegacyCustomProtocol(urlScheme);
++#endif
+ }
+ 
+ void WebProcessPool::registerURLSchemeAsCachePartitioned(const String& urlScheme)
+@@ -1690,16 +1714,22 @@
+ 
+     sendToAllProcesses(Messages::WebProcess::SetCacheModel(cacheModel));
+ 
++
++#if OS(LINUX)
+     for (Ref networkProcess : NetworkProcessProxy::allNetworkProcesses())
+         networkProcess->send(Messages::NetworkProcess::SetCacheModel(cacheModel), 0);
++#endif
+ }
+ 
+ void WebProcessPool::setCacheModelSynchronouslyForTesting(CacheModel cacheModel)
+ {
+     updateBackForwardCacheCapacity();
+ 
++
++#if OS(LINUX)
+     for (Ref networkProcess : NetworkProcessProxy::allNetworkProcesses())
+         networkProcess->sendSync(Messages::NetworkProcess::SetCacheModelSynchronouslyForTesting(cacheModel), 0);
++#endif
+ }
+ 
+ void WebProcessPool::setDefaultRequestTimeoutInterval(double timeoutInterval)
+--- a/Source/WebKit/UIProcess/linux/MemoryPressureMonitor.h
++++ b/Source/WebKit/UIProcess/linux/MemoryPressureMonitor.h
+@@ -25,7 +25,7 @@
+ 
+ #pragma once
+ 
+-#if OS(LINUX)
++#if OS(LINUX) || OS(QNX)
+ 
+ #include <wtf/NeverDestroyed.h>
+ #include <wtf/Noncopyable.h>
+@@ -83,4 +83,4 @@
+ 
+ } // namespace WebKit
+ 
+-#endif // OS(LINUX)
++#endif // OS(LINUX) || OS(QNX)
+--- a/Source/WebKit/UIProcess/WebProcessPool.h
++++ b/Source/WebKit/UIProcess/WebProcessPool.h
+@@ -388,7 +388,7 @@
+ #endif
+ 
+     void fullKeyboardAccessModeChanged(bool fullKeyboardAccessEnabled);
+-#if OS(LINUX)
++#if OS(LINUX) || OS(QNX)
+     void sendMemoryPressureEvent(bool isCritical);
+ #endif
+     void textCheckerStateChanged();
+--- a/Source/WebKit/PlatformGTK.cmake
++++ b/Source/WebKit/PlatformGTK.cmake
+@@ -51,7 +51,11 @@
+ list(APPEND WebKit_UNIFIED_SOURCE_LIST_FILES
+     "SourcesGTK.txt"
+ )
+-
++if (CMAKE_SYSTEM_NAME MATCHES "QNX")
++    list(APPEND WebKit_SOURCES
++        "${WEBKIT_DIR}/UIProcess/qnx/MemoryPressureMonitor.cpp"
++    )
++endif ()
+ list(APPEND WebKit_LIBRARIES
+     GLib::GioUnix
+     GLib::Module
+--- a/Source/WebKit/UIProcess/qnx/MemoryPressureMonitor.cpp
++++ b/Source/WebKit/UIProcess/qnx/MemoryPressureMonitor.cpp
+@@ -0,0 +1,124 @@
++/*
++ * Copyright (c) 2026, BlackBerry Limited. All rights reserved.
++ *
++ * BlackBerry Limited and its licensors retain all intellectual property and
++ * proprietary rights in and to this software and related documentation. Any
++ * use, reproduction, disclosure or distribution of this software and related
++ * documentation without an express license agreement from BlackBerry Limited
++ * is strictly prohibited.
++ */
++#include "config.h"
++#include "MemoryPressureMonitor.h"
++
++#if OS(QNX)
++
++#include "WebProcessPool.h"
++#include <mutex>
++#include <stdio.h>
++#include <string.h>
++#include <wtf/Threading.h>
++
++namespace WebKit {
++
++static const Seconds s_minPollingInterval { 1_s };
++static const Seconds s_maxPollingInterval { 5_s };
++static const double s_minUsedMemoryPercentageForPolling = 50;
++static const double s_maxUsedMemoryPercentageForPolling = 85;
++static const int s_memoryPresurePercentageThreshold = 90;
++static const int s_memoryPresurePercentageThresholdCritical = 95;
++
++// Reads page_count and pages_free from /proc/vm/stats.
++// Format per line: key=0xHEX (human_readable)
++// %li handles the 0x prefix correctly via scanf's auto-base detection.
++static int systemMemoryUsedAsPercentage()
++{
++    FILE* vmStats = fopen("/proc/vm/stats", "r");
++    if (!vmStats)
++        return -1;
++
++    size_t pageCount = 0;
++    size_t pagesFree = 0;
++    char key[64];
++
++    while (!feof(vmStats)) {
++        unsigned long value = 0;
++        if (fscanf(vmStats, "%63[^=]=%li%*[^\n]\n", key, &value) == 2) {
++            if (!strcmp(key, "page_count"))
++                pageCount = (size_t)value;
++            else if (!strcmp(key, "pages_free"))
++                pagesFree = (size_t)value;
++        }
++        if (pageCount && pagesFree)
++            break;
++    }
++    fclose(vmStats);
++
++    if (!pageCount || pagesFree > pageCount)
++        return -1;
++
++    int usedPercentage = (int)(((pageCount - pagesFree) * 100) / pageCount);
++    LOG(MemoryPressure, "MemoryPressureMonitor: pageCount=%zu pagesFree=%zu used=%d%%",
++        pageCount, pagesFree, usedPercentage);
++    return usedPercentage;
++}
++
++static inline Seconds pollIntervalForUsedMemoryPercentage(int usedPercentage)
++{
++    if (usedPercentage < s_minUsedMemoryPercentageForPolling)
++        return s_maxPollingInterval;
++    if (usedPercentage >= s_maxUsedMemoryPercentageForPolling)
++        return s_minPollingInterval;
++    return s_minPollingInterval + (s_maxPollingInterval - s_minPollingInterval) *
++        ((s_maxUsedMemoryPercentageForPolling - usedPercentage) /
++         (s_maxUsedMemoryPercentageForPolling - s_minUsedMemoryPercentageForPolling));
++}
++
++MemoryPressureMonitor& MemoryPressureMonitor::singleton()
++{
++    static NeverDestroyed<MemoryPressureMonitor> memoryMonitor;
++    return memoryMonitor;
++}
++
++void MemoryPressureMonitor::start()
++{
++    if (m_started)
++        return;
++    m_started = true;
++
++    Thread::create("MemoryPressureMonitor"_s, [] {
++        Seconds pollInterval = s_maxPollingInterval;
++        while (true) {
++            sleep(pollInterval);
++            int usedPercentage = systemMemoryUsedAsPercentage();
++            if (usedPercentage == -1) {
++                WTFLogAlways("MemoryPressureMonitor: failed to read /proc/vm/stats");
++                pollInterval = s_maxPollingInterval;
++                continue;
++            }
++            if (usedPercentage >= s_memoryPresurePercentageThreshold) {
++                bool isCritical = (usedPercentage >= s_memoryPresurePercentageThresholdCritical);
++                RunLoop::mainSingleton().dispatch([isCritical] {
++                    for (auto& processPool : WebProcessPool::allProcessPools())
++                        processPool->sendMemoryPressureEvent(isCritical);
++                });
++            }
++            pollInterval = pollIntervalForUsedMemoryPercentage(usedPercentage);
++        }
++    })->detach();
++}
++
++bool MemoryPressureMonitor::s_disabled = false;
++
++bool MemoryPressureMonitor::disabled()
++{
++    static std::once_flag flag;
++    std::call_once(flag, []() {
++        auto envvar = getenv("WEBKIT_DISABLE_MEMORY_PRESSURE_MONITOR");
++        s_disabled = envvar && !strcmp(envvar, "1");
++    });
++    return s_disabled;
++}
++
++} // namespace WebKit
++
++#endif // OS(QNX)

@@ -1,0 +1,62 @@
+# Alpine-Contributor: August Klein <amatcoder@gmail.com>
+# Alpine-Maintainer: Hannes Braun <hannes@hannesbraun.net>
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=sdl2-ttf
+_pkgname=SDL_ttf
+pkgver=2.0.18
+pkgrel=0
+pkgdesc="Support for TrueType (.ttf) font files with Simple Directmedia Layer."
+url="https://libsdl.org/"
+arch="all"
+license="Zlib"
+depends="
+    sdl2-compat
+    "
+makedepends="
+    cmake=3.31.6-r1
+    ninja
+    clang
+    sdl3-static
+    sdl3-dev
+    sdl2-compat-static
+    sdl2-compat-dev
+    freetype-static
+    freetype-dev
+    "
+subpackages="
+    $pkgname-static
+    $pkgname-dev
+    $pkgname-dbg
+    "
+_git_rev=1
+source="$pkgname-$pkgver-r$_git_rev.tar.gz::https://github.com/qnx-ports/$_pkgname/archive/refs/tags/qnx-release-$pkgver-r$_git_rev.tar.gz"
+builddir="$srcdir/$_pkgname-qnx-release-$pkgver-r$_git_rev"
+
+options="!check"
+
+build() {
+    CFLAGS="$CFLAGS -O2 -DNDEBUG" \
+    CXXFLAGS="$CXXFLAGS -O2 -DNDEBUG" \
+    cmake -B build-shared -G Ninja \
+        -DCMAKE_C_COMPILER=clang \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DBUILD_SHARED_LIBS=True \
+        -DCMAKE_SKIP_INSTALL_RPATH=ON
+    cmake --build build-shared
+
+    cmake -B build-static -G Ninja \
+        -DCMAKE_C_COMPILER=clang \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DBUILD_SHARED_LIBS=False \
+        -DCMAKE_SKIP_INSTALL_RPATH=ON
+    cmake --build build-static
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install build-static
+    DESTDIR="$pkgdir" cmake --install build-shared
+}
+
+sha512sums="
+b278f1caf3ab9f3206f2304047083002f5622d92b6ab07c85ebe898640044b9c726b18dc5c2bdd9438d2b4d3b5b2cbf91c0bfddbb6a81b6786eed93d4237af30  sdl2-ttf-2.0.18-r1.tar.gz
+"

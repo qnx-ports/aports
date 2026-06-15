@@ -1,0 +1,50 @@
+# Maintainer: Felix Lionardo <flionardo@qnx.com>
+pkgname=ompl
+pkgver=1.7.0
+pkgrel=0
+pkgdesc="The Open Motion Planning Library"
+url="https://ompl.kavrakilab.org"
+arch="all"
+license="BSD-3-Clause"
+subpackages="$pkgname-dev $pkgname-doc"
+depends="boost"
+makedepends="
+  cmake
+  ninja
+  boost-dev
+  eigen-dev
+"
+source="$pkgname-$pkgver.tar.gz::https://github.com/ompl/ompl/archive/refs/tags/$pkgver.tar.gz
+0001-remove-boost.system-as-a-dependency.-unused-1306.patch
+0002-remove-boost.filesystem-as-a-dependency-and-use-std-.patch
+"
+builddir="$srcdir/$pkgname-$pkgver"
+
+build() {
+      cd "$builddir"
+
+  cmake -B build -G Ninja \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=/usr \
+    -DOMPL_BUILD_TESTS=ON \
+    -DOMPL_BUILD_DEMOS=OFF \
+    -DOMPL_BUILD_PYBINDINGS=OFF \
+    -DOMPL_BUILD_PYTESTS=OFF
+
+  cmake --build build
+}
+
+package() {
+  cd "$builddir"
+  DESTDIR="$pkgdir" cmake --install build
+}
+
+check(){
+  ctest --test-dir build --output-on-failure
+}
+
+sha512sums="
+359d0cb8d1a1735d608c8e10bbb233d80fdcc7ec0314a0b7bcb6b611592d0c6ebdb9dcd4aaf8da2369754cf50cc38347d2634305bc430abc07d7b981360990cf  ompl-1.7.0.tar.gz
+b3fc8aa80095542c9420e8a9bbf2257e407528b5cd491b5605fe2528cd7977167355f07ed1bed18c6f262e690aa361c3211a749989d6369c19c06d027e94202f  0001-remove-boost.system-as-a-dependency.-unused-1306.patch
+b3f61b81765ee89ed058cfe21bce80a5ec77b9d59948d104a73953b874b063887bec0f88b9d8f4253fe77a8996b42f3a068affa8b372aa54ec52594aab4e95b6  0002-remove-boost.filesystem-as-a-dependency-and-use-std-.patch
+"

@@ -1,0 +1,125 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 8e49c19e..71d2b731 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -180,19 +180,36 @@ endif (IOS)
+ 
+ unset(CERES_COMPILE_OPTIONS)
+ 
++# We call find_package multiple time with different versioning scheme to support
++# both Eigen3 3.x and 5.x. If the first invocation fails and Eigen3_DIR was set
++# to a possible location, e.g., during cross-compilation, failure to locate the
++# package will unset the variable. To avoid losing the path hint, we save it and
++# reuse it in the second find_package call.
++set (_Ceres_Eigen3_DIR)
++
++if (Eigen3_DIR)
++  set (_Ceres_Eigen3_DIR "${Eigen3_DIR}")
++endif (Eigen3_DIR)
++
+ # Eigen.
+ # Eigen delivers Eigen3Config.cmake since v3.3.3
+-find_package(Eigen3 3.3 REQUIRED)
++find_package(Eigen3 3.3.4...5 NO_MODULE)
++
++if (NOT Eigen3_FOUND)
++  if (_Ceres_Eigen3_DIR)
++    set (Eigen3_DIR "${_Ceres_Eigen3_DIR}")
++  endif (_Ceres_Eigen3_DIR)
++  # Eigen3's CMake package config prior to 5.0.0 does not support version ranges
++  # with different major version components. To ensure backward compatibility,
++  # we locate the package using the previous version scheme as a fallback
++  # mechanism.
++  find_package(Eigen3 3.3.4 REQUIRED NO_MODULE)
++endif (NOT Eigen3_FOUND)
++
++unset (_Ceres_Eigen3_DIR)
++
+ if (Eigen3_FOUND)
+   message("-- Found Eigen version ${Eigen3_VERSION}: ${Eigen3_DIR}")
+-  if (CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64.*|AARCH64.*)" AND
+-      Eigen3_VERSION VERSION_LESS 3.3.4)
+-    # As per issue #289: https://github.com/ceres-solver/ceres-solver/issues/289
+-    # the bundle_adjustment_test will fail for Eigen < 3.3.4 on aarch64.
+-    message(FATAL_ERROR "-- Ceres requires Eigen version >= 3.3.4 on aarch64. "
+-      "Detected version of Eigen is: ${Eigen3_VERSION}.")
+-  endif()
+-
+   if (EIGENSPARSE)
+     message("-- Enabling use of Eigen as a sparse linear algebra library.")
+     list(APPEND CERES_COMPILE_OPTIONS CERES_USE_EIGEN_SPARSE)
+@@ -502,18 +519,6 @@ else (NOT CMAKE_BUILD_TYPE)
+   endif (CMAKE_BUILD_TYPE STREQUAL "Debug")
+ endif (NOT CMAKE_BUILD_TYPE)
+ 
+-if (MINGW)
+-  # MinGW produces code that segfaults when performing matrix multiplications
+-  # in Eigen when compiled with -O3 (see [1]), as such force the use of -O2
+-  # which works.
+-  #
+-  # [1] http://eigen.tuxfamily.org/bz/show_bug.cgi?id=556
+-  message("-- MinGW detected, forcing -O2 instead of -O3 in Release for Eigen due "
+-          "to a MinGW bug: http://eigen.tuxfamily.org/bz/show_bug.cgi?id=556")
+-  string(REPLACE "-O3" "-O2" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
+-  update_cache_variable(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
+-endif (MINGW)
+-
+ # After the tweaks for the compile settings, disable some warnings on MSVC.
+ if (MSVC)
+   # Insecure standard library functions
+diff --git a/docs/source/installation.rst b/docs/source/installation.rst
+index 4feb1a48..737e5a9f 100644
+--- a/docs/source/installation.rst
++++ b/docs/source/installation.rst
+@@ -32,7 +32,7 @@ optional. For details on customizing the build process, see
+ - `CMake <http://www.cmake.org>`_ 3.16 or later **required**.
+ 
+ - `Eigen <http://eigen.tuxfamily.org/index.php?title=Main_Page>`_
+-  3.3 or later **required**.
++  (**Required**) 3.3.4 or later.
+ 
+   .. NOTE ::
+ 
+@@ -365,7 +365,7 @@ Studio 2019 and newer.
+ #. Get dependencies; unpack them as subdirectories in ``ceres/``
+    (``ceres/eigen``, ``ceres/glog``, etc.)
+ 
+-   #. ``Eigen`` 3.3 . Configure and optionally install Eigen. It should be
++   #. ``Eigen`` 3.3.4 . Configure and optionally install Eigen. It should be
+       exported into the CMake package registry by default as part of the
+       configure stage so installation should not be necessary.
+ 
+diff --git a/internal/ceres/covariance_impl.cc b/internal/ceres/covariance_impl.cc
+index 6e8362da..deb0ce12 100644
+--- a/internal/ceres/covariance_impl.cc
++++ b/internal/ceres/covariance_impl.cc
+@@ -723,8 +723,13 @@ bool CovarianceImpl::ComputeCovarianceValuesUsingDenseSVD() {
+   }
+   event_logger.AddEvent("ConvertToDenseMatrix");
+ 
++#if EIGEN_VERSION_AT_LEAST(5, 0, 0)
++  Eigen::BDCSVD<Matrix, Eigen::ComputeThinU | Eigen::ComputeThinV> svd(
++      dense_jacobian);
++#else   // !EIGEN_VERSION_AT_LEAST(5, 0, 0)
+   Eigen::BDCSVD<Matrix> svd(dense_jacobian,
+                             Eigen::ComputeThinU | Eigen::ComputeThinV);
++#endif  // EIGEN_VERSION_AT_LEAST(5, 0, 0)
+ 
+   event_logger.AddEvent("SingularValueDecomposition");
+ 
+diff --git a/internal/ceres/invert_psd_matrix.h b/internal/ceres/invert_psd_matrix.h
+index bc749009..34a46982 100644
+--- a/internal/ceres/invert_psd_matrix.h
++++ b/internal/ceres/invert_psd_matrix.h
+@@ -68,7 +68,11 @@ typename EigenTypes<kSize, kSize>::Matrix InvertPSDMatrix(
+ 
+   // For a thin SVD the number of columns of the matrix need to be dynamic.
+   using SVDMType = typename EigenTypes<kSize, Eigen::Dynamic>::Matrix;
++#if EIGEN_VERSION_AT_LEAST(5, 0, 0)
++  Eigen::JacobiSVD<SVDMType, Eigen::ComputeThinU | Eigen::ComputeThinV> svd(m);
++#else   // !EIGEN_VERSION_AT_LEAST(5, 0, 0)
+   Eigen::JacobiSVD<SVDMType> svd(m, Eigen::ComputeThinU | Eigen::ComputeThinV);
++#endif  // EIGEN_VERSION_AT_LEAST(5, 0, 0)
+   return svd.solve(MType::Identity(size, size));
+ }
+ 

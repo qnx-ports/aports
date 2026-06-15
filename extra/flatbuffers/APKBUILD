@@ -1,0 +1,66 @@
+# Alpine-Contributor: Leo <thinkabit.ukim@gmail.com>
+# Alpine-Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+# Maintainer: Deep Chordia <dchordia@blackberry.com>
+pkgname=flatbuffers
+pkgver=25.12.19
+pkgrel=0
+pkgdesc="Memory Efficient Serialization Library"
+url="https://flatbuffers.dev/"
+arch="all"
+license="Apache-2.0"
+depends_dev="flatc=$pkgver-r$pkgrel"
+makedepends="
+    cmake
+    ninja
+    python3-gpep517
+    python3-setuptools
+    python3-wheel
+    python3-dev
+    libc++-dev
+"
+subpackages="
+    $pkgname-dev
+    flatc
+    python3-$pkgname:py3
+"
+source="$pkgname-$pkgver.tar.gz::https://github.com/google/flatbuffers/archive/refs/tags/v$pkgver.tar.gz"
+
+build() {
+  cmake -B build -G Ninja \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=/usr \
+    -DCMAKE_INSTALL_LIBDIR=lib \
+    -DFLATBUFFERS_BUILD_SHAREDLIB=ON \
+    -DFLATBUFFERS_BUILD_FLATLIB=OFF
+  cmake --build build
+
+  cd python
+  gpep517 build-wheel \
+    --wheel-dir ../build/dist \
+    --output-fd 3 3>&1 >&2
+}
+
+check() {
+  ctest --test-dir build
+}
+
+package() {
+  DESTDIR="$pkgdir" cmake --install build
+
+  python3 -m installer -d "$pkgdir" \
+    build/dist/*.whl
+}
+
+flatc() {
+  pkgdesc="$pkgname compiler"
+  amove usr/bin
+}
+
+py3() {
+  pkgdesc="$pkgname python3 bindings"
+  amove usr/lib/python3*
+}
+
+sha512sums="
+808c77536fbfb1c8a1145506873a2b4e5cb508e48bf35f8502a2d1349b64e7581bfe7ff2f587b3edb2642cc885c60c0170a8875fad245240a1288057f4c07a42  flatbuffers-25.12.19.tar.gz
+"

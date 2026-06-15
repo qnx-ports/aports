@@ -1,0 +1,49 @@
+# Maintainer:Ramya santoshi <rtimmaraju@qnx.com>
+pkgname=foonathan_memory
+pkgver=1.4.1
+pkgrel=0
+pkgdesc="STL-compatible C++ memory allocator library (eProsima vendor fork)"
+url="https://github.com/eProsima/memory"
+arch="all"
+license="Zlib"
+depends="libc++"
+
+makedepends="cmake ninja libc++-dev"
+
+source="$pkgname-$pkgver.tar.gz::https://github.com/eProsima/memory/archive/refs/tags/vendor-$pkgver.tar.gz"
+builddir="$srcdir/memory-vendor-$pkgver"
+
+subpackages="$pkgname-dev"
+
+build() {
+  
+    export CFLAGS="${CFLAGS/-fstack-clash-protection/}"
+    export CXXFLAGS="${CXXFLAGS/-fstack-clash-protection/}"
+
+    cmake -B build -S "$builddir" -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DCMAKE_CXX_STANDARD=17 \
+        -DCMAKE_CXX_STANDARD_REQUIRED=ON \
+        -DCMAKE_CXX_EXTENSIONS=OFF \
+        -DFOONATHAN_MEMORY_BUILD_EXAMPLES=OFF \
+        -DFOONATHAN_MEMORY_BUILD_TESTS=OFF \
+        -DFOONATHAN_MEMORY_BUILD_TOOLS=OFF
+
+    cmake --build build
+}
+dev() {
+    depends="$pkgname=$pkgver-r$pkgrel"
+
+    amove usr/lib/foonathan_memory
+
+    default_dev
+}
+package() {
+    DESTDIR="$pkgdir" cmake --install build
+}
+
+sha512sums="
+2227b2710f096795cc89d1b9b6d7a2c77ddaced8946334beba4abb134ce8dfca79771bfb157d4ed891d203626edcb8d08c56e636c5ab5c9753da8ce6bcfa8a56  foonathan_memory-1.4.1.tar.gz
+"
+

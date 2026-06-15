@@ -1,0 +1,32 @@
+# Alpine-Contributor: Fabian Affolter <fabian@affolter-engineering.ch>
+# Alpine-Maintainer: Fabian Affolter <fabian@affolter-engineering.ch>
+# Maintainer: jscaffidi <jscaffidi@qnx.com>
+pkgname=python3-flake8-builtins
+pkgver=2.5.0
+pkgrel=0
+pkgdesc="Extension for flake8 to check for builtins"
+options="!check" # No testsuite
+url="https://github.com/gforcada/flake8-builtins"
+arch="noarch"
+license="MIT"
+depends="python3-flake8"
+makedepends="python3-hatchling python3-gpep517"
+source="https://files.pythonhosted.org/packages/source/f/flake8-builtins/flake8_builtins-$pkgver.tar.gz"
+builddir="$srcdir"/flake8_builtins-$pkgver
+
+build() {
+	gpep517 build-wheel \
+		--wheel-dir .dist \
+		--output-fd 3 3>&1 >&2
+}
+
+package() {
+	gpep517 install-wheel --destdir "$pkgdir" \
+		.dist/*.whl
+}
+
+sha512sums="
+ffe8e3a36a5235b4508d937451afeed4266d926512409f074568f8b77c25d98d26c9c67445ce3789085dbe9272a6f602736eaaf6223e4103525728cf468cd236  flake8_builtins-2.5.0.tar.gz
+"
+
+

@@ -1,0 +1,43 @@
+# Alpine-Maintainer: Andy Postnikov <apostnikov@gmail.com>
+# Maintainer: jscaffidi <jscaffidi@qnx.com>
+pkgname=python3-typeguard
+_pkgname=typeguard
+pkgver=4.5.1
+pkgrel=0
+pkgdesc="run-time type checker for Python "
+url="https://typeguard.readthedocs.io/"
+arch="noarch"
+license="MIT"
+depends="python3-bracex python3-typing-extensions" # TODO: remove python3-typing-extensions once python>3.12 (alpine) (removing breaks despite us having python=3.14)
+makedepends="python3-gpep517 python3-setuptools_scm python3-wheel"
+checkdepends="python3-pytest"
+source="https://files.pythonhosted.org/packages/source/${_pkgname:0:1}/$_pkgname/$_pkgname-$pkgver.tar.gz"
+builddir="$srcdir"/$_pkgname-$pkgver
+
+build() {
+	SETUPTOOLS_SCM_PRETEND_VERSION=$pkgver \
+	gpep517 build-wheel \
+		--wheel-dir .dist \
+		--output-fd 3 3>&1 >&2
+}
+
+check() {
+    # test is broken (alpine)
+    # Also we don't have mypy (qnx)
+	rm -f tests/mypy/test_type_annotations.py 
+
+	python3 -m venv --clear --without-pip --system-site-packages .testenv
+	.testenv/bin/python3 -m installer .dist/*.whl
+	.testenv/bin/python3 -m pytest
+}
+
+package() {
+	python3 -m installer -d "$pkgdir" \
+		.dist/*.whl
+}
+
+sha512sums="
+6f9dea4b0eab7f9480d93d021673d61292bcaf4c2c688d7e00a3ce9948f18d230d4707c532ea40e588bb883fc5b60c59b385276e2e8963c31eb696f3891d3439  typeguard-4.5.1.tar.gz
+"
+
+

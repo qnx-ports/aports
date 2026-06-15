@@ -1,0 +1,148 @@
+# Alpine-Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+# Maintianer: Aaron Bassett <abassett@qnx.com>
+pkgname=cups
+pkgver=2.4.16
+pkgrel=0
+pkgdesc="The CUPS Printing System"
+url="https://github.com/OpenPrinting/cups/"
+arch="all"
+license="Apache-2.0"
+depends_dev="libgcrypt-dev gnutls-dev zlib-dev avahi-dev"
+makedepends="
+	$depends_dev
+	avahi-dev
+	dbus-dev
+	libjpeg-turbo-dev
+	libpaper-dev
+	qnx-io-sock-dev
+	libc++-dev
+	libxcrypt-dev
+	autoconf
+	"
+depends="cups-client poppler-utils openssl dbus libc++ $pkgname-libs"
+install="cups.pre-install"
+pkggroups="lp lpadmin"
+pkgusers="lp"
+subpackages="
+	$pkgname-dbg
+	$pkgname-dev
+	$pkgname-doc
+	$pkgname-libs
+	ipptool
+	$pkgname-client
+	$pkgname-openrc
+	"
+source="$pkgname-$pkgver.tar.gz::https://github.com/qnx-ports/cups/archive/refs/tags/qnx-v$pkgver.tar.gz
+	$pkgname.logrotate
+	cupsd.initd
+	cups-nostrip.patch
+	"
+options="!check"
+builddir="$srcdir/$pkgname-qnx-v$pkgver"
+
+prepare() {
+    default_prepare
+    # force update for qnx linking to libsocket
+    autoconf
+}
+
+build() {
+	CFLAGS="$CFLAGS -U_FORTIFY_SOURCE" \
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--libdir=/usr/lib \
+		--sysconfdir=/etc \
+		--sbindir=/usr/bin \
+		--localstatedir=/var \
+		--with-menudir=/usr/share/applications \
+		--with-icondir=/usr/share/icons \
+		--with-logdir=/var/log/cups \
+		--with-docdir=/usr/share/cups \
+		--with-rundir=/run/cups \
+		--with-cupsd-file-perm=0755 \
+		--with-cups-user=lp \
+		--with-cups-group=lp \
+		--with-system-groups=lpadmin \
+		--with-domainsocket=/run/cups/cups.sock \
+		--disable-libusb \
+		--without-rcdir \
+		--without-php \
+		--disable-pam \
+		--enable-raw-printing \
+		--enable-dbus \
+		--with-dbusdir=/usr/share/dbus-1 \
+		--enable-libpaper \
+		--enable-ssl=yes \
+		--enable-gnutls \
+		--disable-launchd
+
+	make
+}
+
+package() {
+	make BUILDROOT="$pkgdir" install
+
+	cd "$pkgdir"
+
+	# These no longer works since CUPS >= 1.6 (http://www.cups.org/str.php?L4120).
+	rm -rf usr/share/cups/banners/* \
+		usr/share/cups/data/testprint
+
+	install -D -m 644 "$srcdir"/cups.logrotate etc/logrotate.d/cups
+	install -D -m 755 "$srcdir"/cupsd.initd etc/init.d/cupsd
+
+	if [ -e usr/share/applications/cups.desktop ] ; then
+		sed -i 's|^Exec=htmlview http://localhost:631/|Exec=xdg-open http://localhost:631/|g' \
+			usr/share/applications/cups.desktop
+	fi
+	find usr/share/cups/model -name "*.ppd" -exec gzip -n9f {} +
+}
+
+dev() {
+	default_dev
+
+	# needed for main cups operation
+	mv "$subpkgdir"/usr/share/cups/ppdc/* \
+		"$pkgdir"/usr/share/cups/ppdc
+	rmdir "$subpkgdir"/usr/share/cups/ppdc
+}
+
+libs() {
+	pkgdesc="CUPS libraries"
+	depends="avahi-libs gnutls libxcrypt qnx-io-sock zlib-ng"
+	replaces="libcups"
+
+	amove 'usr/lib/*.so*'
+	install -d "$pkgdir"/etc/cups
+}
+
+ipptool() {
+	pkgdesc="Perform internet printing protocol requests"
+	depends="$pkgname-libs"
+
+	amove usr/bin/ipptool \
+		usr/share/cups/ipptool
+}
+
+client() {
+	pkgdesc="CUPS command-line client programs"
+	depends="$pkgname-libs libc++ libpaper dbus"
+
+	amove usr/bin
+}
+
+doc() {
+	default_doc
+
+	amove usr/share/cups/help
+}
+
+
+sha512sums="
+fefaee0a3608d10f14ee38ff60da71b8483c875f6c96d3d1b838dc92fc315b2637520a9de5140674fdf20515601474e7d47bccbd6c71d8701eb51dc849f43407  cups-2.4.16.tar.gz
+6b4b8c33f89ac316a56d71356953496657ed5b0b17f92f73c1415bc7be1dcc8e2f0644342446cc8ab23b84d50142b6d4194f3e3370688373233cde0786431af8  cups.logrotate
+161587f5254b82dc3248711764c57f3cecea768c7b60ace4e770b3964ad3255bcadad23afb13156ec04418767dbff102a8deee93deac52dd4ecffd3999fb8887  cupsd.initd
+ee3e1d7647c73c6ee5af2a90ece0b94fc799138c65991967910bd367e08ba94b5edd9cbf580f11a760a14dbc204a0bf84c4d3499b8d137005d2c8bc67b2d25ed  cups-nostrip.patch
+"

@@ -43,6 +43,7 @@ build() {
     fi
     sed "s/%VER%/$_luaver/g;s/%REL%/$pkgver/g;" $srcdir/lua.pc > $srcdir/lua.pc.patched
 
+    CFLAGS="$CFLAGS -Qunused-arguments" \
     ./configure \
         --build=$CBUILD \
         --host=$CHOST \

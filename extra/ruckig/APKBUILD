@@ -1,0 +1,47 @@
+# Maintainer: Felix Lionardo <flionardo@qnx.com>
+pkgname=ruckig
+pkgver=0.17.3
+pkgrel=0
+pkgdesc="Instantaneous Motion Generation for Robots and Machines"
+url="https://github.com/pantor/ruckig"
+arch="all"
+license="MIT"
+
+source="$pkgname-$pkgver.tar.gz::https://github.com/pantor/ruckig/archive/refs/tags/v$pkgver.tar.gz"
+
+builddir="$srcdir/$pkgname-$pkgver"
+depends="libc++ qnx-io-sock"
+makedepends="
+	libc++-dev
+	qnx-io-sock-dev
+	cmake
+	ninja
+"
+
+subpackages="$pkgname-dev"
+
+build() {
+	cmake -B build -G Ninja \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DCMAKE_INSTALL_LIBDIR=lib \
+		-DCMAKE_EXE_LINKER_FLAGS="$LDFLAGS -Wl,--no-as-needed -lsocket" \
+		-DCMAKE_SHARED_LINKER_FLAGS="$LDFLAGS -Wl,--no-as-needed -lsocket" \
+		-DBUILD_EXAMPLES=OFF \
+		-DBUILD_TESTS=ON \
+		-DBUILD_BENCHMARK=OFF \
+		-DBUILD_PYTHON_MODULE=OFF
+		cmake --build build
+}
+
+check() {
+	ctest --test-dir build
+}
+
+package() {
+	DESTDIR="$pkgdir" cmake --install build
+}
+
+sha512sums="
+357b78a39b0ed0dde959aa7629af036d66e77ba3c0c4d0edb1f8fe3a6de4afca91bd4aecd316edd26d8b35a00e739f395850671374cd0f46743d4fe9a088f14b  ruckig-0.17.3.tar.gz
+"

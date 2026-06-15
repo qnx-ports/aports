@@ -1,0 +1,49 @@
+# Alpine-Contributor: Leo <thinkabit.ukim@gmail.com>
+# Alpine-Maintainer: Simon Zeni <simon@bl4ckb0ne.ca>
+# Maintainer: Elliott Mazzuca <emazzuca@qnx.com>
+pkgname=spirv-tools
+_pkgname=SPIRV-Tools
+pkgver=1.4.321.0
+pkgrel=0
+pkgdesc="API and commands for processing SPIR-V modules"
+url="https://github.com/KhronosGroup/SPIRV-Tools"
+arch="all"
+license="Apache-2.0"
+depends="libc++"
+depends_dev="spirv-headers $pkgname=$pkgver-r$pkgrel"
+makedepends="$depends_dev cmake ninja python3"
+subpackages="$pkgname-dev $pkgname-dbg"
+source="$pkgname-$pkgver.tar.gz::https://github.com/KhronosGroup/SPIRV-Tools/archive/refs/tags/vulkan-sdk-$pkgver.tar.gz"
+builddir="$srcdir/$_pkgname-vulkan-sdk-$pkgver"
+
+build() {
+	# QNX clang treats Alpine's -fstack-clash-protection as unused. Preserve
+	# Alpine's flags and ask clang not to fail on target-irrelevant arguments.
+	export CFLAGS="$CFLAGS -Qunused-arguments"
+	export CXXFLAGS="$CXXFLAGS -Qunused-arguments"
+	CXXFLAGS="$CXXFLAGS -g1" \
+	cmake -B build -G Ninja \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DCMAKE_INSTALL_LIBDIR=lib \
+		-DCMAKE_BUILD_TYPE=MinSizeRel \
+		-DBUILD_SHARED_LIBS=ON \
+		-DSPIRV_WERROR=OFF \
+		-DSPIRV-Headers_SOURCE_DIR=/usr \
+		-DSPIRV_TOOLS_BUILD_STATIC=OFF
+	cmake --build build
+}
+
+check() {
+	# Not all test are enabled, because they rely on googletest source
+	# folder. While it is easy to add, the (extra) tests then also need
+	# effcee and re2 as well.
+	ctest --test-dir build
+}
+
+package() {
+	DESTDIR="$pkgdir" cmake --install build
+}
+
+sha512sums="
+ae133c7b27b2a4f472ecb2928120a3beec01fb306abfe5c1e315982d8ad98f67be8639e646c1172a5257d4a9010b000e6a5924b567d7878bf942a7b87cac4abc  spirv-tools-1.4.321.0.tar.gz
+"

@@ -1,0 +1,23 @@
+# Alpine-Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+# Maintainer: Aaron Bassett <abassett@qnx.com>
+pkgname=java-cacerts
+pkgver=1.1
+pkgrel=0
+pkgdesc="Script to update java cacerts store"
+url="https://github.com/qnx-ports/aports/blob/-/extra/java-cacerts/APKBUILD"
+arch="noarch"
+options="!check"  # Simple script, no tests
+license="MIT"
+depends="p11-kit ca-certificates"
+install="$pkgname.pre-deinstall"
+builddir=$srcdir
+
+package() {
+	install -d "$pkgdir"/etc/ssl/certs/java
+	install -Dm755 /dev/stdin "$pkgdir"/etc/ca-certificates/update.d/java-cacerts <<EOF
+#!/bin/sh
+exec trust extract --overwrite --format=java-cacerts --filter=ca-anchors \
+	--purpose server-auth /etc/ssl/certs/java/cacerts
+EOF
+}
+

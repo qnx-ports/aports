@@ -1,0 +1,5 @@
+# Do not modify this file - use /etc/npmrc instead!
+
+globalconfig=/etc/npmrc
+prefix=/usr/local
+

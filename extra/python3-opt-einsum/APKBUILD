@@ -1,0 +1,54 @@
+# Alpine-Contributor: Iztok Fister, Jr. <iztok@iztok-jr-fister.eu>
+# Alpine-Maintainer: Iztok Fister, Jr. <iztok@iztok-jr-fister.eu>
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=python3-opt-einsum
+pkgver=3.4.0
+pkgrel=0
+pkgdesc="Optimizing einsum functions in NumPy, Tensorflow, Dask, and more with contraction order optimization"
+url="https://github.com/dgasmith/opt_einsum"
+arch="noarch"
+license="MIT"
+depends="
+    python3-numpy
+    "
+makedepends="
+    python3-gpep517
+    python3-hatch-vcs
+    python3-hatch-fancy-pypi-readme
+    python3-hatchling
+    python3-wheel
+    "
+checkdepends="
+    python3-pytest-xdist
+    "
+subpackages="$pkgname-doc"
+source="https://github.com/dgasmith/opt_einsum/archive/v$pkgver/opt_einsum-$pkgver.tar.gz"
+builddir="$srcdir/opt_einsum-$pkgver"
+
+build() {
+    export SETUPTOOLS_SCM_PRETEND_VERSION=$pkgver
+    gpep517 build-wheel \
+        --wheel-dir .dist \
+        --output-fd 3 3>&1 >&2
+}
+
+check() {
+    python3 -m venv --clear --without-pip --system-site-packages .testenv
+    .testenv/bin/python3 -m installer .dist/*.whl
+    .testenv/bin/python3 -m pytest -n auto
+}
+
+package() {
+    python3 -m installer -d "$pkgdir" \
+        .dist/*.whl
+
+    rm -r "$pkgdir"/usr/lib/python*/site-packages/opt_einsum/tests
+
+    install -Dm644 CITATION.cff -t "$pkgdir"/usr/share/doc/$pkgname
+    install -Dm644 README.md -t "$pkgdir"/usr/share/doc/$pkgname
+
+}
+
+sha512sums="
+0001a6f95c6101e172eb2ae2492d713517a1e76783b8c9542c0845d97da7181d9fdaa06724d3bd67022835def0d6f0ce68531996c38f18b1f667f67ae1b36957  opt_einsum-3.4.0.tar.gz
+"

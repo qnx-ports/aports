@@ -1,0 +1,95 @@
+# Alpine-Contributor: Łukasz Jendrysik 
+# Alpine-Contributor: Sören Tempel <soeren+alpine@soeren-tempel.net> 
+# Alpine-Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+# Maintainer: J. Scaffidi <jscaffidi@qnx.com>
+pkgname=chrony
+pkgver=4.8
+pkgrel=2
+pkgdesc="Advanced NTP client and server"
+url="https://gitlab.com/chrony/chrony/"
+arch="all"
+license="GPL-2.0-or-later"
+pkgusers="$pkgname"
+pkggroups="$pkgname"
+tag="$pkgver"
+install="$pkgname.pre-install $pkgname.pre-upgrade $pkgname.post-install"
+builddir="$srcdir"/$pkgname
+#TODO add docs subpkg when we get an asciidoctor port
+subpackages="$pkgname-openrc $pkgname-dbg"
+depends="qnx-io-sock nettle gnutls"
+makedepends="bison make clang qnx-io-sock-dev nettle-dev gnutls-dev"
+source="
+$pkgname-$pkgver.tar.gz::https://gitlab.com/chrony/chrony/-/archive/$tag/chrony-$tag.tar.gz?ref_type=tags
+00-build-patches.patch
+01-sys-c.patch
+02-sysincl.patch
+03-tests.patch
+04-getsockname-fix.patch
+05-client-socket.patch
+sys_qnx.c
+sys_qnx.h
+adjtime_qnx.h
+chrony.conf
+chronyd.confd
+chronyd.initd
+"
+
+
+unpack() {
+    default_unpack
+    # Makes tests pass because QNX saddr_un.sun_path contains absolute paths, and when it gets capped at 104 chars, doesn't nul-terminate it so it breaks a bunch of stuff yay
+    # This makes the path shorter by removing the long commit sha. This might bite us later if we have a build system with a long path.
+    mv "$srcdir/$pkgname-$tag" "$srcdir/$pkgname"
+}
+
+prepare() {
+    default_prepare
+    cp $srcdir/sys_qnx.c $srcdir/sys_qnx.h $srcdir/adjtime_qnx.h .
+}
+
+build() {
+    export CC=clang
+    export CFLAGS=" -Wno-deprecated-non-prototype"
+    ./configure \
+        --prefix=/usr \
+        --sbindir=/usr/bin \
+        --sysconfdir=/etc/$pkgname \
+        --chronyrundir=/run/$pkgname \
+        --with-pidfile=/run/$pkgname/chronyd.pid \
+        --with-user=$pkgname \
+        --enable-ntp-signd
+    make 
+}
+
+check() {
+    make check
+}
+
+package() {
+    make DESTDIR="$pkgdir" install
+
+    install -dm2750 -g wheel "$pkgdir"/var/log/chrony
+    install -Dm755 "$srcdir"/chronyd.initd "$pkgdir"/etc/init.d/chronyd
+    install -Dm644 "$srcdir"/chronyd.confd "$pkgdir"/etc/conf.d/chronyd
+
+    mkdir -p "$pkgdir"/var/lib/chrony \
+        "$pkgdir"/etc/chrony
+
+    install -m644 "$srcdir"/chrony.conf "$pkgdir"/etc/chrony/chrony.conf
+}
+
+sha512sums="
+acfb9e456df3358c0b32b75a2c645347c5be1433ec5e247576c2102ee1eb72499b6deb8473358b279e926dcd11d48f3b0b0b0ad24f51594309f69637f8a23f07  chrony-4.8.tar.gz
+01327a629ac4ec8e476cc97ed075deaa5a0b3a74d22d22516a016d624a3d6c3219de266702bc1a993bfe9b437eef31d85f265416d2a5b68cba8610f480227998  00-build-patches.patch
+762e8fc7929429dff3e0cec342eb8736a3fd7208fc0357985696e1a0be55ca42e9a5493068c692ec0539ea1b5cd80166517faae6a0bcc6fd06747ee9e3c9eadc  01-sys-c.patch
+a6f510baf5c654d654549c2f60ea10c720e113175bb597691d58dfba1a9bcdad1de134b7fc592d3511a82b475ebcae5b56855aa6d50a10fbcc4f2abfcc7612d8  02-sysincl.patch
+e347a558aad5d9a9d64737c68c9c9abc40e58eeed72677bce576f0102591ef3444829fc15d7630188cb6de27e6689efe0d1c6870cd54edb000770bbde1ad0c0a  03-tests.patch
+9d7a7748b6ceffd1592ac15cafcc93471fc44d3897cd1edaad07cdae492ff114d69e5244c907006bc6185511860c895f4277537efad7c40ce7573a54effdfbb8  04-getsockname-fix.patch
+40a98cad0e00d729cd7982ced93fd56ffca8bdc04dcee2249417105529b34fa85f60c8982b6040312be4541a79a6f6729da558ab90c25fdd9990cab740ff5542  05-client-socket.patch
+2066364bf5bb86c6c25b313eca79da4ed5d05e4e728fa10c027179c0f734a1ffd5eaa850af7aceb6494f55a49fa28b18cf3221cc21d8b35d20f1719964d8e43e  sys_qnx.c
+bc6a02465d49f756072bd00b53357e34c8e402f49af3d4c570a8ee88965141e60ef71522c7e3ec50ff131cffb0c04a7ef19ad40f64a3b42ad3f5b6a7f69c943c  sys_qnx.h
+1fb7d279299cdf88f9ba83c68ea866e830b8edd518b84c14515bee8389f55114b9f5ee60154614c81427c6db71ac1cabb1cbf56ab51895d3ccf2d8a3612801ad  adjtime_qnx.h
+663c6316bcca762de119d88e4bb6536bfe0fea19939fe1b673900847619e7f1d6783b789b38ebba97b5dc3778dedf798bafd65f00f8bd7e312bfed7df0caaf71  chrony.conf
+7769822bf8a963416c37b05d9e0002502fe98d205d7b45586202cbc59a7b994ece37c48f87736627c9480b6d0d51baead212181b63d9b0f4af5d732b7ddceee5  chronyd.confd
+ac2c3f3478669f4d44308cf7041529caa5be5696ce3b44a5f17b3fde4d3b6c81cae76f0eb9e518cc1ee1d13f0b95344a9d3423c14416b4f53b7f4edb9654c168  chronyd.initd
+"

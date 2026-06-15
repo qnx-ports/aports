@@ -1,0 +1,42 @@
+# Maintainer: Felix Lionardo <flionardo@qnx.com>
+pkgname=osqp
+pkgver=0.6.3
+pkgrel=0
+pkgdesc="Optimization solver for Quadratic Programs (QPs)"
+url="https://github.com/osqp/osqp"
+arch="all"
+license="Apache-2.0"
+source="$pkgname-$pkgver.tar.gz::https://github.com/osqp/osqp/releases/download/v$pkgver/osqp-v$pkgver-src.tar.gz
+0001-scipy-test-fix.patch"
+builddir="$srcdir"
+depends="libc++"
+makedepends="
+	libc++-dev
+	cmake
+	ninja
+"
+checkdepends="python3-scipy openblas-dev"
+subpackages="$pkgname-dev"
+
+build() {
+	cmake3.5 -B build -G Ninja \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DCMAKE_INSTALL_LIBDIR=lib \
+		-DUNITTESTS=ON \
+		-DENABLE_MKL_PARDISO=OFF
+	cmake3.5 --build build
+}
+
+check() {
+	ctest3.5 --test-dir build
+}
+
+package() {
+	DESTDIR="$pkgdir" cmake3.5 --install build
+}
+
+sha512sums="
+3176e87d71731d523d16706a404f087c7dd076a74b6dab6172e568ae4d945cb81591ce88aaad53926762c342f2981b8269c7fa1a0b9528675d3823fb2b996fb7  osqp-0.6.3.tar.gz
+5d2b58c704c8365e577c943ecf097c3fccd3304283051a8abc7754bbec46b9a1bfcca032557111a226a98709d093733700e59f0ceda4e43f4c4469d61453fe94  0001-scipy-test-fix.patch
+"

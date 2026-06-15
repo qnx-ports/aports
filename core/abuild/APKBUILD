@@ -1,13 +1,13 @@
 # Maintainer: Leo Shen <yishen@qnx.com>
 pkgname=abuild
 pkgver=3.15.0
-pkgrel=10
+pkgrel=11
 pkgdesc="APK build toolchain, adapted for QNX"
 url="https://gitlab.alpinelinux.org/alpine/abuild/"
 arch="all"
 license="GPL-2.0-only"
 makedepends="scdoc pkgconf pkgconf-dev openssl-dev zlib-ng-dev"
-depends="qnx-utils nproc apk-tools fakeroot busybox openssl pkgconf pax-utils libssl3 libcrypto3 zlib-ng"
+depends="qnx-utils nproc apk-tools fakeroot busybox openssl pkgconf pax-utils libssl3 libcrypto3 zlib-ng gawk curl bc"
 options="suid"
 subpackages="$pkgname-doc"
 source="https://gitlab.alpinelinux.org/alpine/abuild/-/archive/$pkgver/abuild-$pkgver.tar.gz

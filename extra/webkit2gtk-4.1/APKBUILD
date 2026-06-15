@@ -2,10 +2,10 @@
 # Alpine-Contributor: Sergei Lukin <sergej.lukin@gmail.com>
 # Alpine-Contributor: Jiri Horner <laeqten@gmail.com>
 # Alpine-Maintainer: Patrycja Rosa <alpine@ptrcnull.me>
-# Maintainer: Felix Xing <fxing@qnx.com>
+# Maintainer: Elliott Mazzuca <emazzuca@qnx.com>
 pkgname=webkit2gtk-4.1
 pkgver=2.51.1
-pkgrel=5
+pkgrel=7
 pkgdesc="Portable web rendering engine WebKit for GTK+ - GTK+3 libsoup3 version"
 url="https://webkitgtk.org/"
 arch="all"
@@ -108,6 +108,9 @@ source="https://webkitgtk.org/releases/webkitgtk-$pkgver.tar.xz
         008-fix-platform-codes.patch
         009-add-qnx-to-angle-gtk.patch
         010-disable-view-transiton-webgl.patch
+	011-add-aarch64-support.patch
+        012-fix-drag-source-wayland-event.patch
+        013-add-qnx-memory-pressure-monitor.patch
     "
 builddir="$srcdir/webkitgtk-$pkgver"
 
@@ -124,17 +127,19 @@ build() {
     # QNX names madvise differently
     _madv_defs="-DMADV_DISCARD_NP=POSIX_MADV_DISCARD_NP \
                 -DMADV_DONTNEED=POSIX_MADV_DONTNEED \
+                -DMADV_FREE=POSIX_MADV_DONTNEED \
                 -DMADV_NORMAL=POSIX_MADV_NORMAL \
                 -DMADV_RANDOM=POSIX_MADV_RANDOM \
                 -DMADV_SEQUENTIAL=POSIX_MADV_SEQUENTIAL \
                 -DMADV_WILLNEED=POSIX_MADV_WILLNEED \
                 -Dmadvise=posix_madvise"
-    
+
     _dbg_flags="-ggdb"
 
     # Do not build with debug symbols
     export CFLAGS="$CFLAGS $_madv_defs $_dbg_flags"
     export CXXFLAGS="$CXXFLAGS $_madv_defs $_dbg_flags"
+
 
     # supress some warnings
     _no_warns="-U_FORTIFY_SOURCE \
@@ -166,6 +171,27 @@ build() {
 
     _libcxx="-DUSE_CXX_STDLIB_ASSERTIONS=OFF"
 
+
+    cat > /tmp/qnx_setjmp_stub.S << 'EOF'
+.globl setjmp
+#if defined(__aarch64__)
+.type setjmp, %function
+setjmp:
+    b _setjmp
+#elif defined(__x86_64__)
+.type setjmp, @function
+setjmp:
+    jmp _setjmp
+#else
+#error "Unsupported architecture for setjmp stub"
+#endif
+EOF
+    /usr/bin/clang -fPIC -c /tmp/qnx_setjmp_stub.S -o /tmp/qnx_setjmp_stub.o
+    mkdir -p /tmp/ldwrap
+    printf '#!/bin/sh\nexec /usr/bin/ld.bfd "$@" /tmp/qnx_setjmp_stub.o\n' > /tmp/ldwrap/ld
+    chmod +x /tmp/ldwrap/ld
+    _linker_flags="-B/tmp/ldwrap -Wl,--strip-debug -Wl,--reduce-memory-overheads -lsocket"
+
     cmake -B build -G Ninja \
         -DCMAKE_BUILD_TYPE=Release \
         -DPORT=GTK \
@@ -181,9 +207,16 @@ build() {
         -DENABLE_SPEECH_SYNTHESIS=OFF \
         -DENABLE_WEBGL=ON \
         -DUSE_SYSTEM_MALLOC=ON \
+        -DCMAKE_SHARED_LINKER_FLAGS="$_linker_flags" \
         $_gtk_options \
         $_jit \
         $_libcxx
+
+    # Symlink sweep AFTER cmake (cmake wipes these on reconfigure)
+    grep -oE 'ln -n -s -f [^ ]+ [^ ]+' build/build.ninja | sort -u | while read _ _ _ _ src dest; do
+        mkdir -p "$(dirname "$dest")"
+        [ ! -e "$dest" ] && ln -sf "$src" "$dest"
+    done || true
 
     ninja -C build -j$(nproc)
 }
@@ -199,7 +232,7 @@ package() {
 
 sha512sums="
 64b9e6142d6329b307bcce832df24ad3b0e559d0ed66a71f8724043002b7570f930a5016c7c00336320206ffc5b8ad1d09496f5b1ddb9097b4a1022d4a4665ab  webkitgtk-2.51.1.tar.xz
-416535173edee1366db8718abcdf2e75e6e68a189ed9a07390c424b21a4cfd4998cd010d144056bd26153b677f0b8372deebe243fdbe916607f24dabbcafbe93  001-add_mcontext_support.patch
+5a0c0c17f60e9e5fcddd040a953bbc906fe297cae84ee73b1cfd81638078a4f652f7bbfd2aa49d8a8b0235d07be15d7f8d86cddf9fc9e85af82e2260c3ba9bac  001-add_mcontext_support.patch
 b131708368eeff15e9139a9401e208604945cbc8abe92d2327a18692a44fb9051e6a0b4cb13439d2f882225215e1a6c437673d65b8c58f940f4eea5f90e2e3d8  002-add-exe-path-support.patch
 fc494940ed4156e68246da3e73cfc6ff109a9bd84c584ecc061a9a5f20f71afbfd1157b9cbcc5ed13af574aa44bd83c58abf175089904dff3f7b46a813164387  004-disable-girscanner-warn-all.patch
 f3a79e8f2bff30e2b3c28037e8ea75fcae5067841d043ed9508253c05da6b322cd641220492156733f9ce11d5fdc98d53532b5a9877fcc54dd5459bb4f6a0d03  005-add-unix-mem-pressure-file.patch
@@ -208,4 +241,7 @@ a1c6e6b20ba1838e54def8eb56c6b567c7862d45d5e488da4c747201c58d29edbc427d9eab4416c7
 27db2f0072535a1b6219db87a69550a0b56964295457e7bfd8bf78fb090a1d41d1ad7f3e399c40fc16430167341a55add0c7f37c8dd1bfd39893b77058000913  008-fix-platform-codes.patch
 9da00ef79ec57149ec2c3ecf58a469bb3e8d5f1e32ce6f30d106b4e46c14beacb5bae73626430dd3de1804f2e6ef6f09c6f1a46109387e596861d87f5036bbf9  009-add-qnx-to-angle-gtk.patch
 b604280dea8f3e43ddad54a3b97e90dc275d7e573fa1c4331b1b7603ac80d1f5e8b706b8ac9a66c064b42308f4081f6d09399940e3630b3383d3ffaa06748fa7  010-disable-view-transiton-webgl.patch
+0e1bf9d4e78ffb72562b9a4c1e20beec2c922f227243764e739a0d9308ee50ecaca1bb144912a1a00558f361592fe892392a20507ff7625dbdf9a11cf82102a1  011-add-aarch64-support.patch
+8c7956db39792ae7c89404fc6ffd3720be56434129e10d3a021a1043d40a48c4bcd793dab5a1aeeeed6a545dfea2c26f43a82c1071f48214348ef451b797e210  012-fix-drag-source-wayland-event.patch
+59126de48cca0ec5baf02cb139e65f0211a566d016693be8a8df4bca99c17fa7573383704dcd1b9452be14bf878e68add71dc2152c511aa944e3b3f54f139578  013-add-qnx-memory-pressure-monitor.patch
 "

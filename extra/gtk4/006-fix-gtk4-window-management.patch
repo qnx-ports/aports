@@ -1,0 +1,245 @@
+--- a/gdk/wayland/gdksurface-wayland.c
++++ b/gdk/wayland/gdksurface-wayland.c
+@@ -137,12 +137,23 @@
+                    GDK_TOPLEVEL_STATE_FULLSCREEN |
+                    GDK_TOPLEVEL_STATE_TILED))
+         {
++          /* Use the configured dimensions from Wayland, not the surface size */
++          int width = impl->next_layout.configured_width;
++          int height = impl->next_layout.configured_height;
++          
++          /* Fallback to surface dimensions if not configured yet */
++          if (width == 0 || height == 0)
++            {
++              width = surface->width;
++              height = surface->height;
++            }
++          
+           /* Return geometry WITHOUT shadow margins */
+           *geometry = (GdkRectangle) {
+             .x = 0,
+             .y = 0,
+-            .width = surface->width,
+-            .height = surface->height
++            .width = width,
++            .height = height
+           };
+           return;
+         }
+--- a/gdk/wayland/gdktoplevel-wayland.c
++++ b/gdk/wayland/gdktoplevel-wayland.c
+@@ -419,11 +419,21 @@
+       wayland_surface->next_layout.configured_height > 0)
+     {
+       int width, height;
+-
+-      width = wayland_surface->next_layout.configured_width +
+-        wayland_surface->shadow_left + wayland_surface->shadow_right;
+-      height = wayland_surface->next_layout.configured_height +
+-        wayland_surface->shadow_top + wayland_surface->shadow_bottom;
++      GdkToplevelState state = GDK_SURFACE (surface)->state;
++      
++      /* QNX FIX: Don't add shadows when maximized/fullscreen/tiled */
++      if (state & (GDK_TOPLEVEL_STATE_MAXIMIZED | GDK_TOPLEVEL_STATE_FULLSCREEN | GDK_TOPLEVEL_STATE_TILED))
++        {
++          width = wayland_surface->next_layout.configured_width;
++          height = wayland_surface->next_layout.configured_height;
++        }
++      else
++        {
++          width = wayland_surface->next_layout.configured_width +
++            wayland_surface->shadow_left + wayland_surface->shadow_right;
++          height = wayland_surface->next_layout.configured_height +
++            wayland_surface->shadow_top + wayland_surface->shadow_bottom;
++        }
+ 
+       if (wayland_toplevel->next_layout.should_constrain)
+         {
+--- a/gtk/gtkwindow.c
++++ b/gtk/gtkwindow.c
+@@ -3537,9 +3537,12 @@
+   GtkBorder window_border = { 0 };
+   int w, h;
+ 
+-  if (!priv->decorated ||
+-      priv->fullscreen)
+-    return;
++/* QNX FIX: Don't add shadows when fullscreen, maximized, or tiled */
++if (!priv->decorated ||
++    priv->fullscreen ||
++    (priv->state & (GDK_TOPLEVEL_STATE_MAXIMIZED | 
++                    GDK_TOPLEVEL_STATE_TILED)))
++  return;
+ 
+   get_shadow_width (window, &window_border);
+   w = *width + apply * (window_border.left + window_border.right);
+@@ -4202,7 +4205,10 @@
+       *min_width = minimum;
+       if (cur_width <= 0)
+         cur_width = natural;
++      /* QNX FIX: Don't let default size exceed screen bounds */
+       *width = MAX (minimum, MIN (max_width, cur_width));
++      if (*width > max_width)
++        *width = max_width;
+ 
+       gtk_widget_measure (widget, GTK_ORIENTATION_VERTICAL,
+                           *width,
+@@ -4213,10 +4219,17 @@
+         cur_height = natural;
+ 
+       *height = MAX (minimum, MIN (max_height, cur_height));
+-
++      if (*height > max_height)
++        *height = max_height;
+       if (request_mode != GTK_SIZE_REQUEST_CONSTANT_SIZE)
+         gtk_window_compute_min_size (widget, GTK_ORIENTATION_HORIZONTAL, (double) *width / *height, min_width, min_height);
+     }
++
++  /* QNX FIX: Also cap minimum size to screen bounds */
++  if (*min_width > max_width)
++    *min_width = max_width;
++  if (*min_height > max_height)
++    *min_height = max_height;
+ }
+ 
+ static gboolean
+@@ -4251,6 +4264,27 @@
+ 
+   gdk_toplevel_size_get_bounds (size, &bounds_width, &bounds_height);
+ 
++  /* QNX FIX: When maximized/fullscreen, use bounds directly without measuring widgets */
++  if (priv->state & (GDK_TOPLEVEL_STATE_FULLSCREEN |
++                     GDK_TOPLEVEL_STATE_MAXIMIZED |
++                     GDK_TOPLEVEL_STATE_TILED))
++    {
++      
++      width = bounds_width;
++      height = bounds_height;
++      min_width = bounds_width;
++      min_height = bounds_height;
++      
++      /* Set size without adding shadows */
++      gdk_toplevel_size_set_min_size (size, min_width, min_height);
++      gdk_toplevel_size_set_size (size, width, height);
++      
++      /* Don't set shadow width when maximized */
++      gtk_widget_ensure_resize (widget);
++      return;
++    }
++
++  /* Normal windowed mode: measure widgets as usual */
+   gtk_window_compute_default_size (window,
+                                    priv->default_width, priv->default_height,
+                                    bounds_width, bounds_height,
+@@ -4268,12 +4302,12 @@
+   gtk_window_update_csd_size (window,
+                               &width, &height,
+                               INCLUDE_CSD_SIZE);
++
+   gtk_window_update_csd_size (window,
+                               &min_width, &min_height,
+                               INCLUDE_CSD_SIZE);
+ 
+   gdk_toplevel_size_set_min_size (size, min_width, min_height);
+-
+   gdk_toplevel_size_set_size (size, width, height);
+ 
+   if (priv->use_client_shadow)
+--- a/demos/widget-factory/widget-factory.c
++++ b/demos/widget-factory/widget-factory.c
+@@ -2229,13 +2229,14 @@
+       g_clear_error (&error);
+     }
+ 
+-  window = (GtkWindow *)gtk_builder_get_object (builder, "window");
+-  gtk_window_fullscreen (window);
+ 
+-  load_texture_in_thread ((GtkWidget *)gtk_builder_get_object (builder, "notebook_sunset"),
+-                          "/org/gtk/WidgetFactory4/sunset.jpg");
+-  load_texture_in_thread ((GtkWidget *)gtk_builder_get_object (builder, "notebook_nyc"),
+-                          "/org/gtk/WidgetFactory4/nyc.jpg");
++window = (GtkWindow *)gtk_builder_get_object (builder, "window");
++gtk_window_set_default_size (window, 1280, 720);
++/* gtk_window_fullscreen (window); */
++load_texture_in_thread ((GtkWidget *)gtk_builder_get_object (builder, "notebook_sunset"),
++                        "/org/gtk/WidgetFactory4/sunset.jpg");
++load_texture_in_thread ((GtkWidget *)gtk_builder_get_object (builder, "notebook_nyc"),
++                        "/org/gtk/WidgetFactory4/nyc.jpg");
+   load_texture_in_thread ((GtkWidget *)gtk_builder_get_object (builder, "notebook_beach"),
+                           "/org/gtk/WidgetFactory4/beach.jpg");
+ 
+--- a/gdk/qnxscreen/gdktoplevel-qnxscreen.c
++++ b/gdk/qnxscreen/gdktoplevel-qnxscreen.c
+@@ -306,13 +306,30 @@
+   gdk_surface_constrain_size (&geometry, mask, width, height, &width, &height);
+   gdk_qnxscreen_surface_move_resize (surface, FALSE, -1, -1, width, height);
+ 
+-  /* On QNX, just make maximize the same as fullscreen */
++/* QNX: Implement proper maximize - manually track state */
+   if (gdk_toplevel_layout_get_maximized (layout, &maximize))
+     {
+-      if (maximize)
+-        gdk_qnxscreen_surface_fullscreen (surface);
+-      else
+-        gdk_qnxscreen_surface_unfullscreen (surface);
++      static GdkSurface *last_maximized_surface = NULL;
++      gboolean currently_maximized = (last_maximized_surface == surface);
++      
++      if (maximize && !currently_maximized)
++        {
++          GdkRectangle monitor_geom;
++          gdk_monitor_get_geometry (monitor, &monitor_geom);
++          gdk_qnxscreen_surface_move_resize (surface, FALSE, 0, 0, 
++                                             monitor_geom.width, monitor_geom.height);
++          GDK_SURFACE(surface)->state |= GDK_TOPLEVEL_STATE_MAXIMIZED;
++          g_object_notify (G_OBJECT (surface), "state");
++          last_maximized_surface = surface;
++        }
++      else if (maximize && currently_maximized)
++        {
++          /* Toggle: already maximized, unmaximize */
++          gdk_qnxscreen_surface_move_resize (surface, FALSE, -1, -1, 1024, 650);
++          GDK_SURFACE(surface)->state &= ~GDK_TOPLEVEL_STATE_MAXIMIZED;
++          g_object_notify (G_OBJECT (surface), "state");
++          last_maximized_surface = NULL;
++        }
+     }
+ 
+   if (gdk_toplevel_layout_get_fullscreen (layout, &fullscreen))
+@@ -409,6 +426,36 @@
+   object_class->get_property = gdk_qnxscreen_toplevel_get_property;
+   object_class->set_property = gdk_qnxscreen_toplevel_set_property;
+   gdk_toplevel_install_properties (object_class, 1);
++}
++
++static gboolean
++gdk_qnxscreen_toplevel_maximize (GdkToplevel *toplevel)
++{
++  GdkSurface *surface = GDK_SURFACE (toplevel);
++  GdkDisplay *display = gdk_surface_get_display (surface);
++  GdkMonitor *monitor = gdk_display_get_monitor_at_surface (display, surface);
++  GdkRectangle geom;
++  
++  gdk_monitor_get_geometry (monitor, &geom);
++  gdk_qnxscreen_surface_move_resize (surface, FALSE, 0, 0, geom.width, geom.height);
++  
++  GDK_SURFACE(surface)->state |= GDK_TOPLEVEL_STATE_MAXIMIZED;
++  g_object_notify (G_OBJECT (surface), "state");
++  
++  return TRUE;
++}
++
++static gboolean
++gdk_qnxscreen_toplevel_unmaximize (GdkToplevel *toplevel)
++{
++  GdkSurface *surface = GDK_SURFACE (toplevel);
++  
++  gdk_qnxscreen_surface_move_resize (surface, FALSE, -1, -1, 1024, 650);
++  
++  GDK_SURFACE(surface)->state &= ~GDK_TOPLEVEL_STATE_MAXIMIZED;
++  g_object_notify (G_OBJECT (surface), "state");
++  
++  return TRUE;
+ }
+ 
+ void

@@ -1,0 +1,623 @@
+From cbdf560f1d93f56267ea67bb2fdf599ef9ac1362 Mon Sep 17 00:00:00 2001
+From: Mark Moll <mark@picknik.ai>
+Date: Thu, 21 Aug 2025 16:02:47 -0700
+Subject: [PATCH 2/2] remove boost.filesystem as a dependency and use
+ std::filesystem instead (#1308)
+
+* remove boost.filesystem as a dependency and use std::filesystem instead
+
+* remove a few more occurences of references to deprecated boost deps
+---
+ .github/workflows/before_build.sh                      |  2 --
+ .github/workflows/build.yml                            |  3 +--
+ CMakeLists.txt                                         |  2 +-
+ CMakeModules/CPackSettings.cmake                       |  2 +-
+ CMakeModules/OMPLUtils.cmake                           |  1 -
+ demos/CMakeLists.txt                                   |  1 -
+ demos/Point2DPlanning.cpp                              |  4 ++--
+ demos/ThunderLightning.cpp                             |  4 ++--
+ demos/constraint/ConstrainedPlanningTorus.cpp          |  8 ++++----
+ install-ompl-ubuntu.sh.in                              |  1 -
+ omplConfig.cmake.in                                    |  4 ++--
+ scripts/docker/debian-buster.Dockerfile                |  2 --
+ scripts/docker/ompl.Dockerfile                         |  2 --
+ scripts/docker/omplapp.Dockerfile                      |  2 --
+ src/ompl/CMakeLists.txt                                |  1 -
+ src/ompl/tools/lightning/src/LightningDB.cpp           |  4 ++--
+ src/ompl/tools/thunder/src/ThunderDB.cpp               |  4 ++--
+ tests/base/halton_deterministic_sampling.cpp           | 10 +++++-----
+ tests/control/2dmap/2dmap.cpp                          |  4 ++--
+ tests/geometric/2d/2DcirclesSetup.h                    |  2 +-
+ tests/geometric/2d/2DmapSetup.h                        |  4 ++--
+ tests/geometric/2d/2DmapSetup1.h                       |  4 ++--
+ tests/geometric/2d/2dcircles_optimize.cpp              |  2 +-
+ tests/geometric/2d/2denvs.cpp                          |  2 +-
+ tests/geometric/2d/2dmap_ik.cpp                        |  2 +-
+ tests/geometric/2d/2dmap_simple.cpp                    |  2 +-
+ tests/geometric/2d/2dpath_simplifying.cpp              |  2 +-
+ tests/regression_tests/CMakeLists.txt                  |  3 ---
+ .../RegressionTestCirclesProblem.inl.h                 |  2 +-
+ tests/tools/test_experience_planning.cpp               | 10 ++++++----
+ vcpkg.json                                             |  1 -
+ 31 files changed, 41 insertions(+), 56 deletions(-)
+
+diff --git a/.github/workflows/before_build.sh b/.github/workflows/before_build.sh
+index 2227c1e5..450f2ec3 100755
+--- a/.github/workflows/before_build.sh
++++ b/.github/workflows/before_build.sh
+@@ -25,8 +25,6 @@ install_boost() {
+     ./bootstrap.sh
+     sudo ./b2 "${b2_args[@]}" \
+         --with-serialization \
+-        --with-filesystem \
+-        --with-system \
+         --with-program_options \
+         --with-python \
+         install
+diff --git a/.github/workflows/build.yml b/.github/workflows/build.yml
+index 093cdc72..b60776c2 100644
+--- a/.github/workflows/build.yml
++++ b/.github/workflows/build.yml
+@@ -38,7 +38,6 @@ jobs:
+       run: |
+         sudo apt-get update -y -qq &&
+         sudo apt-get install -y -qq \
+-        libboost-filesystem-dev \
+         libboost-program-options-dev \
+         libboost-serialization-dev \
+         libboost-test-dev \
+@@ -57,7 +56,7 @@ jobs:
+       with:
+           vcpkgGitCommitId: da4b78d35084ec4e9808aa02017028da03b8d2ab
+           vcpkgTriplet: 'x64-windows'
+-          vcpkgArguments: 'boost-dynamic-bitset boost-filesystem boost-graph boost-odeint boost-program-options boost-serialization boost-test eigen3 flann'
++          vcpkgArguments: 'boost-dynamic-bitset boost-graph boost-odeint boost-program-options boost-serialization boost-test eigen3 flann'
+ 
+     - name: Build & Test (Linux, macOS)
+       if: runner.os != 'Windows'
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index bc655506..1205ca55 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -47,7 +47,7 @@ set_package_properties(Boost PROPERTIES
+     URL "https://www.boost.org"
+     PURPOSE "Used throughout OMPL for data serialization, graphs, etc.")
+ set(Boost_USE_MULTITHREADED ON)
+-find_package(Boost 1.68 REQUIRED COMPONENTS serialization filesystem program_options)
++find_package(Boost 1.68 REQUIRED COMPONENTS serialization program_options)
+ 
+ # on macOS we need to check whether to use libc++ or libstdc++ with clang++
+ if(CMAKE_CXX_COMPILER_ID MATCHES "^(Apple)?Clang$")
+diff --git a/CMakeModules/CPackSettings.cmake b/CMakeModules/CPackSettings.cmake
+index 00009157..f58818bc 100644
+--- a/CMakeModules/CPackSettings.cmake
++++ b/CMakeModules/CPackSettings.cmake
+@@ -45,7 +45,7 @@ if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+         OUTPUT_VARIABLE UBUNTU_RELEASE
+         OUTPUT_STRIP_TRAILING_WHITESPACE)
+     set(CPACK_PACKAGE_FILE_NAME "${PROJECT_NAME}_${PROJECT_VERSION}_${CPACK_DEBIAN_PACKAGE_ARCHITECTURE}-Ubuntu${UBUNTU_RELEASE}")
+-    set(CPACK_DEBIAN_PACKAGE_DEPENDS "python${PYTHON_VERSION}, libboost-serialization-dev, libboost-filesystem-dev, libboost-program-options-dev, libboost-test-dev, libtriangle-dev")
++    set(CPACK_DEBIAN_PACKAGE_DEPENDS "python${PYTHON_VERSION}, libboost-serialization-dev, libboost-program-options-dev, libboost-test-dev, libtriangle-dev")
+ endif()
+ 
+ if(WIN32)
+diff --git a/CMakeModules/OMPLUtils.cmake b/CMakeModules/OMPLUtils.cmake
+index 9a63df7d..d9f8b37e 100644
+--- a/CMakeModules/OMPLUtils.cmake
++++ b/CMakeModules/OMPLUtils.cmake
+@@ -4,7 +4,6 @@ macro(add_ompl_test test_name)
+     ompl::ompl
+     Boost::program_options
+     Boost::serialization
+-    Boost::filesystem
+     Boost::unit_test_framework)
+   add_test(NAME ${test_name} COMMAND $<TARGET_FILE:${test_name}>)
+ endmacro(add_ompl_test)
+diff --git a/demos/CMakeLists.txt b/demos/CMakeLists.txt
+index 47547279..e51efe8b 100644
+--- a/demos/CMakeLists.txt
++++ b/demos/CMakeLists.txt
+@@ -11,7 +11,6 @@ if (OMPL_BUILD_DEMOS)
+         target_link_libraries(${demo_name} PRIVATE
+             ompl::ompl
+             Eigen3::Eigen
+-            Boost::filesystem
+             Boost::program_options)
+     endmacro(add_ompl_demo)
+ 
+diff --git a/demos/Point2DPlanning.cpp b/demos/Point2DPlanning.cpp
+index 3ff5781a..80a1ed8e 100644
+--- a/demos/Point2DPlanning.cpp
++++ b/demos/Point2DPlanning.cpp
+@@ -45,7 +45,7 @@
+ #include <ompl/base/samplers/deterministic/HaltonSequence.h>
+ #include <ompl/config.h>
+ 
+-#include <boost/filesystem.hpp>
++#include <filesystem>
+ #include <iostream>
+ 
+ namespace ob = ompl::base;
+@@ -191,7 +191,7 @@ int main(int /*argc*/, char ** /*argv*/)
+ {
+     std::cout << "OMPL version: " << OMPL_VERSION << std::endl;
+ 
+-    boost::filesystem::path path(TEST_RESOURCES_DIR);
++    std::filesystem::path path(TEST_RESOURCES_DIR);
+     bool useDeterministicSampling = true;
+     Plane2DEnvironment env((path / "ppm/floor.ppm").string().c_str(), useDeterministicSampling);
+ 
+diff --git a/demos/ThunderLightning.cpp b/demos/ThunderLightning.cpp
+index a19d60fe..cb9bce13 100644
+--- a/demos/ThunderLightning.cpp
++++ b/demos/ThunderLightning.cpp
+@@ -41,7 +41,7 @@
+ 
+ #include <ompl/config.h>
+ 
+-#include <boost/filesystem.hpp>
++#include <filesystem>
+ #include <iostream>
+ 
+ namespace ob = ompl::base;
+@@ -153,7 +153,7 @@ int main(int argc, char **)
+ {
+     std::cout << "OMPL version: " << OMPL_VERSION << std::endl;
+ 
+-    boost::filesystem::path path(TEST_RESOURCES_DIR);
++    std::filesystem::path path(TEST_RESOURCES_DIR);
+     Plane2DEnvironment env((path / "ppm" / "floor.ppm").string().c_str(), argc==1);
+ 
+     for (unsigned int i = 0; i < 100; ++i)
+diff --git a/demos/constraint/ConstrainedPlanningTorus.cpp b/demos/constraint/ConstrainedPlanningTorus.cpp
+index d7b06957..d4f38fa1 100644
+--- a/demos/constraint/ConstrainedPlanningTorus.cpp
++++ b/demos/constraint/ConstrainedPlanningTorus.cpp
+@@ -35,7 +35,7 @@
+ /* Author: Zachary Kingston */
+ 
+ #include <ompl/util/PPM.h>
+-#include <boost/filesystem.hpp>
++#include <filesystem>
+ 
+ #include "ConstrainedPlanningCommon.h"
+ 
+@@ -145,8 +145,8 @@ public:
+         file << outer << std::endl;
+         file << inner << std::endl;
+ 
+-        boost::filesystem::path path(file_);
+-        file << boost::filesystem::canonical(path).string() << std::endl;
++        std::filesystem::path path(file_);
++        file << std::filesystem::canonical(path).string() << std::endl;
+     }
+ 
+ private:
+@@ -235,7 +235,7 @@ int main(int argc, char **argv)
+     struct AtlasOptions a_opt;
+ 
+     double outer, inner;
+-    boost::filesystem::path path(__FILE__);
++    std::filesystem::path path(__FILE__);
+     std::string maze = (path.parent_path() / "mazes/thick.ppm").string();
+ 
+     po::options_description desc("Options");
+diff --git a/install-ompl-ubuntu.sh.in b/install-ompl-ubuntu.sh.in
+index 86f62f5e..c8984a33 100755
+--- a/install-ompl-ubuntu.sh.in
++++ b/install-ompl-ubuntu.sh.in
+@@ -17,7 +17,6 @@ install_common_dependencies()
+     ${SUDO} apt-get -y install \
+         clang \
+         cmake \
+-        libboost-filesystem-dev \
+         libboost-program-options-dev \
+         libboost-serialization-dev \
+         libboost-test-dev \
+diff --git a/omplConfig.cmake.in b/omplConfig.cmake.in
+index 5f40fe11..2eb354cb 100644
+--- a/omplConfig.cmake.in
++++ b/omplConfig.cmake.in
+@@ -12,7 +12,7 @@ set_and_check(OMPL_INCLUDE_DIRS @PACKAGE_INCLUDE_INSTALL_DIR@)
+ 
+ include ("${CMAKE_CURRENT_LIST_DIR}/omplExport.cmake" )
+ include(CMakeFindDependencyMacro)
+-set(_@PROJECT_NAME@_boost_components serialization filesystem)
++set(_@PROJECT_NAME@_boost_components serialization)
+ find_dependency(Boost REQUIRED COMPONENTS ${_@PROJECT_NAME@_boost_components})
+ if(Boost_FOUND)
+     foreach(_comp ${_@PROJECT_NAME@_boost_components})
+@@ -83,7 +83,7 @@ else()
+     endif()
+     
+     # Add dependent libraries
+-    foreach(_lib @Boost_SERIALIZATION_LIBRARY@;@Boost_FILESYSTEM_LIBRARY@;@Boost_SYSTEM_LIBRARY@;@SPOT_LIBRARIES@)
++    foreach(_lib @Boost_SERIALIZATION_LIBRARY@;@SPOT_LIBRARIES@)
+         if(_lib)
+             list(APPEND OMPL_LIBRARIES "${_lib}")
+         endif()
+diff --git a/scripts/docker/debian-buster.Dockerfile b/scripts/docker/debian-buster.Dockerfile
+index 59c09e24..31e42f1c 100644
+--- a/scripts/docker/debian-buster.Dockerfile
++++ b/scripts/docker/debian-buster.Dockerfile
+@@ -3,10 +3,8 @@ RUN apt-get update && \
+     apt-get install -y \
+         build-essential  \
+         cmake \
+-        libboost-filesystem-dev \
+         libboost-program-options-dev \
+         libboost-serialization-dev \
+-        libboost-system-dev \
+         libboost-test-dev \
+         libeigen3-dev \
+         libflann-dev \
+diff --git a/scripts/docker/ompl.Dockerfile b/scripts/docker/ompl.Dockerfile
+index b20a97e7..1e0e65de 100644
+--- a/scripts/docker/ompl.Dockerfile
++++ b/scripts/docker/ompl.Dockerfile
+@@ -8,7 +8,6 @@ RUN apt-get update && \
+         castxml \
+         clang \
+         cmake \
+-        libboost-filesystem-dev \
+         libboost-numpy-dev \
+         libboost-program-options-dev \
+         libboost-python-dev \
+@@ -52,7 +51,6 @@ RUN apt-get update && \
+     apt-get install -y \
+         build-essential \
+         cmake \
+-        libboost-filesystem-dev \
+         libboost-numpy-dev \
+         libboost-program-options-dev \
+         libboost-python-dev \
+diff --git a/scripts/docker/omplapp.Dockerfile b/scripts/docker/omplapp.Dockerfile
+index a969884a..cd9dbd61 100644
+--- a/scripts/docker/omplapp.Dockerfile
++++ b/scripts/docker/omplapp.Dockerfile
+@@ -11,7 +11,6 @@ RUN apt-get update && \
+         freeglut3-dev \
+         git \
+         libassimp-dev \
+-        libboost-filesystem-dev \
+         libboost-numpy-dev \
+         libboost-program-options-dev \
+         libboost-python-dev \
+@@ -63,7 +62,6 @@ RUN apt-get update && \
+         freeglut3-dev \
+         git \
+         libassimp-dev \
+-        libboost-filesystem-dev \
+         libboost-numpy-dev \
+         libboost-program-options-dev \
+         libboost-python-dev \
+diff --git a/src/ompl/CMakeLists.txt b/src/ompl/CMakeLists.txt
+index 82911ef2..4d02befa 100644
+--- a/src/ompl/CMakeLists.txt
++++ b/src/ompl/CMakeLists.txt
+@@ -42,7 +42,6 @@ endif()
+ add_library(ompl::ompl ALIAS ompl)
+ target_link_libraries(ompl
+     PUBLIC
+-        Boost::filesystem
+         Boost::serialization
+         Eigen3::Eigen
+         "$<$<BOOL:${Threads_FOUND}>:Threads::Threads>"
+diff --git a/src/ompl/tools/lightning/src/LightningDB.cpp b/src/ompl/tools/lightning/src/LightningDB.cpp
+index 594f6d94..9f924b1a 100644
+--- a/src/ompl/tools/lightning/src/LightningDB.cpp
++++ b/src/ompl/tools/lightning/src/LightningDB.cpp
+@@ -42,7 +42,7 @@
+ #include "ompl/base/PlannerDataStorage.h"
+ 
+ // Boost
+-#include <boost/filesystem.hpp>
++#include <filesystem>
+ 
+ ompl::tools::LightningDB::LightningDB(const base::StateSpacePtr &space)
+ {
+@@ -75,7 +75,7 @@ bool ompl::tools::LightningDB::load(const std::string &fileName)
+         OMPL_ERROR("Empty filename passed to save function");
+         return false;
+     }
+-    if (!boost::filesystem::exists(fileName))
++    if (!std::filesystem::exists(fileName))
+     {
+         OMPL_WARN("Database file does not exist: %s", fileName.c_str());
+         return false;
+diff --git a/src/ompl/tools/thunder/src/ThunderDB.cpp b/src/ompl/tools/thunder/src/ThunderDB.cpp
+index 05195cc5..bb9c211c 100644
+--- a/src/ompl/tools/thunder/src/ThunderDB.cpp
++++ b/src/ompl/tools/thunder/src/ThunderDB.cpp
+@@ -43,7 +43,7 @@
+ #include <ompl/base/PlannerDataStorage.h>
+ 
+ // Boost
+-#include <boost/filesystem.hpp>
++#include <filesystem>
+ 
+ ompl::tools::ThunderDB::ThunderDB(const base::StateSpacePtr &space) : numPathsInserted_(0), saving_enabled_(true)
+ {
+@@ -65,7 +65,7 @@ bool ompl::tools::ThunderDB::load(const std::string &fileName)
+         OMPL_ERROR("Empty filename passed to save function");
+         return false;
+     }
+-    if (!boost::filesystem::exists(fileName))
++    if (!std::filesystem::exists(fileName))
+     {
+         OMPL_INFORM("Database file does not exist: %s.", fileName.c_str());
+         return false;
+diff --git a/tests/base/halton_deterministic_sampling.cpp b/tests/base/halton_deterministic_sampling.cpp
+index 7f030621..9c7f96aa 100644
+--- a/tests/base/halton_deterministic_sampling.cpp
++++ b/tests/base/halton_deterministic_sampling.cpp
+@@ -35,7 +35,7 @@
+ /* Author: Luigi Palmieri */
+ #define BOOST_TEST_MODULE "HaltonDeterministicSampling"
+ #include <boost/test/unit_test.hpp>
+-#include <boost/filesystem.hpp>
++#include <filesystem>
+ 
+ #include <ompl/config.h>
+ #include <ompl/base/samplers/deterministic/HaltonSequence.h>
+@@ -47,7 +47,7 @@ namespace ob = ompl::base;
+ 
+ BOOST_AUTO_TEST_CASE(Halton_1D)
+ {
+-    boost::filesystem::path path(TEST_RESOURCES_DIR);
++    std::filesystem::path path(TEST_RESOURCES_DIR);
+     // Reading sequence from file
+     HaltonXD hd1 = HaltonXD(1);
+     hd1.loadSequence((path / "halton/halton_1d.txt").string().c_str());
+@@ -72,7 +72,7 @@ BOOST_AUTO_TEST_CASE(Halton_1D)
+ 
+ BOOST_AUTO_TEST_CASE(Halton_2D)
+ {
+-    boost::filesystem::path path(TEST_RESOURCES_DIR);
++    std::filesystem::path path(TEST_RESOURCES_DIR);
+     // Reading sequence from file
+     HaltonXD hd2 = HaltonXD(2);
+     hd2.loadSequence((path / "halton/halton_2d.txt").string().c_str());
+@@ -97,7 +97,7 @@ BOOST_AUTO_TEST_CASE(Halton_2D)
+ 
+ BOOST_AUTO_TEST_CASE(Halton_5D)
+ {
+-    boost::filesystem::path path(TEST_RESOURCES_DIR);
++    std::filesystem::path path(TEST_RESOURCES_DIR);
+     // Reading sequence from file
+     HaltonXD hd5 = HaltonXD(5);
+     hd5.loadSequence((path / "halton/halton_5d.txt").string().c_str());
+@@ -122,7 +122,7 @@ BOOST_AUTO_TEST_CASE(Halton_5D)
+ 
+ BOOST_AUTO_TEST_CASE(Halton_10D)
+ {
+-    boost::filesystem::path path(TEST_RESOURCES_DIR);
++    std::filesystem::path path(TEST_RESOURCES_DIR);
+     // Reading sequence from file
+     HaltonXD hd10 = HaltonXD(10);
+     hd10.loadSequence((path / "halton/halton_10d.txt").string().c_str());
+diff --git a/tests/control/2dmap/2dmap.cpp b/tests/control/2dmap/2dmap.cpp
+index 5bcd4d78..936d71cf 100644
+--- a/tests/control/2dmap/2dmap.cpp
++++ b/tests/control/2dmap/2dmap.cpp
+@@ -36,7 +36,7 @@
+ 
+ #define BOOST_TEST_MODULE "ControlPlanning"
+ #include <boost/test/unit_test.hpp>
+-#include <boost/filesystem.hpp>
++#include <filesystem>
+ #include <iostream>
+ 
+ #include "ompl/base/goals/GoalState.h"
+@@ -501,7 +501,7 @@ protected:
+     PlanTest()
+     {
+         verbose = true;
+-        boost::filesystem::path path(TEST_RESOURCES_DIR);
++        std::filesystem::path path(TEST_RESOURCES_DIR);
+         path = path / "env1.txt";
+         loadEnvironment(path.string().c_str(), env);
+ 
+diff --git a/tests/geometric/2d/2DcirclesSetup.h b/tests/geometric/2d/2DcirclesSetup.h
+index 1f4b792f..10beb355 100644
+--- a/tests/geometric/2d/2DcirclesSetup.h
++++ b/tests/geometric/2d/2DcirclesSetup.h
+@@ -37,7 +37,7 @@
+ #ifndef OMPL_TEST_2DCIRCLES_SETUP_
+ #define OMPL_TEST_2DCIRCLES_SETUP_
+ 
+-#include <boost/filesystem.hpp>
++#include <filesystem>
+ 
+ #include "ompl/base/SpaceInformation.h"
+ #include "ompl/base/spaces/RealVectorStateSpace.h"
+diff --git a/tests/geometric/2d/2DmapSetup.h b/tests/geometric/2d/2DmapSetup.h
+index 254fce57..a3666e5e 100644
+--- a/tests/geometric/2d/2DmapSetup.h
++++ b/tests/geometric/2d/2DmapSetup.h
+@@ -37,7 +37,7 @@
+ #ifndef OMPL_TEST_2DMAP_SETUP_
+ #define OMPL_TEST_2DMAP_SETUP_
+ 
+-#include <boost/filesystem.hpp>
++#include <filesystem>
+ 
+ #include "ompl/base/SpaceInformation.h"
+ #include "ompl/base/ProblemDefinition.h"
+@@ -119,7 +119,7 @@ namespace ompl
+             void loadTestFile(const std::string &testFile)
+             {
+                 /* load environment */
+-                boost::filesystem::path path(TEST_RESOURCES_DIR);
++                std::filesystem::path path(TEST_RESOURCES_DIR);
+                 path = path / testFile;
+                 loadEnvironment(path.string().c_str(), env_);
+                 configure2DMap();
+diff --git a/tests/geometric/2d/2DmapSetup1.h b/tests/geometric/2d/2DmapSetup1.h
+index 25055bbd..85c49ea9 100644
+--- a/tests/geometric/2d/2DmapSetup1.h
++++ b/tests/geometric/2d/2DmapSetup1.h
+@@ -34,7 +34,7 @@
+ 
+ /* Author: Ioan Sucan */
+ 
+-#include <boost/filesystem.hpp>
++#include <filesystem>
+ 
+ #include "ompl/base/SpaceInformation.h"
+ #include "ompl/base/ProblemDefinition.h"
+@@ -101,7 +101,7 @@ namespace ompl
+             void loadTestFile(const std::string &testFile)
+             {
+                 /* load environment */
+-                boost::filesystem::path path(TEST_RESOURCES_DIR);
++                std::filesystem::path path(TEST_RESOURCES_DIR);
+                 path = path / testFile;
+                 loadEnvironment(path.string().c_str(), env_);
+                 configure2DMap1();
+diff --git a/tests/geometric/2d/2dcircles_optimize.cpp b/tests/geometric/2d/2dcircles_optimize.cpp
+index 2c650b83..438a8a85 100644
+--- a/tests/geometric/2d/2dcircles_optimize.cpp
++++ b/tests/geometric/2d/2dcircles_optimize.cpp
+@@ -415,7 +415,7 @@ protected:
+     PlanTest()
+     {
+         verbose_ = VERBOSE;
+-        boost::filesystem::path path(TEST_RESOURCES_DIR);
++        std::filesystem::path path(TEST_RESOURCES_DIR);
+         circles_.loadCircles((path / "circle_obstacles.txt").string());
+         circles_.loadQueries((path / "circle_queries.txt").string());
+     }
+diff --git a/tests/geometric/2d/2denvs.cpp b/tests/geometric/2d/2denvs.cpp
+index 9d2123b3..6515d396 100644
+--- a/tests/geometric/2d/2denvs.cpp
++++ b/tests/geometric/2d/2denvs.cpp
+@@ -656,7 +656,7 @@ protected:
+     PlanTest()
+     {
+         verbose_ = VERBOSE;
+-        boost::filesystem::path path(TEST_RESOURCES_DIR);
++        std::filesystem::path path(TEST_RESOURCES_DIR);
+         loadEnvironment((path / "env1.txt").string().c_str(), env_);
+ 
+         if (env_.width * env_.height == 0)
+diff --git a/tests/geometric/2d/2dmap_ik.cpp b/tests/geometric/2d/2dmap_ik.cpp
+index 3de69466..f46bbd84 100644
+--- a/tests/geometric/2d/2dmap_ik.cpp
++++ b/tests/geometric/2d/2dmap_ik.cpp
+@@ -54,7 +54,7 @@ BOOST_AUTO_TEST_CASE(SimpleIK)
+ 
+     /* load environment */
+     Environment2D env;
+-    boost::filesystem::path path(TEST_RESOURCES_DIR);
++    std::filesystem::path path(TEST_RESOURCES_DIR);
+     path = path / "env1.txt";
+     loadEnvironment(path.string().c_str(), env);
+ 
+diff --git a/tests/geometric/2d/2dmap_simple.cpp b/tests/geometric/2d/2dmap_simple.cpp
+index a4a26320..9dee7df0 100644
+--- a/tests/geometric/2d/2dmap_simple.cpp
++++ b/tests/geometric/2d/2dmap_simple.cpp
+@@ -131,7 +131,7 @@ public:
+     PlanTest()
+     {
+         verbose = true;
+-        boost::filesystem::path path(TEST_RESOURCES_DIR);
++        std::filesystem::path path(TEST_RESOURCES_DIR);
+         path = path / "env1.txt";
+         loadEnvironment(path.string().c_str(), env);
+ 
+diff --git a/tests/geometric/2d/2dpath_simplifying.cpp b/tests/geometric/2d/2dpath_simplifying.cpp
+index ba53de02..8416ff6c 100644
+--- a/tests/geometric/2d/2dpath_simplifying.cpp
++++ b/tests/geometric/2d/2dpath_simplifying.cpp
+@@ -60,7 +60,7 @@ public:
+     SimplifyTest()
+     {
+         verbose_ = VERBOSE;
+-        boost::filesystem::path path(TEST_RESOURCES_DIR);
++        std::filesystem::path path(TEST_RESOURCES_DIR);
+         circles_.loadCircles((path / "circle_obstacles.txt").string());
+         si_ = geometric::spaceInformation2DCircles(circles_);
+         paths_ = geometric::readPathsFromFile(si_, (path / "circle_paths_to_simplify.txt").string());
+diff --git a/tests/regression_tests/CMakeLists.txt b/tests/regression_tests/CMakeLists.txt
+index 8ddbbbd6..4cbe14b4 100644
+--- a/tests/regression_tests/CMakeLists.txt
++++ b/tests/regression_tests/CMakeLists.txt
+@@ -1,7 +1,4 @@
+ add_executable(regression_test RegressionTest.cpp)
+ target_link_libraries(regression_test
+     ompl
+-    ${Boost_FILESYSTEM_LIBRARY}
+-    ${Boost_SYSTEM_LIBRARY}
+-    ${Boost_THREAD_LIBRARY}
+     ${Boost_DATE_TIME_LIBRARY})
+diff --git a/tests/regression_tests/RegressionTestCirclesProblem.inl.h b/tests/regression_tests/RegressionTestCirclesProblem.inl.h
+index a4086cd1..fe8f2912 100644
+--- a/tests/regression_tests/RegressionTestCirclesProblem.inl.h
++++ b/tests/regression_tests/RegressionTestCirclesProblem.inl.h
+@@ -6,7 +6,7 @@ std::string problemName<CIRCLES_ID>() { return "circles"; }
+ 
+ // Setup for the Circles problem, part of the OMPL test suite.
+ static std::shared_ptr<geometric::SimpleSetup> setupCirclesProblem(unsigned int query_index) {
+-    boost::filesystem::path path(TEST_RESOURCES_DIR);
++    std::filesystem::path path(TEST_RESOURCES_DIR);
+ 
+     Circles2D circles;
+     circles.loadCircles((path / "circle_obstacles.txt").string());
+diff --git a/tests/tools/test_experience_planning.cpp b/tests/tools/test_experience_planning.cpp
+index 5c4fdb91..85be1775 100644
+--- a/tests/tools/test_experience_planning.cpp
++++ b/tests/tools/test_experience_planning.cpp
+@@ -36,8 +36,9 @@
+ 
+ #define BOOST_TEST_MODULE "ExperienceBasedPlanning"
+ #include <boost/test/unit_test.hpp>
+-#include <boost/filesystem.hpp>
++#include <filesystem>
+ 
++#include <unistd.h>
+ #include <memory>
+ 
+ #include "ompl/base/State.h"
+@@ -99,13 +100,14 @@ struct ExperienceBasedPlannerTest
+ 
+     static void runTest()
+     {
+-        const auto temp_path = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path();
++        std::string temp_path = std::filesystem::temp_directory_path().string() + "/testfile-XXXXXX";
++        mkstemp(const_cast<char*>(temp_path.c_str()));
+         const size_t n_problem = 5;
+ 
+         // solve problem
+         {
+             const auto exp_planner = setupExperienceBasedPlanner();
+-            exp_planner->setFilePath(temp_path.string());
++            exp_planner->setFilePath(temp_path);
+ 
+             const auto valid_sampler = exp_planner->getSpaceInformation()->allocValidStateSampler();
+             // note that the experience is not always be stored even when solved
+@@ -138,7 +140,7 @@ struct ExperienceBasedPlannerTest
+             exp_planner->setStartAndGoalStates(start, goal);
+ 
+             BOOST_CHECK_EQUAL(exp_planner->getExperiencesCount(), 0);
+-            exp_planner->setFilePath(temp_path.string());
++            exp_planner->setFilePath(temp_path);
+             exp_planner->setup();  // load experience
+             BOOST_CHECK_EQUAL(exp_planner->getExperiencesCount(), n_problem);
+ 
+diff --git a/vcpkg.json b/vcpkg.json
+index 9690014d..cdda4497 100644
+--- a/vcpkg.json
++++ b/vcpkg.json
+@@ -2,7 +2,6 @@
+     "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+     "dependencies": [
+         "boost-dynamic-bitset",
+-        "boost-filesystem",
+         "boost-graph",
+         "boost-odeint",
+         "boost-program-options",
+-- 
+2.52.0
+

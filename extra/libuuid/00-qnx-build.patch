@@ -1,0 +1,77 @@
+diff --git a/include/strutils.h b/include/strutils.h
+index a7177fc23..175f1ba66 100644
+--- a/include/strutils.h
++++ b/include/strutils.h
+@@ -14,6 +14,7 @@
+ #include <stdio.h>
+ #include <errno.h>
+ #include <time.h>
++#include <sys/time.h>
+ #include <stdbool.h>
+ 
+ #include "c.h"
+diff --git a/include/ttyutils.h b/include/ttyutils.h
+index 46df3cddd..25d63a3c8 100644
+--- a/include/ttyutils.h
++++ b/include/ttyutils.h
+@@ -166,7 +166,11 @@ static inline void reset_virtual_console(struct termios *tp, int flags)
+ 	tp->c_oflag &= ~(OLCUC | OCRNL | ONOCR | ONLRET | OFILL | \
+ 			    NLDLY|CRDLY|TABDLY|BSDLY|VTDLY|FFDLY);
+ 	tp->c_lflag |=  (ISIG | ICANON | IEXTEN | ECHO|ECHOE|ECHOK|ECHOKE|ECHOCTL);
++#ifdef __QNX__
++	tp->c_lflag &= ~(ECHONL| NOFLSH | TOSTOP);
++#else
+ 	tp->c_lflag &= ~(ECHONL|ECHOPRT | NOFLSH | TOSTOP);
++#endif
+ 
+ 	if ((flags & UL_TTY_KEEPCFLAGS) == 0) {
+ 		tp->c_cflag |=  (CREAD | CS8 | HUPCL);
+diff --git a/lib/logindefs.c b/lib/logindefs.c
+index 4fee83957..1ce16dc9a 100644
+--- a/lib/logindefs.c
++++ b/lib/logindefs.c
+@@ -26,7 +26,11 @@
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
++#ifdef __QNX__
++#include <syslog.h>
++#else
+ #include <sys/syslog.h>
++#endif
+ #include <sys/stat.h>
+ #include <sys/types.h>
+ #include <pwd.h>
+diff --git a/lib/path.c b/lib/path.c
+index a828aea49..9f5a46704 100644
+--- a/lib/path.c
++++ b/lib/path.c
+@@ -868,7 +868,11 @@ int ul_path_read_majmin(struct path_cxt *pc, dev_t *res, const char *path)
+ 	if (rc != 2)
+ 		return -1;
+ 	if (res)
++#ifdef __QNX__
++		*res = makedev(0, maj, min);
++#else
+ 		*res = makedev(maj, min);
++#endif
+ 	return 0;
+ }
+ 
+diff --git a/lib/sysfs.c b/lib/sysfs.c
+index c888617b7..273834621 100644
+--- a/lib/sysfs.c
++++ b/lib/sysfs.c
+@@ -876,7 +876,11 @@ static dev_t read_devno(const char *path)
+ 		return 0;
+ 
+ 	if (fscanf(f, "%d:%d", &maj, &min) == 2)
++#ifdef __QNX__
++		dev = makedev(0, maj, min);
++#else
+ 		dev = makedev(maj, min);
++#endif
+ 	fclose(f);
+ 	return dev;
+ }
+

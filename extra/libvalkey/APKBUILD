@@ -1,0 +1,57 @@
+# Alpine-Contributor: Jakub Jirutka <jakub@jirutka.cz>
+# Alpine-Maintainer: Jakub Jirutka <jakub@jirutka.cz>
+# Maintainer: jscaffidi <jscaffidi@qnx.com>
+pkgname=libvalkey
+pkgver=0.2.1
+pkgrel=0
+pkgdesc="Valkey client library in C"
+url="https://github.com/valkey-io/libvalkey"
+arch="all"
+license="BSD-3-Clause"
+depends="libssl3 libcrypto3"
+makedepends="openssl-dev qnx-io-sock-dev"
+checkdepends="
+	libevent-dev
+	valkey
+	"
+subpackages="
+	$pkgname-tls
+	$pkgname-dev
+	"
+source="https://github.com/valkey-io/libvalkey/archive/$pkgver/libvalkey-$pkgver.tar.gz
+  fix-test.patch
+"
+
+case "$CARCH" in
+	# Tests fail on MPTCP - Protocol not supported.
+	loongarch64 | ppc64le) options="!check";;
+esac
+
+build() {
+	make USE_TLS=1 \
+		TEST_ASYNC="$(want_check && echo 1 || echo 0)" \
+		OPTIMIZATION= \
+		CFLAGS="${CFLAGS/-Os/-O2} -Qunused-arguments" \
+        LDFLAGS="$LDFLAGS -lsocket"
+}
+
+check() {
+	cd tests
+	./test.sh
+}
+
+package() {
+	make install USE_TLS=1 DESTDIR="$pkgdir" PREFIX=/usr
+}
+
+tls() {
+	pkgdesc="$pkgdesc (TLS support)"
+
+	amove usr/lib/libvalkey_tls.so.*
+}
+
+
+sha512sums="
+7dd42c109d699e51dc0c5d392a74a8c11fbfefef66485deed89a7ba1e2df24c5f3d614785581a825fbe75dc1ca0a49dd2f5467ade7c548c7c96a2b2044a7843a  libvalkey-0.2.1.tar.gz
+25c07fec98e6f4c62c08ad9e45df896d97cb7b8c6f53aa13ff851b0d50066da7294750a995ffa8583960e3459aeb83c89dc15d5cc50d303fda14acd34cfacbd2  fix-test.patch
+"

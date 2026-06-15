@@ -1,0 +1,56 @@
+--- a/src/ephy-action-bar-start.c
++++ b/src/ephy-action-bar-start.c
+@@ -276,27 +276,44 @@
+ }
+ 
+ static void
+-popup_history_menu (GtkWidget                      *widget,
+-                    EphyWindow                     *window,
+-                    EphyNavigationHistoryDirection  direction,
+-                    GdkEventButton                 *event)
++popup_history_menu (GtkWidget *widget,
++                    EphyWindow *window,
++                    EphyNavigationHistoryDirection direction,
++                    GdkEventButton *event)
+ {
+   GtkWidget *menu;
+-
++  
++  // Safety check: ensure widget is still valid and realized
++  if (!GTK_IS_WIDGET(widget) || !gtk_widget_get_realized(widget)) {
++    return;
++  }
++  
+   menu = build_dropdown_menu (window, direction);
++  
++  /* Pass NULL for event instead of the original GdkEventButton.
++   * The event parameter comes from the button press that initiated the timeout,
++   * but by the time this timeout callback fires (500ms later), the event's
++   * window reference may be stale/destroyed, causing GTK to crash when trying
++   * to call gdk_window_get_screen() on it during menu positioning.
++   * Passing NULL makes GTK use the current event context instead.
++   */
+   gtk_menu_popup_at_widget (GTK_MENU (menu),
+                             widget,
+                             GDK_GRAVITY_SOUTH_WEST,
+                             GDK_GRAVITY_NORTH_WEST,
+-                            (GdkEvent *)event);
++                            NULL);
+ }
+ 
+ static gboolean
+ menu_timeout_cb (PopupData *data)
+ {
+-  if (data != NULL && data->window)
+-    popup_history_menu (data->button, data->window, data->direction, data->event);
+-
++  // Validate widget state before attempting popup
++  if (data == NULL || data->window == NULL || data->button == NULL || 
++      !GTK_IS_WIDGET(data->button) || !gtk_widget_get_realized(data->button)) {
++    return G_SOURCE_REMOVE;
++  }
++  
++  popup_history_menu (data->button, data->window, data->direction, data->event);
+   return G_SOURCE_REMOVE;
+ }
+ 

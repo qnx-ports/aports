@@ -1,0 +1,59 @@
+# Alpine-Contributor: Russ Webber <russ@rw.id.au>
+# Alpine-Maintainer: Russ Webber <russ@rw.id.au>
+# Maintainer: jscaffidi <jscaffidi@qnx.com>
+pkgname=vcstool
+pkgver=0.3.0
+pkgrel=0
+pkgdesc="A command line tool designed to make working with multiple repositories easier"
+url="https://github.com/dirk-thomas/vcstool"
+arch="noarch"
+license="Apache-2.0"
+depends="python3-yaml python3-setuptools"
+makedepends="python3-gpep517 python3-wheel"
+checkdepends="python3-pytest python3-flake8 python3-flake8-import-order subversion mercurial git"
+subpackages="
+	$pkgname-bash-completion
+	$pkgname-zsh-completion
+	$pkgname-tcsh-completion:tcshcomp:noarch
+	"
+source="$pkgname-$pkgver.tar.gz::https://github.com/dirk-thomas/vcstool/archive/$pkgver.tar.gz"
+options="!check" # fail due to  various git errors, and outdated dependency expectations
+
+build() {
+	gpep517 build-wheel \
+		--wheel-dir .dist \
+		--output-fd 3 3>&1 >&2
+}
+
+check() {
+	python3 -m venv --clear --without-pip --system-site-packages .testenv
+	gpep517 install-wheel --destdir .testenv --prefix '' .dist/*.whl
+	.testenv/bin/python3 -m pytest
+}
+
+package() {
+	gpep517 install-wheel --destdir "$pkgdir" \
+		.dist/*.whl
+
+	mkdir -p "$pkgdir"/usr/share/bash-completion/completions
+	mkdir -p "$pkgdir"/usr/share/zsh/site-functions
+	mkdir -p "$pkgdir"/usr/share/tcsh-completion/completions
+	mv "$pkgdir"/usr/share/vcstool-completion/vcs.bash "$pkgdir"/usr/share/bash-completion/completions
+	mv "$pkgdir"/usr/share/vcstool-completion/vcs.zsh "$pkgdir"/usr/share/zsh/site-functions
+	mv "$pkgdir"/usr/share/vcstool-completion/vcs.tcsh "$pkgdir"/usr/share/tcsh-completion/completions
+	rm -rf "$pkgdir"/usr/share/vcstool-completion
+}
+
+tcshcomp() {
+	pkgdesc="tcsh completions for $pkgname"
+	depends=""
+	install_if="$pkgname=$pkgver-r$pkgrel tcsh"
+
+	amove usr/share/tcsh-completion/completions
+}
+
+sha512sums="
+f50ec4c23fce65f71ec0070b709840150f6a90b0620dd937c234c408951b4eb6ad9d53d841d3862ce7ece54c15458fd9db434341fd4a1eabb40a7084fb71b101  vcstool-0.3.0.tar.gz
+"
+
+

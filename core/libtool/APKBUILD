@@ -1,7 +1,7 @@
 # This can only be compiled natively on QNX
 pkgname=libtool
 pkgver=2.5.4
-pkgrel=1
+pkgrel=2
 pkgdesc="A generic library support script"
 url="https://www.gnu.org/software/libtool"
 arch="all"
@@ -28,7 +28,7 @@ build() {
         --build=$CBUILD \
         --host=$CHOST \
         --prefix=/usr \
-        CFLAGS=-D_QNX_SOURCE \
+        CFLAGS="$CFLAGS -D_QNX_SOURCE -Qunused-arguments" \
         LDFLAGS="-lm -lregex -lgcc_s"
 
     make

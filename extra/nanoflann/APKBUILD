@@ -1,0 +1,35 @@
+# Maintainer: Felix Lionardo <flionardo@qnx.com>
+pkgname=nanoflann
+pkgver=1.9.0
+pkgrel=0
+pkgdesc="C++11 header-only library for building KD-Trees of datasets with different topologies"
+url="https://github.com/jlblancoc/nanoflann"
+arch="all"
+license="BSD-2-Clause"
+makedepends="cmake ninja libc++-dev"
+subpackages="$pkgname-dev"
+source="$pkgname-$pkgver.tar.gz::https://github.com/jlblancoc/nanoflann/archive/refs/tags/v$pkgver.tar.gz"
+build() {
+	cmake -B build -G Ninja \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DCMAKE_INSTALL_LIBDIR=lib \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DCMAKE_CXX_FLAGS="-fstack-clash-protection -Wformat -Werror=format-security" \
+		-DNANOFLANN_BUILD_TESTS="$(want_check && echo ON || echo OFF)"
+	cmake --build build
+}
+
+check() {
+	cd build
+	ctest
+}
+
+package() {
+	DESTDIR="$pkgdir" cmake --install build
+}
+
+
+
+sha512sums="
+414da00a553f473fe8c541178a60cecb2b27039e31d434ebb7059f8337f3e4fb9fdacf312444692a9a48a9cd1efd129a0aa2e7b80409e053d529aae7e736a840  nanoflann-1.9.0.tar.gz
+"

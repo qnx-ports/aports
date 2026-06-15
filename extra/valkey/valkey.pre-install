@@ -1,6 +1,6 @@
 #!/bin/sh
 
-addgroup -S valkey
-adduser -S -D -H -h /var/lib/valkey -s /bin/nologin -G valkey -g valkey valkey
+addgroup -S valkey 2>/dev/null
+adduser -S -D -H -h /var/lib/valkey -s /bin/nologin -G valkey -g valkey valkey 2>/dev/null
 
 exit 0

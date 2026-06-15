@@ -1,0 +1,36 @@
+diff --git a/rclcpp/package.xml b/rclcpp/package.xml
+index 04dd2322..225c2a59 100644
+--- a/rclcpp/package.xml
++++ b/rclcpp/package.xml
+@@ -51,7 +51,6 @@
+   <test_depend>ament_cmake_gtest</test_depend>
+   <test_depend>ament_lint_auto</test_depend>
+   <test_depend>ament_lint_common</test_depend>
+-  <test_depend>mimick_vendor</test_depend>
+   <test_depend>performance_test_fixture</test_depend>
+   <test_depend>rmw</test_depend>
+   <test_depend>rmw_implementation_cmake</test_depend>
+diff --git a/rclcpp_action/package.xml b/rclcpp_action/package.xml
+index f0c5534c..f7ed21fc 100644
+--- a/rclcpp_action/package.xml
++++ b/rclcpp_action/package.xml
+@@ -31,7 +31,6 @@
+   <test_depend>ament_cmake_gtest</test_depend>
+   <test_depend>ament_lint_auto</test_depend>
+   <test_depend>ament_lint_common</test_depend>
+-  <test_depend>mimick_vendor</test_depend>
+   <test_depend>performance_test_fixture</test_depend>
+   <test_depend>test_msgs</test_depend>
+ 
+diff --git a/rclcpp_lifecycle/package.xml b/rclcpp_lifecycle/package.xml
+index 89e999af..ae00da65 100644
+--- a/rclcpp_lifecycle/package.xml
++++ b/rclcpp_lifecycle/package.xml
+@@ -37,7 +37,6 @@
+   <test_depend>ament_cmake_gtest</test_depend>
+   <test_depend>ament_lint_auto</test_depend>
+   <test_depend>ament_lint_common</test_depend>
+-  <test_depend>mimick_vendor</test_depend>
+   <test_depend>performance_test_fixture</test_depend>
+   <test_depend>rcpputils</test_depend>
+   <test_depend>test_msgs</test_depend>

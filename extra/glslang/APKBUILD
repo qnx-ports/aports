@@ -1,0 +1,69 @@
+# Alpine-Contributor: Leo <thinkabit.ukim@gmail.com>
+# Alpine-Maintainer: Simon Zeni <simon@bl4ckb0ne.ca>
+# Maintainer: Elliott Mazzuca <emazzuca@qnx.com>
+pkgname=glslang
+pkgver=1.4.321.0
+pkgrel=0
+pkgdesc="Khronos reference front-end for GLSL, ESSL, and sample SPIR-V generator"
+url="https://github.com/KhronosGroup/glslang"
+arch="all"
+license="BSD-3-Clause AND BSD-2-Clause AND MIT AND Apache-2.0 AND GPL-3.0-or-later"
+depends="$pkgname-libs=$pkgver-r$pkgrel libc++"
+depends_dev="$pkgname=$pkgver-r$pkgrel"
+makedepends="cmake ninja python3 bison spirv-tools-dev libc++-dev"
+checkdepends="bash gtest-dev"
+subpackages="$pkgname-static $pkgname-libs $pkgname-dev"
+source="$pkgname-$pkgver.tar.gz::https://github.com/KhronosGroup/glslang/archive/refs/tags/vulkan-sdk-$pkgver.tar.gz"
+builddir="$srcdir/glslang-vulkan-sdk-$pkgver"
+
+build() {
+	export CFLAGS="$CFLAGS -Qunused-arguments"
+	export CXXFLAGS="$CXXFLAGS -Qunused-arguments"
+	cmake -B build-shared -G Ninja \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DCMAKE_INSTALL_LIBDIR=lib \
+		-DCMAKE_BUILD_TYPE=MinSizeRel \
+		-DBUILD_EXTERNAL=OFF \
+		-DBUILD_SHARED_LIBS=ON \
+		-DALLOW_EXTERNAL_SPIRV_TOOLS=YES \
+		-DGLSLANG_TESTS="$(want_check && echo ON || echo OFF)"
+	cmake --build build-shared
+
+	cmake -B build-static -G Ninja \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DCMAKE_INSTALL_LIBDIR=lib \
+		-DCMAKE_BUILD_TYPE=MinSizeRel \
+		-DBUILD_EXTERNAL=OFF \
+		-DBUILD_SHARED_LIBS=OFF \
+		-DALLOW_EXTERNAL_SPIRV_TOOLS=YES \
+		-DGLSLANG_TESTS="$(want_check && echo ON || echo OFF)"
+	cmake --build build-static
+}
+
+libs() {
+	pkgdesc="$pkgdesc (shared libraries)"
+	depends="libc++ spirv-tools"
+	amove usr/lib/libSPIRV.so.* \
+		usr/lib/libSPVRemapper.so.* \
+		usr/lib/libglslang-default-resource-limits.so.* \
+		usr/lib/libglslang.so.*
+}
+
+check() {
+	msg "Testing shared version of glslang"
+	ctest --test-dir build-shared
+
+	msg "Testing static version of glslang"
+	ctest --test-dir build-static
+}
+
+package() {
+	# installing static first lets shared overwrite the executables so they
+	# themselves are not statically linking the library
+	DESTDIR="$pkgdir" cmake --install build-static
+	DESTDIR="$pkgdir" cmake --install build-shared
+}
+
+sha512sums="
+284c662e3902d443145e3cc9dc7d68ecadaf4a78d2d66d144624cbcb4235e1c7384712448a929b5fd4b412abddc879e9630ba0e92f62af5b57776122bf19d8cf  glslang-1.4.321.0.tar.gz
+"

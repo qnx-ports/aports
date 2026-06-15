@@ -1,0 +1,14 @@
+diff --git a/progs/reset_cmd.c b/progs/reset_cmd.c
+index ebdf276..1a2161d 100644
+--- a/progs/reset_cmd.c
++++ b/progs/reset_cmd.c
+@@ -551,7 +551,8 @@ send_init_strings(int fd GCC_UNUSED, TTY * old_settings)
+     bool need_flush = FALSE;
+ 
+     (void) old_settings;
+-#if TAB3
++    // hardcoded value from <termios.h> which doesn't embed well because it's typecasted
++#if 0x1800
+     if (old_settings != NULL &&
+ 	old_settings->c_oflag & (TAB3 | ONLCR | OCRNL | ONLRET)) {
+ 	old_settings->c_oflag &= (TAB3 | ONLCR | OCRNL | ONLRET);

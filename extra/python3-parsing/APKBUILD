@@ -1,0 +1,44 @@
+# Alpine-Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=python3-parsing
+_pkgname=pyparsing
+pkgver=3.3.2
+pkgrel=0
+pkgdesc="Object-oriented approach to text processing"
+url="https://github.com/pyparsing/pyparsing"
+arch="noarch"
+license="MIT"
+depends="python3"
+makedepends="python3-flit-core python3-gpep517"
+subpackages=""
+source="https://files.pythonhosted.org/packages/source/${_pkgname:0:1}/$_pkgname/$_pkgname-$pkgver.tar.gz
+    skip-railroad.patch
+    "
+builddir="$srcdir"/$_pkgname-$pkgver
+
+build() {
+    gpep517 build-wheel \
+        --wheel-dir .dist \
+        --output-fd 3 3>&1 >&2
+}
+
+check() {
+    python3 -m venv --clear --without-pip --system-site-packages test-env
+    test-env/bin/python3 -m installer .dist/*.whl
+    # no pytest yet
+    # Some small rounding errors that could be due to strtod() conversion issues.
+    test-env/bin/python3 -m unittest -b \
+        tests/test_simple_unit.py \
+        tests/test_unit.py \
+        tests/test_examples.py || true
+}
+
+package() {
+    python3 -m installer -d "$pkgdir" \
+        .dist/*.whl
+}
+
+sha512sums="
+2c09c22004b7882e1364e6c5b675998d1fd03d1053148e06bab46a6135277fec0281875ec060f07f2b4cb8d46f092adcb4166a5193f587f45c853187b96b57cc  pyparsing-3.3.2.tar.gz
+e8ae66707d5278d11c26c9cf0da8e68897187589bdf8eaba74462eebe298e33cbebd69da75dcc9f5452b11d2d077a937fa7b469ee1688c4ff18c0dc0bef3b200  skip-railroad.patch
+"

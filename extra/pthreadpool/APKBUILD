@@ -1,0 +1,64 @@
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=pthreadpool
+pkgver=1.0.0_git20240116
+_pkgver=0e6ca13779b57d397a5ba6bfdcaa8a275bc8ea2e
+pkgrel=0
+pkgdesc="Portable thread pool for C/C++"
+url="https://github.com/google/pthreadpool"
+arch="all"
+license="BSD-2-Clause"
+depends=""
+makedepends="
+    cmake
+    ninja
+    clang
+    libc++-dev
+    "
+subpackages="$pkgname-dev"
+source="${pkgname}-${pkgver}.zip::https://github.com/google/pthreadpool/archive/${_pkgver}.zip
+    "
+builddir="${srcdir}/pthreadpool-${_pkgver}"
+
+options="!check" # Always builds googletest from src.
+
+unpack() {
+    # Workaround for busybox bug.
+    cd $srcdir
+    for u in $source; do
+        local s
+        if is_remote "$u"; then
+            s="$SRCDEST/$(filename_from_uri $u)"
+        else
+            s="$startdir/$u"
+        fi
+        case "$s" in
+            *.zip)
+                msg "Unpacking $s..."
+				unzip -n -q "$s";;
+        esac
+    done
+}
+
+build() {
+    CC=clang \
+    CXX=clang++ \
+    cmake3.5 -B build -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DBUILD_SHARED_LIBS=ON \
+        -DPTHREADPOOL_BUILD_TESTS=OFF \
+        -DPTHREADPOOL_BUILD_BENCHMARKS=OFF
+    cmake3.5 --build build
+}
+
+check() {
+    ctest3.5 --test-dir build
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake3.5 --install build
+}
+
+sha512sums="
+db93e3fb726a2fe7a50e3f019e432c317958c9ccc0ef4a5cfdccd412e6ea6433b73cae3c0a511007524533f0ff795f84812fc86648957770c4d33fd77f378e0a  pthreadpool-1.0.0_git20240116.zip
+"
