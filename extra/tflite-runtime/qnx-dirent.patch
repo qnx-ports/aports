@@ -1,0 +1,19 @@
+diff --git a/tensorflow/lite/tools/evaluation/utils.cc b/tensorflow/lite/tools/evaluation/utils.cc
+index 599a3f23a1b..0f894be6c23 100644
+--- a/tensorflow/lite/tools/evaluation/utils.cc
++++ b/tensorflow/lite/tools/evaluation/utils.cc
+@@ -92,7 +92,14 @@ TfLiteStatus GetSortedFileNames(
+   std::string dir_path = StripTrailingSlashes(directory);
+   if ((dir = opendir(dir_path.c_str())) != nullptr) {
+     while ((ent = readdir(dir)) != nullptr) {
++      #ifdef __QNX__
++      struct stat st;
++      if (fstatat(dir, ent->d_name, &st, 0) != -1) {
++        if (S_ISDIR(st.st_mode)) continue;
++      }
++      #else
+       if (ent->d_type == DT_DIR) continue;
++      #endif
+       std::string filename(std::string(ent->d_name));
+       size_t lastdot = filename.find_last_of('.');
+       std::string ext = lastdot != std::string::npos ? filename.substr(lastdot)

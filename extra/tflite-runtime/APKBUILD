@@ -57,6 +57,7 @@ makedepends="
     git
     libc++-dev
     ninja
+    protoc
     python3-dev
     python3-gpep517
     python3-numpy-dev
@@ -79,6 +80,7 @@ source="${pkgname}-${pkgver}.tar.gz::https://github.com/tensorflow/tensorflow/ar
     https://github.com/google/XNNPACK/archive/$_xnnpack_ver.zip
     fix-test-paths.patch
     no-export.patch
+    qnx-dirent.patch
     cpuinfo_patch
     eigen_patch
     pthreadpool_patch
@@ -203,6 +205,7 @@ db93e3fb726a2fe7a50e3f019e432c317958c9ccc0ef4a5cfdccd412e6ea6433b73cae3c0a511007
 ad7bad6bcae85e9772ebbc1b6d0ba0bf56064419ffca026ac3af736ab3a2d2191d455cb90f974931cec3ed6e189168a0af79454a340df8bc00a15d92c235a3dd  25b42dfddb0ee22170d73ff0d4b333ea1e6edfeb.zip
 dbcb3e2767178f7f0f8792374ed9df681291704c3e3855a828b4dcda977adf9cf6e7af65fe3c27830cef56336681b239994f9772518b2457a945ab86560d412a  fix-test-paths.patch
 fb1ab5d5991770116504a4c99519d51b4fbdbb14519cc6aa970437e9a2b7f96df1e9362501c564bbf2b4e365a17d948e93c2d463b8ce1ea395ae55480ce929b9  no-export.patch
+c622263dbfa12e232e4248bf286eab081c7a02d18ec16845b002eb7df6fa6dd8b88eedbbfbf286f8f7c775c17246094617f2e2985cd8302f97e3ab986818c9f2  qnx-dirent.patch
 8bf1a384d89dbdd1de5aa672c57395044e0391015267146d5cb9dede4601ae4550baba4c66f509ee632dcfd717401993a4fbd2b9c40f40d5e46e51b8e10276ae  cpuinfo_patch
 df31ed689ffb5dad1920ce5841b178f616920b631dde60e3b7d727290c828187da191b18d1ca8999fb5a07f39cdb5589e4910aa8dbed3e323eec29e5c8ac5e5f  eigen_patch
 9e9d146e3c5787cdd97cdaed1246b13ccae7b1479794ba21e6a24c05d8227ecaa0ff9d228a33afe009e48ab96af88996f9b56ea147807aeae65bbc3b5715ec96  pthreadpool_patch
