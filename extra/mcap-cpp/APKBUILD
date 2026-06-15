@@ -1,0 +1,56 @@
+# Maintainer: Abdulfatah Ahmoda <abahmoda@qnx.com>
+pkgname=mcap-cpp
+pkgver=2.1.3
+pkgrel=0
+pkgdesc="MCAP is a modular, performant, and serialization-agnostic container file format, useful for pub/sub and robotics applications."
+url="https://github.com/foxglove/mcap"
+arch="all"
+license="MIT"
+makedepends="
+    libc++-dev
+    cmake
+    lz4-dev>=1.9.3
+    zstd-dev>=1.5.2
+    "
+checkdepends="
+    catch2
+    protobuf-dev>=3
+    nlohmann-json
+    "
+builddir="$srcdir/mcap-cpp-v$pkgver/cpp"
+source="$pkgname-v$pkgver.tar.gz::https://github.com/abdulahmoda/mcap/archive/refs/heads/qnx-cpp-v2.1.3.tar.gz"
+
+unpack() {
+	default_unpack
+	mv "$srcdir"/mcap-qnx* "$srcdir/$pkgname-v$pkgver"
+}
+
+build() {
+    CC=clang \
+    CXX=clang++ \
+    CFLAGS="$CFLAGS -Qunused-arguments" \
+    CXXFLAGS="$CXXFLAGS -Qunused-arguments" \
+
+    cmake -B build \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DCMAKE_BUILD_TYPE=MinSizeRel \
+        -DBUILD_SHARED_LIBS=ON \
+        -DBUILD_TESTING=ON \
+        -DBUILD_EXAMPLES=ON \
+        -DBUILD_CONFORMANCE_TESTS=OFF
+    cmake --build build
+}
+
+check() {
+    cd "$builddir"
+    ctest --test-dir build -VV
+
+    ./run_examples.sh > /dev/null
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install build
+}
+sha512sums="
+9c9c3b64be74bc4424c3b2285529a156161bd3374f7825a6d2db2b04723180bb08378246d56c5b29c6c4877944df0c7e98b08ae89dfcf93f570e0589d0c3b365  mcap-cpp-v2.1.3.tar.gz
+"
