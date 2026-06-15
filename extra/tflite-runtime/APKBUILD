@@ -92,8 +92,6 @@ _xnnpack_builddir="$srcdir/XNNPACK-$_xnnpack_ver"
 
 _patch_dir="$srcdir/patches"
 
-options="!check" # This does not work with v2.21.0-rc0
-
 unpack() {
     default_unpack
 
