@@ -6,7 +6,7 @@ pkgname=python3-matplotlib
 pkgver=3.10.6
 _imgver=3.10.3
 _ftver=2.13.1
-pkgrel=0
+pkgrel=1
 pkgdesc="Python3 library for plots"
 url="https://matplotlib.org"
 arch="all"
@@ -143,7 +143,7 @@ data() {
 
 qt6() {
     pkgdesc="Qt6 backend for $pkgname"
-    depends="$pkgname=$pkgver-r$pkgrel py3-cairocffi py3-qt6"
+    depends="$pkgname=$pkgver-r$pkgrel python3-cairocffi python3-qt6"
 
     # This is handled by backend_qt*.py (no number), so the package exists only for
     # the dependencies.
@@ -152,14 +152,14 @@ qt6() {
 
 gtk3() {
     pkgdesc="GTK3 backend for $pkgname"
-    depends="$pkgname=$pkgver-r$pkgrel py3-gobject3"
+    depends="$pkgname=$pkgver-r$pkgrel python3-gobject3"
 
     amove usr/lib/python*/site-packages/matplotlib/backends/backend_gtk3*.py
 }
 
 gtk4() {
     pkgdesc="GTK4 backend for $pkgname"
-    depends="$pkgname=$pkgver-r$pkgrel py3-gobject3"
+    depends="$pkgname=$pkgver-r$pkgrel python3-gobject3"
 
     amove usr/lib/python*/site-packages/matplotlib/backends/backend_gtk4*.py
 }
@@ -175,7 +175,7 @@ tk() {
 
 wx() {
     pkgdesc="WX backend for $pkgname"
-    depends="$pkgname=$pkgver-r$pkgrel py3-wxpython"
+    depends="$pkgname=$pkgver-r$pkgrel python3-wxpython"
 
     amove usr/lib/python*/site-packages/matplotlib/backends/backend_wx*.py
 }
