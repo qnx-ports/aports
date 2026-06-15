@@ -13,40 +13,40 @@ url="https://ai.google.dev/edge/litert"
 arch="all"
 license="Apache-2.0"
 depends="
-    abseil-cpp-status
-    abseil-cpp-raw-hash-set
-    abseil-cpp-synchronization
-    abseil-cpp-str-format-internal
-    abseil-cpp-strings
-    abseil-cpp-cord
-    abseil-cpp-leak-check
-    abseil-cpp-strerror
-    abseil-cpp-cordz-info
-    abseil-cpp-hashtablez-sampler
-    abseil-cpp-hash
-    abseil-cpp-raw-logging-internal
-    abseil-cpp-kernel-timeout-internal
-    abseil-cpp-stacktrace
-    abseil-cpp-time
-    abseil-cpp-tracing-internal
-    abseil-cpp-malloc-internal
-    abseil-cpp-base
-    abseil-cpp-spinlock-wait
-    abseil-cpp-int128
-    abseil-cpp-strings-internal
-    abseil-cpp-cord-internal
-    abseil-cpp-crc-cord-state
-    abseil-cpp-cordz-handle
-    abseil-cpp-city
-    abseil-cpp-time-zone
-    abseil-cpp-crc32c
-    abseil-cpp-crc-internal
+    abseil-cpp-status>=20250814.1
+    abseil-cpp-raw-hash-set>=20250814.1
+    abseil-cpp-synchronization>=20250814.1
+    abseil-cpp-str-format-internal>=20250814.1
+    abseil-cpp-strings>=20250814.1
+    abseil-cpp-cord>=20250814.1
+    abseil-cpp-leak-check>=20250814.1
+    abseil-cpp-strerror>=20250814.1
+    abseil-cpp-cordz-info>=20250814.1
+    abseil-cpp-hashtablez-sampler>=20250814.1
+    abseil-cpp-hash>=20250814.1
+    abseil-cpp-raw-logging-internal>=20250814.1
+    abseil-cpp-kernel-timeout-internal>=20250814.1
+    abseil-cpp-stacktrace>=20250814.1
+    abseil-cpp-time>=20250814.1
+    abseil-cpp-tracing-internal>=20250814.1
+    abseil-cpp-malloc-internal>=20250814.1
+    abseil-cpp-base>=20250814.1
+    abseil-cpp-spinlock-wait>=20250814.1
+    abseil-cpp-int128>=20250814.1
+    abseil-cpp-strings-internal>=20250814.1
+    abseil-cpp-cord-internal>=20250814.1
+    abseil-cpp-crc-cord-state>=20250814.1
+    abseil-cpp-cordz-handle>=20250814.1
+    abseil-cpp-city>=20250814.1
+    abseil-cpp-time-zone>=20250814.1
+    abseil-cpp-crc32c>=20250814.1
+    abseil-cpp-crc-internal>=20250814.1
     xnnpack
     cpuinfo
     pthreadpool
     "
 depends_dev="
-    abseil-cpp-dev
+    abseil-cpp-dev>=20250814.1
     xnnpack-dev
     cpuinfo-dev
     ruy-dev
@@ -57,7 +57,7 @@ makedepends="
     git
     libc++-dev
     ninja
-    protoc
+    protoc>=31.1
     python3-dev
     python3-gpep517
     python3-numpy-dev
@@ -205,7 +205,7 @@ db93e3fb726a2fe7a50e3f019e432c317958c9ccc0ef4a5cfdccd412e6ea6433b73cae3c0a511007
 ad7bad6bcae85e9772ebbc1b6d0ba0bf56064419ffca026ac3af736ab3a2d2191d455cb90f974931cec3ed6e189168a0af79454a340df8bc00a15d92c235a3dd  25b42dfddb0ee22170d73ff0d4b333ea1e6edfeb.zip
 dbcb3e2767178f7f0f8792374ed9df681291704c3e3855a828b4dcda977adf9cf6e7af65fe3c27830cef56336681b239994f9772518b2457a945ab86560d412a  fix-test-paths.patch
 fb1ab5d5991770116504a4c99519d51b4fbdbb14519cc6aa970437e9a2b7f96df1e9362501c564bbf2b4e365a17d948e93c2d463b8ce1ea395ae55480ce929b9  no-export.patch
-c622263dbfa12e232e4248bf286eab081c7a02d18ec16845b002eb7df6fa6dd8b88eedbbfbf286f8f7c775c17246094617f2e2985cd8302f97e3ab986818c9f2  qnx-dirent.patch
+2b8401c045cadc1cabc83c07a02d3d070248b60be54cb53c56810d97ce463b225b3d64e57d7985086dc69f5ca8d4b5e6c5e59f757ae59531b183b4d874122f38  qnx-dirent.patch
 8bf1a384d89dbdd1de5aa672c57395044e0391015267146d5cb9dede4601ae4550baba4c66f509ee632dcfd717401993a4fbd2b9c40f40d5e46e51b8e10276ae  cpuinfo_patch
 df31ed689ffb5dad1920ce5841b178f616920b631dde60e3b7d727290c828187da191b18d1ca8999fb5a07f39cdb5589e4910aa8dbed3e323eec29e5c8ac5e5f  eigen_patch
 9e9d146e3c5787cdd97cdaed1246b13ccae7b1479794ba21e6a24c05d8227ecaa0ff9d228a33afe009e48ab96af88996f9b56ea147807aeae65bbc3b5715ec96  pthreadpool_patch
