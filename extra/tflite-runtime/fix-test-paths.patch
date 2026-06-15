@@ -1,13 +1,13 @@
 diff --git a/tensorflow/lite/kernels/CMakeLists.txt b/tensorflow/lite/kernels/CMakeLists.txt
-index b9872323ac6..690695cbdfe 100644
+index b9872323ac6..f8f38a73105 100644
 --- a/tensorflow/lite/kernels/CMakeLists.txt
 +++ b/tensorflow/lite/kernels/CMakeLists.txt
-@@ -89,13 +89,13 @@ set(TEST_FRAMEWORK_SRC
+@@ -89,13 +89,12 @@ set(TEST_FRAMEWORK_SRC
    ${DELEGATE_PROVIDERS}
    ${TFLITE_SOURCE_DIR}/tools/optimize/model_utils.cc
    ${TF_SOURCE_DIR}/compiler/mlir/lite/tools/optimize/operator_property.cc
+-  ${TF_SOURCE_DIR}/compiler/mlir/tools/optimize/quantization_utils.cc
 +  ${TF_SOURCE_DIR}/compiler/mlir/lite/tools/versioning/op_version.cc
-   ${TF_SOURCE_DIR}/compiler/mlir/tools/optimize/quantization_utils.cc
    ${TF_SOURCE_DIR}/compiler/mlir/lite/kernels/internal/runtime_shape.cc
    ${TFLITE_SOURCE_DIR}/tools/optimize/quantization_utils.cc
    ${TFLITE_SOURCE_DIR}/tools/tool_params.cc
