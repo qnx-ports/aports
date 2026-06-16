@@ -38,7 +38,6 @@ makedepends="
     python3-pybind11-dev
     "
 subpackages="
-    $pkgname-dbg
     $pkgname-dev
     python3-$pkgname:_py3
     "
