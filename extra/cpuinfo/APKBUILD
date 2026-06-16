@@ -1,7 +1,7 @@
 # Maintainer: Ethan Leir <eleir@qnx.com>
 pkgname=cpuinfo
 pkgver=1.0.0_git20250808
-pkgrel=1
+pkgrel=2
 pkgdesc="A tool for detecting host CPU performance information"
 url="https://github.com/pytorch/cpuinfo"
 arch="all"
@@ -14,7 +14,7 @@ makedepends="
     libc++-dev
     "
 subpackages="$pkgname-dev"
-_git_rev=2
+_git_rev=1
 source="${pkgname}-${pkgver}-r${_git_rev}.tar.gz::https://github.com/qnx-ports/cpuinfo/archive/refs/tags/qnx-tflite-r$_git_rev.tar.gz
     "
 builddir="${srcdir}/${pkgname}-qnx-tflite-r$_git_rev"
