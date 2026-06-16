@@ -1,8 +1,41 @@
 diff --git a/tensorflow/lite/kernels/CMakeLists.txt b/tensorflow/lite/kernels/CMakeLists.txt
-index b9872323ac6..f8f38a73105 100644
+index b9872323ac6..a58bc9c1788 100644
 --- a/tensorflow/lite/kernels/CMakeLists.txt
 +++ b/tensorflow/lite/kernels/CMakeLists.txt
-@@ -89,13 +89,12 @@ set(TEST_FRAMEWORK_SRC
+@@ -24,6 +24,8 @@ set(SCHEMA_FILE ${SCHEMA_GENERATED_ROOT}/schema.fbs)
+ set(SCHEMA_GENERATED_PATH ${SCHEMA_GENERATED_ROOT}/mutable)
+ set(SCHEMA_GENERATED_FILE ${SCHEMA_GENERATED_PATH}/schema_generated.h)
+ 
++set(WRITER_GENERATED_FILE ${TFLITE_SOURCE_DIR}/tools/serialization/option_writer_generated.h)
++
+ # Use the util function in flatbuffer to generate the schema header.
+ include(BuildFlatBuffers)
+ 
+@@ -48,6 +50,8 @@ endif()
+ 
+ set(FLATBUFFERS_FLATC_SCHEMA_EXTRA_ARGS
+   -c
++  --reflect-types
++  --reflect-names
+   --gen-object-api
+   --gen-mutable
+ )
+@@ -61,6 +65,14 @@ build_flatbuffers(
+   ""
+ )
+ 
++add_custom_command(
++    OUTPUT "${WRITER_GENERATED_FILE}"
++    COMMAND ${CMAKE_COMMAND} -E copy
++        "${SCHEMA_GENERATED_FILE}"
++        "${WRITER_GENERATED_FILE}"
++    DEPENDS mutable_schema_file
++)
++
+ set(DELEGATE_PROVIDERS_SUPP
+   ${TFLITE_SOURCE_DIR}/nnapi/sl/SupportLibrary.cc
+   ${TFLITE_SOURCE_DIR}/tools/delegates/delegate_provider.cc
+@@ -89,19 +101,20 @@ set(TEST_FRAMEWORK_SRC
    ${DELEGATE_PROVIDERS}
    ${TFLITE_SOURCE_DIR}/tools/optimize/model_utils.cc
    ${TF_SOURCE_DIR}/compiler/mlir/lite/tools/optimize/operator_property.cc
@@ -12,9 +45,58 @@ index b9872323ac6..f8f38a73105 100644
    ${TFLITE_SOURCE_DIR}/tools/optimize/quantization_utils.cc
    ${TFLITE_SOURCE_DIR}/tools/tool_params.cc
 -  ${TFLITE_SOURCE_DIR}/tools/versioning/op_version.cc
++  ${TFLITE_SOURCE_DIR}/tools/serialization/writer_lib.cc
    ${XLA_SOURCE_DIR}/xla/tsl/platform/default/env_time.cc
 -  ${XLA_SOURCE_DIR}/xla/tsl/platform/default/logging.cc
 +  ${XLA_SOURCE_DIR}/xla/tsl/platform/logging.cc
    internal/test_util.cc
    acceleration_test_util.cc
    acceleration_test_util_internal.cc
+   subgraph_test_util.cc
+   test_delegate_providers.cc
+   test_util.cc
++  ${WRITER_GENERATED_FILE}
+ )
+ if(NOT _TFLITE_ENABLE_NNAPI)
+   list(APPEND TEST_FRAMEWORK_SRC
+@@ -110,7 +123,7 @@ if(NOT _TFLITE_ENABLE_NNAPI)
+ endif()
+ if(NOT TFLITE_ENABLE_GPU)
+   list(APPEND TEST_FRAMEWORK_SRC
+-    ${TFLITE_SOURCE_DIR}/tools/versioning/op_signature.cc
++    ${TF_SOURCE_DIR}/compiler/mlir/lite/tools/versioning/op_signature.cc
+   )
+ endif()
+ 
+@@ -126,6 +139,23 @@ endif()
+ # Base library to be later linked with the gtest OR gtest_main library
+ add_library(tensorflow-lite-test-base ${TEST_FRAMEWORK_SRC})
+ target_link_libraries(tensorflow-lite-test-base
++  absl::algorithm_container
++  absl::base
++  absl::core_headers
++  absl::check
++  absl::log
++  absl::memory
++  absl::no_destructor
++  absl::optional
++  absl::random_bit_gen_ref
++  absl::random_distributions
++  absl::random_random
++  absl::span
++  absl::status
++  absl::statusor
++  absl::strings
++  absl::str_format
++  absl::synchronization
+   gmock
+   re2
+   tensorflow-lite
+@@ -150,6 +180,7 @@ target_link_libraries(tensorflow-lite-test-external-main
+   -Wl,--whole-archive
+   tensorflow-lite-test-base
+   -Wl,--no-whole-archive
++  tensorflow-lite
+   gtest
+   absl::log
+ )
