@@ -14,7 +14,7 @@ makedepends="
     libc++-dev
     "
 subpackages="$pkgname-dev"
-_git_rev=1
+_git_rev=2
 source="${pkgname}-${pkgver}-r${_git_rev}.tar.gz::https://github.com/qnx-ports/cpuinfo/archive/refs/tags/qnx-tflite-r$_git_rev.tar.gz
     "
 builddir="${srcdir}/${pkgname}-qnx-tflite-r$_git_rev"
@@ -33,7 +33,8 @@ build() {
         -DCPUINFO_BUILD_TOOLS=OFF \
         -DCPUINFO_BUILD_MOCK_TESTS=OFF \
         -DCPUINFO_BUILD_UNIT_TESTS=OFF \
-        -DCPUINFO_BUILD_BENCHMARKS=OFF
+        -DCPUINFO_BUILD_BENCHMARKS=OFF \
+        -DQNX=ON
     cmake3.5 --build build
 }
 
