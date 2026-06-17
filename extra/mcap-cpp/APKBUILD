@@ -19,10 +19,11 @@ checkdepends="
     "
 builddir="$srcdir/mcap-cpp-v$pkgver/cpp"
 source="$pkgname-v$pkgver.tar.gz::https://github.com/abdulahmoda/mcap/archive/refs/heads/qnx-cpp-v2.1.3.tar.gz"
+# TODO point to tag under qnx-ports/mcap when PR is merged
 
 unpack() {
 	default_unpack
-	mv "$srcdir"/mcap-qnx* "$srcdir/$pkgname-v$pkgver"
+	mv "$srcdir"/mcap-qnx* "$srcdir/$pkgname-v$pkgver"      # for now just because
 }
 
 build() {
@@ -30,6 +31,7 @@ build() {
     CXX=clang++ \
     CFLAGS="$CFLAGS -Qunused-arguments" \
     CXXFLAGS="$CXXFLAGS -Qunused-arguments" \
+    # examples complain about fstack-clash-protection
 
     cmake -B build \
         -DCMAKE_INSTALL_PREFIX=/usr \
@@ -45,7 +47,8 @@ check() {
     cd "$builddir"
     ctest --test-dir build -VV
 
-    ./run_examples.sh > /dev/null
+    ./run_examples.sh > /dev/null       
+    # just run the noisy examples as a smoke test
 }
 
 package() {
