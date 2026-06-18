@@ -8,14 +8,13 @@ arch="all"
 license="BSD-3-Clause"
 depends="
     armadillo
-    cereal
-    ensmallen
+    openmp
 "
 makedepends="
     cmake
     armadillo-dev
-    cereal-dev
-    ensmallen-dev
+    cereal
+    ensmallen
 "
 source="https://www.mlpack.org/files/mlpack-$pkgver.tar.gz"
 subpackages="$pkgname-dev"
