@@ -14,7 +14,7 @@ makedepends="
     boost-dev
 "
 subpackages=""
-provides="$pkgname-dev-$pkgver-r$pkgrel"
+provides="$pkgname-dev=$pkgver"
 source="
     $pkgname-$pkgver.tar.gz::https://github.com/USCiLab/cereal/archive/v$pkgver.tar.gz
     0001-compare-floats-using-doctest-approx.patch
