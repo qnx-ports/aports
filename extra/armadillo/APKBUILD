@@ -9,10 +9,12 @@ url="https://arma.sourceforge.net/"
 arch="all"
 license="Apache-2.0"
 depends="
+    libc++
     openblas
 "
 makedepends="
     cmake
+    libc++-dev
     openblas-dev
 "
 subpackages="$pkgname-dev"
