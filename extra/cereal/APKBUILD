@@ -9,7 +9,7 @@ url="https://uscilab.github.io/cereal/"
 arch="noarch"
 license="BSD-3-Clause"
 depends="
-    libc++-dev
+    libc++
 "
 makedepends="
     cmake
