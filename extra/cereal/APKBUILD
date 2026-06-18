@@ -8,10 +8,13 @@ pkgdesc="Header-only C++11 serialization library"
 url="https://uscilab.github.io/cereal/"
 arch="noarch"
 license="BSD-3-Clause"
-depends=""
+depends="
+    libc++-dev
+"
 makedepends="
     cmake
     boost-dev
+    libc++-dev
 "
 subpackages=""
 provides="$pkgname-dev=$pkgver"
@@ -36,6 +39,7 @@ build() {
             -Wno-deprecated-copy \
             -Wno-error=deprecated-copy \
             -Wno-unused-variable \
+            -Wno-c++11-narrowing-const-reference \
         " \
         -Wno-dev
 
