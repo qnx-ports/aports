@@ -8,9 +8,7 @@ pkgdesc="Header-only C++11 serialization library"
 url="https://uscilab.github.io/cereal/"
 arch="noarch"
 license="BSD-3-Clause"
-depends="
-    libc++
-"
+depends=""
 makedepends="
     cmake
     boost-dev
