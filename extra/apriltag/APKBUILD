@@ -1,0 +1,46 @@
+# Maintainer: Abdulfatah Ahmoda <abahmoda@qnx.com>
+pkgname=apriltag
+pkgver=3.4.5
+pkgrel=0
+pkgdesc="AprilTag is a visual fiducial system popular for robotics research"
+url="https://github.com/AprilRobotics/apriltag"
+arch="all"
+license="BSD-2-Clause"
+makedepends="
+    libc++-dev
+    cmake
+    ninja
+    python3-numpy-dev
+    "
+subpackages="$pkgname-dev"
+source="$pkgname-$pkgver.tar.gz::https://github.com/AprilRobotics/apriltag/archive/refs/tags/v3.4.5.tar.gz"
+builddir="$srcdir/$pkgname-$pkgver"
+
+build() {
+    CC=clang \
+    CXX=clang++ \
+    CFLAGS="$CFLAGS -Qunused-arguments" \
+    CXXFLAGS="$CXXFLAGS -Qunused-arguments" \
+    # -fstack-clash-protection
+
+    cmake -B build -G Ninja \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DCMAKE_BUILD_TYPE=MinSizeRel \
+        -DBUILD_TESTING=ON \
+        -DBUILD_SHARED_LIBS=ON \
+        -DBUILD_EXAMPLES=OFF \
+        -DBUILD_PYTHON_WRAPPER=ON
+    cmake --build build
+}
+
+check() {
+    cd $builddir
+    ctest --test-dir build -V
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install build
+}
+sha512sums="
+f39bcac7b65e09b483f6d8579cdc89ac0162691b5b412454f975f56703b2caa1d005805360a5c8fb1433db83a3ae6a0f7cb1cad9ce5a0373787b79b9f32f983d  apriltag-3.4.5.tar.gz
+"
