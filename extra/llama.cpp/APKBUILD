@@ -4,7 +4,7 @@
 pkgname=llama.cpp
 pkgver=0.0.9006
 _buildver=${pkgver#0.0.}
-pkgrel=0
+pkgrel=1
 pkgdesc="LLM inference in C/C++ (with Vulkan GPU acceleration)"
 arch="all"
 url="https://github.com/ggml-org/llama.cpp"
@@ -209,7 +209,7 @@ server() {
 sha512sums="
 9a4e21519b069721692ad4927935793d96a93c25e59a50d8436e535e0d393202cf178ea2b236f6e760dcb0073654f87804ecb3feaa7750882e9e280cbc222d56  llama.cpp-b9006.tar.gz
 117e3e60b0f941a5326274976065629137e962ce7db99575aeed2ff66863f4d8be28b78210430d6500ff1f4b1be348056bb871f783d1d2c466846f6e089c3f74  llama.cpp-b9006.json
-aaa702d961cc86887d8f677d4b3bdfee3e4b41406055a23093691284407380fbf974b7b016569e4ec28084240766c6a4d3606600201875bfb8c1f36c02f2e425  0002-qnx-install-libraries-into-LLAMA_LIB_INSTALL_DIR.patch
+e8977238bb3164dd500d864045384da3a463e9966a64177afcc33d42a38d4727af9cb7425e732a999d713415ddb9587b3f0287a87dbf50619a9b7afcf4522e7b  0002-qnx-install-libraries-into-LLAMA_LIB_INSTALL_DIR.patch
 c1c56cba82f79630e00dc19bff0a028ad1b3f03ecd781a9de914171873b8e1e9606f164d950736a79e14c8dca85d35cb3607fbca7887c70bc3497e2fc8c2feaa  0003-qnx-platform-compat.patch
 6b4c2f704ec4934d15520332a4f61264a2bf73d928737967ffecfd5ce92740543117c0316835fde494e1e1767cc97ee3f7d6746166b8c970bdb754ccd23a55d4  0004-qnx-vulkan-shader-compat.patch
 "
