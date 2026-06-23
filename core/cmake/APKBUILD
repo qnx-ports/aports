@@ -1,6 +1,6 @@
 pkgname=cmake
 pkgver=4.2.3
-pkgrel=0
+pkgrel=1
 pkgdesc="Cross-platform, open-source make system"
 url="https://www.cmake.org/"
 arch="all"
@@ -9,7 +9,11 @@ license="BSD-3-Clause"
 depends="libbz2 libexpat libarchive ncurses xz-libs libuv zlib-ng lz4-libs nghttp2 libcurl libc++"
 makedepends="bzip2-dev expat-dev libarchive-dev ncurses-dev xz-dev libuv-dev zlib-ng-dev lz4-dev nghttp2-dev curl-dev libc++-dev clang"
 checkdepends="file"
-subpackages="$pkgname-doc $pkgname-bash-completion"
+subpackages="
+$pkgname-doc
+$pkgname-bash-completion
+abuild-$pkgname:abuild:noarch
+"
 case $pkgver in
 *.*.*.*) _v=v${pkgver%.*.*};;
 *.*.*) _v=v${pkgver%.*};;
@@ -61,6 +65,15 @@ EOF
         chmod 0755 "$pkgdir"/usr/bin/${exe}3.5
 	done
 
+}
+
+abuild(){
+	pkgdesc="$pkgdesc (abuild wrapper)"
+    # abuild sets CMAKE_GENERATOR=Ninja in it's default.conf 
+	depends="$pkgname=$pkgver-r$pkgrel abuild ninja"
+	install_if="$pkgname=$pkgver-r$pkgrel abuild"
+
+    mkdir -p "$subpkgdir"
 }
 
 sha512sums="
