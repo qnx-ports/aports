@@ -74,8 +74,9 @@ package() {
 
     # QNX: the desktop auto-logs in with no PAM, so nothing unlocks the GNOME login keyring the
     # way a normal login would. Point the org.freedesktop.secrets D-Bus activation at a wrapper
-    # that unlocks the login keyring from a per-device 0600 master file
-    # (~/.config/keyring/master, provisioned by the image - NOT shipped here).
+    # that unlocks the login keyring from a per-device 0600 master password
+    # (~/.config/keyring/master); the wrapper auto-generates that master on a fresh system, so
+    # no image-side provisioning is required.
     install -Dm755 "$srcdir"/keyring-secrets-service.sh \
         "$pkgdir"/usr/libexec/gnome-keyring/keyring-secrets-service.sh
     install -Dm644 "$srcdir"/org.freedesktop.secrets.service \
