@@ -27,6 +27,7 @@ build() {
     cmake -B build -G Ninja \
         -DCMAKE_INSTALL_PREFIX=/usr \
         -DCMAKE_BUILD_TYPE=MinSizeRel \
+        -DCMAKE_EXE_LINKER_FLAGS=-Wl,-z,stack-size=8388608 \
         -DBUILD_TESTING=ON \
         -DBUILD_SHARED_LIBS=ON \
         -DBUILD_EXAMPLES=OFF \
