@@ -1,10 +1,13 @@
---- neovim-0.11.4.orig/test/unit/preprocess.lua
-+++ neovim-0.11.4/test/unit/preprocess.lua
-@@ -123,6 +123,7 @@
+diff --git a/test/unit/preprocess.lua b/test/unit/preprocess.lua
+index 4b10918c2d..e8f32ab742 100644
+--- a/test/unit/preprocess.lua
++++ b/test/unit/preprocess.lua
+@@ -123,6 +123,7 @@ function Gcc:init_defines()
    self:define('EXTERN', nil, 'extern')
    self:define('INIT', { '...' }, '')
    self:define('_GNU_SOURCE')
 +  self:define('_QNX_SOURCE')
-   self:define('INCLUDE_GENERATED_DECLARATIONS')
    self:define('UNIT_TESTING')
    self:define('UNIT_TESTING_LUA_PREPROCESSING')
+   -- Needed for FreeBSD
+
