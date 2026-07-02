@@ -5,7 +5,7 @@ pkgrel=0
 pkgdesc="Fast, header-only C++ machine learning library"
 url="https://www.mlpack.org/"
 arch="all"
-license="BSD-3-Clause"
+license="BSD-3-Clause AND MIT AND LicenseRef-scancode-public-domain"
 depends="
     armadillo
     openmp
@@ -15,6 +15,7 @@ makedepends="
     armadillo-dev
     cereal
     ensmallen
+    libc++-dev
 "
 source="https://www.mlpack.org/files/mlpack-$pkgver.tar.gz"
 subpackages="$pkgname-dev"
