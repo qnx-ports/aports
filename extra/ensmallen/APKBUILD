@@ -16,7 +16,7 @@ makedepends="
     openblas-dev
 "
 subpackages=""
-provides="$pkgname-dev=$pkgver"
+provides="$pkgname-dev=$pkgver-r$pkgrel"
 source="https://ensmallen.org/files/$pkgname-$pkgver.tar.gz"
 
 build() {
