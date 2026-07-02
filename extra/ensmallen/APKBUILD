@@ -9,6 +9,7 @@ license="BSD-3-Clause"
 depends="
     armadillo
     openblas
+    libc++-dev
 "
 makedepends="
     cmake
