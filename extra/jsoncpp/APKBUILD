@@ -1,27 +1,26 @@
+# Maintainer: Terence Ang <taang@qnx.com>
 pkgname=jsoncpp
-pkgver=1.9.6
+pkgver=1.8.4
 pkgrel=0
 pkgdesc="A C++ library for interacting with JSON."
 url="https://github.com/open-source-parsers/jsoncpp"
 arch="all"
 license="MIT"
 options="!check"
-makedepends="qnx-base-dev"
-depends_dev=$makedepends
-depends=""
-subpackages="${pkgname}-dev"
+makedepends="meson libc++-dev"
+subpackages="$pkgname-static $pkgname-dev"
 source="${pkgname}-${pkgver}.tar.gz::https://github.com/open-source-parsers/jsoncpp/archive/refs/tags/${pkgver}.tar.gz"
 builddir=${srcdir}/${pkgname}-${pkgver}
 
 build() {
-    BUILD_ROOT=${CBUILDROOT} "${CBUILDROOT}"/"${PREFIX}"/bin/gen-meson-cross
+    # Avoid "expected unqualified-id" error due to mis-understanding "version" file as a C++ header
+    if [ -f version ]; then
+        mv version version.txt
+    fi
 
-    # cross for now, worry about self-hosted when the toolchain is up
-    meson_args="-Dtests=false \
-                --reconfigure \
+    meson_args="--default-library=both \
                 --buildtype=release \
                 --prefix="${PREFIX}" \
-                --cross-file="meson.cross" \
                 "
 
     meson setup ${meson_args} build
@@ -32,6 +31,7 @@ package() {
     DESTDIR=${pkgdir} ninja -C ${builddir}/build install
 }
 
+
 sha512sums="
-006d81f9f723dcfe875ebc2147449c07c5246bf97dd7b9eee1909decc914b051d6f3f06feb5c3dfa143d28773fb310aabb04a81dc447cc61513309df8eba8b08  jsoncpp-1.9.6.tar.gz
+f70361a3263dd8b9441374a9a409462be1426c0d6587c865171a80448ab73b3f69de2b4d70d2f0c541764e1e6cccc727dd53178347901f625ec6fb54fb94f4f1  jsoncpp-1.8.4.tar.gz
 "
