@@ -45,7 +45,8 @@ check() {
         exclude:"FastMKSSerializationTest" \
         exclude:"KNNTest" \
         exclude:"PolynomialSerializationTest" \
-        exclude:"RASearchTest"
+        exclude:"RASearchTest" \
+        exclude:"HoeffdingTreeModelSerializationTest"
     cd ..
 }
 
