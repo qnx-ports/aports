@@ -1,0 +1,54 @@
+# Maintainer: Cris Sinnott <csinnott@qnx.com>
+pkgname=stable-diffusion.cpp
+pkgver=0_git20260602
+pkgrel=0
+_sdcommit=a51021b190b3aac1684c22a03fb0607f144ab6ce
+_ggmlcommit=69f2807d4153413d91a41c4bd28bc95aefec275b
+# CPU backend only: the Vulkan GPU backend hits an unresolved QNX drm-virtio
+# runtime deadlock (see stable-diffusion-gpu-deadlock.md) and is disabled
+# for now. Re-enable SD_VULKAN once that issue is fixed upstream.
+pkgdesc="Stable Diffusion in pure C/C++ (CPU backend)"
+url="https://github.com/leejet/stable-diffusion.cpp"
+arch="x86_64"
+license="MIT"
+makedepends="cmake ninja clang libc++-dev"
+subpackages="$pkgname-dev $pkgname-dbg"
+source="
+	stable-diffusion.cpp-$_sdcommit.tar.gz::https://github.com/qnx-ports/stable-diffusion.cpp/archive/$_sdcommit.tar.gz
+	ggml-$_ggmlcommit.tar.gz::https://github.com/qnx-ports/ggml/archive/$_ggmlcommit.tar.gz
+	"
+builddir="$srcdir/stable-diffusion.cpp-$_sdcommit"
+
+prepare() {
+	default_prepare
+	rm -rf "$builddir/ggml"
+	mv "$srcdir/ggml-$_ggmlcommit" "$builddir/ggml"
+}
+
+build() {
+	cmake -B build -G Ninja \
+		-DCMAKE_C_COMPILER=clang \
+		-DCMAKE_CXX_COMPILER=clang++ \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DSD_VULKAN=OFF \
+		-DSD_BUILD_SHARED_LIBS=ON \
+		-DGGML_BUILD_TESTS=ON
+	cmake --build build
+}
+
+check() {
+	ctest --test-dir build/ggml/tests \
+		--output-junit "$builddir/test-results.xml" \
+		--output-on-failure \
+		-j$(nproc)
+}
+
+package() {
+	DESTDIR="$pkgdir" cmake --build build --target install
+}
+
+sha512sums="
+7b4e19a95c4038eb08158395849ce93dfabefdbc7e7a398e4080484f34a7a0d69ad069bc2b6960d5d9a03f9de23286a682eca81128d052dbe3ac0e7a7b2bd098  stable-diffusion.cpp-a51021b190b3aac1684c22a03fb0607f144ab6ce.tar.gz
+329c3b80fc52a3353d4a6b6742c6833b6aeb4f58a4b21210fc1f51a7c3055c721701e7c1e7c7b34333c328cbdb89e65585e16b623986882dc0e69a9263785619  ggml-69f2807d4153413d91a41c4bd28bc95aefec275b.tar.gz
+"
