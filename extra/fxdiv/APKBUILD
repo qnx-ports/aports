@@ -4,10 +4,11 @@ _pkgname=FXdiv
 pkgver=1.0.0_git20200417
 _pkgver=b408327ac2a15ec3e43352421954f5b1967701d1
 pkgrel=0
-pkgdesc="Integer division via fixed-point multiplication"
+pkgdesc="Header-only integer division via fixed-point multiplication"
 url="https://github.com/Maratyszcza/FXdiv"
 arch="all"
 license="MIT"
+depends="$pkgname-dev"
 makedepends="
     cmake
     ninja
