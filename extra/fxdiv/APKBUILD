@@ -8,7 +8,6 @@ pkgdesc="Integer division via fixed-point multiplication"
 url="https://github.com/Maratyszcza/FXdiv"
 arch="all"
 license="MIT"
-depends="cpuinfo pthreadpool"
 makedepends="
     cmake
     ninja
