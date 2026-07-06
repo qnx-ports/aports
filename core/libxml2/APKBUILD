@@ -1,15 +1,18 @@
+# Maintainer: Terence Ang <taang@qnx.com>
 pkgname=libxml2
-pkgver=2.13.9
-pkgrel=3
+pkgver=2.14.0
+pkgrel=0
 pkgdesc="XML parsing library, version 2"
 url="https://gitlab.gnome.org/GNOME/libxml2"
 arch="all"
 license="MIT"
 options="!check !tracedeps"
 depends="zlib-ng xz-libs qnx-io-sock"
-makedepends="zlib-ng-dev xz-dev qnx-io-sock-dev"
-depends_dev="$makedepends"
-subpackages="$pkgname-doc $pkgname-static $pkgname-dev $pkgname-utils"
+makedepends="zlib-ng-dev xz-dev qnx-io-sock-dev libiconv-dev"
+# This builds libxml2.so.16, some components require libxml2.so.15 (2.13.9), thus headers would not be included.
+# $pkgname-dev will be added back once the conflict is resolved.
+# libxml2-dev-2.13.9-r3 would be the latest one
+subpackages="$pkgname-doc $pkgname-static $pkgname-utils"
 source="https://download.gnome.org/sources/libxml2/${pkgver%.*}/libxml2-$pkgver.tar.xz"
 if  [  -z "$BOOTSTRAP" ]; then
 	makedepends="$makedepends python3-dev"
@@ -48,6 +51,15 @@ check() {
 
 package() {
     make -j1 DESTDIR="$pkgdir" install
+
+    # This avoids the inclusion of .h, .pc and .cmake files, and .so Symlinks
+    # When conflicts of libxml2.so.15 (2.13.9) and libxml2.so.16 (2.14.0) are resolved, this can be removed.
+    find "$pkgdir" -type f -name '*.h' -delete
+    find "$pkgdir" -type f -name '*.pc' -delete
+    find "$pkgdir" -type f -name '*.cmake' -delete
+    find "$pkgdir" -type l -name '*.so' -delete
+    find "$pkgdir"  -type d -empty -delete
+
 }
 
 _python3() {
