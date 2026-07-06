@@ -9,6 +9,7 @@ _ruy_ver=master
 _xnnpack_ver=25b42dfddb0ee22170d73ff0d4b333ea1e6edfeb
 _kleidiai_ver=63205aa90afa6803d8f58bc3081b69288e9f1906
 _eigen_ver=5.0.1
+_fxdiv_ver="b408327ac2a15ec3e43352421954f5b1967701d1"
 pkgdesc="TensorFlow Lite - High-performance ML & GenAI deployment on edge platforms"
 url="https://ai.google.dev/edge/litert"
 arch="all"
@@ -51,6 +52,7 @@ source="${pkgname}-${pkgver}.tar.gz::https://github.com/tensorflow/tensorflow/ar
     https://github.com/qnx-ports/ruy/archive/refs/tags/qnx-$_ruy_ver-r$_ruy_git_rev.tar.gz
     https://github.com/google/XNNPACK/archive/$_xnnpack_ver.zip
     https://github.com/ARM-software/kleidiai/archive/$_kleidiai_ver.zip
+    https://github.com/Maratyszcza/FXdiv/archive/$_fxdiv_ver.zip
     fix-test-paths.patch
     no-export.patch
     qnx-dirent.patch
@@ -60,6 +62,7 @@ source="${pkgname}-${pkgver}.tar.gz::https://github.com/tensorflow/tensorflow/ar
     ruy_patch
     XNNPACK_patch
     kleidiai_patch
+    FXdiv_patch
     "
 builddir="$srcdir/$_pkgname-$_pkgver"
 _cpuinfo_builddir="${srcdir}/cpuinfo-qnx-tflite-r${_cpuinfo_git_rev}"
@@ -68,6 +71,7 @@ _pthreadpool_builddir="$srcdir/pthreadpool-$_pthreadpool_ver"
 _ruy_builddir="${srcdir}/ruy-qnx-${_ruy_ver}-r${_ruy_git_rev}"
 _xnnpack_builddir="$srcdir/XNNPACK-$_xnnpack_ver"
 _kleidiai_builddir="$srcdir/kleidiai-$_kleidiai_ver"
+_fxdiv_builddir="${srcdir}/FXdiv-${_fxdiv_ver}"
 
 _patch_dir="$srcdir/patches"
 
@@ -100,6 +104,7 @@ prepare() {
     (cd $_ruy_builddir && patch ${patch_args:--p1} -i "$srcdir/ruy_patch")
     (cd $_xnnpack_builddir && patch ${patch_args:--p1} -i "$srcdir/XNNPACK_patch")
     (cd $_kleidiai_builddir && patch ${patch_args:--p1} -i "$srcdir/kleidiai_patch")
+    (cd $_fxdiv_builddir && patch ${patch_args:--p1} -i "$srcdir/FXdiv_patch")
 }
 
 build() {
@@ -127,15 +132,16 @@ build() {
         -DBUILD_SHARED_LIBS=ON \
         -DCMAKE_VERBOSE_MAKEFILE=ON \
         -DTFLITE_KERNEL_TEST="$(want_check && echo ON || echo OFF)" \
-        -DQNX_PATCH_DIR=$_patch_dir \
-        -DTENSORFLOW_SOURCE_DIR=$builddir \
-        -DPTHREADPOOL_SOURCE_DIR=$_pthreadpool_builddir \
-        -DKLEIDIAI_SOURCE_DIR=$_kleidiai_builddir \
-        -DOVERRIDABLE_FETCH_CONTENT_cpuinfo_URL=$_cpuinfo_builddir \
-        -DOVERRIDABLE_FETCH_CONTENT_eigen_URL=$_eigen_builddir \
-        -DOVERRIDABLE_FETCH_CONTENT_pthreadpool_URL=$_pthreadpool_builddir \
-        -DOVERRIDABLE_FETCH_CONTENT_ruy_URL=$_ruy_builddir \
-        -DOVERRIDABLE_FETCH_CONTENT_xnnpack_URL=$_xnnpack_builddir \
+        -DQNX_PATCH_DIR="$_patch_dir" \
+        -DTENSORFLOW_SOURCE_DIR="$builddir" \
+        -DPTHREADPOOL_SOURCE_DIR="$_pthreadpool_builddir" \
+        -DKLEIDIAI_SOURCE_DIR="$_kleidiai_builddir" \
+        -DFXDIV_SOURCE_DIR="$_fxdiv_builddir" \
+        -DOVERRIDABLE_FETCH_CONTENT_cpuinfo_URL="$_cpuinfo_builddir" \
+        -DOVERRIDABLE_FETCH_CONTENT_eigen_URL="$_eigen_builddir" \
+        -DOVERRIDABLE_FETCH_CONTENT_pthreadpool_URL="$_pthreadpool_builddir" \
+        -DOVERRIDABLE_FETCH_CONTENT_ruy_URL="$_ruy_builddir" \
+        -DOVERRIDABLE_FETCH_CONTENT_xnnpack_URL="$_xnnpack_builddir" \
         -DOVERRIDABLE_FETCH_CONTENT_abseil-cpp_GIT_REPOSITORY=https://github.com/qnx-ports/abseil-cpp.git \
         -DOVERRIDABLE_FETCH_CONTENT_abseil-cpp_GIT_TAG=qnx_20250814.1-r1 \
         -DOVERRIDABLE_FETCH_CONTENT_farmhash_GIT_REPOSITORY=https://github.com/qnx-ports/farmhash.git \
@@ -181,6 +187,7 @@ db93e3fb726a2fe7a50e3f019e432c317958c9ccc0ef4a5cfdccd412e6ea6433b73cae3c0a511007
 0fbc0d837e86ecad89b093622bfd0199df97e1ab482c27a9dab69e2579130d63066829c785272173e5f97d722fa6e8f8fc613f8b67b30aba798cd2fd1d5a1387  qnx-master-r0.tar.gz
 ad7bad6bcae85e9772ebbc1b6d0ba0bf56064419ffca026ac3af736ab3a2d2191d455cb90f974931cec3ed6e189168a0af79454a340df8bc00a15d92c235a3dd  25b42dfddb0ee22170d73ff0d4b333ea1e6edfeb.zip
 e7405c32051aa7ebe0366216e2d85018a19f6781412177479203a316348aabc9bfdc189af30bb7cc94ce6d7fbf8efc6e9900c8365190919028b67fb145c75ff4  63205aa90afa6803d8f58bc3081b69288e9f1906.zip
+8a2ef9b5c3353bbb53be3584bccf5bf0ebda99ff903b55d34a966768e3acfead08d1d981e7428697166e028067c90f31cbcf793a39d07d76c31b2fb51787f74e  b408327ac2a15ec3e43352421954f5b1967701d1.zip
 3cab47aa7c84923ed263cfc285e7041ef0af6f3e6fd8e778afb4320cd9025453f8c68e0f16e37d36b3a96287a4940cfb8446d2aa7456ebed95c6a325fe72fbc8  fix-test-paths.patch
 ff685a04c1e9724caa4722e27f626af8d08a7552054651cfa12432b52668d029943f8774a31f73451fc6f002853f245a209e2a2b693cb6a9663750351d6f11c3  no-export.patch
 2b8401c045cadc1cabc83c07a02d3d070248b60be54cb53c56810d97ce463b225b3d64e57d7985086dc69f5ca8d4b5e6c5e59f757ae59531b183b4d874122f38  qnx-dirent.patch
@@ -190,4 +197,5 @@ df31ed689ffb5dad1920ce5841b178f616920b631dde60e3b7d727290c828187da191b18d1ca8999
 c304a15f6c765e488382d76e5949cb4fc096a5397f9417d4e68afa5bc636f90bd82f78a4909bd9100488744dbeaba684251701272331a3283454d41861a5aa6c  ruy_patch
 1366ce4acad98adeaaaff998fce5e0913ae2abb44c96e4973e2fad97f17609c7f6209a266966a3f5c36fbcacb4447e7a6ae23ca202bd9d9b9c83a4a4bcf89ba7  XNNPACK_patch
 0dd0cdc2736c557f1c5b3e575bbceedf5b5b8e0ab59e54ed249b7769725c152a1d3d31ba5d4ab54aa105066a2ccc362644f21f03e3e1f5ec833c98d0743d7d4c  kleidiai_patch
+c1fdb43cd730bcf241a5c7e3ebb8601220c2aff930cb7540a023e9ab90879b54a131123b351d836c60ab08fd1d3f4fd8db04b40ba7dfa9ad750c9131721c372e  FXdiv_patch
 "
