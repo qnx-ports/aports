@@ -3,7 +3,7 @@ pkgname=xnnpack
 _pkgname=XNNPACK
 pkgver=1.0.0_git20251226
 _pkgver=25b42dfddb0ee22170d73ff0d4b333ea1e6edfeb
-pkgrel=0
+pkgrel=1
 _pthreadpool_ver=0e6ca13779b57d397a5ba6bfdcaa8a275bc8ea2e
 pkgdesc="Efficient neural network inference accelerator for ARM, x86, WebAssembly, and RISC-V platforms"
 url="https://github.com/google/XNNPACK"
@@ -69,6 +69,7 @@ build() {
         -DBUILD_SHARED_LIBS=ON \
         -DXNNPACK_BUILD_TESTS=OFF \
         -DXNNPACK_BUILD_BENCHMARKS=OFF \
+        -DCPUINFO_BUILD_PKG_CONFIG=OFF \
         -DCPUINFO_SOURCE_DIR=$_cpuinfo_builddir \
         -DPTHREADPOOL_SOURCE_DIR=$_pthreadpool_builddir
     cmake3.5 --build build
