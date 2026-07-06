@@ -22,7 +22,7 @@ build() {
     cmake3.5 -B build -G Ninja \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_INSTALL_PREFIX=/usr \
-        -DCMAKE_CXX_FLAGS="-Qunused-arguments -Wno-missing-field-initializers" \
+        -DCMAKE_CXX_FLAGS="-Qunused-arguments -w" \
         -DBUILD_SHARED_LIBS=ON \
         -DFXDIV_BUILD_BENCHMARKS=OFF
     cmake3.5 --build build
