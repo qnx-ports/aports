@@ -15,11 +15,13 @@ makedepends="
     libc++-dev
     "
 subpackages="$pkgname-dev"
+_fxdiv_ver="b408327ac2a15ec3e43352421954f5b1967701d1"
 source="${pkgname}-${pkgver}.zip::https://github.com/google/pthreadpool/archive/${_pkgver}.zip
+    https://github.com/Maratyszcza/FXdiv/archive/$_fxdiv_ver.zip
+    FXdiv_patch
     "
 builddir="${srcdir}/pthreadpool-${_pkgver}"
-
-options="!check" # Always builds googletest from src.
+_fxdiv_builddir="${srcdir}/FXdiv-${_pkgver}"
 
 unpack() {
     # Workaround for busybox bug.
@@ -39,15 +41,23 @@ unpack() {
     done
 }
 
+prepare() {
+    default_prepare
+
+    (cd $_fxdiv_builddir && patch ${patch_args:--p1} -i "$srcdir/FXdiv_patch")
+}
+
 build() {
     CC=clang \
     CXX=clang++ \
     cmake3.5 -B build -G Ninja \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_INSTALL_PREFIX=/usr \
+        -DCMAKE_CXX_FLAGS="-Qunused-arguments -w" \
         -DBUILD_SHARED_LIBS=ON \
-        -DPTHREADPOOL_BUILD_TESTS=OFF \
-        -DPTHREADPOOL_BUILD_BENCHMARKS=OFF
+        -DPTHREADPOOL_BUILD_TESTS=ON \
+        -DPTHREADPOOL_BUILD_BENCHMARKS=OFF \
+        -DFXDIV_SOURCE_DIR="$_fxdiv_builddir"
     cmake3.5 --build build
 }
 
@@ -61,4 +71,6 @@ package() {
 
 sha512sums="
 db93e3fb726a2fe7a50e3f019e432c317958c9ccc0ef4a5cfdccd412e6ea6433b73cae3c0a511007524533f0ff795f84812fc86648957770c4d33fd77f378e0a  pthreadpool-1.0.0_git20240116.zip
+8a2ef9b5c3353bbb53be3584bccf5bf0ebda99ff903b55d34a966768e3acfead08d1d981e7428697166e028067c90f31cbcf793a39d07d76c31b2fb51787f74e  b408327ac2a15ec3e43352421954f5b1967701d1.zip
+c1fdb43cd730bcf241a5c7e3ebb8601220c2aff930cb7540a023e9ab90879b54a131123b351d836c60ab08fd1d3f4fd8db04b40ba7dfa9ad750c9131721c372e  FXdiv_patch
 "
