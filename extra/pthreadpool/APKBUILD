@@ -57,6 +57,7 @@ build() {
         -DBUILD_SHARED_LIBS=ON \
         -DPTHREADPOOL_BUILD_TESTS=ON \
         -DPTHREADPOOL_BUILD_BENCHMARKS=OFF \
+        -DINSTALL_GTEST=OFF \
         -DFXDIV_SOURCE_DIR="$_fxdiv_builddir"
     cmake3.5 --build build
 }
