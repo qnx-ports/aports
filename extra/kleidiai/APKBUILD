@@ -1,0 +1,38 @@
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=kleidiai
+pkgver=1.0.0_git20251124
+_pkgver=63205aa90afa6803d8f58bc3081b69288e9f1906
+pkgrel=0
+pkgdesc="Optimized micro-kernels tailored for Arm CPUs"
+url="https://github.com/ARM-software/kleidiai"
+arch="aarch64"
+license="Apache-2.0 AND BSD-3-Clause"
+depends="libc++"
+makedepends="
+    cmake
+    ninja
+    libc++-dev
+    "
+subpackages="$pkgname-dev"
+source="${pkgname}-${pkgver}.tar.gz::https://github.com/ARM-software/${pkgname}/archive/${_pkgver}.tar.gz"
+builddir="${srcdir}/${pkgname}-${_pkgver}"
+
+build() {
+    cmake3.5 -B build -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DBUILD_SHARED_LIBS=ON
+    cmake3.5 --build build
+}
+
+check() {
+    ctest3.5 --test-dir build
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake3.5 --install build
+}
+
+sha512sums="
+0aadcfbe9bd174fd4420a64a121d0bca86b6684b42ac810ac8a561d351bb13a2b24e601c822fcd9b814c3334c1e80c33cc222b717be8466013caf9f1d2906129  kleidiai-1.0.0_git20251124.tar.gz
+"
