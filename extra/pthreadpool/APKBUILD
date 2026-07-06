@@ -2,7 +2,7 @@
 pkgname=pthreadpool
 pkgver=1.0.0_git20240116
 _pkgver=0e6ca13779b57d397a5ba6bfdcaa8a275bc8ea2e
-pkgrel=0
+pkgrel=1
 pkgdesc="Portable thread pool for C/C++"
 url="https://github.com/google/pthreadpool"
 arch="all"
