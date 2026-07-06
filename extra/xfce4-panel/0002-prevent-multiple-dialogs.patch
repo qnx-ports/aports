@@ -1,4 +1,4 @@
-From b05bc117d9150110a5b170600728cda72144a141 Mon Sep 17 00:00:00 2001
+From 37c3e8136e836845222dc68bb7a998ea68a173d2 Mon Sep 17 00:00:00 2001
 From: felixlionardo <flionardo@blackberry.com>
 Date: Thu, 11 Jun 2026 15:21:56 -0400
 Subject: [PATCH] prevent multiple dialogs
@@ -8,7 +8,7 @@ Subject: [PATCH] prevent multiple dialogs
  1 file changed, 12 insertions(+), 1 deletion(-)
 
 diff --git a/plugins/actions/actions.c b/plugins/actions/actions.c
-index 3e7b7f884..746c010e9 100644
+index 3e7b7f884..63604c95a 100644
 --- a/plugins/actions/actions.c
 +++ b/plugins/actions/actions.c
 @@ -117,6 +117,7 @@ struct _ActionsPlugin
@@ -19,16 +19,19 @@ index 3e7b7f884..746c010e9 100644
    GDBusProxy *proxy;
    const gchar *switch_user_cmd;
    const gchar *lock_session_cmd;
-@@ -1110,11 +1111,19 @@ actions_plugin_action_activate (GtkWidget *widget,
-   entry = g_object_get_qdata (G_OBJECT (widget), action_quark);
-   panel_return_if_fail (entry != NULL);
+@@ -1107,6 +1108,11 @@ actions_plugin_action_activate (GtkWidget *widget,
+   GError *error = NULL;
+   gboolean succeed = FALSE;
  
 +  // Check if an action is in progress to avoid stacking multiple dialogs
 +  if (plugin->action_in_progress)
 +    return;
 +  plugin->action_in_progress = TRUE;
-+
-   if (plugin->ask_confirmation
++  
+   entry = g_object_get_qdata (G_OBJECT (widget), action_quark);
+   panel_return_if_fail (entry != NULL);
+ 
+@@ -1114,7 +1120,10 @@ actions_plugin_action_activate (GtkWidget *widget,
        && entry->question != NULL
        && entry->status != NULL
        && !actions_plugin_action_confirmation (plugin, entry, &unattended))
