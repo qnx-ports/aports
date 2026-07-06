@@ -36,7 +36,7 @@ unpack() {
         case "$s" in
             *.zip)
                 msg "Unpacking $s..."
-				unzip -n -q "$s";;
+                unzip -n -q "$s";;
         esac
     done
 }
