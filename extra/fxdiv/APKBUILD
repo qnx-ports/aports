@@ -19,10 +19,10 @@ source="${pkgname}-${pkgver}.tar.gz::https://github.com/Maratyszcza/${_pkgname}/
 builddir="${srcdir}/${_pkgname}-${_pkgver}"
 
 build() {
-    export CPPFLAGS="$CPPFLAGS -Wno-missing-field-initializers"
     cmake3.5 -B build -G Ninja \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_INSTALL_PREFIX=/usr \
+        -DCMAKE_CXX_FLAGS="-Qunused-arguments -Wno-missing-field-initializers" \
         -DBUILD_SHARED_LIBS=ON \
         -DFXDIV_BUILD_BENCHMARKS=OFF
     cmake3.5 --build build
