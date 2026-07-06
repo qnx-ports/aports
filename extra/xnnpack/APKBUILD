@@ -60,7 +60,11 @@ build() {
         -DBUILD_SHARED_LIBS=ON \
         -DXNNPACK_BUILD_TESTS=OFF \
         -DXNNPACK_BUILD_BENCHMARKS=OFF \
-        -DXNNPACK_USE_SYSTEM_LIBS=ON
+        -DXNNPACK_USE_SYSTEM_LIBS=ON \
+        -DCPUINFO_SOURCE_DIR=/usr \
+        -DPTHREADPOOL_SOURCE_DIR=/usr \
+        -DFXDIV_SOURCE_DIR=/usr \
+        -DKLEIDIAI_SOURCE_DIR=/usr
     cmake3.5 --build build
 }
 
