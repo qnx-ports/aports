@@ -13,13 +13,13 @@ makedepends="
     cmake
     ninja
     libc++-dev
-    gtest-dev
     "
 subpackages="$pkgname-dev"
 source="${pkgname}-${pkgver}.tar.gz::https://github.com/Maratyszcza/${_pkgname}/archive/${_pkgver}.tar.gz"
 builddir="${srcdir}/${_pkgname}-${_pkgver}"
 
 build() {
+    export CPPFLAGS="$CPPFLAGS -Wno-missing-field-initializers"
     cmake3.5 -B build -G Ninja \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_INSTALL_PREFIX=/usr \
