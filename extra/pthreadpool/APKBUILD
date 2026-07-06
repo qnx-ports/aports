@@ -21,7 +21,7 @@ source="${pkgname}-${pkgver}.zip::https://github.com/google/pthreadpool/archive/
     FXdiv_patch
     "
 builddir="${srcdir}/pthreadpool-${_pkgver}"
-_fxdiv_builddir="${srcdir}/${_pkgver}"
+_fxdiv_builddir="${srcdir}/${_fxdiv_ver}"
 
 unpack() {
     # Workaround for busybox bug.
