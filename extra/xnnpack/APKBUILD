@@ -8,12 +8,13 @@ pkgdesc="Efficient neural network inference accelerator for ARM, x86, WebAssembl
 url="https://github.com/google/XNNPACK"
 arch="all"
 license="BSD-3-Clause"
-depends="cpuinfo fxdiv pthreadpool"
+depends="cpuinfo fxdiv kleidiai pthreadpool"
 makedepends="
     clang
     cmake
     cpuinfo-dev
     fxdiv-dev
+    kleidiai-dev
     ninja
     pthreadpool-dev
     libc++-dev
