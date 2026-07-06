@@ -16,12 +16,14 @@ makedepends="
 subpackages="$pkgname-dev"
 source="${pkgname}-${pkgver}.tar.gz::https://github.com/ARM-software/${pkgname}/archive/${_pkgver}.tar.gz"
 builddir="${srcdir}/${pkgname}-${_pkgver}"
+options="!check" # We need to implement a way to get supported cpu ISAs for this.
 
 build() {
     cmake3.5 -B build -G Ninja \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_INSTALL_PREFIX=/usr \
-        -DBUILD_SHARED_LIBS=ON
+        -DBUILD_SHARED_LIBS=ON \
+        -DKLEIDIAI_BUILD_TESTS="$(want_check && echo ON || echo OFF)"
     cmake3.5 --build build
 }
 
