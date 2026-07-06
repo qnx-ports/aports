@@ -23,6 +23,7 @@ build() {
         -DCMAKE_INSTALL_PREFIX=/usr \
         -DCMAKE_CXX_FLAGS="-Qunused-arguments -w" \
         -DBUILD_SHARED_LIBS=ON \
+        -DINSTALL_GTEST=OFF \
         -DFXDIV_BUILD_BENCHMARKS=OFF
     cmake3.5 --build build
 }
