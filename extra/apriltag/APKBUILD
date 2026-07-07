@@ -13,7 +13,10 @@ makedepends="
     python3-dev
     python3-numpy-dev
     "
-subpackages="$pkgname-dev"
+subpackages="
+    $pkgname-dev
+    python3-$pkgname:python3-bindings
+    "
 source="$pkgname-$pkgver.tar.gz::https://github.com/AprilRobotics/apriltag/archive/refs/tags/v3.4.5.tar.gz"
 builddir="$srcdir/$pkgname-$pkgver"
 
@@ -38,6 +41,17 @@ build() {
 check() {
     cd $builddir
     ctest --test-dir build -V
+}
+
+dev() {
+    default_dev
+    amove usr/lib/apriltag/cmake
+}
+
+python3-bindings() {
+    pkgdesc="Python3 bindings for Apriltag"
+    depends="$pkgname python3-numpy"
+    amove usr/lib/python3*/site-packages
 }
 
 package() {
