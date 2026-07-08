@@ -12,6 +12,10 @@ makedepends="
     lz4-dev>=1.9.3
     zstd-dev>=1.5.2
     "
+depends="
+    lz4>=1.9.3
+    zstd>=1.5.2
+    "
 checkdepends="
     catch2
     protobuf-dev>=3
