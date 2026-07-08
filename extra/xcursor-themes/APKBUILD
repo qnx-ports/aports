@@ -1,0 +1,30 @@
+# Alpine-Maintainer: Дмитрий <wakoo1337@yandex.ru>
+# Maintainer: Elliott Mazzuca <emazzuca@qnx.com>
+pkgname=xcursor-themes
+pkgver=1.0.7
+pkgrel=0
+pkgdesc="X.Org cursor themes (whiteglass/redglass/handhelds); provides window resize cursors for GTK4/Weston on QNX"
+url="https://gitlab.freedesktop.org/xorg/data/cursors"
+arch="noarch"
+license="HPND-sell-variant"
+options="!check"
+# NOTE (QNX port): upstream xcursor-themes generates its cursors at build time
+# with xcursorgen, an X11 tool that is not available on the QNX Wayland image
+# (no xcursorgen / libXcursor / xorgproto in the QNX repos). The generated
+# cursors are architecture-independent Xcursor data, so this package ships and
+# installs the pre-generated cursor data directly instead of running xcursorgen.
+# A 'default' theme (whiteglass cursors + the CSS-name resize aliases) is
+# included so GDK and Weston, which both fall back to the cursor theme named
+# 'default' when nothing is configured, resolve resize cursors with no session
+# configuration. This is what makes the GTK4 window resize cursor appear.
+source="xcursor-themes-data-$pkgver.tar.gz"
+builddir="$srcdir"
+
+package() {
+	install -d "$pkgdir"/usr/share/icons
+	cp -a "$srcdir"/whiteglass "$srcdir"/redglass "$srcdir"/handhelds \
+		"$srcdir"/default "$pkgdir"/usr/share/icons/
+}
+sha512sums="
+9a365782592d374a227ad5a9f1da871c909bbdab9295dc57ec03e2af0ec03d7e8b8a85e69ab248baa4bb3451997240660a12b454924a9499d05c7d8ea8edd644  xcursor-themes-data-1.0.7.tar.gz
+"
