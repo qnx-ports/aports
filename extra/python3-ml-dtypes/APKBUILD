@@ -1,8 +1,8 @@
 # Maintainer: Ethan Leir <eleir@qnx.com>
 pkgname=python3-ml-dtypes
 _pkgname=ml_dtypes
-pkgver=0.5.0
-pkgrel=0
+pkgver=0.5.4
+pkgrel=1
 pkgdesc="Standalone NumPy dtype extensions for machine learning"
 url="https://github.com/jax-ml/ml_dtypes"
 arch="all"
@@ -54,5 +54,5 @@ package() {
 }
 
 sha512sums="
-20b2677c1e69b9ea298ac7d8ccfee3f0d19b847a805efa183ba04845e1a1697e9030abe00d6e8a4d46981df14c8d5986bcbc3b4e0f36eef2aee1cd04e3996bfe  python3-ml-dtypes-0.5.0.tar.gz
+585641b2d4d9ff7b134310ac38484989d85efd3f303cc99fa71b2b693c710f435d4245bb64239b79f823da647e71f477be89d3141fa6aeb775262ea13a4f1bf7  python3-ml-dtypes-0.5.4.tar.gz
 "
