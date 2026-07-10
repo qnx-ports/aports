@@ -5,7 +5,7 @@ pkgrel=0
 pkgdesc="ROS 2 Jazzy desktop package"
 url="https://docs.ros.org/en/jazzy/index.html"
 arch="all"
-license="Apache-2.0"
+license="BSD-3-Clause"
 options="!check !tracedeps !fhs"
 
 source="https://github.com/moveit/moveit2/archive/refs/tags/2.12.4.tar.gz
