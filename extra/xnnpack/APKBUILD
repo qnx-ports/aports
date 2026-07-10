@@ -10,6 +10,10 @@ arch="all"
 license="BSD-3-Clause"
 depends="cpuinfo pthreadpool"
 depends_dev="cpuinfo-dev fxdiv-dev pthreadpool-dev"
+if [[ $CARCH == "aarch64" ]]; then
+    depends="$depends kleidiai"
+    depends_dev="$depends_dev kleidiai-dev"
+fi
 makedepends="
     $depends_dev
     clang
@@ -18,10 +22,6 @@ makedepends="
     libc++-dev
     python3
     "
-if [[ $CARCH == "aarch64" ]]; then
-    depends="$depends kleidiai"
-    depends_dev="$depends_dev kleidiai-dev"
-fi
 subpackages="$pkgname-dev"
 source="${pkgname}-${pkgver}.zip::https://github.com/google/${_pkgname}/archive/${_pkgver}.zip
     001-system-name.patch
