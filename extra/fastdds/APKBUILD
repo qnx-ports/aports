@@ -7,6 +7,8 @@ url="https://github.com/eProsima/Fast-DDS"
 arch="all"
 license="Apache-2.0"
 
+subpackages="$pkgname-dev $pkgname-tools $pkgname-tests"
+
 makedepends="
     build-base
     cmake
@@ -73,6 +75,17 @@ check() {
 
 package() {
     DESTDIR="$pkgdir" cmake --install build
+}
+
+tests() {
+    amove usr/bin/Fast-DDS_test
+}
+
+tools() {
+    amove usr/bin/fastdds
+    amove usr/bin/fast-discovery-server
+    amove usr/bin/ros-discovery
+    amove usr/tools
 }
 
 sha512sums="
