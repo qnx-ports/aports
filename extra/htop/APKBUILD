@@ -15,7 +15,7 @@ license="GPL-2.0-or-later"
 # QNX we don't have this ported
 # depends="lsof"
 depends="ncurses"
-makedepends="ncurses-dev qnx-io-sock-dev qnx-fs-core-dev qnx-fs-gpt-dev"
+makedepends="ncurses-dev qnx-io-sock-dev qnx-fs-core-dev qnx-fs-gpt-dev automake"
 subpackages="$pkgname-doc"
 
 builddir="$srcdir/$pkgname-qnx-$pkgver-r$pkgrel"
