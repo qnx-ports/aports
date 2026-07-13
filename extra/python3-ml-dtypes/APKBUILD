@@ -2,7 +2,7 @@
 pkgname=python3-ml-dtypes
 _pkgname=ml_dtypes
 pkgver=0.5.4
-pkgrel=1
+pkgrel=0
 pkgdesc="Standalone NumPy dtype extensions for machine learning"
 url="https://github.com/jax-ml/ml_dtypes"
 arch="all"
