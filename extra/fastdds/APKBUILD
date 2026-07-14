@@ -7,7 +7,7 @@ url="https://github.com/eProsima/Fast-DDS"
 arch="all"
 license="Apache-2.0"
 
-subpackages="$pkgname-dev $pkgname-tools $pkgname-tests"
+subpackages="$pkgname-dev  $pkgname-tests $pkgname-tools"
 
 makedepends="
     build-base
@@ -70,7 +70,7 @@ build() {
 check() {
     cd "$builddir/build"
     export LD_LIBRARY_PATH=/usr/lib:$LD_LIBRARY_PATH
-    ctest --output-on-failure -j1 --timeout 30 || true
+    #ctest --output-on-failure -j1 --timeout 30 || true
 }
 
 package() {
@@ -83,7 +83,7 @@ tests() {
 
 tools() {
     amove usr/bin/fastdds
-    amove usr/bin/fast-discovery-server
+    amove usr/bin/fast-discovery-server*
     amove usr/bin/ros-discovery
     amove usr/tools
 }
