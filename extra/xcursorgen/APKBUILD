@@ -1,0 +1,45 @@
+# Alpine-Maintainer: Leonardo Arena <rnalrd@alpinelinux.org>
+# Maintainer: Elliott Mazzuca <emazzuca@qnx.com>
+pkgname=xcursorgen
+pkgver=1.0.9
+pkgrel=0
+pkgdesc="Create and X cursor file from PNG images"
+url="https://xorg.freedesktop.org/archive/individual/app/"
+arch="all"
+license="Custom"
+# Upstream lists xorg-server-dev, but xcursorgen is an X11 client tool that does
+# not need X server headers; it only needs the xcursor/libpng client libs plus
+# the xorg autoconf macros. xorg-server-dev is not available on QNX, so drop it
+# and pull the macros directly via util-macros. (libxcursor-dev already depends
+# on libx11-dev, so apk installs it automatically.)
+makedepends="libxcursor-dev libpng-dev util-macros"
+subpackages="$pkgname-doc"
+source="https://xorg.freedesktop.org/archive/individual/app/xcursorgen-$pkgver.tar.xz"
+
+build() {
+	# QNX: pass the abuild build/host triplet explicitly; without it configure
+	# auto-detects a malformed triplet (unknown-x86pc-nto-qnx8.0.0) that the
+	# bundled config.sub rejects.
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--sysconfdir=/etc \
+		--mandir=/usr/share/man \
+		--infodir=/usr/share/info
+	make
+}
+
+package() {
+	make DESTDIR="$pkgdir" install
+	install -m755 -d "$pkgdir/usr/share/licenses/$pkgname"
+	install -m644 COPYING "$pkgdir/usr/share/licenses/$pkgname/"
+}
+
+check() {
+	make check
+}
+
+sha512sums="
+d40b96d6f60ee3815ef8ed6217028b39b127f200415661e39cf23af89662aafc6783f9e311f8021fe1a5ccfbc47610909796e569991e6680b8c2133401af476e  xcursorgen-1.0.9.tar.xz
+"
