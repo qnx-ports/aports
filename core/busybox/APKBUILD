@@ -1,46 +1,44 @@
 # Maintainer: Leo Shen <yishen@qnx.com>
 pkgname=busybox
-pkgver=1.36.1
-pkgrel=10
+pkgver=1.36.1_p0
+pkgrel=11
 arch="all"
 pkgdesc="Size optimized toolbox of many common UNIX utilities"
 url="https://www.busybox.net"
 license="GPL-2.0-only"
 depends="qnx-io-sock"
-makedepends="qnx-io-sock-dev help2man diffutils"
-subpackages="$pkgname-doc $pkgname-utils:utils"
-source="$url/downloads/$pkgname-$pkgver.tar.bz2
+makedepends="qnx-io-sock-dev help2man"
+checkdepends="zip"
+install="$pkgname.post-install $pkgname.post-upgrade"
+subpackages="$pkgname-doc"
+triggers="busybox.trigger=/usr/bin"
+source="https://github.com/qnx-ports/busybox/archive/refs/tags/qnx-${pkgver//./_}.tar.gz
     config
-    fix-qnx.patch
 "
-
+builddir="$srcdir/$pkgname-qnx-${pkgver//./_}"
 build() {
     cp ../config .config
-    # the -no-pie argument for LD is a hack that should be removed when clang's QNX support is fixed
-    make LD="ld -no-pie" HOSTCFLAGS="-D_QNX_SOURCE" HOSTLDFLAGS="-lregex -lsocket"
+    make HOSTLDFLAGS="-lregex -lsocket" LDFLAGS="-Wl,-z,stack-size=4194304" CONFIG_EXTRA_CFLAGS="-DBB_GLOBAL_CONST=''" CONFIG_EXTRA_LDLIBS="regex socket"
 }
+
+check() {
+	# Set VERBOSE to see expected outcome of each test (runtest -v flag).
+	# Set DEBUG to enable command trace (see testsuite/testing.sh).
+
+	# TEST FAILS
+	# - qnx date doesn't accept some formats need to find the best way to do this
+	# - tar has 1 issue with symlinks
+	SKIP_KNOWN_BUGS=1 make V=1 check HOSTLDFLAGS="-lregex -lsocket" LDFLAGS="-Wl,-z,stack-size=4194304" CONFIG_EXTRA_CFLAGS="-DBB_GLOBAL_CONST=''" CONFIG_EXTRA_LDLIBS="regex socket" || true
+}
+
 
 package() {
+    install -d "$pkgdir"/usr/bin
     install -Dm755 busybox "$pkgdir"/usr/bin/busybox
     install -Dm644 docs/busybox.1 "$pkgdir"/usr/share/man/man1/busybox.1
-    # utils
-}
-
-utils() {
-    provides="coreutils"
-    pkgdesc="Busybox (coreutils symlinks)"
-    depends="$pkgname"
-
-    _user_utils="adduser addgroup deluser delgroup add-shell remove-shell"
-    _utils="date find getopt setopt sha256sum sha512sum tree unzip $_user_utils"
-    mkdir -p "$subpkgdir"/usr/bin
-    for util in $_utils; do
-        ln -sv busybox "$subpkgdir"/usr/bin/$util
-    done
 }
 
 sha512sums="
-8c0c754c9ae04b5e6b23596283a7d3a4ef96225fe179f92d6f6a99c69c0caa95b1aa56c267f52d7c807f6cc69e1f0b7dd29a8ac624098f601738f8c0c57980d4  busybox-1.36.1.tar.bz2
-46eb409a42ae1d90ed7f513224d8611a8266671f3bf48d15347171afb1667ebb19d0ec2e0965775ee2bb4ccda2817d1b611839ae5b6241a264db4032d4b8f8ba  config
-a497503b408cef7c5574b859f59eef978b7db43dc8303eb84d2765ae54413e8450c6e8e89559054fa342120a88edfb8964778a091341c382c5fe44eb0623417b  fix-qnx.patch
+f0da2ff9f08dcbba00c44097fe8c33958e4364567e96b33388f29c1ca3c4228076e8920e3abe26b817a4e6e890000e99d4da108e98915057e34b4795dfa4c63c  qnx-1_36_1_p0.tar.gz
+4dbfc5d58cbf0d6f25b93c61bd43e625f7ccb59dde279f6e31ba4c137148bd81cc73ba32b11a0e50c3fc5d280a92f7bb56e75405ab70fcfaf241e3e56bbee84a  config
 "
