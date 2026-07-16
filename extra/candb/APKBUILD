@@ -10,6 +10,7 @@ license="MPL-2.0"
 depends="libc++"
 makedepends="cmake ninja make libc++-dev"
 _pkgver=150c42a8cdfc0748915f09d2cd0c5a68591263a7
+subpackages="$pkgname-dev"
 source="
 https://github.com/GENIVI/CANdb/archive/${_pkgver}.tar.gz
 candb.patch
@@ -55,7 +56,9 @@ build() {
         -DBUILD_TESTING=ON \
         -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
         -DENABLE_TESTS=ON \
-        -DCANDB_BUILD_TESTS=ON
+        -DCANDB_BUILD_TESTS=ON \
+        -DINSTALL_GTEST=OFF \
+        -DBUILD_SHARED_LIBS=ON
 
     cmake --build build
 }
@@ -67,7 +70,16 @@ check() {
 
 package() {
     cd "$builddir"
+
     DESTDIR="$pkgdir" cmake --install build
+
+    install -Dm755 build/src/libCANdb.so \
+        "$pkgdir/usr/lib/libCANdb.so"
+
+    install -d "$pkgdir/usr/include/CANdb"
+
+    install -m644 src/*.h src/*.hpp \
+        "$pkgdir/usr/include/CANdb/"
 }
 
 sha512sums="
