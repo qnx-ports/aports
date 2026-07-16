@@ -1,28 +1,35 @@
 # Maintainer: Aaron Bassett <abassett@qnx.com>
 pkgname=libsysv-ipc-shim
 pkgver=0.1.0
-pkgrel=2
+pkgrel=3
 pkgdesc="QNX ipc.h shim"
 url="https://qnx.com"
 arch="all"
 license="LicenseRef-QDL-Non-Commercial"
 options="!check"
-makedepends="clang"
+makedepends="clang cmake gtest-dev libc++-dev ninja"
+checkdepends="gtest libc++"
 subpackages="$pkgname-dev"
-source="$pkgname-v$pkgver.tar.gz::https://github.com/qnx-ports/libsysv-ipc-shim/archive/refs/tags/v$pkgver.tar.gz
+source="$pkgname-v$pkgver-r$pkgrel.tar.gz::https://github.com/qnx-ports/libsysv-ipc-shim/archive/refs/tags/v$pkgver-r$pkgrel.tar.gz
     "
+builddir="$srcdir/$pkgname-$pkgver-r$pkgrel"
 
 build() {
-    CC=clang ./build.sh
+    # Testing and install are enabled by default.
+    cmake -B build -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DCMAKE_INSTALL_INCLUDEDIR=include/shims \
+        -DBUILD_SHARED_LIBS=ON
+    cmake --build build
+}
+
+check() {
+    ctest --test-dir build
 }
 
 package() {
-    mkdir -p "$pkgdir"/usr/include/shims
-    mkdir -p "$pkgdir"/usr/lib
-
-    cd $builddir
-    cp -r include/sys "$pkgdir"/usr/include/shims
-    cp -r libsysv-ipc.so "$pkgdir"/usr/lib
+    DESTDIR="$pkgdir" cmake --install build
 }
 
 dev() {
@@ -31,5 +38,5 @@ dev() {
 }
 
 sha512sums="
-3c36b3af4a33586a95f7e77051a3dc82522102976fcfa5ede278db35de8b7966828b6bd2bc0e205d764c720a9e33f4ed784c516cd308aafcbdf8514e9c94501d  libsysv-ipc-shim-v0.1.0.tar.gz
+ccb268cf8b6dfcd7d949a482af6487561f18ab22c86eb4ae9a95783f2ac9cb568defcbc03cbc9895756229d313b656a87eff9601390bf43ff5bb048a32956c45  libsysv-ipc-shim-v0.1.0-r3.tar.gz
 "
