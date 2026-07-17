@@ -27,27 +27,11 @@ source="https://github.com/HDFGroup/hdf5/releases/download/hdf5_$pkgver/hdf5-$pk
     "
 builddir=$srcdir/$pkgname-$pkgver
 
-prepare() {
-    default_prepare
-
-    # Don't mess with build flags
-    sed -e '/-Werror/d' -i configure
-}
-
 build() {
     export LDFLAGS="${LDFLAGS} -lz"
     export CC=clang
     export CXX=clang++
 
-    # Crazy workaround: run CMake to generate pkg-config file
-    # 2nd workaround: cmake creates the file pac_Cconftest.out in the current
-    # directory, but checks if it is successfully created in the build dir.
-    # So the current directory must be build.
-    #
-    # FIXME: We're supposed to pick up szip, but we don't because libaec does
-    #        not come with szip config files... Might be broken.
-    # FIXME: flang has problems with its runtime libraries at the moment, so
-    #        Fortran is disabled.
     mkdir build && cd build
     cmake -G "Unix Makefiles" \
         -DCMAKE_INSTALL_PREFIX=/usr \
