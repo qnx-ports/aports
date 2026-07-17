@@ -18,7 +18,7 @@ subpackages="
     libsz
     "
 source="
-    libaec-$pkgver.tar.gz::https://gitlab.dkrz.de/k202009/libaec/-/archive/v$pkgver/libaec-v$pkgver.tar.gz
+    libaec-$pkgver.tar.gz::https://gitlab.dkrz.de/dkrz-sw/libaec/-/archive/v$pkgver/libaec-v$pkgver.tar.gz
     "
 builddir=$srcdir/$pkgname-v$pkgver
 
