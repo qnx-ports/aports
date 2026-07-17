@@ -21,7 +21,7 @@ depends="libc++"
 depends_dev="zlib-dev"
 makedepends="cmake $depends_dev clang libaec-dev perl libc++-dev"
 checkdepends="diffutils"
-subpackages="$pkgname-tools $pkgname-fortran $pkgname-cpp $pkgname-hl $pkgname-hl-fortran:hl_fortran $pkgname-hl-cpp:hl_cpp $pkgname-static $pkgname-doc $pkgname-dev"
+subpackages="$pkgname-tools $pkgname-cpp $pkgname-hl $pkgname-hl-cpp:hl_cpp $pkgname-static $pkgname-doc $pkgname-dev"
 source="https://github.com/HDFGroup/hdf5/releases/download/hdf5_$pkgver/hdf5-$pkgver.tar.gz
     qnx-fix-segfault.patch
     "
