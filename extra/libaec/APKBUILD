@@ -13,6 +13,7 @@ makedepends="
     clang
     ninja
     "
+checkdepends="diffutils"
 subpackages="
     $pkgname-dev
     libsz
