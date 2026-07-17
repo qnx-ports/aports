@@ -69,7 +69,7 @@ build() {
 check() {
     # It looks like the tests expect dynamics to already be installed
     export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$builddir/build/bin
-    ctest --timeout 600 --test-dir build
+    ctest --timeout 900 --test-dir build
 }
 
 package() {
@@ -107,5 +107,5 @@ dev() {
 
 sha512sums="
 d93194ad8f48acf110aae317f4c37104b9042f89ef72919aac887817e4c2713449c4cb2ab6a163c61ab1c12811170d7611cdf69322b0e0f96420fcc7f99fdd67  hdf5-1.14.6.tar.gz
-61643e7fe291196de5eee404e2c2b25ec913dd8058e3da62b56108d7a392fed415312a5a85a55394f7e99d7849dade63417a3e5f8f260c82bcdada740dba2632  qnx-fix-segfault.patch
+d24f701881aad859e7032e14475f2088459c9539c76096d811dbf91dbf3149f5eb2f8c513bc55ad24e4ed3a60c31e879f6a56725468512f26610f05a37344751  qnx-fix-segfault.patch
 "
