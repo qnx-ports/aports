@@ -1,7 +1,7 @@
-#!/bin/busybox sh
+#!/usr/bin/busybox sh
 
 #QNX: we don't have this right now but may in the future
-[ -e /bin/bbsuid ] && /bin/bbsuid --install
-[ -e /bin/busybox-extras ] && /bin/busybox-extras --install -s
+[ -e /usr/bin/bbsuid ] && /bin/bbsuid --install -s /usr/bin
+[ -e /usr/bin/busybox-extras ] && /bin/busybox-extras --install -s /usr/bin
 
-/bin/busybox --install -s
+/usr/bin/busybox --install -s /usr/bin

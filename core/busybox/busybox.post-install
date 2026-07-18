@@ -1,8 +1,8 @@
 #!/bin/busybox sh
 
 # We need the symlinks early
-/bin/busybox mkdir -p "/usr/bin"
-/bin/busybox --install -s || exit 1
+/usr/bin/busybox mkdir -p "/usr/bin"
+/usr/bin/busybox --install -s /usr/bin || exit 1
 
 exit 0
 
