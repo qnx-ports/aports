@@ -6,7 +6,7 @@ pkgrel=0
 pkgdesc="Create and X cursor file from PNG images"
 url="https://xorg.freedesktop.org/archive/individual/app/"
 arch="all"
-license="Custom"
+license="HPND-sell-variant "
 # Upstream lists xorg-server-dev, but xcursorgen is an X11 client tool that does
 # not need X server headers; it only needs the xcursor/libpng client libs plus
 # the xorg autoconf macros. xorg-server-dev is not available on QNX, so drop it
