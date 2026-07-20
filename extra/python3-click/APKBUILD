@@ -1,0 +1,38 @@
+# Contributor: Fabian Affolter <fabian@affolter-engineering.ch>
+# Contributor: Celeste <cielesti@protonmail.com>
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=python3-click
+pkgver=8.4.0
+pkgrel=0
+pkgdesc="Simple wrapper around optparse for powerful command line utilities"
+url="https://click.palletsprojects.com"
+arch="noarch"
+license="BSD-3-Clause"
+makedepends="
+    python3-flit-core
+    python3-gpep517
+    "
+checkdepends="python3-pytest"
+source="https://files.pythonhosted.org/packages/source/c/click/click-$pkgver.tar.gz"
+builddir="$srcdir/click-$pkgver"
+
+build() {
+    gpep517 build-wheel \
+        --wheel-dir .dist \
+        --output-fd 3 3>&1 >&2
+}
+
+check() {
+    python3 -m venv --clear --without-pip --system-site-packages .testenv
+    .testenv/bin/python3 -m installer .dist/*.whl
+    .testenv/bin/python3 -m pytest
+}
+
+package() {
+    python3 -m installer -d "$pkgdir" \
+        .dist/*.whl
+}
+
+sha512sums="
+7b1e82888b2859e417c2086e72113394ccab442110822fa4ae59df8cc9937b01f4886e6461d1ade809faa885db542cc298fe7d0e42c3045abb59b0bf71b23192  click-8.4.0.tar.gz
+"
