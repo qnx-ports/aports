@@ -13,7 +13,7 @@ makedepends="python3-gpep517 python3-installer python3-hatchling"
 checkdepends="python3-jupyter_core python3-jupyter_client python3-jupyter_server"
 source="$pkgname-$pkgver.tar.gz::https://github.com/jupyter-server/pytest-jupyter/archive/refs/tags/v$pkgver.tar.gz"
 builddir="$srcdir/pytest-jupyter-$pkgver"
-options="!check" # check seems to need a venv but also fails in a venv
+options="!check" # Circular dependencies.
 
 build() {
     gpep517 build-wheel \
