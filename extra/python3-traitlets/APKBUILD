@@ -1,0 +1,30 @@
+# Alpine-Contributor: Kevin Daudt <kdaudt@alpinelinux.org>
+# Alpine-Maintainer: Kevin Daudt <kdaudt@alpinelinux.org>
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=python3-traitlets
+pkgver=5.14.3
+pkgrel=1
+pkgdesc="lightweight Traits like module"
+url="https://traitlets.readthedocs.io/"
+arch="noarch"
+license="BSD-3-Clause"
+depends="python3"
+makedepends="python3-gpep517 python3-hatchling"
+options="!check" # No test suite present
+source="traitlets-$pkgver.tar.gz::https://github.com/ipython/traitlets/archive/v$pkgver.tar.gz"
+builddir="$srcdir/${pkgname#python3-}-$pkgver"
+
+build() {
+    gpep517 build-wheel \
+        --wheel-dir .dist \
+        --output-fd 3 3>&1 >&2
+}
+
+package() {
+    local whl=.dist/traitlets-$pkgver-py3-none-any.whl
+    python3 -m installer --dest="$pkgdir" "$whl"
+}
+
+sha512sums="
+c901d75f7eac1416ea8d5ff8ccaece62eb43c3e95d2121c9adfe3b41691b38c9c94277c8313cb8b61d5a4f46666b4f9ad824ceff0ccac85f45d833a316375f2f  traitlets-5.14.3.tar.gz
+"
