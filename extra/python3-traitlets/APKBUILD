@@ -20,6 +20,7 @@ checkdepends="
     "
 source="traitlets-$pkgver.tar.gz::https://github.com/ipython/traitlets/archive/v$pkgver.tar.gz"
 builddir="$srcdir/${pkgname#python3-}-$pkgver"
+options="!check" # Missing dependencies.
 
 build() {
     gpep517 build-wheel \
