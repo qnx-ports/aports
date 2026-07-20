@@ -3,7 +3,7 @@
 # Maintainer: Ethan Leir <eleir@qnx.com>
 pkgname=python3-traitlets
 pkgver=5.14.3
-pkgrel=1
+pkgrel=0
 pkgdesc="lightweight Traits like module"
 url="https://traitlets.readthedocs.io/"
 arch="noarch"
