@@ -10,7 +10,14 @@ arch="noarch"
 license="BSD-3-Clause"
 depends="python3"
 makedepends="python3-gpep517 python3-hatchling"
-options="!check" # No test suite present
+checkdepends="
+    python3-argcomplete
+    python3-mypy
+    python3-pre-commit
+    python3-pytest
+    python3-pytest-mock
+    python3-pytest-mypy-testing
+    "
 source="traitlets-$pkgver.tar.gz::https://github.com/ipython/traitlets/archive/v$pkgver.tar.gz"
 builddir="$srcdir/${pkgname#python3-}-$pkgver"
 
@@ -18,6 +25,12 @@ build() {
     gpep517 build-wheel \
         --wheel-dir .dist \
         --output-fd 3 3>&1 >&2
+}
+
+check() {
+    python3 -m venv --clear --without-pip --system-site-packages .testenv
+    .testenv/bin/python3 -m installer .dist/*.whl
+    .testenv/bin/python3 -m pytest
 }
 
 package() {
