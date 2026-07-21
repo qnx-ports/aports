@@ -10,7 +10,7 @@ arch="noarch"
 license="MPL-2.0"
 depends="python3-attrs python3-sortedcontainers"
 makedepends="python3-gpep517 python3-setuptools python3-wheel"
-checkdepends="python3-pytest python3-coverage python3-tz python3-numpy python3-dateutil python3-pexpect"
+checkdepends="python3-black python3-pytest python3-click python3-coverage python3-tz python3-numpy python3-dateutil python3-pexpect python3-typing-extensions"
 source="$pkgname-$pkgver.tar.gz::https://github.com/HypothesisWorks/hypothesis-python/archive/hypothesis-python-$pkgver.tar.gz"
 builddir="$srcdir/hypothesis-hypothesis-python-$pkgver/hypothesis-python"
 
@@ -25,7 +25,8 @@ check() {
     sed -e 's/from mock/from unittest.mock/' -i tests/cover/test_regressions.py
     sed -e 's/from mock/from unittest.mock/' -i tests/cover/test_reflection.py
 
-    rm -rf tests/lark tests/dpcontracts tests/pandas
+    # Remove some circular-dependency paths.
+    rm -rf tests/lark tests/dpcontracts tests/pandas tests/redis tests/codemods tests/crosshair tests/patching
     PYTHONPATH="$PWD/build/lib" pytest-3 -v -k "not test_healthcheck_traceback_is_hidden"
 }
 
