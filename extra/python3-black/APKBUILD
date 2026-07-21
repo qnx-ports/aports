@@ -16,9 +16,9 @@ prepare() {
     default_prepare
 
     # Remove deprecated pathspec submodule.
-    sed -i 's|from pathspec.patterns.gitignore import GitIgnorePatternError||' "$builddir"/src/black/__init__.py
+    sed -i 's|from pathspec.patterns.gitignore import GitIgnorePatternError|from pathspec.patterns.gitwildmatch import GitWildMatchPatternError|' "$builddir"/src/black/__init__.py
     sed -i 's|GitIgnorePatternError|GitWildMatchPatternError|' "$builddir"/src/black/__init__.py
-    sed -i 's|from pathspec.patterns.gitignore import GitIgnorePatternError||' "$builddir"/src/black/files.py
+    sed -i 's|from pathspec.patterns.gitignore import GitIgnorePatternError|from pathspec.patterns.gitwildmatch import GitWildMatchPatternError|' "$builddir"/src/black/files.py
     sed -i 's|GitIgnorePatternError|GitWildMatchPatternError|' "$builddir"/src/black/files.py
 }
 
