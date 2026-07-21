@@ -16,8 +16,8 @@ prepare() {
     default_prepare
 
     # Remove deprecated pathspec submodule.
-    sed -i 's|from pathspec.patterns.gitignore| from pathspec.gitignore|' "$builddir"/src/black/__init__.py
-    sed -i 's|from pathspec.patterns.gitignore| from pathspec.gitignore|' "$builddir"/src/black/files.py
+    sed -i 's|from pathspec.patterns.gitignore|from pathspec.gitignore|' "$builddir"/src/black/__init__.py
+    sed -i 's|from pathspec.patterns.gitignore|from pathspec.gitignore|' "$builddir"/src/black/files.py
 }
 
 build() {
