@@ -1,0 +1,34 @@
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=python3-black
+pkgver=26.3.1
+pkgrel=0
+pkgdesc="Python code formatter"
+url="https://github.com/psf/black"
+license="MIT"
+arch="noarch"
+depends="python3-click python3-mypy-extensions python3-pathspec python3-platformdirs python3-pytokens python3-tomli python3-typing-extensions"
+makedepends="python3-gpep517 python3-installer python3-packaging python3-setuptools"
+checkdepends="python3-pytest python3-pytest-cov python3-pytest-xdist"
+source="https://github.com/psf/black/archive/$pkgver/py3-pytokens-$pkgver.tar.gz"
+builddir="$srcdir/black-$pkgver"
+
+build() {
+    gpep517 build-wheel \
+        --wheel-dir .dist \
+        --output-fd 3 3>&1 >&2
+}
+
+check() {
+    python3 -m venv --clear --without-pip --system-site-packages .testenv
+    .testenv/bin/python3 -m installer .dist/*.whl
+    .testenv/bin/python3 -m pytest -vv
+}
+
+package() {
+    python3 -m installer -d "$pkgdir" \
+        .dist/*.whl
+}
+
+sha512sums="
+51e08b241d2202569993fb1a2cd96ceed23a203bf8bff62f311852c03ba4248cd00e24ac0815380e4385aa86d93d4e4f9277727581bfab4ccb682b6bf508f7ba  py3-pytokens-0.3.0.tar.gz
+"
