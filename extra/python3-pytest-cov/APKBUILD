@@ -1,0 +1,39 @@
+# Alpine-Contributor: TBK <alpine@jjtc.eu>
+# Alpine-Maintainer: TBK <alpine@jjtc.eu>
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=python3-pytest-cov
+pkgver=5.0.0
+pkgrel=0
+pkgdesc="Pytest plugin for measuring coverage"
+options="!check" # Requires unpackaged 'fields' module
+url="https://github.com/pytest-dev/pytest-cov"
+arch="noarch"
+license="MIT"
+replaces="pytest-cov" # for backwards compatibility
+provides="pytest-cov=$pkgver-r$pkgrel" # for backwards compatibility
+depends="python3-pytest python3-coverage"
+makedepends="python3-gpep517 python3-setuptools"
+#python3-pytest-xdist introduces a circular dependency
+#checkdepends="python3-virtualenv python3-pytest-xdist"
+subpackages="$pkgname-pyc"
+source="$pkgname-$pkgver.tar.gz::https://github.com/pytest-dev/pytest-cov/archive/v$pkgver.tar.gz"
+builddir="$srcdir/pytest-cov-$pkgver"
+
+build() {
+    gpep517 build-wheel \
+        --wheel-dir .dist \
+        --output-fd 3 3>&1 >&2
+}
+
+check() {
+    pytest
+}
+
+package() {
+    python3 -m installer -d "$pkgdir" \
+        .dist/*.whl
+}
+
+sha512sums="
+26721791424ef35eff6f3344b4c5bda486015f83657a9a33bab942bfa3514c319397dc343a292d2d76e175f4615062e4a229218420bc4cb331e09a9ceb0266d8  python3-pytest-cov-5.0.0.tar.gz
+"
