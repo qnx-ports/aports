@@ -9,8 +9,6 @@ options="!check" # Requires unpackaged 'fields' module
 url="https://github.com/pytest-dev/pytest-cov"
 arch="noarch"
 license="MIT"
-replaces="pytest-cov" # for backwards compatibility
-provides="pytest-cov=$pkgver-r$pkgrel" # for backwards compatibility
 depends="python3-pytest python3-coverage"
 makedepends="python3-gpep517 python3-setuptools"
 #python3-pytest-xdist introduces a circular dependency
