@@ -31,6 +31,9 @@ build() {
 check() {
     python3 -m venv --clear --without-pip --system-site-packages .testenv
     .testenv/bin/python3 -m installer .dist/*.whl
+
+    # We're not packaging blackd yet since it pulls in extra dependencies.
+    rm tests/test_blackd.py
     .testenv/bin/python3 -m pytest -vv
 }
 
