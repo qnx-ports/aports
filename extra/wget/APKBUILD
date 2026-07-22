@@ -1,0 +1,48 @@
+# Alpine-Contributor: Sandro Jäckel <sandro.jaeckel@posteo.de>
+# Alpine-Contributor: Sergei Lukin <sergej.lukin@gmail.com>
+# Alpine-Contributor: Carlo Landmeter <clandmeter@alpinelinux.org>
+# Alpine-Maintainer: Jingyun Hua <huajingyun@loongson.cn>
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=wget
+pkgver=1.25.0
+pkgrel=0
+pkgdesc="Network utility to retrieve files from the Web"
+url="https://www.gnu.org/software/wget/wget.html"
+arch="all"
+license="GPL-3.0-or-later WITH OpenSSL-Exception"
+makedepends="
+    libidn2-dev
+    openssl-dev
+    pcre2-dev
+    perl
+    zlib-dev
+    "
+checkdepends="perl-http-daemon"
+subpackages="$pkgname-doc"
+source="https://ftp.gnu.org/gnu/wget/wget-$pkgver.tar.gz"
+
+build() {
+    ./configure \
+        --build=$CBUILD \
+        --host=$CHOST \
+        --prefix=/usr \
+        --sysconfdir=/etc \
+        --mandir=/usr/share/man \
+        --infodir=/usr/share/info \
+        --with-libidn \
+        --with-ssl=openssl \
+        --disable-nls
+    make
+}
+
+check() {
+    make check
+}
+
+package() {
+    make DESTDIR="$pkgdir" install
+}
+
+sha512sums="
+a7ce33c07a1a206a8574b6e9ea7cc5292315df0914edbcf05a014d35ae9e3d24699a46818b409b884ada57428cf30502f4bbb3767cae2c6934e4e7fb2d0c5036  wget-1.25.0.tar.gz
+"
