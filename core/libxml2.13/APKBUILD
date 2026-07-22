@@ -1,0 +1,64 @@
+pkgname=libxml2.13
+pkgver=2.13.9
+pkgrel=0
+pkgdesc="XML parsing library, version 2.13"
+url="https://gitlab.gnome.org/GNOME/libxml2"
+arch="all"
+license="MIT"
+depends="zlib-ng xz-libs qnx-io-sock"
+makedepends="zlib-ng-dev xz-dev qnx-io-sock-dev"
+checkdepends="perl tar"
+depends_dev="$makedepends !libxml2-dev"
+subpackages="$pkgname-static $pkgname-dev"
+source="https://download.gnome.org/sources/libxml2/${pkgver%.*}/libxml2-$pkgver.tar.xz
+	CVE-2026-6732.patch
+	CVE-2026-6732-test.patch
+"
+replaces="libxml2~2.13"
+builddir="$srcdir/libxml2-$pkgver"
+
+prepare() {
+    default_prepare
+
+    # We don't build libxml2 with icu.
+    rm test/icu_parse_test.xml
+}
+
+build() {
+    msg "$_python_path"
+    CFLAGS="$CFLAGS -Wl,-z,stack-size=8388608" \
+    ./configure \
+        --build=$CBUILD \
+        --host=$CHOST \
+        --prefix=/usr \
+        --sysconfdir=/etc \
+        --mandir=/usr/share/man \
+        --infodir=/usr/share/info \
+        --enable-static \
+        --with-legacy \
+        --with-lzma \
+        --with-zlib \
+	--with-python=no
+
+    make
+}
+
+check() {
+	rm -f test/ebcdic_566012.xml
+	LD_LIBRARY_PATH="$(realpath $builddir/.libs):$LD_LIBRARY_PATH" make runtests
+}
+
+
+package() {
+    make -j1 DESTDIR="$pkgdir" install
+
+    # we dont need docs
+    rm -rf "$pkgdir"/usr/share
+}
+
+
+sha512sums="
+62d4813860124c969f204aaf33b497105dbc32a6c5655f5a86168743660e10987d687d7e5e7ee49fdfdeb8f6ad9fa4503f81fcce2e4d459094895f02436d1b13  libxml2-2.13.9.tar.xz
+c33bc129682b39f9a540712f9474e0aca7807bf76dab9f68ac1511c6e3644c4f1fb82e503221b1b9ae7c66220e27dfdcdc74fcd0ec6f16799d0bcb58f116f49d  CVE-2026-6732.patch
+9117a6a060d9c760ae4aa88c33131b02b4677a6703fe02ea36a474035c901d5da778a4d98402a87187410e9bcfe9819d382f9df4e6fe42ff3cf33acc88ba28a9  CVE-2026-6732-test.patch
+"
