@@ -21,6 +21,12 @@ checkdepends="perl-http-daemon"
 subpackages="$pkgname-doc"
 source="https://mirror.csclub.uwaterloo.ca/gnu/wget/wget-$pkgver.tar.gz"
 
+prepare() {
+    default_prepare
+
+    sed -i "s|# undef inet_ntop||" "$builddir"/lib/inet_ntop.c
+}
+
 build() {
     ./configure \
         --build=$CBUILD \
