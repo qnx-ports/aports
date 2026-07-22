@@ -15,6 +15,7 @@ makedepends="
     openssl-dev
     pcre2-dev
     perl
+    qnx-io-sock-dev
     zlib-dev
     "
 checkdepends="perl-http-daemon"
