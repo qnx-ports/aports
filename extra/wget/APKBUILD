@@ -19,7 +19,7 @@ makedepends="
     "
 checkdepends="perl-http-daemon"
 subpackages="$pkgname-doc"
-source="https://ftp.gnu.org/gnu/wget/wget-$pkgver.tar.gz"
+source="https://mirror.csclub.uwaterloo.ca/gnu/wget/wget-$pkgver.tar.gz"
 
 build() {
     ./configure \
