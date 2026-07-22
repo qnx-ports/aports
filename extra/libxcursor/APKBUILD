@@ -13,10 +13,6 @@ makedepends="xorgproto util-macros libx11-dev libxrender-dev libxfixes-dev"
 source="https://www.x.org/releases/individual/lib/libXcursor-$pkgver.tar.xz"
 builddir="$srcdir"/libXcursor-$pkgver
 
-# secfixes:
-#   1.1.15-r0:
-#     - CVE-2017-16612
-
 build() {
 	./configure \
 		--build=$CBUILD \
