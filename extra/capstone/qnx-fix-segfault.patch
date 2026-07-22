@@ -1,0 +1,13 @@
+diff --git a/tests/test_iter.c b/tests/test_iter.c
+index 1820d958..1e7ae63e 100644
+--- a/tests/test_iter.c
++++ b/tests/test_iter.c
+@@ -327,7 +327,7 @@ struct platform platforms[] = {
+ 			if (detail->groups_count > 0) {
+ 				printf("\tThis instruction belongs to groups: ");
+ 				for (n = 0; n < detail->groups_count; n++) {
+-					printf("%s ", cs_group_name(handle, detail->groups[n]));
++					printf("%s ", ((char * name = cs_group_name(handle, detail->groups[n])) == NULL) ? "(null)" : name);
+ 				}
+ 				printf("\n");
+ 			}
