@@ -1,0 +1,18 @@
+see https://github.com/qnx-ports/aports/issues/479
+
+
+diff --git a/colcon_cmake/task/cmake/build.py b/colcon_cmake/task/cmake/build.py
+index ad72839..fdf1ca7 100644
+--- a/colcon_cmake/task/cmake/build.py
++++ b/colcon_cmake/task/cmake/build.py
+@@ -309,6 +309,10 @@ class CmakeBuildTask(TaskExtensionPoint):
+         if jobs is None:
+             # the number of cores can't be determined
+             return []
++        try:
++            os.getloadavg
++        except AttributeError:
++            return [f'-j{jobs}']
+         return [
+             f'-j{jobs}',
+             f'-l{jobs}',

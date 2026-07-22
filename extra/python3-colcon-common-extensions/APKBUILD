@@ -1,7 +1,8 @@
+# Contributor: abdulahmoda <abahmoda@qnx.com>
 # Maintainer: jscaffidi <jcaffidi@qnx.com>
 pkgname=python3-colcon-common-extensions
 pkgver=20260406
-pkgrel=0
+pkgrel=1
 pkgdesc=" Meta package aggregating colcon-core and common extensions "
 url="https://github.com/colcon/colcon-common-extensions"
 arch="noarch"
@@ -48,12 +49,26 @@ for extension in "${!extensions[@]}"; do
     depends+="python3-$extension "
 done
 
+source="
+    $source
+    0000-colcon-cmake-getloadavg.patch
+    "
 unpack(){
     mkdir -p "$builddir"/src
     for extension in "${!extensions[@]}"; do
         mkdir -p "$builddir"/src/$extension
         tar -xf "$srcdir"/$extension.tar.gz --strip-components=1 -C "$builddir"/src/$extension
     done
+}
+
+prepare() {
+    cd "$builddir"
+    _apply_qnx_patch() {
+            local _dir="$1"
+            local _patch="$2"
+            git -C "$builddir/$_dir" apply --whitespace=nowarn "$srcdir/$_patch"
+    }
+    _apply_qnx_patch ./src/colcon-cmake 0000-colcon-cmake-getloadavg.patch
 }
 
 build(){
@@ -109,4 +124,5 @@ eb164e95b4eccf1f790627f6e125e57769ac013931951ed06c90911894f17ef9b6aa4fc233e5fb52
 7365743aee7a7f9cbcfc8e3c5ff345d6c92ad048089eb40b3f7fa354ebd442d185dab543131ab1b08765f6f3dfa8e3b6f8b07ecf51a8fbbafad2568b9dfb74b8  colcon-parallel-executor.tar.gz
 7a3e507b2352d945a0d8470af26ee6a33d279cda9780725882287342d250a9a8c3c733a19d3cabcbaf645ff3d02666a109a391d1f116aa4430442c270b3c2bd6  colcon-bash.tar.gz
 64fbad83a1ce607d5b2ad74c64374dfc3a1e80abc2a1e061fdb9f4a05517f9213c1e376b53b1130c29126a53c125a705b6e0e0c787c6ede39437d0c18e8157cb  colcon-output.tar.gz
+cce7a8b285baa8fd9f5ada9c64c26d513636b3c927922f0fb40360c8ab9814b5284acdc3dceb5b56084707e761b66d762c85c3ae8b411a32c5cf44c55116438c  0000-colcon-cmake-getloadavg.patch
 "
