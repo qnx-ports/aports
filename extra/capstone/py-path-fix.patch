@@ -1,0 +1,11 @@
+--- capstone-5.0.2.orig/bindings/python/capstone/__init__.py
++++ capstone-5.0.2/bindings/python/capstone/__init__.py
+@@ -401,7 +401,7 @@ _path_list = [os.getenv('LIBCAPSTONE_PAT
+               join(split(__file__)[0], 'lib'),
+               '',
+               sysconfig.get_path('platlib'),
+-              "/usr/local/lib/" if sys.platform == 'darwin' else '/usr/lib64']
++              "/usr/local/lib/" if sys.platform == 'darwin' else '/usr/lib']
+ 
+ for _path in _path_list:
+     if _path is None: continue
