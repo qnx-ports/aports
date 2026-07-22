@@ -33,7 +33,7 @@
 #done
 
 # We need the symlinks early
-/usr/bin/busybox --install -s || exit 1
+/usr/bin/busybox --install -s /usr/bin || exit 1
 
 exit 0
 
