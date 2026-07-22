@@ -1,0 +1,33 @@
+# Maintainer: abdulahmoda <abahmoda@qnx.com>
+pkgname=apriltag_msgs
+pkgver=2.0.2
+pkgrel=0
+pkgdesc="AprilTag message definitions"
+url="https://github.com/christianrauch/apriltag_msgs"
+arch=all
+license="MIT"
+options="!fhs !tracedeps !check" # only contains ament linter checks
+source="$pkgname-$pkgver.tar.gz::https://github.com/christianrauch/apriltag_msgs/archive/refs/tags/2.0.2.tar.gz"
+builddir="$srcdir/$pkgname-$pkgver"
+makedepends="ros2-jazzy cmake ninja clang libc++-dev python3-dev python3-numpy-dev"
+
+build() {
+    cd "$builddir"
+    COLCON_CURRENT_PREFIX="/opt/ros/jazzy/" source /opt/ros/jazzy/setup.bash
+    colcon build --merge-install --cmake-args -G Ninja -DBUILD_TESTING=OFF
+}
+
+package() {
+        dest="/opt/ros/jazzy"
+        mkdir -p "$pkgdir"/$dest
+        cp -a "$builddir"/install/. "$pkgdir"/$dest
+
+        # Remove files we don't want in our final package
+        for _f in  COLCON_IGNORE .colcon_install_layout _local_setup_util_ps1.py local_setup.ps1 setup.ps1 _local_setup_util_sh.py local_setup.bash local_setup.bash local_setup.sh local_setup.zsh setup.bash setup.sh setup.zsh; do
+            [[ -f "$pkgdir"/$dest/$_f ]] && rm "$pkgdir"/$dest/$_f
+        done
+}
+
+sha512sums="
+8376799f4c96323b48a3ae2422c8cff17d9717593416356e9100d692d0185c7e517cf425040b51888e56863a3cf89e1315ac6c6accee94b44bea9b8490669c6a  apriltag_msgs-2.0.2.tar.gz
+"
