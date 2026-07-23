@@ -1,0 +1,42 @@
+# Alpine-Contributor: Sören Tempel <soeren+alpine@soeren-tempel.net>
+# Alpine-Maintainer: Bart Ribbers <bribbers@disroot.org>
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=python3-astor
+pkgver=0.8.1_git20260217
+# release is from 2019. This recent commit pulls in many bug fixes.
+_commit=708038844745b2a2c37c206ec422547ea6ddc367
+pkgrel=0
+pkgdesc="Easy manipulation of Python source via the AST"
+url="https://github.com/berkerpeksag/astor"
+arch="noarch"
+license="BSD-3-Clause-Clear"
+depends="python3"
+makedepends="python3-gpep517 python3-setuptools"
+source="astor-$pkgver.tar.gz::https://github.com/berkerpeksag/astor/archive/$_commit.tar.gz
+    "
+builddir="$srcdir/astor-$_commit"
+
+prepare() {
+    default_prepare
+    # Tries to roundtrip every package on the system and is unreliable
+    rm -f tests/test_rtrip.py
+}
+
+build() {
+    gpep517 build-wheel \
+        --wheel-dir .dist \
+        --output-fd 3 3>&1 >&2
+}
+
+check() {
+    python3 -m unittest discover -v
+}
+
+package() {
+    python3 -m installer -d "$pkgdir" \
+        .dist/*.whl
+}
+
+sha512sums="
+1dc6329d2b4a6eca3317557eaf13ef5e3808f0ca0f5d0d4de04966331fc6c587c37faf253836aa23d1b828d87d3e5c128553079686ed7ff98b59f33b23d9af8e  astor-0.8.1_git20260217.tar.gz
+"
