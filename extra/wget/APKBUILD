@@ -10,6 +10,7 @@ pkgdesc="Network utility to retrieve files from the Web"
 url="https://www.gnu.org/software/wget/wget.html"
 arch="all"
 license="GPL-3.0-or-later WITH OpenSSL-Exception"
+depends="qnx-io-sock"
 makedepends="
     libidn2-dev
     openssl-dev
@@ -21,6 +22,7 @@ makedepends="
 checkdepends="perl-http-daemon"
 subpackages="$pkgname-doc"
 source="https://mirror.csclub.uwaterloo.ca/gnu/wget/wget-$pkgver.tar.gz"
+options="net"
 
 prepare() {
     default_prepare
