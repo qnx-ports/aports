@@ -16,7 +16,6 @@ makedepends="
 checkdepends="python3-pytest"
 source="
     https://pypi.python.org/packages/source/c/curio/curio-$pkgver.tar.gz
-    751b0d3_remove-dependency-telnetlib.patch
     "
 builddir="$srcdir/curio-$pkgver"
 options="!check"
@@ -36,5 +35,4 @@ package() {
 
 sha512sums="
 480824a50055d170cc01e2ab28dc1b276df9ab8dfbd50f3c70fe6e3fe2a745b636a4717f7886463a1ed38d6fc357098239e1718e00c8f983369b72f4e5d20f17  curio-1.6.tar.gz
-d740d71fb99ef0998b20b7b59facc15a79103b8ab68bd1c47f35073246eda415eba89a9176b79b110f67dd869269faf2d44a1922831fe05f60f38ecb4bbc9a30  751b0d3_remove-dependency-telnetlib.patch
 "
