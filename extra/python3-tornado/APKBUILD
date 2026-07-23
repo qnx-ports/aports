@@ -1,0 +1,43 @@
+# Alpine-Maintainer: Michael M <mic@hael.xyz>
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=python3-tornado
+_pkgname=tornado
+pkgver=6.5.6
+pkgrel=0
+pkgdesc="Python3 web framework and asynchronous networking library"
+options="!check" # 3 Tests fail by failure to resolve 'localhost'
+url="https://www.tornadoweb.org/"
+arch="all"
+license="Apache-2.0"
+depends="python3"
+makedepends="python3-dev python3-gpep517 python3-setuptools python3-wheel"
+checkdepends="python3-curl python3-mock python3-twisted"
+source="https://files.pythonhosted.org/packages/source/${_pkgname:0:1}/$_pkgname/$_pkgname-$pkgver.tar.gz
+    "
+builddir="$srcdir/$_pkgname-$pkgver"
+# This pulls in python3-twisted which has a lot of other deps. Some require x11
+# utils which its unclear if we can support.
+options="!check"
+
+export TORNADO_EXTENSION=1
+
+build() {
+    gpep517 build-wheel \
+        --wheel-dir .dist \
+        --output-fd 3 3>&1 >&2
+}
+
+check() {
+    export PYTHONPATH="$(echo $PWD/build/lib.*)"
+    cd build
+    python3 -m tornado.test.runtests
+}
+
+package() {
+    python3 -m installer -d "$pkgdir" .dist/*.whl
+    rm -rf "$pkgdir"/usr/lib/python3*/site-packages/$_pkgname/test
+}
+
+sha512sums="
+7618d73a0bab94f91624ad9279368e0f4ec87de6139cfc9c0efff491eeced4d57310422754c629e5ea58a3c86902f8916ebe0f0989d509c56333680ac6a2bb03  tornado-6.5.6.tar.gz
+"
