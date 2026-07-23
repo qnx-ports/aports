@@ -1,0 +1,40 @@
+# Alpine-Contributor: Bart Ribbers <bribbers@disroot.org>
+# Alpine-Maintainer: Bart Ribbers <bribbers@disroot.org>
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=python3-curio
+pkgver=1.6
+pkgrel=0
+pkgdesc="Curio is a coroutine-based library for concurrent systems programming"
+url="https://github.com/dabeaz/curio"
+arch="noarch"
+license="BSD-3-Clause"
+depends="python3"
+makedepends="
+    python3-setuptools
+    "
+#    python3-sphinx
+checkdepends="python3-pytest"
+source="
+    https://pypi.python.org/packages/source/c/curio/curio-$pkgver.tar.gz
+    751b0d3_remove-dependency-telnetlib.patch
+    "
+builddir="$srcdir/curio-$pkgver"
+options="!check"
+
+build() {
+    python3 setup.py build
+}
+
+check() {
+    # https://github.com/dabeaz/curio/issues/368
+    PYTHONPATH="$PWD/build/lib" pytest -m "not internet" -k "not test_cpu"
+}
+
+package() {
+    python3 setup.py install --skip-build --root="$pkgdir"
+}
+
+sha512sums="
+480824a50055d170cc01e2ab28dc1b276df9ab8dfbd50f3c70fe6e3fe2a745b636a4717f7886463a1ed38d6fc357098239e1718e00c8f983369b72f4e5d20f17  curio-1.6.tar.gz
+d740d71fb99ef0998b20b7b59facc15a79103b8ab68bd1c47f35073246eda415eba89a9176b79b110f67dd869269faf2d44a1922831fe05f60f38ecb4bbc9a30  751b0d3_remove-dependency-telnetlib.patch
+"
