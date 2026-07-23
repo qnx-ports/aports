@@ -1,0 +1,34 @@
+# Alpine-Contributor: Michał Polański <michal@polanski.me>
+# Alpine-Maintainer: Michał Polański <michal@polanski.me>
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=python3-pretend
+pkgver=1.0.9
+pkgrel=0
+pkgdesc="Library for stubbing in Python"
+url="https://github.com/alex/pretend"
+license="BSD-3-Clause"
+arch="noarch"
+depends="python3"
+makedepends="python3-gpep517 python3-installer python3-setuptools python3-wheel"
+checkdepends="python3-pytest"
+source="https://github.com/alex/pretend/archive/v$pkgver/py3-pretend-$pkgver.tar.gz"
+builddir="$srcdir/pretend-$pkgver"
+
+build() {
+    gpep517 build-wheel \
+        --wheel-dir .dist \
+        --output-fd 3 3>&1 >&2
+}
+
+check() {
+    pytest
+}
+
+package() {
+    python3 -m installer -d "$pkgdir" \
+        .dist/pretend-$pkgver-py2.py3-none-any.whl
+}
+
+sha512sums="
+976e3272557aecfb11e4147a868ea96e23546e277d57d726f41b945103bef3451039716e6bbc5082d691fa1fd331c06b3d0f8b254deb0510948153571326eaf0  py3-pretend-1.0.9.tar.gz
+"
