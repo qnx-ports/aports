@@ -16,6 +16,7 @@ makedepends="
 checkdepends="python3-pytest"
 source="
     https://pypi.python.org/packages/source/c/curio/curio-$pkgver.tar.gz
+    363_add-support-py312.patch
     "
 builddir="$srcdir/curio-$pkgver"
 options="!check"
@@ -35,4 +36,5 @@ package() {
 
 sha512sums="
 480824a50055d170cc01e2ab28dc1b276df9ab8dfbd50f3c70fe6e3fe2a745b636a4717f7886463a1ed38d6fc357098239e1718e00c8f983369b72f4e5d20f17  curio-1.6.tar.gz
+7d5bc4aef72d1c3522fda7ed64d780ce54968f86e48f2f57626e3bf13c51a4d29c34c24d97d7a43dac73e1f5b20114dbba3efe42b15bc8c9a897db4d9f22ce89  363_add-support-py312.patch
 "
