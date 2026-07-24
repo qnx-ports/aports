@@ -6,8 +6,8 @@ pkgrel=5
 pkgdesc="High-level scripting language"
 url="https://www.python.org/"
 arch="all"
-depends="sqlite sqlite-libs zlib-ng xz-libs readline libffi expat bzip2 lz4 libssl3 libcrypto3 ncurses qnx-io-sock"
-depends_dev="$pkgname=$pkgver-r$pkgrel sqlite-dev zlib-ng-dev xz-dev readline-dev libffi-dev expat-dev bzip2-dev lz4-dev openssl-dev ncurses-dev qnx-crypto-dev qnx-io-sock-dev"
+depends="sqlite sqlite-libs zlib-ng xz-libs readline libffi expat bzip2 lz4 libssl3 libcrypto3 ncurses qnx-io-sock qnx-fd-notify"
+depends_dev="$pkgname=$pkgver-r$pkgrel sqlite-dev zlib-ng-dev xz-dev readline-dev libffi-dev expat-dev bzip2-dev lz4-dev openssl-dev ncurses-dev qnx-crypto-dev qnx-io-sock-dev qnx-fd-notify-dev"
 makedepends="$depends_dev make pkgconf pkgconf-dev"
 license="PSF-2.0"
 provides="python"
@@ -38,7 +38,7 @@ build() {
         --with-system-expat \
         --enable-shared \
         CFLAGS="-D_QNX_SOURCE -O2 -fPIC -DTHREAD_STACK_SIZE=8388608" \
-        LDFLAGS="-lsocket -lm -lgcc_s -lregex"
+        LDFLAGS="-lsocket -lm -lgcc_s -lregex -lepoll"
 
     make
 }
