@@ -1,7 +1,7 @@
 # Maintainer: Leo Shen <yishen@qnx.com>
 pkgname=openrc
-pkgver=0.63.1
-pkgrel=1
+pkgver=0.63.1_p1
+pkgrel=0
 pkgdesc="OpenRC manages the services, startup and shutdown of a host"
 url="https://github.com/OpenRC/openrc"
 vcs_url="$url"
@@ -11,9 +11,9 @@ depends="qnx-security qnx-memstream qnx-io-sock "
 depends_dev="qnx-security-dev qnx-memstream-dev qnx-io-sock-dev ncurses-dev"
 makedepends="meson ninja scdoc $depends_dev"
 subpackages="$pkgname-dev $pkgname-doc $pkgname-bash-completion $pkgname-zsh-completion"
-source="$pkgname-$pkgver.tar.gz::https://github.com/OpenRC/openrc/archive/refs/tags/$pkgver.tar.gz
-    fix-qnx.patch
+source="$pkgname-$pkgver.tar.gz::https://github.com/qnx-ports/openrc/archive/refs/tags/qnx-$pkgver.tar.gz
 "
+builddir="$srcdir/$pkgname-qnx-$pkgver"
 
 build() {
     LDFLAGS="-lmemstream -lsocket" \
@@ -32,6 +32,5 @@ package() {
 }
 
 sha512sums="
-d1746909275bd2552ccc4a1786eb5f80ac79ba911ce08ffc12dd550f2965f3bea09ac7c4b638f17f495f92238b833ca1886782c9c7bbba868e1c905e82639a2e  openrc-0.63.1.tar.gz
-9a77b8c3f308ffae2f92ca959e88f8cce24dc550f6a5a89206fbf77f6c1b2ace637abd130220dbf35798f0c6e66b1a6f2ff2bfc3456a79f16b7a146de9f4730b  fix-qnx.patch
+ec2db756c5465f274874370f20c069720df7cb11f0c55f4d9fd8cc2cd9c4676ddb24f228d3978cc3bc76439a812471b847f2008d25c389e695aa83b777cee1d1  openrc-0.63.1_p1.tar.gz
 "
