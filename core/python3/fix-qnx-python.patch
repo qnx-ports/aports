@@ -1,5 +1,5 @@
 diff --git a/Include/internal/pycore_time.h b/Include/internal/pycore_time.h
-index 23312471..e42da267 100644
+index 23312471c65..e42da267fbe 100644
 --- a/Include/internal/pycore_time.h
 +++ b/Include/internal/pycore_time.h
 @@ -59,7 +59,7 @@ extern "C" {
@@ -11,21 +11,8 @@ index 23312471..e42da267 100644
  struct timeval;
  #endif
  
-diff --git a/Include/pythread.h b/Include/pythread.h
-index 82247daf..28941992 100644
---- a/Include/pythread.h
-+++ b/Include/pythread.h
-@@ -42,7 +42,7 @@ PyAPI_FUNC(unsigned long) PyThread_get_thread_ident(void);
- #if (defined(__APPLE__) || defined(__linux__) || defined(_WIN32) \
-      || defined(__FreeBSD__) || defined(__FreeBSD_kernel__) \
-      || defined(__OpenBSD__) || defined(__NetBSD__) \
--     || defined(__DragonFly__) || defined(_AIX))
-+     || defined(__DragonFly__) || defined(_AIX) || defined(__QNX__))
- #define PY_HAVE_THREAD_NATIVE_ID
- PyAPI_FUNC(unsigned long) PyThread_get_thread_native_id(void);
- #endif
 diff --git a/Lib/asyncio/unix_events.py b/Lib/asyncio/unix_events.py
-index 1c145812..4468ad56 100644
+index 1c1458127db..4468ad569b0 100644
 --- a/Lib/asyncio/unix_events.py
 +++ b/Lib/asyncio/unix_events.py
 @@ -118,7 +118,8 @@ def add_signal_handler(self, sig, callback, *args):
@@ -39,20 +26,20 @@ index 1c145812..4468ad56 100644
              del self._signal_handlers[sig]
              if not self._signal_handlers:
 diff --git a/Lib/getpass.py b/Lib/getpass.py
-index 3d9bb1f0..caae57a6 100644
+index 3d9bb1f0d14..eb51cc3df99 100644
 --- a/Lib/getpass.py
 +++ b/Lib/getpass.py
 @@ -86,6 +86,8 @@ def unix_getpass(prompt='Password: ', stream=None, *, echo_char=None):
                  finally:
                      termios.tcsetattr(fd, tcsetattr_flags, old)
                      stream.flush()  # issue7208
-+                    if os.name == 'qnx':
++                    if sys.platform.startswith('qnx'):
 +                        stream.seek(0, 1)
              except termios.error:
                  if passwd is not None:
                      # _raw_input succeeded.  The final tcsetattr failed.  Reraise
 diff --git a/Lib/shutil.py b/Lib/shutil.py
-index 8d8fe145..4278c409 100644
+index 8d8fe145567..4278c409a35 100644
 --- a/Lib/shutil.py
 +++ b/Lib/shutil.py
 @@ -762,7 +762,7 @@ def _rmtree_safe_fd_step(stack, onexc):
@@ -65,7 +52,7 @@ index 8d8fe145..4278c409 100644
          func = os.path.islink  # For error reporting.
          try:
 diff --git a/Lib/test/support/os_helper.py b/Lib/test/support/os_helper.py
-index 2c45fe23..882253b8 100644
+index 2c45fe2369e..27ae03789c1 100644
 --- a/Lib/test/support/os_helper.py
 +++ b/Lib/test/support/os_helper.py
 @@ -50,7 +50,7 @@
@@ -73,12 +60,12 @@ index 2c45fe23..882253b8 100644
              TESTFN_UNENCODABLE = None
  # Apple and Emscripten deny unencodable filenames (invalid utf-8)
 -elif not support.is_apple and sys.platform not in {"emscripten", "wasi"}:
-+elif not support.is_apple and sys.platform not in {"emscripten", "wasi", 'qnx'}:
++elif not support.is_apple and (sys.platform not in {"emscripten", "wasi"} or sys.platform.startswith('qnx')):
      try:
          # ascii and utf-8 cannot encode the byte 0xff
          b'\xff'.decode(sys.getfilesystemencoding())
 diff --git a/Modules/_localemodule.c b/Modules/_localemodule.c
-index 41e6d48b..5ff25776 100644
+index 41e6d48b1db..5ff25776829 100644
 --- a/Modules/_localemodule.c
 +++ b/Modules/_localemodule.c
 @@ -563,31 +563,31 @@ static struct langinfo_constant{
@@ -123,7 +110,7 @@ index 41e6d48b..5ff25776 100644
  #endif
  #ifdef _DATE_FMT
 diff --git a/Modules/_testinternalcapi/pytime.c b/Modules/_testinternalcapi/pytime.c
-index 2b0a205d..41c9aeaa 100644
+index 2b0a205d158..41c9aeaa94a 100644
 --- a/Modules/_testinternalcapi/pytime.c
 +++ b/Modules/_testinternalcapi/pytime.c
 @@ -2,6 +2,9 @@
@@ -137,7 +124,7 @@ index 2b0a205d..41c9aeaa 100644
  
  #ifdef MS_WINDOWS
 diff --git a/Modules/faulthandler.c b/Modules/faulthandler.c
-index d49ce794..4c46e2ed 100644
+index d49ce794d88..4c46e2edbd6 100644
 --- a/Modules/faulthandler.c
 +++ b/Modules/faulthandler.c
 @@ -852,7 +852,9 @@ faulthandler_register(int signum, int chain, _Py_sighandler_t *previous_p)
@@ -151,7 +138,7 @@ index d49ce794..4c46e2ed 100644
          /* do not prevent the signal from being received from within its
             own signal handler */
 diff --git a/Modules/posixmodule.c b/Modules/posixmodule.c
-index e1576f80..29264bb8 100644
+index e1576f809fa..8bc66136097 100644
 --- a/Modules/posixmodule.c
 +++ b/Modules/posixmodule.c
 @@ -606,6 +606,12 @@ extern char *ctermid_r(char *);
@@ -172,15 +159,15 @@ index e1576f80..29264bb8 100644
          if (dir_fd != DEFAULT_DIR_FD) {
              if (HAVE_OPENAT_RUNTIME) {
 +#ifdef __QNX__
-+		struct stat path_stat = {};
-+		fstatat(dir_fd, path->narrow, &path_stat, 0);
-+		if(S_ISDIR(path_stat.st_mode)) flags |= O_DIRECTORY;
++                struct stat path_stat = {};
++                fstatat(dir_fd, path->narrow, &path_stat, 0);
++                if(S_ISDIR(path_stat.st_mode)) flags |= O_DIRECTORY;
 +#endif
                  fd = openat(dir_fd, path->narrow, flags, mode);
  
              } else {
 diff --git a/Modules/selectmodule.c b/Modules/selectmodule.c
-index d234d504..ee062e8b 100644
+index d234d504cb5..72a073df7e8 100644
 --- a/Modules/selectmodule.c
 +++ b/Modules/selectmodule.c
 @@ -37,6 +37,10 @@
@@ -194,8 +181,18 @@ index d234d504..ee062e8b 100644
  /* Windows #defines FD_SETSIZE to 64 if FD_SETSIZE isn't already defined.
     64 is too small (too many people have bumped into that limit).
     Here we boost it.
+@@ -2724,7 +2728,9 @@ _select_exec(PyObject *m)
+     /* Kernel 2.6.17 */
+     ADD_INT(EPOLLRDHUP);
+ #endif
++#ifdef EPOLLET
+     ADD_INT(EPOLLET);
++#endif
+ #ifdef EPOLLONESHOT
+     /* Kernel 2.6.2+ */
+     ADD_INT(EPOLLONESHOT);
 diff --git a/Modules/termios.c b/Modules/termios.c
-index efb5fcc1..6597b90a 100644
+index efb5fcc17fa..6597b90a8ad 100644
 --- a/Modules/termios.c
 +++ b/Modules/termios.c
 @@ -11,7 +11,9 @@
@@ -210,7 +207,7 @@ index efb5fcc1..6597b90a 100644
  
  // On QNX 6, struct termio must be declared by including sys/termio.h
 diff --git a/Objects/mimalloc/prim/unix/prim.c b/Objects/mimalloc/prim/unix/prim.c
-index 1598ebab..24b00f90 100644
+index 1598ebabf0a..63cd10b9cc8 100644
 --- a/Objects/mimalloc/prim/unix/prim.c
 +++ b/Objects/mimalloc/prim/unix/prim.c
 @@ -51,7 +51,7 @@ terms of the MIT license. A copy of the license can be found in the file
@@ -239,7 +236,7 @@ index 1598ebab..24b00f90 100644
 +  err = unix_madvise(start, size, POSIX_MADV_DONTNEED);
 +  #else
    err = unix_madvise(start, size, MADV_DONTNEED);
-+  #endif
++#endif
    #if !MI_DEBUG && !MI_SECURE
      *needs_recommit = false;
    #else
@@ -253,18 +250,18 @@ index 1598ebab..24b00f90 100644
    int err = unix_madvise(start, size, MADV_DONTNEED);
    #endif
 diff --git a/Python/fileutils.c b/Python/fileutils.c
-index 78603d40..6f5522f3 100644
+index 78603d40704..dd39e40bf3f 100644
 --- a/Python/fileutils.c
 +++ b/Python/fileutils.c
 @@ -1643,6 +1643,11 @@ _Py_open_impl(const char *pathname, int flags, int gil_held)
  
          do {
              Py_BEGIN_ALLOW_THREADS
-+            #ifdef __QNX__
++#ifdef __QNX__
 +            struct stat path_stat = {};
 +            stat(pathname, &path_stat);
 +            if(S_ISDIR(path_stat.st_mode)) flags |= O_DIRECTORY;
-+            #endif
++#endif
              fd = open(pathname, flags);
              Py_END_ALLOW_THREADS
          } while (fd < 0
@@ -272,39 +269,16 @@ index 78603d40..6f5522f3 100644
          Py_DECREF(pathname_obj);
      }
      else {
-+        #ifdef __QNX__
++#ifdef __QNX__
 +        struct stat path_stat = {};
 +        stat(pathname, &path_stat);
 +        if(S_ISDIR(path_stat.st_mode)) flags |= O_DIRECTORY;
-+        #endif
++#endif
          fd = open(pathname, flags);
          if (fd < 0)
              return -1;
-diff --git a/Python/thread_pthread.h b/Python/thread_pthread.h
-index da405824..68ae03d9 100644
---- a/Python/thread_pthread.h
-+++ b/Python/thread_pthread.h
-@@ -30,6 +30,8 @@
- #   include <lwp.h>             /* _lwp_self() */
- #elif defined(__DragonFly__)
- #   include <sys/lwp.h>         /* lwp_gettid() */
-+#elif defined(__QNX__)
-+#   include <process.h>         /* gettid() */
- #endif
- 
- /* The POSIX spec requires that use of pthread_attr_setstacksize
-@@ -409,6 +411,9 @@ PyThread_get_thread_native_id(void)
- #elif defined(__DragonFly__)
-     lwpid_t native_id;
-     native_id = lwp_gettid();
-+#elif defined(__QNX__)
-+    int native_id;
-+    native_id = gettid();
- #endif
-     return (unsigned long) native_id;
- }
 diff --git a/configure b/configure
-index d31c24df..dc823538 100755
+index d31c24dffa2..dc8235381dd 100755
 --- a/configure
 +++ b/configure
 @@ -7546,7 +7546,7 @@ then
