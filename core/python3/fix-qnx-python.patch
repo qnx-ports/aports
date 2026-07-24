@@ -11,6 +11,19 @@ index 23312471c65..e42da267fbe 100644
  struct timeval;
  #endif
  
+diff --git a/Include/pythread.h b/Include/pythread.h
+index 82247daf8e0..2146e15b407 100644
+--- a/Include/pythread.h
++++ b/Include/pythread.h
+@@ -42,7 +42,7 @@ PyAPI_FUNC(unsigned long) PyThread_get_thread_ident(void);
+ #if (defined(__APPLE__) || defined(__linux__) || defined(_WIN32) \
+      || defined(__FreeBSD__) || defined(__FreeBSD_kernel__) \
+      || defined(__OpenBSD__) || defined(__NetBSD__) \
+-     || defined(__DragonFly__) || defined(_AIX))
++     || defined(__DragonFly__) || defined(_AIX)) || defined(__QNX__)
+ #define PY_HAVE_THREAD_NATIVE_ID
+ PyAPI_FUNC(unsigned long) PyThread_get_thread_native_id(void);
+ #endif
 diff --git a/Lib/asyncio/unix_events.py b/Lib/asyncio/unix_events.py
 index 1c1458127db..4468ad569b0 100644
 --- a/Lib/asyncio/unix_events.py
@@ -277,6 +290,29 @@ index 78603d40704..dd39e40bf3f 100644
          fd = open(pathname, flags);
          if (fd < 0)
              return -1;
+diff --git a/Python/thread_pthread.h b/Python/thread_pthread.h
+index da405824244..68ae03d9788 100644
+--- a/Python/thread_pthread.h
++++ b/Python/thread_pthread.h
+@@ -30,6 +30,8 @@
+ #   include <lwp.h>             /* _lwp_self() */
+ #elif defined(__DragonFly__)
+ #   include <sys/lwp.h>         /* lwp_gettid() */
++#elif defined(__QNX__)
++#   include <process.h>         /* gettid() */
+ #endif
+ 
+ /* The POSIX spec requires that use of pthread_attr_setstacksize
+@@ -409,6 +411,9 @@ PyThread_get_thread_native_id(void)
+ #elif defined(__DragonFly__)
+     lwpid_t native_id;
+     native_id = lwp_gettid();
++#elif defined(__QNX__)
++    int native_id;
++    native_id = gettid();
+ #endif
+     return (unsigned long) native_id;
+ }
 diff --git a/configure b/configure
 index d31c24dffa2..dc8235381dd 100755
 --- a/configure
