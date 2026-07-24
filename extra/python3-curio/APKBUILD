@@ -12,8 +12,7 @@ depends="python3"
 makedepends="
     python3-setuptools
     "
-#    python3-sphinx
-checkdepends="python3-pytest"
+checkdepends="python3-pytest python3-sphinx"
 source="
     https://pypi.python.org/packages/source/c/curio/curio-$pkgver.tar.gz
     363_add-support-py312.patch
