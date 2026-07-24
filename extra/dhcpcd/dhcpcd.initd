@@ -1,0 +1,22 @@
+#!/usr/bin/openrc-run
+description="DHCP Client Daemon"
+
+command="/usr/bin/dhcpcd"
+command_args="-q -B ${command_args:-}"
+command_background="true"
+pidfile="/run/dhcpcd/pid"
+
+depend() {
+    need io-sock
+    provide net
+}
+
+
+start_pre() {
+    checkpath -d /run/dhcpcd
+
+    # we need to allow the dhcpcd user access to /dev/bpf
+    setfacl -m u:dhcpcd:rw- /dev/bpf
+    setfacl -m g:dhcpcd:rw- /dev/bpf
+}
+

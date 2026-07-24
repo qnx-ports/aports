@@ -1,0 +1,122 @@
+diff -Naur dhcpcd-10.2.4.orig/src/if-bsd.c dhcpcd-10.2.4/src/if-bsd.c
+--- dhcpcd-10.2.4.orig/src/if-bsd.c	2025-06-01 18:40:28.000000000 +0000
++++ dhcpcd-10.2.4/src/if-bsd.c	2026-06-08 15:34:16.000000000 +0000
+@@ -393,7 +393,7 @@
+ {
+ 	struct ifreq ifr = { .ifr_flags = 0 };
+ 
+-#if defined(PRIVSEP) && (defined(HAVE_CAPSICUM) || defined(HAVE_PLEDGE))
++#if defined(PRIVSEP) && (defined(HAVE_CAPSICUM) || defined(HAVE_PLEDGE) || defined(__QNX__))
+ 	if (IN_PRIVSEP(ctx))
+ 		return (int)ps_root_indirectioctl(ctx, cmd, ifname, data, len);
+ #else
+@@ -950,7 +950,7 @@
+     const int *name, u_int namelen,
+     void *oldp, size_t *oldlenp, void *newp, size_t newlen)
+ {
+-#if defined(PRIVSEP) && defined(HAVE_CAPSICUM)
++#if defined(PRIVSEP) && (defined(HAVE_CAPSICUM) || defined(__QNX__))
+ 	if (IN_PRIVSEP(ctx))
+ 		return (int)ps_root_sysctl(ctx, name, namelen,
+ 		    oldp, oldlenp, newp, newlen);
+diff -Naur dhcpcd-10.2.4.orig/src/logerr.c dhcpcd-10.2.4/src/logerr.c
+--- dhcpcd-10.2.4.orig/src/logerr.c	2025-06-01 18:40:28.000000000 +0000
++++ dhcpcd-10.2.4/src/logerr.c	2026-06-08 15:18:49.000000000 +0000
+@@ -39,6 +39,10 @@
+ 
+ #include "logerr.h"
+ 
++#ifdef __QNX__
++#include "unix.h"
++#endif
++
+ #ifndef	LOGERR_SYSLOG_FACILITY
+ #define	LOGERR_SYSLOG_FACILITY	LOG_DAEMON
+ #endif
+diff -Naur dhcpcd-10.2.4.orig/src/privsep-bsd.c dhcpcd-10.2.4/src/privsep-bsd.c
+--- dhcpcd-10.2.4.orig/src/privsep-bsd.c	2025-06-01 18:40:28.000000000 +0000
++++ dhcpcd-10.2.4/src/privsep-bsd.c	2026-06-08 15:42:40.000000000 +0000
+@@ -142,7 +142,7 @@
+ 	return write(ctx->link_fd, data, len);
+ }
+ 
+-#if defined(HAVE_CAPSICUM) || defined(HAVE_PLEDGE)
++#if defined(HAVE_CAPSICUM) || defined(HAVE_PLEDGE) || defined(__QNX__)
+ static ssize_t
+ ps_root_doindirectioctl(struct dhcpcd_ctx *ctx,
+     unsigned long req, void *data, size_t len)
+@@ -180,7 +180,7 @@
+ }
+ #endif
+ 
+-#ifdef HAVE_CAPSICUM
++#if defined(HAVE_CAPSICUM) || defined(__QNX__)
+ static ssize_t
+ ps_root_dosysctl(unsigned long flags,
+     void *data, size_t len, void **rdata, size_t *rlen)
+@@ -268,7 +268,7 @@
+ 		break;
+ 	case PS_ROUTE:
+ 		return ps_root_doroute(ctx, data, len);
+-#if defined(HAVE_CAPSICUM) || defined(HAVE_PLEDGE)
++#if defined(HAVE_CAPSICUM) || defined(HAVE_PLEDGE) || defined(__QNX__)
+ 	case PS_IOCTLINDIRECT:
+ 		err = ps_root_doindirectioctl(ctx, psm->ps_flags, data, len);
+ 		break;
+@@ -277,7 +277,7 @@
+ 	case PS_IFIGNOREGRP:
+ 		return ps_root_doifignoregroup(ctx, data, len);
+ #endif
+-#ifdef HAVE_CAPSICUM
++#if defined(HAVE_CAPSICUM) || defined(__QNX__) 
+ 	case PS_SYSCTL:
+ 		*free_rdata = true;
+ 		return ps_root_dosysctl(psm->ps_flags, data, len, rdata, rlen);
+@@ -332,7 +332,7 @@
+ 	return ps_root_readerror(ctx, data, len);
+ }
+ 
+-#if defined(HAVE_CAPSICUM) || defined(HAVE_PLEDGE)
++#if defined(HAVE_CAPSICUM) || defined(HAVE_PLEDGE) || defined(__QNX__)
+ ssize_t
+ ps_root_indirectioctl(struct dhcpcd_ctx *ctx, unsigned long request,
+     const char *ifname, void *data, size_t len)
+@@ -365,7 +365,7 @@
+ }
+ #endif
+ 
+-#ifdef HAVE_CAPSICUM
++#if defined(HAVE_CAPSICUM) || defined(__QNX__)
+ ssize_t
+ ps_root_sysctl(struct dhcpcd_ctx *ctx,
+     const int *name, unsigned int namelen,
+diff -Naur dhcpcd-10.2.4.orig/src/privsep-root.h dhcpcd-10.2.4/src/privsep-root.h
+--- dhcpcd-10.2.4.orig/src/privsep-root.h	2025-06-01 18:40:28.000000000 +0000
++++ dhcpcd-10.2.4/src/privsep-root.h	2026-06-08 15:19:25.000000000 +0000
+@@ -31,7 +31,7 @@
+ 
+ #include "if.h"
+ 
+-#if defined(PRIVSEP) && (defined(HAVE_CAPSICUM) || defined(__linux__))
++#if defined(PRIVSEP) && (defined(HAVE_CAPSICUM) || defined(__linux__) || defined(__QNX__))
+ #define PRIVSEP_GETIFADDRS
+ #endif
+ 
+diff -Naur dhcpcd-10.2.4.orig/src/privsep.c dhcpcd-10.2.4/src/privsep.c
+--- dhcpcd-10.2.4.orig/src/privsep.c	2025-06-01 18:40:28.000000000 +0000
++++ dhcpcd-10.2.4/src/privsep.c	2026-06-08 16:48:19.000000000 +0000
+@@ -179,12 +179,14 @@
+ 	/* Prohibit writing to files.
+ 	 * Obviously this won't work if we are using a logfile
+ 	 * or redirecting stderr to a file. */
++#ifndef __QNX__
+ 	if ((ctx->options & DHC_NOCHKIO) == DHC_NOCHKIO ||
+ 	    (ctx->logfile == NULL && isatty(fd_out) == 1))
+ 	{
+ 		if (setrlimit(RLIMIT_FSIZE, &rzero) == -1)
+ 			logerr("setrlimit RLIMIT_FSIZE");
+ 	}
++#endif
+ 
+ #ifdef RLIMIT_NPROC
+ 	/* Prohibit forks */

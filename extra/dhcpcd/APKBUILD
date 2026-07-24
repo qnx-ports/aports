@@ -12,9 +12,11 @@ license="BSD-2-Clause"
 depends="qnx-io-sock"
 makedepends="qnx-io-sock-dev"
 #install="$pkgname.pre-install"
-subpackages="$pkgname-doc"
+subpackages="$pkgname-doc $pkgname-openrc"
 source="https://github.com/NetworkConfiguration/dhcpcd/releases/download/v$pkgver/dhcpcd-$pkgver.tar.xz
+	dhcpcd.initd
         fix_qnx.patch
+	qnx-priv-fix.patch
 	"
 
 build() {
@@ -44,10 +46,15 @@ check() {
 
 package() {
 	BINMODE=0755 make DESTDIR="$pkgdir" install
+	install -Dm755 "$srcdir"/dhcpcd.initd \
+		"$pkgdir"/etc/init.d/dhcpcd
+
 }
 
 
 sha512sums="
 e6c0caccd590b8c90efe8c60743b6ca4b6cd0c2c170abd8ea940be48f1b75f6767ccbd17eac42a4f1eba8349197dbdfc923696765baab79d49916c8e674f30c8  dhcpcd-10.2.4.tar.xz
+e9d5de5f35e174483063b1afd733c1a0b1d12ca3a51d62d0cfa2887f50271af43988f879a793f9b85ab638d855a3f7a592b800d8c77204f48f870466154622b6  dhcpcd.initd
 de4905b9b9fa3f638f1c2e646fb3c7673105e42413adc93588d17382ff54f7bc135c3c6f7dd7ccbd6d17af796ac4d69033878129fed12048744afbda168793b2  fix_qnx.patch
+10c468f75ca57534ba65435179246fa0865dc2e948a91489a19a439386f09ba5b6e407bbcae7dd87f5c9422b065480d417dd856ec79e98715b77f656841398ed  qnx-priv-fix.patch
 "
