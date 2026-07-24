@@ -12,6 +12,7 @@ depends="python3"
 makedepends="
     python3-setuptools
     "
+# Disabled because we don't have sphinx which is a test dependency used to build docs.
 checkdepends="python3-pytest python3-sphinx"
 source="
     https://pypi.python.org/packages/source/c/curio/curio-$pkgver.tar.gz
