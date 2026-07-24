@@ -40,7 +40,7 @@ build() {
         --with-system-expat \
         --enable-shared \
         CFLAGS="-D_QNX_SOURCE -O2 -fPIC -DTHREAD_STACK_SIZE=8388608" \
-        LDFLAGS="-lsocket -lm -lgcc_s -lregex -lepoll"
+        LDFLAGS="-lsocket -lm -lgcc_s -lregex -lepoll -leventfd"
 
     make
 }
