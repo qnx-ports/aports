@@ -1,5 +1,6 @@
-# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
-# QNX Maintainer: Felix Xing <fxing@qnx.com>
+# Alpine-Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+# Contributor: Felix Lionardo <flionardo@qnx.com>
+# Maintainer: Felix Xing <fxing@qnx.com>
 pkgname=xfce4-panel
 pkgver=4.21.0
 pkgrel=2
@@ -31,10 +32,9 @@ source="https://archive.xfce.org/src/xfce/xfce4-panel/${pkgver%.*}/xfce4-panel-$
 build() {
     CFLAGS="$CFLAGS -Qunused-arguments"
     CXXFLAGS="$CXXFLAGS -Qunused-arguments"
-    meson setup build \
-        --prefix=/usr \
-        -Db_lto=false
-    meson compile -C build
+    abuild-meson \
+        . build
+    ninja -C build
 }
 
 check() {
