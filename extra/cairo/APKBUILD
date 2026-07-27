@@ -42,6 +42,7 @@ source="https://gitlab.freedesktop.org/cairo/cairo/-/archive/$pkgver/cairo-$pkgv
 
 build() {
     # abuild-meson defaults lto to false, due to a bug in ldqnx. (CLT-10182)
+    # TODO: enable lto.
     abuild-meson \
         -Doptimization="0" \
         -Dc_args=-DHAVE_CTIME_R \
