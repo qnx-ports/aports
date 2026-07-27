@@ -1,3 +1,4 @@
+# Maintainer: Felix Lionardo <flionardo@qnx.com>
 pkgname=cairo
 pkgver=1.18.4
 pkgrel=1
@@ -40,8 +41,8 @@ subpackages="
 source="https://gitlab.freedesktop.org/cairo/cairo/-/archive/$pkgver/cairo-$pkgver.tar.bz2"
 
 build() {
-    meson setup build \
-        -Db_lto=false \
+    # abuild-meson defaults lto to false, due to a bug in ldqnx. (CLT-10182)
+    abuild-meson \
         -Doptimization="0" \
         -Dc_args=-DHAVE_CTIME_R \
         -Dc_link_args=-Wl,-lm,-lsysv-ipc \
@@ -54,9 +55,8 @@ build() {
         -Ddefault_library=both \
         --reconfigure \
         --buildtype=custom \
-        --prefix=/usr
+        . build
                 
-
     ninja -C build
 }
 
