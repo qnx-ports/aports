@@ -44,7 +44,6 @@ build() {
     # abuild-meson defaults lto to false, due to a bug in ldqnx. (CLT-10182)
     # TODO: enable lto.
     abuild-meson \
-        -Doptimization="0" \
         -Dc_args=-DHAVE_CTIME_R \
         -Dc_link_args=-Wl,-lm,-lsysv-ipc \
         -Dtests=disabled \
@@ -54,8 +53,6 @@ build() {
         -Dglib=enabled \
         -Dpng=enabled \
         -Ddefault_library=both \
-        --reconfigure \
-        --buildtype=custom \
         . build
                 
     ninja -C build
