@@ -14,7 +14,7 @@ makedepends="python3-setuptools"
 checkdepends="python3-pytest"
 source="$pkgname-$_commitid.tar.gz::https://github.com/eukaryote/pytest-tornasync/archive/$_commitid.tar.gz"
 builddir="$srcdir/pytest-tornasync-$_commitid"
-# options="!check" # tests are not functional
+options="net"
 
 build() {
     python3 setup.py build
