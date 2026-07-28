@@ -1,0 +1,37 @@
+# Alpine-Contributor: psykose <alice@ayaya.dev>
+# Alpine-Maintainer: Antoine Martin (ayakael) <dev@ayakael.nt>
+# Maintainer: Deep Chordia <dchordia@blackberry.com>
+pkgname=python3-tzdata
+pkgver=2026.3
+pkgrel=0
+pkgdesc="Python package wrapping the IANA time zone database"
+url="https://github.com/python/tzdata"
+arch="noarch"
+license="Apache-2.0"
+depends="python3 python3-attrs"
+makedepends="python3-gpep517 python3-setuptools python3-wheel"
+checkdepends="python3-pytest"
+source="$pkgname-$pkgver.tar.gz::https://github.com/python/tzdata/archive/refs/tags/$pkgver.tar.gz"
+builddir="$srcdir/tzdata-$pkgver"
+
+build() {
+	gpep517 build-wheel \
+		--wheel-dir .dist \
+		--output-fd 3 3>&1 >&2
+}
+
+check() {
+	python3 -m venv --clear --without-pip --system-site-packages .testenv
+	.testenv/bin/python3 -m installer .dist/*.whl
+	.testenv/bin/python3 -m pytest -k "not test_load_zones" # subtests submodule within pytest unavailable for QNX
+}
+
+package() {
+	python3 -m installer -d "$pkgdir" \
+		.dist/*.whl
+}
+
+
+sha512sums="
+dbe2da26dd1a9c5aa71ffdea95ada2baef828f273096c5640e91834f37f5a79b47e8fe28f1a6b9e5332e05a6b2842172b1949d258b6ef96a088ceb84b359abcc  python3-tzdata-2026.3.tar.gz
+"
