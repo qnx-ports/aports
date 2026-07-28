@@ -67,6 +67,7 @@ build() {
     cmake --build build
 }
 
+
 check() {
     cd "$builddir/build"
     export LD_LIBRARY_PATH=/usr/lib:$LD_LIBRARY_PATH
@@ -75,6 +76,13 @@ check() {
 
 package() {
     DESTDIR="$pkgdir" cmake --install build
+}
+
+
+dev() {
+    amove usr/include
+    amove usr/lib/libfastrtps.so
+    amove usr/share/fastrtps/cmake
 }
 
 tests() {
