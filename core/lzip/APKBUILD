@@ -1,0 +1,36 @@
+# Alpine-Contributor: ScrumpyJack <scrumpyjack@st.ilet.to>
+# Alpine-Maintainer: Jingyun Hua <huajingyun@loongson.cn>
+# Maintainer: jscaffidi <jscaffidi@qnx.com>
+pkgname=lzip
+pkgver=1.26
+pkgrel=0
+pkgdesc="Lzip is a lossless data compressor"
+url="https://www.nongnu.org/lzip/"
+arch="all"
+license="GPL-2.0-or-later"
+subpackages="$pkgname-doc"
+source="https://download-mirror.savannah.gnu.org/releases/lzip/lzip-$pkgver.tar.gz"
+
+build() {
+	./configure \
+		--prefix=/usr \
+		CXX="$CXX" \
+		CPPFLAGS="$CPPFLAGS" \
+		CXXFLAGS="$CXXFLAGS" \
+		LDFLAGS="$LDFLAGS"
+	make
+}
+
+check() {
+	make check
+}
+
+package() {
+	make DESTDIR="$pkgdir" install
+}
+
+sha512sums="
+df99d7c9ce932486aec64fe9f9c378a9f98300deac6f6065c9543006cf35daeb52b419316d4672c182acbd0c8105388267947dfc9267965697d521259d59a0ad  lzip-1.26.tar.gz
+"
+
+
