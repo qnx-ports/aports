@@ -1,15 +1,15 @@
 # Maintainer: Cris Sinnott <csinnott@qnx.com>
 pkgname=stable-diffusion.cpp
 pkgver=0_git20260602
-pkgrel=0
+pkgrel=1
 _sdcommit=a51021b190b3aac1684c22a03fb0607f144ab6ce
-_ggmlcommit=69f2807d4153413d91a41c4bd28bc95aefec275b
+_ggmlcommit=ec4c7d9fcf8e14ab692a8e79fe108ed848505e77
 # CPU backend only: the Vulkan GPU backend hits an unresolved QNX drm-virtio
 # runtime deadlock (see stable-diffusion-gpu-deadlock.md) and is disabled
 # for now. Re-enable SD_VULKAN once that issue is fixed upstream.
 pkgdesc="Stable Diffusion in pure C/C++ (CPU backend)"
 url="https://github.com/leejet/stable-diffusion.cpp"
-arch="x86_64"
+arch="aarch64 x86_64"
 license="MIT"
 makedepends="cmake ninja clang libc++-dev"
 subpackages="$pkgname-dev $pkgname-dbg"
@@ -17,6 +17,11 @@ source="
 	stable-diffusion.cpp-$_sdcommit.tar.gz::https://github.com/qnx-ports/stable-diffusion.cpp/archive/$_sdcommit.tar.gz
 	ggml-$_ggmlcommit.tar.gz::https://github.com/qnx-ports/ggml/archive/$_ggmlcommit.tar.gz
 	"
+# ggml bumped to ec4c7d9f to pick up the aarch64le/aarch64be CMAKE_SYSTEM_PROCESSOR
+# fixes needed for the aarch64 build added in pkgrel 1 (two occurrences: one in
+# cmake/common.cmake affecting NEON codegen, one in tests/CMakeLists.txt that
+# unconditionally applied x86-only -mfma/-mavx flags on any unmatched arch,
+# breaking the aarch64 build outright) -- see those commits for details.
 builddir="$srcdir/stable-diffusion.cpp-$_sdcommit"
 
 prepare() {
@@ -50,5 +55,5 @@ package() {
 
 sha512sums="
 7b4e19a95c4038eb08158395849ce93dfabefdbc7e7a398e4080484f34a7a0d69ad069bc2b6960d5d9a03f9de23286a682eca81128d052dbe3ac0e7a7b2bd098  stable-diffusion.cpp-a51021b190b3aac1684c22a03fb0607f144ab6ce.tar.gz
-329c3b80fc52a3353d4a6b6742c6833b6aeb4f58a4b21210fc1f51a7c3055c721701e7c1e7c7b34333c328cbdb89e65585e16b623986882dc0e69a9263785619  ggml-69f2807d4153413d91a41c4bd28bc95aefec275b.tar.gz
+59356fde7ae56670ac04d37d6b8f80cadd7eee052809c2f8e16d268678222ebaebac3e1d169dc6b751f89230c29649d3b236961df387d8c9d5689a592ea135ac  ggml-ec4c7d9fcf8e14ab692a8e79fe108ed848505e77.tar.gz
 "
