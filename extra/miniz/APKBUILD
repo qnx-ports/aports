@@ -1,0 +1,52 @@
+# Maintainer: Ramya santoshi <rtimmaraju@qnx.com>
+
+pkgname=miniz
+pkgver=3.1.2
+pkgrel=0
+pkgdesc="Single-file zlib replacement library"
+url="https://github.com/richgel999/miniz"
+arch="all"
+license="MIT"
+
+depends="libc++"
+makedepends="
+cmake
+ninja
+libc++-dev
+"
+
+subpackages="
+	$pkgname-dev
+"
+
+source="
+$pkgname-$pkgver.tar.gz::https://github.com/richgel999/miniz/archive/refs/tags/$pkgver.tar.gz
+"
+
+builddir="$srcdir/miniz-$pkgver"
+
+build() {
+    cmake -B build \
+        -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DBUILD_SHARED_LIBS=ON \
+         -DBUILD_TESTS=ON \
+        -DBUILD_EXAMPLES=ON \
+        -DINSTALL_PROJECT=ON
+
+    cmake --build build
+}
+
+check() {
+    cd "$builddir"
+    ./bin/catch_tests
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install build
+}
+
+sha512sums="
+5f553990632cb15d996ccfa92641167863807867baa9ff0b9a94ae0e40daf782df1746e75ea228a93892be1f574c9261838c9edb94e40bbf559ab22f21068c41  miniz-3.1.2.tar.gz
+"
