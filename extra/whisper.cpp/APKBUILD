@@ -1,0 +1,64 @@
+# Maintainer: Cris Sinnott <csinnott@qnx.com>
+pkgname=whisper.cpp
+pkgver=0_git20260729
+pkgrel=0
+_whispercommit=caae177d00292310d5878a467465524023ed61e5
+# CPU backend only: the Vulkan GPU backend has two separate blockers on QNX --
+# an unresolved drm-virtio runtime deadlock under QEMU/Venus (see
+# stable-diffusion-gpu-deadlock.md, same root cause documented for
+# stable-diffusion.cpp), and on real aarch64 hardware (Raspberry Pi 5 / V3D)
+# ggml-vulkan's matmul shader tiling requires more workgroup shared memory than
+# that GPU provides. Re-enable once either is resolved upstream.
+pkgdesc="Automatic speech recognition using OpenAI's Whisper model, in pure C/C++"
+url="https://github.com/ggml-org/whisper.cpp"
+arch="aarch64 x86_64"
+license="MIT"
+makedepends="cmake ninja clang libc++-dev"
+subpackages="$pkgname-dev $pkgname-dbg"
+source="
+	whisper.cpp-$_whispercommit.tar.gz::https://github.com/qnx-ports/whisper.cpp/archive/$_whispercommit.tar.gz
+	"
+builddir="$srcdir/whisper.cpp-$_whispercommit"
+
+build() {
+	cmake -B build -G Ninja \
+		-DCMAKE_C_COMPILER=clang \
+		-DCMAKE_CXX_COMPILER=clang++ \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DBUILD_SHARED_LIBS=ON \
+		-DGGML_VULKAN=OFF \
+		-DWHISPER_SDL2=OFF
+	cmake --build build
+}
+
+check() {
+	# Deliberately serial (no -j): several tests load full-size model compute
+	# buffers (up to ~3GB for the "large" test), and running enough of them
+	# concurrently exhausts available memory and crashes -- reproduced with
+	# SEGFAULT/aborted-subprocess failures at -j8 on a 20GB x86_64 box. Serial
+	# execution is slower (~10 min) but reliable regardless of the build
+	# machine's core count or available RAM.
+	#
+	# test-vad-full excluded: it hard-asserts n_segments == 1 (tests/test-vad-full.cpp:43),
+	# an expectation calibrated against the real, fully-trained ggml-base.en.bin
+	# model's actual VAD segmentation on samples/jfk.wav. That real model isn't
+	# checked into the repo (only the for-tests-ggml-*.bin stub weights are, used
+	# by every other test here), and the stub's near-random weights don't
+	# reproduce the same segment count even after pointing the test at it. Fixed
+	# the stub model wasn't found at all (upstream bug, see commit caae177); this
+	# remaining assertion mismatch is a real-vs-stub-weights behavioral gap, not
+	# something a QNX packaging patch should paper over.
+	ctest --test-dir build \
+		--output-junit "$builddir/test-results.xml" \
+		--output-on-failure \
+		--exclude-regex 'test-vad-full'
+}
+
+package() {
+	DESTDIR="$pkgdir" cmake --build build --target install
+}
+
+sha512sums="
+517a73b9b9f43ab8fb1b479a89df3934d74ae967654f3622159cd965f73efbb09af2d889939f87a34d1ecbb02af8019f9f3be9777101dc9f7b7245b3d62abd0a  whisper.cpp-caae177d00292310d5878a467465524023ed61e5.tar.gz
+"
