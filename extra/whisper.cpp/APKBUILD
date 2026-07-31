@@ -13,6 +13,7 @@ pkgdesc="Automatic speech recognition using OpenAI's Whisper model, in pure C/C+
 url="https://github.com/ggml-org/whisper.cpp"
 arch="aarch64 x86_64"
 license="MIT"
+depends="libc++"
 makedepends="cmake ninja clang libc++-dev"
 subpackages="$pkgname-dev $pkgname-dbg"
 source="
