@@ -1,0 +1,66 @@
+# Maintainer: Cris Sinnott <csinnott@qnx.com>
+pkgname=c-blosc
+pkgver=1.21.6
+pkgrel=0
+pkgdesc="A blocking, shuffling and lossless compression library"
+url="https://github.com/Blosc/c-blosc"
+arch="all"
+license="BSD-3-Clause"
+depends="zlib-ng zstd-libs"
+makedepends="cmake ninja zlib-dev lz4-dev zstd-dev"
+subpackages="$pkgname-dev"
+source="
+	$pkgname-$pkgver.tar.gz::https://github.com/Blosc/c-blosc/archive/refs/tags/v$pkgver.tar.gz
+	fix-qnx-aligned-alloc.patch
+	"
+builddir="$srcdir/c-blosc-$pkgver"
+
+# fix-qnx-aligned-alloc.patch: tests/test_common.h's blosc_test_malloc()
+# picks its aligned-allocator implementation via an #if/#elif chain ending in
+# #error "Cannot determine how to allocate aligned memory on the target
+# platform." QNX does have posix_memalign (it's POSIX-compliant) -- the
+# existing _POSIX_C_SOURCE/_XOPEN_SOURCE guard just isn't satisfied in this
+# translation unit on QNX/clang, a feature-test-macro gap, not a missing
+# platform capability. Only affects the test suite, not blosc.c/blosc.h
+# themselves, which already build clean with zero patches.
+
+# Building against system snappy is deliberately NOT enabled here even
+# though a QNX snappy port exists (see extra/snappy): blosc's own build
+# links snappy-c.cc's C++ symbols in, so PREFER_EXTERNAL_SNAPPY would need
+# it built as a matching (static-PIC or shared) library and pulls in a C++
+# runtime dependency for what's otherwise a pure-C library. Internal vendored
+# snappy sources build fine as-is (confirmed) -- revisit only if an actual
+# consumer needs BLOSC_SNAPPY_SUPPORT specifically.
+
+build() {
+	cmake -B build \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DBUILD_SHARED=ON \
+		-DBUILD_STATIC=OFF \
+		-DBUILD_TESTS=ON \
+		-DBUILD_BENCHMARKS=OFF \
+		-DBUILD_FUZZERS=OFF \
+		-DPREFER_EXTERNAL_ZLIB=ON \
+		-DPREFER_EXTERNAL_ZSTD=ON \
+		-DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+		-G Ninja
+	cmake --build build
+}
+
+check() {
+	# Real upstream CTest suite (tests/, ~15 test_*.c binaries + the full
+	# test_compat_*.cdata fixture corpus, 1630 individual CTest cases).
+	# CTest's own --output-junit is genuine JUnit XML natively.
+	mkdir -p "$startdir"/output-junit
+	( cd build && ctest --output-junit "$startdir"/output-junit/c-blosc.xml --output-on-failure )
+}
+
+package() {
+	DESTDIR="$pkgdir" cmake --install build
+}
+
+sha512sums="
+f32ac9ca7dd473f32201cdf4b7bb61a89e8bc3e3d16e027d2c6dc1aa838cb47c42dfed6942c9108532b3920ed22a8c662e7451890177c9bbe6ec5b8ab65362b3  c-blosc-1.21.6.tar.gz
+e22dbc4dbb1684395a7e48d1b6873f5279e32087ce02bf24dbffb1db418fa57cd6431a42c739156429eb731e4a0cc10b56e11e54de5bff8b8c959eb1a9461a76  fix-qnx-aligned-alloc.patch
+"
