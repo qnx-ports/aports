@@ -2,7 +2,7 @@
 pkgname=openmp
 _patch_rev=1
 pkgver=22.1.4_p$_patch_rev
-pkgrel=0
+pkgrel=1
 pkgdesc="LLVM OpenMP Runtime Library"
 arch="all"
 url="https://llvm.org"
@@ -11,7 +11,7 @@ license="Apache-2.0 WITH LLVM-exception"
 depends="qnx-io-sock libc++"
 _lib_depends="qnx-io-sock-dev libc++-dev"
 depends_dev="$pkgname=$pkgver-r$pkgrel $_lib_depends"
-makedepends="cmake ninja $_lib_depends flang22 flang22-dev flang22-rt python3 python3-dev"
+makedepends="cmake ninja $_lib_depends flang22 python3 python3-dev"
 subpackages="$pkgname-static $pkgname-dev"
 source="
     https://github.com/qnx-ports/llvm-project/archive/refs/tags/qnx-${pkgver}.tar.gz"
@@ -27,7 +27,8 @@ build() {
         -DLIBOMP_ENABLE_FORTRAN=ON \
 	-DLIBOMP_FORTRAN_MODULES=ON \
     	-DLIBOMP_FORTRAN_MODULES_COMPILER=/usr/lib/llvm22/bin/flang \
-	-DCMAKE_Fortran_COMPILER=/usr/lib/llvm22/bin/flang
+	-DCMAKE_Fortran_COMPILER=/usr/lib/llvm22/bin/flang \
+	-DLIBOMP_LIBFLAGS="-lcatalog"
     cmake --build build
 }
 
