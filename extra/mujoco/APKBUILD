@@ -1,0 +1,73 @@
+# Maintainer: Ramya santoshi <rtimmaraju@qnx.com>
+
+pkgname=mujoco
+pkgver=3.10.0
+pkgrel=0
+pkgdesc="MuJoCo physics engine"
+url="https://github.com/google-deepmind/mujoco"
+arch="all"
+license="Apache-2.0"
+
+depends=""
+
+makedepends="
+    cmake
+    ninja
+    eigen-dev
+    tinyxml2-dev
+    miniz-dev
+"
+options="!lto"
+
+subpackages="
+	$pkgname-dev
+"
+
+source="
+    mujoco-$pkgver.tar.gz::https://github.com/rtimmaraju/mujoco/archive/refs/heads/mujoco_ver_3.10.0.tar.gz
+    benchmark-disable-qnx.patch
+"
+
+builddir="$srcdir/mujoco-mujoco_ver_3.10.0"
+
+build() {
+	cmake -B build \
+		-G Ninja \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DBUILD_SHARED_LIBS=ON \
+		-DMUJOCO_BUILD_TESTS=ON \
+		-DMUJOCO_BUILD_EXAMPLES=OFF \
+		-DMUJOCO_BUILD_SIMULATE=OFF \
+		-DMUJOCO_BUILD_PYTHON=OFF \
+        -DCMAKE_C_STANDARD=99 \
+		-DMUMOCO_DEPENDENCIES=OFF \
+		-DMUJOCO_WITH_USD=OFF \
+		-DCMAKE_CXX_FLAGS="${CXXFLAGS} -Wno-error=unused-command-line-argument" \
+        -DCMAKE_C_FLAGS="${CFLAGS} -Wno-error=unused-command-line-argument" \
+		-DCMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF \
+		-DBENCHMARK_ENABLE_TESTING=OFF
+
+	cmake --build build
+}
+check() {
+    cd "$builddir/build"
+
+ctest --output-on-failure > ctest.log 2>&1
+
+echo $?
+tail -20 ctest.log
+grep "Total Tests" ctest.log
+grep "100%" ctest.log
+}
+
+package() {
+	
+	DESTDIR="$pkgdir" cmake --install build
+}
+
+
+sha512sums="
+623bd02f896f552fc86f424b432324cebe3d3eb844aac5d43811f1a7d98f2c032eebcdb3a9c2058c3807fddbaa91c5136ae4910677569e5969b15bc06a85d8f6  mujoco-3.10.0.tar.gz
+1a0db718e3db2f6bb1dfa2e1f96d0b85fdca0570b3263877163236792e822e72b9efdcc7e94119490d21a4e29c651da7da0759af716128fb5d6c8fe08dc30ff7  benchmark-disable-qnx.patch
+"
