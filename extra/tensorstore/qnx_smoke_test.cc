@@ -8,6 +8,11 @@
 // Storage path: relative to CWD (not a hardcoded absolute path) so this
 // works unmodified whether run from a scratch dev tree or an APKBUILD
 // check() step, which controls CWD itself.
+//
+// No leading "./" -- tensorstore's file kvstore (IsKeyValid() in
+// tensorstore/kvstore/file/util.cc) explicitly rejects "." as a path
+// component, by design (same rule that rejects ".."), so a leading "./"
+// makes the whole path invalid. A bare relative path works fine.
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
@@ -21,7 +26,7 @@
 #include "tensorstore/tensorstore.h"
 
 int main() {
-  const std::string storage_path = "./qnx_smoke_test_storage/";
+  const std::string storage_path = "qnx_smoke_test_storage/";
 
   ::nlohmann::json spec = {
       {"driver", "zarr3"},
