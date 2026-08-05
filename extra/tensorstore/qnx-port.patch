@@ -222,7 +222,16 @@ diff --git a/tensorstore/internal/os/file_util_posix.cc b/tensorstore/internal/o
 index ccbc905..4e05a6c 100644
 --- a/tensorstore/internal/os/file_util_posix.cc
 +++ b/tensorstore/internal/os/file_util_posix.cc
-@@ -446,7 +446,15 @@ Result<MemoryRegion> MemmapFileReadOnly(FileDescriptor fd, size_t offset,
+@@ -437,25 +437,33 @@
+       size = file_size - offset;
+     }
+     if (size == 0) {
+       return MemoryRegion(nullptr, 0, UnmapFilePosix);
+     }
+   }
+ 
+   void* address = ::mmap(nullptr, size, PROT_READ, MAP_PRIVATE, fd, offset);
+   if (address == MAP_FAILED) {
      return std::move(tspan).EndWithStatus(
          StatusFromOsError(errno, "Failed to mmap"));
    }
@@ -238,10 +247,30 @@ index ccbc905..4e05a6c 100644
  
    mmap_count.Increment();
    mmap_bytes.IncrementBy(size);
-@@ -543,6 +551,16 @@ absl::Status FsyncDirectory(FileDescriptor fd) {
-   if (::fsync(fd) == 0) {
+   mmap_active.Increment();
+   return MemoryRegion(static_cast<char*>(address), size, UnmapFilePosix);
+ #else
+   return absl::UnimplementedError("::mmap not supported");
+ #endif
+ }
+ 
+ absl::Status FsyncFile(FileDescriptor fd) {
+   LoggedTraceSpan tspan(__func__, detail_logging.Level(1), {{"fd", fd}});
+@@ -532,20 +540,30 @@
      return absl::OkStatus();
    }
+   auto status = StatusFromOsError(
+       errno, "Failed to create directory: ", QuoteString(path));
+   return std::move(tspan).EndWithStatus(std::move(status));
+ }
+ 
+ absl::Status FsyncDirectory(FileDescriptor fd) {
+   LoggedTraceSpan tspan(__func__, detail_logging.Level(1), {{"fd", fd}});
+ 
+   PotentiallyBlockingRegion region;
+   if (::fsync(fd) == 0) {
++    return absl::OkStatus();
++  }
 +  // QNX port: fsync() on a directory file descriptor is implementation-
 +  // defined by POSIX, and this filesystem returns EINVAL rather than
 +  // supporting it. This call exists to durably flush a new file's directory
@@ -250,11 +279,14 @@ index ccbc905..4e05a6c 100644
 +  // here preserves correctness for normal operation, just without that one
 +  // additional guarantee on platforms/filesystems that don't support it.
 +  if (errno == EINVAL) {
-+    return absl::OkStatus();
-+  }
+     return absl::OkStatus();
+   }
    auto status = StatusFromOsError(errno, "Failed to fsync directory");
    return std::move(tspan).EndWithStatus(std::move(status));
  }
+ 
+ }  // namespace internal_os
+ }  // namespace tensorstore
 diff --git a/third_party/blake3/workspace.bzl b/third_party/blake3/workspace.bzl
 index 6f309fb..88283d3 100644
 --- a/third_party/blake3/workspace.bzl
@@ -409,3 +441,4 @@ index 8532768..9507a9f 100644
 +            "@com_google_riegeli//riegeli/bytes:copy_all": "riegeli::riegeli",
 +        },
      )
+ 
