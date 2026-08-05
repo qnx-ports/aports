@@ -5,11 +5,11 @@ CFLAGS += -Ilib/libplayback/public -Ilib/libqpp/public
 LDFLAGS += -L./lib/libplayback -L./lib/libqpp
 
 LDLIBS += \
+	-lplayback \
+	-lqpp \
 	-lslog2 \
 	-lsocket \
 	-ljson
-
-COMMON_OBJS := lib/libplayback/*.o lib/libqpp/*.o
 
 PLAYBACK_CONNECTOR = playback/playback-connector/playback-connector
 PLAYBACK_RECORDER = playback/playback-connector/playback-recorder

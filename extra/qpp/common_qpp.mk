@@ -15,7 +15,7 @@ CFLAGS += -DVERSION=\"$(QPP_VERSION)\"
 	$(CC) $(CFLAGS) -c $< -o $@
 
 define build_binary
-$1: $2 $(COMMON_OBJS)
+$1: $2
 	$$(CC) $$(CFLAGS) $$(LDFLAGS) -o $$@ $$^ $$(LDLIBS)
 	cp $$@ $$@.sym
 	$$(STRIP) --strip-debug $$@

@@ -2,11 +2,12 @@ include common_qpp.mk
 
 CFLAGS += -Ilib/libqpp/public
 
+LDFLAGS += -L./lib/libqpp
+
 LDLIBS += \
+	-lqpp \
 	-ljson \
 	-lslog2
-
-COMMON_OBJS := lib/libqpp/*.o
 
 ECHO_ACTUATOR = signal-framework/connectors/echo-actuator/echo-actuator
 

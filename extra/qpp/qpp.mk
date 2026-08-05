@@ -13,10 +13,9 @@ TARGETS = $(QPP)
 LDFLAGS += -L./lib/libqpp
 
 LDLIBS += \
+	-lqpp \
 	-ljson \
 	-lslog2
-
-COMMON_OBJS = lib/libqpp/*.o
 
 ALL_OBJS := \
 	qpp/catalog.o \
