@@ -1,0 +1,22 @@
+--- a/playback/playback-connector/util/json.c
++++ b/playback/playback-connector/util/json.c
+@@ -8,7 +8,7 @@
+  * is strictly prohibited.
+  */
+
+-#include "util/json.h"
++#include "json.h"
+
+ #include <errno.h>
+ #include <string.h>
+--- a/signal-framework/connectors/echo-actuator/util/json.c
++++ b/signal-framework/connectors/echo-actuator/util/json.c
+@@ -8,7 +8,7 @@
+  * is strictly prohibited.
+  */
+
+-#include "util/json.h"
++#include "json.h"
+
+ #include <errno.h>
+ #include <string.h>
