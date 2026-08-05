@@ -80,6 +80,7 @@ utils() {
     amove etc/signal_framework/playback-recorder.json
     amove etc/signal_framework/playback-connector.json
     amove etc/signal_framework/sample-playback.jsonl
+    amove etc/signal_framework/echo-actuator.json
 }
 
 samples() {
@@ -100,5 +101,5 @@ da9af27eef32fae95b67ea54835322362f825a3af001d5bcbc229cb1512ee67ef27d592c3a2a8fad
 23e8006358deaf38931ffa3d0f974ea58d98c99437a542b47b9198bf417b17831f5f72be75970afd4dbbbbd9c9c42239990cd32e97fb88b6efd5b189700ba834  playback.mk
 29701a278b9a06bc322c83e092b66d5780bae9d2d9d8a10855bd577f4201cb06996342abb4763022eb746c5171f144e8eb245f3d560857a06e3e285f496a7fb5  qpp.mk
 4360f3e0d2e962d2d968a8632b5b25b9e58d6bd25239cd80697e7f9474262e9233c710063af0081b629861f6a23546a3f0344f38cb2dcf77552292d599aab3c7  samples.mk
-7a902c25ceb526327ebbbc72f2104c43aa855cc8420d89dde14be5ce5ac625e8c35a6852c59530333c214c9ce5885cc3b7d2b6a7da5ac4bcaa88c597c28bf995  signal_framework.mk
+f654c413d20ce85594bdc9afeeb60b8c653973cb14f17128628ac9683008dee3a0012d0190ccd8ffa5c08b91d00ad96ec093370593ef74c691b82f91fcaa3a17  signal_framework.mk
 "
