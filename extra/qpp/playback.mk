@@ -1,6 +1,6 @@
 include common_qpp.mk
 
-CFLAGS += -Ilib/libplayback/public -Ilib/libqpp/public
+CFLAGS += -Ilib/libplayback/public -Ilib/libqpp/public -Iplayback/playback-connector
 
 LDFLAGS += -L./lib/libplayback -L./lib/libqpp
 

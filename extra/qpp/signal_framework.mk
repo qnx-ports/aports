@@ -1,6 +1,6 @@
 include common_qpp.mk
 
-CFLAGS += -Ilib/libqpp/public
+CFLAGS += -Ilib/libqpp/public -Isignal-framework/connectors/echo-actuator
 
 LDFLAGS += -L./lib/libqpp
 
