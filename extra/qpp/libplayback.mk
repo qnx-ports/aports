@@ -13,3 +13,7 @@ $(TARGETS): $(ALL_OBJS)
 all: $(TARGETS)
 
 install: all
+
+clean:
+	rm -f $(TARGETS) $(addsuffix .sym,$(TARGETS)) $(ALL_OBJS)
+	rm -rf $(DESTDIR)

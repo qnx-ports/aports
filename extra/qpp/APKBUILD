@@ -41,13 +41,8 @@ builddir="$srcdir/$qpp_name-$_commit_id"
 
 build() {
     cd "$builddir"
-    cp -p "$srcdir"/common_qpp.mk common_qpp.mk
-    cp -p "$srcdir"/libqpp.mk libqpp.mk
-    cp -p "$srcdir"/libplayback.mk libplayback.mk
-    cp -p "$srcdir"/playback.mk playback.mk
-    cp -p "$srcdir"/qpp.mk qpp.mk
-    cp -p "$srcdir"/samples.mk samples.mk
-    cp -p "$srcdir"/signal_framework.mk signal_framework.mk
+
+    cp -p "$srcdir"/*.mk .
 
     make -f libplayback.mk
     make -f libqpp.mk
@@ -59,12 +54,11 @@ build() {
 
 package() {
     cd "$builddir"
-    make -f libplayback.mk install DESTDIR="$pkgdir"
-    make -f libqpp.mk install DESTDIR="$pkgdir"
-    make -f samples.mk install DESTDIR="$pkgdir"
-    make -f playback.mk install DESTDIR="$pkgdir"
-    make -f signal_framework.mk install DESTDIR="$pkgdir"
-    make -f qpp.mk install DESTDIR="$pkgdir"
+    export DESTDIR="$pkgdir"
+    make -f samples.mk install
+    make -f playback.mk install
+    make -f signal_framework.mk install
+    make -f qpp.mk install
 }
 
 dbg() {
@@ -86,9 +80,9 @@ utils() {
     amove usr/bin/playback-recorder
     amove usr/bin/playback-tool
 
-	amove etc/signal_framework/playback-recorder.json
-	amove etc/signal_framework/playback-connector.json
-	amove etc/signal_framework/sample-playback.jsonl
+    amove etc/signal_framework/playback-recorder.json
+    amove etc/signal_framework/playback-connector.json
+    amove etc/signal_framework/sample-playback.jsonl
 }
 
 samples() {
@@ -103,12 +97,12 @@ samples() {
 
 sha512sums="
 b2e96e71ce7f35b40e17e272544d74fc0689f3e8af70f3c6d9ebd43e0b1ffee0c25c31ebbc45bdf13eb8590631a30ae5b62245cef078a5a7ced042af18f78b73  qnx-posix-publish-subscribe-f7f9329002546f5be91001e74b0f3b77dc86a313.tar.gz
-984ea54f6ad6feefcd584a916c2d489ac4a3f690c7b66c6fb6c4a95579e8b34c8f928070368cff0a7fcf3870c0aca784297f60625265cfd512cd8b4e0d7666d6  common_qpp.mk
+158f341df7cbccb0440bb3d84cbbd860f1b66d6a8835addb91c95d1561db70bb5cc410048e7b5e59bf9a61caefcea9a052d1a7979244f59a00f082ce9a964aa7  common_qpp.mk
 2d86de2d0cc93298fd1ec12849c95c30a6f756ba1ee774b634e4f19126ffc98f29f0a2f1aa7afd9b7e5190d7503dcded769dcc3a68d4ea9c7da805fe8b1d5ba1  libqpp.mk
 6e795a0f85e03adecc89b69073d0201a8cdea524407fd096194e98238bcbd3989a09f332f443ce2539856cec249aa8ed3f97a4c4d1891f29c1308c38d0dc6e67  libplayback.mk
-9a79c0f9566c0c6264a0e355586c8a16d4308ddbf5ecd132af7a2d813bd9690f2ccc9d949e9bde768ff2726193e1d3136760bfad23f5247943f4285e1b279d46  playback.mk
-2f7c154f9f6022e3e300ff6fc980319f843cfd26ed22339352362e26fbbbc04d30472c29c8c40bf512dd64ef9b9518bca6cb99145bc46244e406a5f2c3f67d02  qpp.mk
-c1361c65244c5e01c47e7716a2ed32b2175cce9d7150b6b75ecfc6c16ac5462d6d56261d10b301703bae312cbcba691bc523a497ac3ff696633a1a5d8b25d6ca  samples.mk
-6e6f08b8289e250c83138cc21ca09f5d0f2fca2b1e8924fb7f532e32c008ba1429c798eff5b03ce168a37036e7026f507ebd0a0e6511f44ef4bcb5a0bd734230  signal_framework.mk
+e4372efbd25c86f98e1f9ebb8d8a1aa23a5f6a388b633428c5ab01cabe3a4f2b10f0c8bd988666c7d64311af3f31dcba4043d9667da9bde8bc2223ddb52988ad  playback.mk
+8b8992acd230cb00cc7835839c39d9b7a6e14bdc5c66bfcae7a650bb613fcaf3d66a5417ed6902f50e80a03d4d1f8a7ffb6e86cc067c47e745e243b115ae1c22  qpp.mk
+4360f3e0d2e962d2d968a8632b5b25b9e58d6bd25239cd80697e7f9474262e9233c710063af0081b629861f6a23546a3f0344f38cb2dcf77552292d599aab3c7  samples.mk
+25ad194cbc81c5d947efeb6287a3f4e6be0fdb2a84bfb5992a9f07860cf28e95a8b670d64cc855d182c424d01e5fc559b21ec73508d18fb03f2a78a695b609a6  signal_framework.mk
 86af70b0410dcd0d8b14a322187b62e88f69a8c5d85494099aebd9bf69dd16e7009aa08d488272f8ecd2f603ae8a65c4b84b891c87489cc19561e44ef9352cb3  json.c.patch
 "

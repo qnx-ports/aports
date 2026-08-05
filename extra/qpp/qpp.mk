@@ -57,3 +57,7 @@ install: all
 
 	install -m 644 signal-framework/signal-service/etc/robot_catalog.json $(DESTDIR)/etc/signal_framework
 	install -m 644 signal-framework/signal-service/etc/signal_catalog.json $(DESTDIR)/etc/signal_framework
+
+clean:
+	rm -f $(TARGETS) $(addsuffix .sym,$(TARGETS)) $(ALL_OBJS)
+	rm -rf $(DESTDIR)

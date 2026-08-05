@@ -16,8 +16,7 @@ ALL_OBJS := \
 	signal-framework/connectors/echo-actuator/util/json.o \
 	signal-framework/connectors/echo-actuator/echo-actuator-main.o
 
-TARGETS := \
-	$(ECHO_ACTUATOR) \
+TARGETS := $(ECHO_ACTUATOR)
 
 all: $(TARGETS)
 
@@ -29,3 +28,7 @@ install: all
 
 	install -m 755 $(TARGETS) $(DESTDIR)/usr/bin/
 	install -m 755 $(addsuffix .sym,$(TARGETS)) $(DESTDIR)/usr/bin/
+
+clean:
+	rm -f $(TARGETS) $(addsuffix .sym,$(TARGETS)) $(ALL_OBJS)
+	rm -rf $(DESTDIR)

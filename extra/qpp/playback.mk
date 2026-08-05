@@ -67,3 +67,7 @@ install: all
 	install -m 644 playback/playback-recorder/etc/playback-recorder.json $(DESTDIR)/etc/signal_framework
 	install -m 644 playback/playback-connector/etc/playback-connector.json $(DESTDIR)/etc/signal_framework
 	install -m 644 playback/playback-tool/etc/sample-playback.jsonl $(DESTDIR)/etc/signal_framework
+
+clean:
+	rm -f $(TARGETS) $(addsuffix .sym,$(TARGETS)) $(ALL_OBJS)
+	rm -rf $(DESTDIR)

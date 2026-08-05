@@ -34,3 +34,7 @@ install: all
 
 	install -m 755 $(TARGETS) $(DESTDIR)/usr/bin/
 	install -m 755 $(addsuffix .sym,$(TARGETS)) $(DESTDIR)/usr/bin/
+
+clean:
+	rm -f $(TARGETS) $(addsuffix .sym,$(TARGETS)) $(ALL_OBJS)
+	rm -rf $(DESTDIR)

@@ -21,7 +21,3 @@ $1: $2 $(COMMON_OBJS)
 	$$(STRIP) --strip-debug $$@
 	$$(OBJCOPY) --add-gnu-debuglink=$$@.sym $$@
 endef
-
-clean:
-	rm -f $(TARGETS) $(addsuffix .sym,$(TARGETS)) $(ALL_OBJS)
-	rm -rf $(DESTDIR)
