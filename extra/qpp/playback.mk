@@ -1,5 +1,4 @@
 include common_qpp.mk
-VERSION_MAJOR = $(word 1,$(subst ., ,$(QPP_VERSION)))
 
 CFLAGS += -Ilib/libplayback/public -Ilib/libqpp/public
 
@@ -11,8 +10,6 @@ LDLIBS += \
 	-ljson
 
 COMMON_OBJS := lib/libplayback/*.o lib/libqpp/*.o
-# COMMON_OBJS := lib/libplayback/*.so lib/libqpp/*.so
-# COMMON_OBJS := lib/libplayback/libplayback.so.$(VERSION_MAJOR) lib/libqpp/libqpp.so.$(VERSION_MAJOR)
 
 PLAYBACK_CONNECTOR = playback/playback-connector/playback-connector
 PLAYBACK_RECORDER = playback/playback-connector/playback-recorder
