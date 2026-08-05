@@ -9,20 +9,16 @@ license="BSD-3-Clause"
 depends="zlib-ng zstd-libs"
 makedepends="cmake ninja zlib-dev lz4-dev zstd-dev"
 subpackages="$pkgname-dev"
+# Built from the qnx-ports fork (github.com/qnx-ports/c-blosc, tag
+# qnx-v1.21.6-r0 -- same tag-naming convention as extra/grpc's fork), not
+# vanilla upstream + a local patch. The QNX fix is small enough that it
+# could stay a loose patch file, but this is intended to be upstreamed to
+# Blosc/c-blosc eventually, so the fork carries the real commit directly
+# (see the fork's own commit message for the full QNX rationale).
 source="
-	$pkgname-$pkgver.tar.gz::https://github.com/Blosc/c-blosc/archive/refs/tags/v$pkgver.tar.gz
-	fix-qnx-aligned-alloc.patch
+	$pkgname-$pkgver.tar.gz::https://github.com/qnx-ports/c-blosc/archive/refs/tags/qnx-v1.21.6-r0.tar.gz
 	"
-builddir="$srcdir/c-blosc-$pkgver"
-
-# fix-qnx-aligned-alloc.patch: tests/test_common.h's blosc_test_malloc()
-# picks its aligned-allocator implementation via an #if/#elif chain ending in
-# #error "Cannot determine how to allocate aligned memory on the target
-# platform." QNX does have posix_memalign (it's POSIX-compliant) -- the
-# existing _POSIX_C_SOURCE/_XOPEN_SOURCE guard just isn't satisfied in this
-# translation unit on QNX/clang, a feature-test-macro gap, not a missing
-# platform capability. Only affects the test suite, not blosc.c/blosc.h
-# themselves, which already build clean with zero patches.
+builddir="$srcdir/c-blosc-qnx-v1.21.6-r0"
 
 # Building against system snappy is deliberately NOT enabled here even
 # though a QNX snappy port exists (see extra/snappy): blosc's own build
@@ -61,6 +57,5 @@ package() {
 }
 
 sha512sums="
-f32ac9ca7dd473f32201cdf4b7bb61a89e8bc3e3d16e027d2c6dc1aa838cb47c42dfed6942c9108532b3920ed22a8c662e7451890177c9bbe6ec5b8ab65362b3  c-blosc-1.21.6.tar.gz
-e22dbc4dbb1684395a7e48d1b6873f5279e32087ce02bf24dbffb1db418fa57cd6431a42c739156429eb731e4a0cc10b56e11e54de5bff8b8c959eb1a9461a76  fix-qnx-aligned-alloc.patch
+ba995df966d32cb32ac06d913c9391a3abd7cb02fabc20721a56f1ca0c1046c8bf8d65098710cae7889ba23c4d76eea825c4461fd1d08084baf6a4e8a3fe916f  c-blosc-1.21.6.tar.gz
 "
