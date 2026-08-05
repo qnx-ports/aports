@@ -1,0 +1,35 @@
+diff --git a/qnx/build/backends/qnx-screen/qnx-screen.c b/qnx/build/backends/qnx-screen/qnx-screen.c
+index 7d558cba..eaa404b8 100644
+--- a/qnx/build/backends/qnx-screen/qnx-screen.c
++++ b/qnx/build/backends/qnx-screen/qnx-screen.c
+@@ -1004,7 +1004,7 @@ static enum wl_pointer_button_state to_wl_pointer_button_state(int value)
+	return value ? WL_POINTER_BUTTON_STATE_PRESSED : WL_POINTER_BUTTON_STATE_RELEASED;
+ }
+
+-static void
++static void
+ qnx_screen_backend_deliver_scroll_event(struct qnx_screen_backend *b,
+				         screen_event_t event)
+ {
+@@ -1169,11 +1169,17 @@ qnx_screen_backend_deliver_touch_event(struct qnx_screen_backend *b,
+	if (!output)
+		return;
+
+-	struct weston_coord_global pos;
+-	pos = weston_coord_global_from_output_point(screen_position[0], screen_position[1], &output->base);
+-
+	weston_compositor_get_time(&time);
+-	notify_touch(b->touch_device, &time, screen_id, &pos, type);
++
++	if (type == WL_TOUCH_UP) {
++	    notify_touch(b->touch_device, &time, screen_id, NULL, type);
++	} else {
++		struct weston_coord_global pos;
++		pos = weston_coord_global_from_output_point(screen_position[0], screen_position[1], &output->base);
++
++		notify_touch(b->touch_device, &time, screen_id, &pos, type);
++	}
++
+	notify_touch_frame(b->touch_device);
+ }
+
