@@ -1,0 +1,43 @@
+# Alpine-Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+# Contributor: Arthur Clark <mydevstuff@mail.com>
+# Maintainer: Aaron Bassett <abassett@qnx.com>
+pkgname=doxygen
+pkgver=1.17.0
+pkgrel=0
+pkgdesc="Documentation system for C++, C, Java, IDL and PHP"
+url="https://www.doxygen.nl/"
+arch="all"
+license="GPL-2.0-or-later"
+depends="libc++ libiconv sqlite-libs"
+checkdepends="libxml2-utils"
+makedepends="flex bison perl python3 cmake ninja sqlite-dev libc++-dev libiconv-dev"
+subpackages="$pkgname-doc"
+source="https://doxygen.nl/files/doxygen-$pkgver.src.tar.gz
+        fix-tagfile-test.patch"
+
+build() {
+        # use_sys_sqlite3=ON is QNX-specific. The bundled sqlite3 takes a
+        # QNX code path (#ifndef __QNXNTO__) that includes sys/dcmd_blk.h,
+        # which is not present on QNX 8. Link the system sqlite instead.
+        cmake -B build -G Ninja \
+                -DGIT_EXECUTABLE=/bin/false \
+                -DCMAKE_INSTALL_PREFIX=/usr \
+                -DCMAKE_BUILD_TYPE=MinSizeRel \
+                -Duse_sys_sqlite3=ON
+        cmake --build build
+}
+
+check() {
+        # Remove test that use bibtex
+        rm -f ./testing/012_cite.dox
+        ctest --test-dir build
+}
+
+package() {
+        DESTDIR="$pkgdir" cmake --install build
+}
+
+sha512sums="
+dacaddc74919941f82ec7c80bb7a49267cad34f0dcc98f41bb5563a6537530b5669145e142855083cfac335b43b3e3063701092366440a57ab5c762310996b20  doxygen-1.17.0.src.tar.gz
+46da9b3df3c79040558428af0d6d098fe54ae8ac7ecd9f37e83317db324a1f4e8bbabafabb6b86bb4e4818a67f3c4274e4b4b527859a7bc9a10416dd1e3fce56  fix-tagfile-test.patch
+"
