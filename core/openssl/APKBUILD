@@ -12,7 +12,6 @@ subpackages="$pkgname-libs-static $pkgname-dev
 source="https://github.com/openssl/openssl/releases/download/openssl-$pkgver/openssl-$pkgver.tar.gz"
 depends="qnx-crypto qnx-io-sock"
 makedepends="perl qnx-crypto-dev qnx-io-sock-dev"
-options="!check"
 builddir="$srcdir/openssl-$pkgver"
 
 build() {
