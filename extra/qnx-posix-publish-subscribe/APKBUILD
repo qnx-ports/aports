@@ -1,9 +1,8 @@
 # Maintainer: Terence Ang <taang@qnx.com>
-pkgname="qpp"
+pkgname="qnx-posix-publish-subscribe"
 pkgver=1.1.0
 pkgrel=0
 _commit_id="f7f9329002546f5be91001e74b0f3b77dc86a313"
-qpp_name="qnx-posix-publish-subscribe"
 pkgdesc="QNX POSIX PubSub Service"
 _dbg_pkgdesc="debug symbols and binaries"
 _samples_pkgdesc="samples"
@@ -25,7 +24,7 @@ subpackages="
     $pkgname-samples:samples
 "
 source="
-    $qpp_name-$_commit_id.tar.gz::https://github.com/qnx/qnx-posix-publish-subscribe/archive/$_commit_id.tar.gz
+    $pkgname-$_commit_id.tar.gz::https://github.com/qnx/qnx-posix-publish-subscribe/archive/$_commit_id.tar.gz
     common_qpp.mk
     libqpp.mk
     libplayback.mk
@@ -34,7 +33,7 @@ source="
     samples.mk
     signal_framework.mk
 "
-builddir="$srcdir/$qpp_name-$_commit_id"
+builddir="$srcdir/$pkgname-$_commit_id"
 
 build() {
     cd "$builddir"
