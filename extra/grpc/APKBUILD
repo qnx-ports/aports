@@ -189,7 +189,7 @@ package() {
 
     cd doc
     find ./ -type f -print -exec install -Dm644 {} "$pkgdir"/usr/share/doc/grpc/{} \;
-    rm "$pkgdir"/usr/share/doc/grpc/.gitignore
+    rm -f "$pkgdir"/usr/share/doc/grpc/.gitignore
 
     find "$pkgdir" -type f -name roots.pem -exec \
         sh -c 'rm $0 && ln -s /etc/ssl/certs/ca-certificates.crt $0' "{}" \;
