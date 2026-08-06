@@ -1,0 +1,5 @@
+[patch]
+source = "git"
+git = "https://git.savannah.gnu.org/git/patch.git"
+prefix = "v"
+

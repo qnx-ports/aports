@@ -3,7 +3,7 @@
 # Maintainer: jscaffidi <jscaffidi@qnx.com>
 pkgname=patch
 pkgver=2.8
-pkgrel=0
+pkgrel=1
 pkgdesc="Utility to apply diffs to files"
 url="https://www.gnu.org/software/patch/patch.html"
 arch="all"
@@ -16,28 +16,27 @@ disable-deep-directory-test.patch
 "
 
 build() {
-	gl_cv_func_gettimeofday_clobber=no \
-	gl_cv_func_tzset_clobber=no \
+    gl_cv_func_gettimeofday_clobber=no \
+    gl_cv_func_tzset_clobber=no \
     CFLAGS="$CFLAGS -D_FORTIFY_SOURCE=0" \
-	./configure \
-		--build=$CBUILD \
-		--host=$CHOST \
-		--prefix=/usr \
-		--sysconfdir=/etc \
-		--mandir=/usr/share/man \
-		--localstatedir=/var
-	make
+    LDFLAGS="-Wl,-z,stack-size=8388608" \
+    ./configure \
+        --build=$CBUILD \
+        --host=$CHOST \
+        --prefix=/usr \
+        --sysconfdir=/etc \
+        --mandir=/usr/share/man \
+        --localstatedir=/var
+    make
 }
 
 check() {
-	make check
+    make check
 }
 
 package() {
-	make DESTDIR="$pkgdir" install
+    make DESTDIR="$pkgdir" install
 }
-
-
 
 sha512sums="
 d689d696660a662753e8660792733c3be0a94c76abfe7a28b0f9f70300c3a42d6437d081553a59bfde6e1b0d5ee13ed89be48d0b00b6da2cadbfc14a15ada603  patch-2.8.tar.xz
