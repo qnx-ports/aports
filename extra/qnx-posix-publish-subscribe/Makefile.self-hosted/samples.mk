@@ -1,4 +1,6 @@
-include common_qpp.mk
+COMMON_DIR := $(dir $(lastword $(MAKEFILE_LIST)))
+
+include $(COMMON_DIR)common_qpp.mk
 
 SAMPLE_SIGNAL_CONSUMER = signal-framework/sample/sample-signal-consumer/sample-signal-consumer
 SAMPLE_SIGNAL_PUBLISHER = signal-framework/sample/sample-signal-publisher/sample-signal-publisher

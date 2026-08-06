@@ -1,4 +1,6 @@
-include common_qpp.mk
+COMMON_DIR := $(dir $(lastword $(MAKEFILE_LIST)))
+
+include $(COMMON_DIR)common_qpp.mk
 
 CFLAGS += -Ilib/libqpp/public
 

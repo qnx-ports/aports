@@ -25,36 +25,20 @@ subpackages="
 "
 source="
     $pkgname-$_commit_id.tar.gz::https://github.com/qnx/qnx-posix-publish-subscribe/archive/$_commit_id.tar.gz
-    common_qpp.mk
-    libqpp.mk
-    libplayback.mk
-    playback.mk
-    qpp.mk
-    samples.mk
-    signal_framework.mk
 "
 builddir="$srcdir/$pkgname-$_commit_id"
 
 build() {
+    cp -r "$srcdir/../Makefile.self-hosted" "$builddir"
     cd "$builddir"
 
-    cp -p "$srcdir"/*.mk .
-
-    make -f libplayback.mk
-    make -f libqpp.mk
-    make -f samples.mk
-    make -f playback.mk
-    make -f signal_framework.mk
-    make -f qpp.mk
+    make -f Makefile.self-hosted/Makefile
 }
 
 package() {
     cd "$builddir"
     export DESTDIR="$pkgdir"
-    make -f samples.mk install
-    make -f playback.mk install
-    make -f signal_framework.mk install
-    make -f qpp.mk install
+    make -f Makefile.self-hosted/Makefile install
 }
 
 dbg() {

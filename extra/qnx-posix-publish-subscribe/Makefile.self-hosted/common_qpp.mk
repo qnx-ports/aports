@@ -1,4 +1,6 @@
-include version.mk
+COMMON_DIR := $(dir $(lastword $(MAKEFILE_LIST)))
+
+include $(COMMON_DIR)../version.mk
 
 CC ?= cc
 AR ?= ar
