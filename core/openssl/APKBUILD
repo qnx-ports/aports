@@ -1,5 +1,5 @@
 pkgname=openssl
-pkgver=3.6.0
+pkgver=3.6.3
 _abiver=${pkgver%.*.*}
 pkgrel=0
 pkgdesc="Toolkit for Transport Layer Security (TLS)"
@@ -116,6 +116,7 @@ _libssl() {
 
     amove usr/lib/libssl*
 }
+
 sha512sums="
-866825a1cdf0b705b409402fbc7a713e7d9b8e7736c5126be57b354927954c148a341fc52b02c0629c1e015a889bfd40217f8e703b73235892e91da060909b76  openssl-3.6.0.tar.gz
+4179ad56f285fd27a1c7b294472afdca588e915d4f8a9610e461f34f0678004aebe32e88434ae536a63a7c9aff6607702a3b341e2faacb7899c27d6def4cc92d  openssl-3.6.3.tar.gz
 "
