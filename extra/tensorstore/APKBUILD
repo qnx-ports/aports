@@ -10,7 +10,7 @@ makedepends="
 	cmake ninja python3 nasm
 	abseil-cpp-dev protobuf-dev openssl-dev zlib-dev zstd-dev lz4-dev
 	re2-dev benchmark-dev c-ares-dev
-	blake3-dev riegeli snappy-dev c-blosc-dev
+	blake3-dev snappy-dev c-blosc-dev
 	grpc-dev grpc-cpp grpc-plugins
 	"
 source="
@@ -23,6 +23,8 @@ source="
 	half-2.1.0.zip::https://sourceforge.net/projects/half/files/half/2.1.0/half-2.1.0.zip/download
 	half-detail_raise.patch.txt
 	nlohmann-json-3.11.3.tar.gz::https://github.com/nlohmann/json/archive/refs/tags/v3.11.3.tar.gz
+	riegeli-qnx-e54e4300-r0.tar.gz::https://github.com/qnx-ports/riegeli/archive/refs/tags/qnx-e54e4300-r0.tar.gz
+	riegeli-CMakeLists.txt
 	"
 builddir="$srcdir/$pkgname-$pkgver"
 
@@ -84,13 +86,40 @@ builddir="$srcdir/$pkgname-$pkgver"
 # depended on for TLS elsewhere in this build. No shim needed.
 #
 # cmake-modules/{Findriegeli,Findhalf}.cmake: neither riegeli (our own
-# from-scratch scoped build, see extra/riegeli) nor half (a raw
+# from-scratch scoped build, vendored -- see below) nor half (a raw
 # single-header library with no build system at all) export real CMake
 # Config files, so TENSORSTORE_USE_SYSTEM_RIEGELI/HALF need a hand-written
 # Find module. blake3 does NOT need one -- its real upstream CMake install
 # already provides blake3-config.cmake, found automatically once
 # find_package(BLAKE3) falls through Module mode (no FindBLAKE3.cmake
 # shipped here) to Config mode.
+#
+# riegeli-qnx-e54e4300-r0.tar.gz + riegeli-CMakeLists.txt: riegeli is NOT a
+# separate apk package (unlike blake3/snappy/c-blosc/grpc) -- it's built
+# from source and statically linked straight into tensorstore here. Two
+# reasons: (1) no distro packages riegeli at all (checked Alpine, Debian,
+# Fedora, Arch/AUR, Homebrew, Nix, Gentoo, vcpkg, Conan Center, FreeBSD --
+# genuinely unpackaged everywhere), and its real-world usage is narrow
+# (tensorstore/OCDBT, ArrayRecord/Grain, TensorFlow Datasets, Kythe,
+# Beancount) with zero tracked GitHub dependents and no PyPI presence --
+# consumers vendor it from source, which is exactly what this does; (2) the
+# QNX-scoped subset here only builds ~24 of riegeli's files (bytes/digests/
+# varint/zstd/base -- see riegeli-CMakeLists.txt's own file list), dropping
+# records/chunk_encoding/brotli/lz4/snappy/tensorflow/gcs entirely, so
+# publishing it standalone as "riegeli" would misrepresent it as the full
+# library. Sourced from github.com/qnx-ports/riegeli (tag
+# qnx-e54e4300-r0, pinned to the exact commit tensorstore/orbax-checkpoint
+# depends on transitively, Dec 2023) rather than vanilla google/riegeli +
+# a local patch: the one real fix needed (crc32c_digester.h's dependency on
+# an unported external crc32c library, swapped for absl/crc/crc32c.h which
+# is already available) is a genuine upstream-applicable bug fix, kept as a
+# real commit on the fork in case it's ever worth upstreaming, separate
+# from riegeli-CMakeLists.txt (pure aports/QNX build scaffolding -- riegeli
+# has no CMake support upstream at all, so this isn't a "patch" to
+# anything, it doesn't belong in the fork). Built+installed to the same
+# private vendor prefix as half/nlohmann-json in prepare() below; stays a
+# static archive linked into tensorstore's own binary, so there's no
+# separate runtime artifact to place anywhere.
 #
 # cmake-modules/Re2Config.cmake: tensorstore's declared cmake_name = "Re2"
 # makes find_package(Re2 CONFIG) look for Re2Config.cmake/re2-config.cmake,
@@ -142,6 +171,18 @@ prepare() {
 		-DJSON_BuildTests=OFF -G Ninja
 	cmake --build "$srcdir"/nlohmann-json-build
 	cmake --install "$srcdir"/nlohmann-json-build
+
+	# Vendor riegeli (QNX-scoped subset, from the qnx-ports fork -- see the
+	# riegeli-qnx-e54e4300-r0.tar.gz comment above) into the same private
+	# prefix. Its own CMakeLists.txt isn't part of the fork (riegeli has no
+	# CMake support upstream at all), so it's copied in from our own
+	# riegeli-CMakeLists.txt first.
+	install -Dm644 "$srcdir"/riegeli-CMakeLists.txt "$srcdir"/riegeli-qnx-e54e4300-r0/CMakeLists.txt
+	cmake -B "$srcdir"/riegeli-build -S "$srcdir"/riegeli-qnx-e54e4300-r0 \
+		-DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$vp" \
+		-DCMAKE_PREFIX_PATH="$vp" -G Ninja
+	cmake --build "$srcdir"/riegeli-build
+	cmake --install "$srcdir"/riegeli-build
 }
 
 build() {
@@ -210,4 +251,6 @@ sha512sums="
 fc81a1b58862eb4570f18b5c82ca66eb9e6cf697801ef5686dc36950d149adaa8e6c2543a1b698e983e29253da5137e6b565a69991d4924598f0a10a8ba52142  half-2.1.0.zip
 c7bb331a2009d0c196025229be1d4a43693bb1d7a204baad65c6bd535a46e726fa12c6d7c4228e0165571ed007dfbf3c604124931101ac381e1ca3219de4f70d  half-detail_raise.patch.txt
 7df19b621de34f08d5d5c0a25e8225975980841ef2e48536abcf22526ed7fb99f88ad954a2cb823115db59ccc88d1dbe74fe6c281b5644b976b33fb78db9d717  nlohmann-json-3.11.3.tar.gz
+b4d6582dac9c28a11da2b28b3c53b5c694b18696e2e49c49b2970f0abd9ee5a95897b4fc797f168d1bbb8c91a40a8b9d56a54b2cd139d76ac86bd792b9e96abe  riegeli-qnx-e54e4300-r0.tar.gz
+0d825ee9b9b5679a4de4f85abe1c4e3c6992decbd9347921a1923c9bdfcc87449ab6768a3142795005ca2dc3845e4fc41c1912926aefa7ff19814dcf457c0192  riegeli-CMakeLists.txt
 "
