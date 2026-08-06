@@ -1,14 +1,14 @@
 # Maintainer: Felix Xing <fxing@qnx.com>
 pkgname=llvm22
 pkgver=22.1.7
-pkgrel=0
+pkgrel=1
 _patch_rev=0
 pkgdesc="Low Level Virtual Machine compiler system."
 arch="all"
 url="https://llvm.org/"
 license="Apache-2.0"
-depends_libs="qnx-io-sock libc++ libffi libunwind libxml2 zlib-ng zstd-libs libcurl"
-depends_dev="$depends_libs libc++-dev libffi-dev libunwind-dev libxml2-dev zlib-ng-dev zstd-dev curl-dev qnx-io-sock-dev"
+depends_libs="qnx-io-sock libc++ libffi libunwind libxml2.13 zlib-ng zstd-libs libcurl"
+depends_dev="$depends_libs libc++-dev libffi-dev libunwind-dev libxml2.13-dev zlib-ng-dev zstd-dev curl-dev qnx-io-sock-dev"
 depends="$depends_libs qnx-gcc binutils"
 # the python3* makedepends are optional. remove them and corresponding llvm-lit build during bootstrap
 makedepends="python3 python3-build python3-pyproject-hooks python3-packaging python3-setuptools python3-installer sed cmake ninja perl compiler-rt $depends_dev"
