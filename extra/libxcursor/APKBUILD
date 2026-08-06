@@ -9,6 +9,7 @@ arch="all"
 license="MIT"
 options="!check"  # No test suite.
 subpackages="$pkgname-dev $pkgname-doc"
+subpackages="$pkgname-dev $pkgname-doc"
 depends="libx11 libxrender libxfixes"
 makedepends="xorgproto util-macros libx11-dev libxrender-dev libxfixes-dev"
 source="https://www.x.org/releases/individual/lib/libXcursor-$pkgver.tar.xz"
