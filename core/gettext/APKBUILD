@@ -1,13 +1,14 @@
 pkgname=gettext
 pkgver=0.26
-pkgrel=0
+pkgrel=1
 pkgdesc="GNU locale utilities"
 url="https://www.gnu.org/software/gettext/gettext.html"
 arch="all"
 license="GPL-3.0-or-later AND LGPL-2.1-or-later AND MIT"
 #makedepends="autoconf automake libtool"
-depends="libiconv libxml2"
-makedepends="perl ncurses-dev libxml2-dev libunistring-dev libiconv-dev"
+depends="libxml2 gettext-libs"
+depends_libs="libintl libiconv libunistring ncurses qnx-io-sock"
+makedepends="perl ncurses-dev libxml2-dev libunistring-dev libiconv-dev qnx-io-sock-dev"
 subpackages="
     $pkgname-doc
     $pkgname-static
@@ -17,7 +18,9 @@ subpackages="
     libintl
     $pkgname-libs
     "
-source="https://mirror.csclub.uwaterloo.ca/gnu/gettext/gettext-$pkgver.tar.xz"
+source="https://mirror.csclub.uwaterloo.ca/gnu/gettext/gettext-$pkgver.tar.xz
+	fix-qnx.patch
+"
 
 build() {
     # Increase stack size
@@ -58,7 +61,7 @@ package() {
 libintl() {
     pkgdesc="GNU gettext runtime library"
     license="LGPL-2.1-or-later"
-    depends="gettext=$pkgver-r$pkgrel"
+    depends="libiconv"
 
     amove usr/lib/libintl.so.*
     chmod +x "$subpkgdir"/usr/lib/libintl.so.*
@@ -73,4 +76,5 @@ _envsubst() {
 }
 sha512sums="
 544e41c9390695df1c21542842e9ca027a03cb7d4045d8cd759dec1a3dfb624aae900751b458bdb31d6454b37c40c474a952059b884555a03c7c95d6d0e687b1  gettext-0.26.tar.xz
+9d44922dc38ee80375385d6875e62b4db20e52116c4e802f37c59f26e78c7aeda59670bb8255a959c3c82efd56fccd0d359caaca38a39ffaa9f125782d025537  fix-qnx.patch
 "

@@ -1,0 +1,22 @@
+--- gettext-0.26.orig/gettext-tools/gnulib-lib/inet_ntop.c	2025-07-08 08:54:39.000000000 +0000
++++ gettext-0.26/gettext-tools/gnulib-lib/inet_ntop.c	2026-08-07 21:40:49.000000000 +0000
+@@ -49,7 +49,7 @@
+ 
+ #if HAVE_DECL_INET_NTOP
+ 
+-# undef inet_ntop
++//# undef inet_ntop
+ 
+ const char *
+ rpl_inet_ntop (int af, const void *restrict src,
+--- gettext-0.26.orig/gettext-tools/gnulib-lib/inet_pton.c	2025-07-08 08:54:39.000000000 +0000
++++ gettext-0.26/gettext-tools/gnulib-lib/inet_pton.c	2026-08-07 21:41:23.000000000 +0000
+@@ -39,7 +39,7 @@
+ 
+ #if HAVE_DECL_INET_PTON
+ 
+-# undef inet_pton
++//# undef inet_pton
+ 
+ int
+ rpl_inet_pton (int af, const char *restrict src, void *restrict dst)
