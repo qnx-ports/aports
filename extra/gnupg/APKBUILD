@@ -1,12 +1,12 @@
 # Maintainer: Leo Shen <yishen@qnx.com>
 pkgname=gnupg
-pkgver=2.4.8
+pkgver=2.4.9
 pkgrel=0
 pkgdesc="GNU Privacy Guard 2 - meta package for full GnuPG suite"
 url="https://www.gnupg.org/"
 arch="all"
 license="GPL-3.0-or-later"
-depends="libiconv libbz2 gettext sqlite zlib xz-libs gnutls libassuan libgcrypt libksba npth pinentry qnx-io-sock"
+depends="libiconv libbz2 gettext sqlite-libs zlib xz-libs gnutls libassuan libgcrypt libgpg-error libksba npth pinentry qnx-io-sock"
 makedepends="
     libiconv-dev bzip2-dev gettext-dev sqlite-dev zlib-dev xz
     gnutls-dev libassuan-dev libgcrypt-dev libgpg-error-dev libksba-dev npth-dev pinentry
@@ -63,5 +63,5 @@ package() {
 }
 
 sha512sums="
-34479e02fc10031965f094d1d968341588f0779e91e47dd6a1a1046404bc9eb7174ef1fb7c966e79954923713b543f2181031322201e34c5b6b753cc62a7a4e4  gnupg-gnupg-2.4.8-freepg.tar.gz
+b63c43383d4d90193cc497788051d8d33144500448a961c69c8987d285da4fc2ae164f975b7f3b8960bdaaf3878879a971d85a408eb5db972d903b70d9d12b0a  gnupg-gnupg-2.4.9-freepg.tar.gz
 "
