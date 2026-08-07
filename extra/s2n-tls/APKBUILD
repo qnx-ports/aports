@@ -8,8 +8,7 @@ pkgdesc="An implementation of the TLS/SSL protocols"
 url="https://aws.github.io/s2n-tls/usage-guide/"
 arch="all"
 license="Apache-2.0"
-depends="qnx-io-sock"
-depends_dev="openssl-dev"
+depends_dev="openssl-dev qnx-io-sock-dev"
 makedepends="
     $depends_dev
     cmake
