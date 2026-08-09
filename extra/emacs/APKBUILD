@@ -1,10 +1,9 @@
 # ALPINE-Contributor: Timo Teräs <timo.teras@iki.fi>
 # ALPINE-Maintainer: Celeste <cielesti@protonmail.com>
 # Maintainer: Elliott Mazzuca <emazzuca@qnx.com>
-maintainer="Celeste <cielesti@protonmail.com>"
 pkgname=emacs
 pkgver=30.2
-pkgrel=1
+pkgrel=2
 _pkgdesc="Extensible, customizable, self-documenting real-time display editor"
 pkgdesc="$_pkgdesc (common files)"
 url="https://www.gnu.org/software/emacs/emacs.html"
@@ -30,6 +29,8 @@ makedepends="
 	sqlite-dev
 	texinfo
 	tree-sitter-dev
+	gtk3
+	qnx-screen-dev
 	"
 subpackages="
 	$pkgname-doc
