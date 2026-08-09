@@ -1,12 +1,13 @@
 pkgname=libxkbcommon
 pkgver=1.8.0
-pkgrel=2
+pkgrel=3
 pkgdesc="keyboard handling library"
 url="https://xkbcommon.org/"
 arch="all"
 #options="!check"
 license="MIT AND MIT-open-group AND HPND AND HPND-sell-variant AND LicenseRef-digital-equipment-corporation"
-depends="xkeyboard-config libx11 qnx-io-sock"
+depends="xkeyboard-config libx11 qnx-io-sock libxml2"
+depends_dev="$pkgname=$pkgver-r$pkgrel libx11-dev"
 makedepends="
     bison
     libxml2-dev
@@ -61,6 +62,7 @@ package() {
 
 xkbcli() {
     pkgdesc="xkb command-line tool with interactive debugger"
+    depends="$pkgname=$pkgver-r$pkgrel wayland"
 
     amove usr/bin/xkbcli
     amove usr/lib/xkbcommon/xkbcli*
