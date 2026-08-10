@@ -1,5 +1,5 @@
 pkgname=libxslt
-pkgver=1.1.43
+pkgver=1.1.45
 pkgrel=0
 pkgdesc="XML stylesheet transformation library"
 url="http://xmlsoft.org/XSLT/"
@@ -44,7 +44,7 @@ dev() {
     amove usr/lib/xsltConf.sh
 }
 
-sha512sums="
-96110b0397a8f5791f489127574e2143845feb61bea0581d7b7e3c1101fd0718483bae81a7ce417b971bd678293bfd95daddad0dadd3e256c87d41a69faed85a  libxslt-1.1.43.tar.xz
-"
 
+sha512sums="
+8f0608aad7250ccfe62808169d464a1641535b41a73b4fbbc1eeec9c9e785bbd8f4860d571eb567ee1e7abbd89ac3d707a5f3e3a9e836ecaf38155793ce47d78  libxslt-1.1.45.tar.xz
+"
