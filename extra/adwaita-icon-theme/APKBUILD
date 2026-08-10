@@ -1,0 +1,37 @@
+# Alpine-Maintainer: team/gnome <achill@achill.org>
+# Contributor: Łukasz Jendrysik <scadu@yandex.com>
+# Maintainer: Elliott Mazzuca <emazzuca@qnx.com>
+pkgname=adwaita-icon-theme
+pkgver=50.0
+pkgrel=0
+pkgdesc="Adwaita icon theme"
+url="https://gitlab.gnome.org/GNOME/adwaita-icon-theme"
+arch="noarch"
+options="!check"  # Icons only, no binaries.
+license="LGPL-3.0-or-later OR CC-BY-SA-3.0"
+# Dropped vs Alpine: glycin-svg (no SVG renderer on QNX, so scalable icons will
+# not render) and gtk+3.0, which Alpine lists only for the icon-cache tool that
+# is packaged separately here as gtk-update-icon-cache, below.
+makedepends="
+	gtk-update-icon-cache
+	icon-naming-utils
+	intltool
+	meson
+	"
+subpackages="$pkgname-dev $pkgname-doc"
+source="https://download.gnome.org/sources/adwaita-icon-theme/${pkgver%.*}/adwaita-icon-theme-$pkgver.tar.xz
+	projectsdir.patch
+	"
+
+build() {
+	abuild-meson . output
+	meson compile -C output
+}
+
+package() {
+	DESTDIR="$pkgdir" meson install --no-rebuild -C output
+}
+sha512sums="
+4191943fbbcb9af99537e4b8321375f3bbcee8fe14e5425ef717a8bfe4d410b8d6a86ee1a08686bfb9b918adfe459cf62bc4eae8af9b1c020719bdb0541a3d9f  adwaita-icon-theme-50.0.tar.xz
+5cbf8f14a4ddd371ce64d722f1ea1de08fd7fba9ddc10405a4eea230050de2f3c0a21f1fc016063406b16b8f1b258dd589bd94d9242083c64076aa27f0b6b904  projectsdir.patch
+"
