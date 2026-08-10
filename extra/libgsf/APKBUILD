@@ -2,13 +2,13 @@
 # Maintainer: Aaron Bassett <abassett@qnx.com>
 pkgname=libgsf
 pkgver=1.14.53
-pkgrel=0
+pkgrel=1
 pkgdesc="Utility library for reading and writing structured file formats"
 url="https://gitlab.gnome.org/GNOME/libgsf"
 arch="all"
 license="LGPL-2.1-only"
 subpackages="$pkgname-dev $pkgname-doc $pkgname-lang"
-depends="libxml2 glib bzip2 zlib-ng"
+depends="libbz2 glib libxml2 zlib-ng libintl"
 depends_dev="bzip2-dev glib-dev libxml2-dev"
 makedepends="$depends_dev intltool python3 zlib-ng-dev
 	gobject-introspection-dev"
