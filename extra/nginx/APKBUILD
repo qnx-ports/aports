@@ -1,7 +1,7 @@
 # Maintainer: Felix Xing <fxing@qnx.com>
 pkgname=nginx
 pkgver=1.29.2
-pkgrel=1
+pkgrel=2
 pkgdesc="Lightweight HTTP server and IMAP/POP3 proxy server"
 url="nginx.org/"
 arch="all"
