@@ -1,5 +1,4 @@
 # Maintainer: Ramya santoshi <rtimmaraju@qnx.com>
-
 pkgname=mujoco
 pkgver=3.10.0
 pkgrel=0
@@ -7,9 +6,7 @@ pkgdesc="MuJoCo physics engine"
 url="https://github.com/google-deepmind/mujoco"
 arch="all"
 license="Apache-2.0"
-
 depends="miniz libc++"
-
 makedepends="
     cmake
     ninja
@@ -19,18 +16,16 @@ makedepends="
 	libc++-dev
 "
 options="!lto"
-
 subpackages="
-	$pkgname-dev
+    $pkgname-dev
+    $pkgname-models:models
 "
-
 source="
     mujoco-$pkgver.tar.gz::https://github.com/rtimmaraju/mujoco/archive/refs/heads/mujoco_ver_3.10.0.tar.gz
     benchmark-disable-qnx.patch
     001-fix-qnx-setjmp-link-error.patch
     002-increase-gtest-discovery-timeout.patch
 "
-
 builddir="$srcdir/mujoco-mujoco_ver_3.10.0"
 
 build() {
@@ -59,11 +54,14 @@ check() {
     ctest --output-on-failure > ctest.log 2>&1 || true
 }
 
+models() {
+    amove usr/share/mujoco/model
+}
+
 package() {
 	
 	DESTDIR="$pkgdir" cmake --install build
 }
-
 
 sha512sums="
 56ac27926e288c890feab5d79fd1669e37c1efada1816d3338f4ca69a305acddc2bb1a622d26bd53a2657854b8d11fb938fe815da1b11dc90c5559e2e14f06b3  mujoco-3.10.0.tar.gz
