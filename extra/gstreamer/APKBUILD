@@ -2,7 +2,7 @@
 # Maintainer: Felix Xing <fxing@qnx.com>
 pkgname=gstreamer
 pkgver=1.26.8
-pkgrel=1
+pkgrel=2
 pkgdesc="GStreamer streaming media framework"
 url="https://gstreamer.freedesktop.org"
 arch="all"
