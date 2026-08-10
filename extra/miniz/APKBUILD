@@ -1,5 +1,4 @@
 # Maintainer: Ramya santoshi <rtimmaraju@qnx.com>
-
 pkgname=miniz
 pkgver=3.1.2
 pkgrel=0
@@ -7,18 +6,15 @@ pkgdesc="Single-file zlib replacement library"
 url="https://github.com/richgel999/miniz"
 arch="all"
 license="MIT"
-
 depends="libc++"
 makedepends="
 cmake
 ninja
 libc++-dev
 "
-
 subpackages="
 	$pkgname-dev
 "
-
 source="
 $pkgname-$pkgver.tar.gz::https://github.com/richgel999/miniz/archive/refs/tags/$pkgver.tar.gz
 "
