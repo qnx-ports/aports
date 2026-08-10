@@ -1,7 +1,6 @@
 # Maintainer: Leo Shen <yishen@qnx.com>
 pkgname=abuild
-_pkgver=3.16.0
-pkgver=${_pkgver}_p2
+pkgver=3.16.0_p2
 pkgrel=0
 pkgdesc="APK build toolchain, adapted for QNX"
 url="https://gitlab.alpinelinux.org/alpine/abuild/"
@@ -12,12 +11,8 @@ depends="qnx-utils nproc apk-tools fakeroot busybox openssl pkgconf pax-utils
 makedepends="scdoc pkgconf pkgconf-dev openssl-dev zlib-ng-dev"
 options="suid"
 subpackages="$pkgname-doc"
-source="https://gitlab.alpinelinux.org/alpine/abuild/-/archive/$_pkgver/abuild-$_pkgver.tar.gz
-    0001-qnx-remove-features-not-used-by-QNX.patch
-    0002-qnx-add-BUILDINFO.patch
-    0003-qnx-misc-fixes.patch
-"
-builddir="$srcdir"/abuild-$_pkgver
+source="https://github.com/qnx-ports/abuild/archive/refs/tags/qnx-$pkgver.tar.gz"
+builddir="$srcdir"/abuild-qnx-$pkgver
 
 build() {
     make VERSION="$pkgver-r$pkgrel"
@@ -28,8 +23,5 @@ package() {
 }
 
 sha512sums="
-1a889ac88715ef988d3970163122d603329c5b02e85b0329b497c1b940a2dc25d852f25320af79415d6b2050184d9ff14ccfcc14f286d3b2dabad19634861026  abuild-3.16.0.tar.gz
-5465eff256b593e2698d8ba40677a6d36a5c91018f9027792d5b19e9ba43b72e19e162be07ac6122fa64d915b0115bc7a338a8a1a27a82fc9b86dbbf81b1964f  0001-qnx-remove-features-not-used-by-QNX.patch
-d5e850a33786c95ec40a1c2c697cc12e0e182afd673f5027f5020d29046f8eeacdf6873f0902a5eee01cc641bb418b47e36688e70ac7771bc949715940858191  0002-qnx-add-BUILDINFO.patch
-e003d4a05702baca06fd990e1d7c316d5b0b75d649090e21a33c7f1b17d47beacaa667975c12d81ed219a8db39f39b00525fd433de46d009ee6e1005db0e2afd  0003-qnx-misc-fixes.patch
+beec51c2e33e0d8680e03ad634c7d70230799ea233265531d6b6a52b33030c602eeaedd8d1f316e4cb81bf3449feac1ba4aa42143ec7894ea5703fe781f38f0e  qnx-3.16.0_p2.tar.gz
 "
