@@ -2,7 +2,7 @@
 # Maintainer: Aaron Bassett <abassett@qnx.com>
 pkgname=geany-plugins
 pkgver=2.1
-pkgrel=1
+pkgrel=2
 pkgdesc="Plugins for Geany"
 url="https://plugins.geany.org/"
 arch="all"
@@ -71,7 +71,7 @@ prepare() {
 }
 
 build() {
-	CFLAGS="$CFLAGS -Qunused-arguments"
+	LDFLAGS="-shared-libgcc" LIBS="-lc -lpthread" \
 	./configure \
 		--build=$CBUILD \
 		--host=$CHOST \
