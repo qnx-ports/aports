@@ -3,7 +3,7 @@
 # Maintainer: Felix Lionardo <flionardo@qnx.com>
 pkgname=graphicsmagick
 pkgver=1.3.46
-pkgrel=0
+pkgrel=1
 pkgdesc="Image processing system"
 url="http://www.graphicsmagick.org/"
 arch="all"
