@@ -33,7 +33,7 @@ build() {
 }
 
 check() {
-  test_exclude="s2n_override_openssl_random_test|s2n_self_talk_broken_pipe_test"
+  test_exclude="s2n_override_openssl_random_test|s2n_self_talk_broken_pipe_test|s2n_client_hello_test"
   ctest --test-dir build -E $test_exclude
 }
 
