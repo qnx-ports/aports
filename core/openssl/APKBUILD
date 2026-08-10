@@ -13,6 +13,7 @@ source="https://github.com/openssl/openssl/releases/download/openssl-$pkgver/ope
 depends="qnx-crypto qnx-io-sock"
 makedepends="perl qnx-crypto-dev qnx-io-sock-dev"
 builddir="$srcdir/openssl-$pkgver"
+option="net"
 
 build() {
     local _target _optflags
