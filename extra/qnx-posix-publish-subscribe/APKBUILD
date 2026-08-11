@@ -89,6 +89,10 @@ samples() {
     amove usr/bin/sample-message-subscriber
     amove usr/bin/sample-signal-consumer
     amove usr/bin/sample-signal-publisher
+    amove etc/signal_framework/playback-connector.json
+    amove etc/signal_framework/playback-recorder.json
+    amove etc/signal_framework/sample-playback.jsonl
+    amove etc/signal_framework/echo-actuator.json
 }
 
 sha512sums="
