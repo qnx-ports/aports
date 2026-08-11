@@ -46,15 +46,15 @@ prepare() {
 
   mv "$srcdir"/azure-c-shared-utility-$_azure_c_shared_utility_commit/* "$builddir"/c-utility
   mv "$srcdir"/azure-umqtt-c-$_umqtt_commit/* "$builddir"/umqtt/
-	mv "$srcdir"/azure-uamqp-c-$_uamqp_commit/* "$builddir"/uamqp/
-	mv "$srcdir"/parson-$_parson_commit/* "$builddir"/deps/parson/
-	mv "$srcdir"/azure-uhttp-c-$_uhttp_commit/* "$builddir"/deps/uhttp/
+  mv "$srcdir"/azure-uamqp-c-$_uamqp_commit/* "$builddir"/uamqp/
+  mv "$srcdir"/parson-$_parson_commit/* "$builddir"/deps/parson/
+  mv "$srcdir"/azure-uhttp-c-$_uhttp_commit/* "$builddir"/deps/uhttp/
   mv "$srcdir"/RIoT-$_RIOT_commit/* "$builddir"/provisioning_client/deps/RIoT/
-	mv "$srcdir"/azure-utpm-c-$_utpm_commit/* "$builddir"/provisioning_client/deps/utpm/
+  mv "$srcdir"/azure-utpm-c-$_utpm_commit/* "$builddir"/provisioning_client/deps/utpm/
   mv "$srcdir"/macro-utils-c-$_azure_macro_utils_c_commit/* "$builddir"/deps/azure-macro-utils-c/
-	mv "$srcdir"/umock-c-$_umock_c_commit/* "$builddir"/deps/umock-c/
+  mv "$srcdir"/umock-c-$_umock_c_commit/* "$builddir"/deps/umock-c/
   mv "$srcdir"/c-testrunnerswitcher-$_azure_c_testrunnerswitcher_commit/* "$builddir"/deps/azure-c-testrunnerswitcher/
-	mv "$srcdir"/ctest-$_azure_ctest_commit/* "$builddir"/deps/azure-ctest/
+  mv "$srcdir"/ctest-$_azure_ctest_commit/* "$builddir"/deps/azure-ctest/
 
   default_prepare
 
