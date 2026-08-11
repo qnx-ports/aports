@@ -46,12 +46,12 @@ source="
 builddir="$srcdir/$pkgname-v$pkgver"
 
 prepare() {
-    default_prepare
     (cd $builddir/third_party/XNNPACK && patch ${patch_args:--p1} -i "$srcdir"/0001-XNNPACK-qnx-build_patch)
     (cd $builddir/third_party/protobuf && patch ${patch_args:--p1} -i "$srcdir"/0002-protobuf-qnx-build_patch)
     (cd $builddir/third_party/kineto && patch ${patch_args:--p1} -i "$srcdir"/0003-kineto-qnx-build_patch)
     (cd $builddir/third_party/fbgemm && patch ${patch_args:--p1} -i "$srcdir"/0004-fbgemm-qnx-build_patch)
     (cd $builddir/third_party/foxi && patch ${patch_args:--p1} -i "$srcdir"/0005-foxi-qnx-build_patch)
+    default_prepare
 }
 
 build() {
