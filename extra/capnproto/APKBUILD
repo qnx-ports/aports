@@ -19,6 +19,7 @@ depends_dev="
     openssl-dev
     libucontext-dev
     libc++-dev
+    qnx-io-sock-dev
     "
 makedepends="
     $depends_dev
@@ -53,5 +54,5 @@ package() {
 
 sha512sums="
 1777379e2cd60231fc50f1c150a85b3bb4d2e2964bc00fac5c81f14cf3297b671b5080d195291a048362c5961ca6713b226f8637e13b89adf41989fd4e964892  capnproto-1.3.0.tar.gz
-84bf6760cfd0e0f10cad7ea4bd554f075d526cf9c698c6cfa1668a89b470fa116bcdd6a771f181a28f1082391ac050aa5785bfad12e9a020bfc26c832524e4f9  0001-add-qnx-build.patch
+d9753c2c16daaa37fe03d6f97cc5e50d583d85112e26cfe035d11d9eee5ecff5ca8c6726e6056cb58a086b620b4f10c50ba16f85e87bf7e2097bcf337acaaf20  0001-add-qnx-build.patch
 "

@@ -112,6 +112,27 @@ index 64190c43..9da4c71b 100644
  
  KJ_TEST("UnixEventPort poll for signals") {
    captureSignals();
+diff --git a/c++/src/kj/async.c++ b/c++/src/kj/async.c++
+index 496a72cc..dfc26220 100644
+--- a/c++/src/kj/async.c++
++++ b/c++/src/kj/async.c++
+@@ -56,7 +56,16 @@
+ #else
+ 
+ #if KJ_USE_FIBERS
++#ifdef __QNX__
++#include <libucontext/libucontext.h>
++#define getcontext libucontext_getcontext
++#define makecontext libucontext_makecontext
++#define setcontext libucontext_setcontext
++#define swapcontext libucontext_swapcontext
++#define ucontext_t libucontext_ucontext_t
++#else
+ #include <ucontext.h>
++#endif
+ #include <setjmp.h>    // for fibers
+ #endif
+ 
 diff --git a/c++/src/kj/exception.c++ b/c++/src/kj/exception.c++
 index 29405f64..709e5ed9 100644
 --- a/c++/src/kj/exception.c++
