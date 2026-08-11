@@ -5,8 +5,6 @@ pkgrel=0
 _commit_id="f7f9329002546f5be91001e74b0f3b77dc86a313"
 pkgdesc="QNX POSIX PubSub Service"
 _dbg_pkgdesc="debug symbols and binaries"
-_static_pkgdesc="static libraries"
-_libs_pkgdesc="shared libraries"
 _samples_pkgdesc="samples"
 _utils_pkgdesc="utilities"
 url="https://qnx.com"
@@ -21,8 +19,6 @@ makedepends="
 "
 options="!check"
 subpackages="
-    $pkgname-static:static
-    $pkgname-dev:dev
     $pkgname-dbg:dbg
     $pkgname-utils:utils
     $pkgname-samples:samples
@@ -69,11 +65,6 @@ package() {
     echo
 }
 
-static() {
-    pkgdesc="$subpkgname $_static_pkgdesc"
-    amove usr/lib/*.a
-}
-
 dbg() {
     pkgdesc="$subpkgname $_dbg_pkgdesc"
     depends="
@@ -81,15 +72,7 @@ dbg() {
         $pkgname-utils=$pkgver-r$pkgrel
         $pkgname-samples=$pkgver-r$pkgrel
     "
-    amove usr/lib/*.sym
     amove usr/bin/*.sym
-}
-
-
-dev() {
-    default_dev
-    pkgdesc="$subpkgname $_dev_pkgdesc"
-    depends="$pkgname=$pkgver-r$pkgrel"
 }
 
 utils() {
