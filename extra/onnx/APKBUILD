@@ -6,24 +6,22 @@ pkgdesc="Open standard for machine learning interoperability"
 url="https://onnx.ai"
 arch="all"
 license="Apache-2.0"
+depends="libc++"
 depends_dev="
+    libc++-dev
     protobuf-dev
-    python3-numpy-dev
     "
 makedepends="
     $depends_dev
     cmake
     ninja
     gtest-dev
-    nanobind-dev
+    python3-dev
+    python3-pybind11-dev
+    python3-numpy-dev
     python3-setuptools
     python3-wheel
     "
-depends="
-    python3-protobuf
-    python3-numpy
-    python3-ml-dtypes
-"
 subpackages="
     $pkgname-dev
     python3-$pkgname:py3"
@@ -61,7 +59,14 @@ package() {
 }
 
 py3() {
-  pkgdesc="Generate $pkgname python3 bindings"
+  pkgdesc="Python3 bindings for $pkgname"
+  depends="
+        libc++
+        python3
+        python3-protobuf
+        python3-numpy
+        python3-ml-dtypes
+    "
   amove usr/lib/python*
 }
 
