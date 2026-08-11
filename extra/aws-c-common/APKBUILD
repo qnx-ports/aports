@@ -8,7 +8,9 @@ pkgdesc="Core c99 package for AWS SDK for C. Includes cross-platform primitives,
 url="https://github.com/awslabs/aws-c-common"
 arch="all"
 license="Apache-2.0"
+depends_dev="qnx-io-sock-dev"
 makedepends="
+    $depends_dev
     cmake
     ninja
 "
