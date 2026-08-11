@@ -27,6 +27,7 @@ subpackages="
     python3-$pkgname:py3"
 source="$pkgname-$pkgver.tar.gz::https://github.com/onnx/onnx/archive/refs/tags/v$pkgver.tar.gz"
 builddir="$srcdir/$pkgname-$pkgver"
+options="net"
 
 build() {
   PROTOC_PATH="/usr/bin/protoc"
