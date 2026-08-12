@@ -1,5 +1,9 @@
 # Maintainer: Deep Chordia <dchordia@blackberry.com>
 pkgname=onnx
+_nanobind_dep=nanobind
+_nanobind_ver=2.8.0
+_robin_map_dep=robin-map
+_robin_map_ver=1.3.0
 pkgver=1.20.1
 pkgrel=0
 pkgdesc="Open standard for machine learning interoperability"
@@ -15,7 +19,6 @@ makedepends="
     $depends_dev
     cmake
     ninja
-    ca-certificates-mozilla
     gtest-dev
     python3-dev
     python3-pybind11-dev
@@ -24,10 +27,24 @@ makedepends="
     python3-wheel
     "
 subpackages="
+    python3-$pkgname-dev:py3_dev
     $pkgname-dev
-    python3-$pkgname:py3"
-source="$pkgname-$pkgver.tar.gz::https://github.com/onnx/onnx/archive/refs/tags/v$pkgver.tar.gz"
+    python3-$pkgname:py3
+    "
+source="
+    $pkgname-$pkgver.tar.gz::https://github.com/onnx/onnx/archive/refs/tags/v$pkgver.tar.gz
+    $_nanobind_dep-$_nanobind_ver.tar.gz::https://github.com/wjakob/nanobind/archive/refs/tags/v$_nanobind_ver.tar.gz
+    $_robin_map_dep-$_robin_map_ver.tar.gz::https://github.com/Tessil/robin-map/archive/refs/tags/v$_robin_map_ver.tar.gz
+    0001-add-qnx-build.patch
+    "
 builddir="$srcdir/$pkgname-$pkgver"
+
+prepare() {
+  default_prepare
+
+  mkdir -p "$srcdir"/$_nanobind_dep-$_nanobind_ver/ext/$_robin_map_dep
+  cp -r "$srcdir"/$_robin_map_dep-$_robin_map_ver/* "$srcdir"/$_nanobind_dep-$_nanobind_ver/ext/robin_map
+}
 
 build() {
   PROTOC_PATH="/usr/bin/protoc"
@@ -43,7 +60,7 @@ build() {
     -DONNX_BUILD_TESTS=ON
   cmake --build build
 
-  python3 setup.py build
+  CMAKE_ARGS="-DFETCHCONTENT_SOURCE_DIR_NANOBIND=$srcdir/$_nanobind_dep-$_nanobind_ver" python3 setup.py build
 }
 
 check() {
@@ -59,9 +76,20 @@ package() {
   python3 setup.py install --skip-build --root="$pkgdir"
 }
 
+py3_dev() {
+  pkgdesc="Development files for Python3 bindings of $pkgname"
+  depends="$pkgname-dev=$pkgver-r$pkgrel"
+
+  cd "$pkgdir"
+  for f in $(find usr/lib/python* -name "*.h" 2>/dev/null); do
+    amove "$f"
+  done
+}
+
 py3() {
   pkgdesc="Python3 bindings for $pkgname"
   depends="
+        $pkgname=$pkgver-r$pkgrel
         libc++
         python3
         python3-protobuf
@@ -73,4 +101,7 @@ py3() {
 
 sha512sums="
 4bbc4c09e4bb3eb6049d653ce49200564e8c5dcf1154a30f894f24e15f1986d1f2fe2f4ca32fe383c559e2a0b20681f33d649376bf63e4345df6972a2c78eac8  onnx-1.20.1.tar.gz
+777436b5136d0e7e59e095d1e067b94f608cd949ec59e497fcab2de16c8c7687e734cc0df1606b5dba40484c4f39ba1014c731cef6ec6a4c5c84d0c33166af70  nanobind-2.8.0.tar.gz
+862cb98d771d1acb692e27d1cc8a4f2cda0883b66af7b38b63ea702ed2d4fc4d49e5700ca4d5f5148fee132f36e111c4839d4f8c52c96a9c60f3937d941b2320  robin-map-1.3.0.tar.gz
+5bc6bdbbef89c79528a0b58804ea76387d254e0e4c839182f760e88d79f78b9bf813457ace94d1d3a60a498f6c955fe3eb2ea30d762c0fdb3124e1daddcd3fe5  0001-add-qnx-build.patch
 "
