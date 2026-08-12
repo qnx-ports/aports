@@ -308,6 +308,9 @@ package() {
         for _f in  COLCON_IGNORE .colcon_install_layout _local_setup_util_ps1.py local_setup.ps1 setup.ps1; do
             [[ -f "$pkgdir"/$dest/$_f ]] && rm "$pkgdir"/$dest/$_f
         done
+
+        sed -i "s|$builddir/install|$dest|g" "$pkgdir/$dest/setup.sh"
+        sed -i "s|$builddir/install|$dest|g" "$pkgdir/$dest/local_setup.sh"
 }
 
 sha512sums="
