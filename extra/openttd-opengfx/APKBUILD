@@ -2,6 +2,7 @@
 # Apline Maintainer: Thomas Kienlen <kommander@laposte.net>
 # Maintainer: abdulahmoda <abahmoda@qnx.com>
 pkgname=openttd-opengfx
+_pkgname=opengfx
 pkgver=8.0
 pkgrel=0
 pkgdesc="Free graphics set for OpenTTD"
@@ -13,14 +14,11 @@ source="https://cdn.openttd.org/opengfx-releases/$pkgver/opengfx-$pkgver-all.zip
 builddir="$srcdir/opengfx-$pkgver"
 install_if="openttd"
 
-prepare() {
-	default_prepare
+unpack() {
+    default_unpack
 
-	cd "$srcdir"
-	unzip "opengfx-$pkgver-all.zip"
-	tar xf opengfx-$pkgver.tar
+    tar xf "$srcdir/$_pkgname-$pkgver.tar" -C "$srcdir"
 }
-
 package() {
 	install -Dm644 ./*.grf ./*.obg -t "$pkgdir"/usr/share/games/openttd/data
 }

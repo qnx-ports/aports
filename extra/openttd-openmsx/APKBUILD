@@ -2,6 +2,7 @@
 # Alpine Maintainer: Thomas Kienlen <kommander@laposte.net>
 # Maintainer: abdulahmoda <abahmoda@qnx.com>
 pkgname=openttd-openmsx
+_pkgname=openmsx
 pkgver=0.4.2
 pkgrel=0
 pkgdesc="Music Base Set for OpenTTD"
@@ -13,12 +14,10 @@ source="https://cdn.openttd.org/openmsx-releases/$pkgver/openmsx-$pkgver-all.zip
 builddir="$srcdir/openmsx-$pkgver"
 install_if="openttd"
 
-prepare() {
-	default_prepare
+unpack() {
+	default_unpack
 
-	cd "$srcdir"
-	unzip "openmsx-$pkgver-all.zip"
-	tar xf openmsx-$pkgver.tar
+	tar xf "$srcdir/$_pkgname-$pkgver.tar" -C "$srcdir"
 }
 
 package() {
