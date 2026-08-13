@@ -10,9 +10,7 @@ license="GPL-2.0-or-later"
 makedepends="build-base perl libc++-dev"
 depends="libc++"
 source="$pkgname-$pkgver.tar.gz::https://github.com/kdlucas/byte-unixbench/archive/refs/tags/v$pkgver.tar.gz
-	unixbench-qnx.patch
-	unixbench-graphic-qnx.patch
-"
+        unixbench-qnx.patch"
 
 builddir="$srcdir/byte-unixbench-$pkgver"
 
