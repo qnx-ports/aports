@@ -16,27 +16,9 @@ depends_dev="
     $pkgname-cpp=$pkgver-r$pkgrel
     $pkgname-plugins=$pkgver-r$pkgrel
     "
-makedepends="
-    abseil-cpp-dev
-    autoconf
-    automake
-    bash
-    benchmark-dev
-    c-ares-dev
-    clang
-    chrpath
-    cmake
-    libc++-dev
-    clang
-    libtool
-    openssl-dev>3
-    protobuf-dev
-    re2-dev
-    ninja
-    yaml-dev
-    xxhash-dev
-    zlib-dev
-    qnx-io-sock-dev
+makedepends="abseil-cpp-dev autoconf automake bash benchmark-dev c-ares-dev
+    clang chrpath cmake libc++-dev clang libtool openssl-dev>3 protobuf-dev
+    re2-dev ninja yaml-dev xxhash-dev zlib-dev qnx-io-sock-dev
     "
 checkdepends="coreutils python3 python3-six"
 subpackages="
