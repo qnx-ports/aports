@@ -9,24 +9,9 @@ pkgrel=0
 pkgdesc="Network utility to retrieve files from the Web"
 url="https://www.gnu.org/software/wget/wget.html"
 arch="all"
-license="GPL-3.0-or-later WITH OpenSSL-Exception"
-depends="
-    libiconv
-    libidn2
-    openssl
-    pcre2
-    qnx-io-sock
-    zlib
-    "
-makedepends="
-    libiconv-dev
-    libidn2-dev
-    openssl-dev
-    pcre2-dev
-    perl
-    qnx-io-sock-dev
-    zlib-dev
-    "
+license="GPL-3.0-or-later WITH GPL-3.0-linking-source-exception"
+depends="libiconv libidn2 libssl3 libcrypto3 openssl pcre2 qnx-io-sock zlib-ng"
+makedepends="libiconv-dev libidn2-dev openssl-dev pcre2-dev perl qnx-io-sock-dev zlib-ng-dev"
 checkdepends="perl-http-daemon"
 subpackages="$pkgname-doc"
 source="https://mirror.csclub.uwaterloo.ca/gnu/wget/wget-$pkgver.tar.gz"
