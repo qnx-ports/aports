@@ -1,6 +1,6 @@
 # Maintainer: Leo Shen <yishen@qnx.com>
 pkgname=llvm-runtimes
-_llvm_ver=22.1.7
+_llvm_ver=22.1.8
 _llvm_major=${_llvm_ver%%.*}
 _patch_ver=0
 pkgver=${_llvm_ver}_p${_patch_ver}
@@ -105,5 +105,5 @@ libunwind_static() {
 }
 
 sha512sums="
-57ca6a1ada7e8452279c6b7ef80a60382d80a896b903b1fa7fed787ecafca402d7d8124d8e7e2165068924b4fce1c385f8a4bf5ebf032051bb72f521c82f8c80  qnx-22.1.7_p0.tar.gz
+da5d5f031862ce3290664d04b56b2ea4a28c7498fb176b6f9463ee556c6c3a7c8a33c1151a7123a1976bf34cf2713394d47f8763aecf09368d35994143e1227d  qnx-22.1.8_p0.tar.gz
 "
