@@ -5,7 +5,7 @@
 # Maintainer: Elliott Mazzuca <emazzuca@qnx.com>
 pkgname=webkit2gtk-4.1
 pkgver=2.51.1
-pkgrel=7
+pkgrel=8
 pkgdesc="Portable web rendering engine WebKit for GTK+ - GTK+3 libsoup3 version"
 url="https://webkitgtk.org/"
 arch="all"
@@ -233,7 +233,7 @@ package() {
 sha512sums="
 64b9e6142d6329b307bcce832df24ad3b0e559d0ed66a71f8724043002b7570f930a5016c7c00336320206ffc5b8ad1d09496f5b1ddb9097b4a1022d4a4665ab  webkitgtk-2.51.1.tar.xz
 5a0c0c17f60e9e5fcddd040a953bbc906fe297cae84ee73b1cfd81638078a4f652f7bbfd2aa49d8a8b0235d07be15d7f8d86cddf9fc9e85af82e2260c3ba9bac  001-add_mcontext_support.patch
-b131708368eeff15e9139a9401e208604945cbc8abe92d2327a18692a44fb9051e6a0b4cb13439d2f882225215e1a6c437673d65b8c58f940f4eea5f90e2e3d8  002-add-exe-path-support.patch
+7d415d6688da1d9df61dc75a0347389398084a39e832d0c5c5c4d4363752974a44109639316cdeeaa3b9c8e4d80de79101b7513e5a4dfbc7a56b7c7927f9bb37  002-add-exe-path-support.patch
 fc494940ed4156e68246da3e73cfc6ff109a9bd84c584ecc061a9a5f20f71afbfd1157b9cbcc5ed13af574aa44bd83c58abf175089904dff3f7b46a813164387  004-disable-girscanner-warn-all.patch
 f3a79e8f2bff30e2b3c28037e8ea75fcae5067841d043ed9508253c05da6b322cd641220492156733f9ce11d5fdc98d53532b5a9877fcc54dd5459bb4f6a0d03  005-add-unix-mem-pressure-file.patch
 87a345a3bd596362c7e1fe883eff31c824468001eba86f6ad21aa71af78ba1c517be82406a82b7e44b9cd1341299e86db08ae5cc2ea544eac5281f16945c8d53  006-fix-EGLNativeDisplayType-is-ull.patch
