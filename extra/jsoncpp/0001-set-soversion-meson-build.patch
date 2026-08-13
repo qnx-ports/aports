@@ -1,0 +1,13 @@
+diff --git a/meson.build b/meson.build
+index 8daab9c..5ec3d07 100644
+--- a/meson.build
++++ b/meson.build
+@@ -53,7 +53,7 @@ jsoncpp_lib = library(
+     'src/lib_json/json_reader.cpp',
+     'src/lib_json/json_value.cpp',
+     'src/lib_json/json_writer.cpp'],
+-  soversion : 20,
++  soversion : 19,
+   install : true,
+   include_directories : jsoncpp_include_directories)
+ 
