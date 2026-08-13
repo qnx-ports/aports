@@ -1,0 +1,26 @@
+diff --git a/xwayland/selection.c b/xwayland/selection.c
+index c243aa2..fbb6b1e 100644
+--- a/xwayland/selection.c
++++ b/xwayland/selection.c
+@@ -36,6 +36,7 @@
+ #include <libweston/libweston.h>
+ #include "xwayland.h"
+ #include "shared/helpers.h"
++#include "shared/os-compatibility.h"
+ 
+ #ifdef WM_DEBUG
+ #define wm_log(...) weston_log(__VA_ARGS__)
+diff --git a/xwayland/window-manager.c b/xwayland/window-manager.c
+index d403675..aa913e3 100644
+--- a/xwayland/window-manager.c
++++ b/xwayland/window-manager.c
+@@ -49,6 +49,7 @@
+ #include "shared/hash.h"
+ #include "shared/helpers.h"
+ #include "shared/xcb-xwayland.h"
++#include "shared/os-compatibility.h"
+ #include "xwayland-shell-v1-server-protocol.h"
+ 
+ struct wm_size_hints {
+
+

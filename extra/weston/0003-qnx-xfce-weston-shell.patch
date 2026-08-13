@@ -63,7 +63,7 @@ index 5b95fad0..0387d694 100644
  		const char* app_id = weston_desktop_surface_get_app_id(shsurf->desktop_surface);
  		const char* process_name = app_id ? app_id : "default";
  
-+		if(strcmp(external_panel_name, app_id) == 0)	
++		if(app_id && strcmp(external_panel_name, app_id) == 0)	
 +		{
 +			external_panel_map(shsurf, &surface_id);
 +			return;

@@ -36,6 +36,10 @@ makedepends="
 	qnx-libdrm-dev
 	qnx-libgbm-dev
 	ncurses-dev
+    libxcursor-dev
+    libxfixes-dev
+    libxrender-dev
+    xwayland-dev
 	"
 _shell="shell-qnx-desktop shell-desktop shell-fullscreen shell-ivi"
 _client="terminal wcap-decode"
@@ -52,6 +56,7 @@ subpackages="
 	$pkgname-doc
 	$subpackages
 	$pkgname-clients
+    $pkgname-xwayland
 	$_libname:libs
 	"
 source="https://github.com/qnx-ports/weston/archive/$_commit.tar.gz
@@ -61,6 +66,7 @@ source="https://github.com/qnx-ports/weston/archive/$_commit.tar.gz
 	qnx-fix.patch
 	0002-qnx-taskbar.patch
 	0003-qnx-xfce-weston-shell.patch
+    0004-os-compatibility.patch
 	"
 options="!check"
 builddir="$srcdir/weston-$_commit"
@@ -99,7 +105,7 @@ build() {
 		-Dcolor-management-lcms=false \
 		-Drenderer-gl=true \
 		-Dbackend-rdp=false \
-		-Dxwayland=false \
+		-Dxwayland=true \
 		-Dsystemd=false \
 		-Dremoting=false \
 		-Dpipewire=false \
@@ -133,12 +139,13 @@ clients() {
 	mv "$pkgdir"/usr/bin/$pkgname-* "$subpkgdir"/usr/bin
 }
 
-#xwayland() {
-#	pkgdesc="Wayland module to run X Clients"
-#	mkdir -p "$subpkgdir"/usr/lib/$_libdir
-#	mv "$pkgdir"/usr/lib/$_libdir/xwayland.so \
-#		"$subpkgdir"/usr/lib/$_libdir
-#}
+xwayland() {
+	pkgdesc="Wayland module to run X Clients"
+    depends="libxfixes libxrender libxcursor weston"
+	mkdir -p "$subpkgdir"/usr/lib/$_libdir
+	mv "$pkgdir"/usr/lib/$_libdir/xwayland.so \
+		"$subpkgdir"/usr/lib/$_libdir
+}
 
 _sub() {
 	local name path
@@ -174,5 +181,6 @@ df637c58711e02d865c31ccd719a435253f7eb34718b19a64a8b057cb82b40eae0ed52d0a49d0db2
 add868b314b3781e4d10f32d25f83b3b6e52f0a6b5fbca23b1bf1880d038d72c5b2b2deb7b3206de8b22ec3ac396d6568c7690a6ca4e0a2276f7691ae7bbeec6  xfce4-panel.patch
 7ae10ab45050b5820bfd662406dcb7594529635587699b275ed0578e74c042f84ab628c12f9e70ff9a3a23a7691fde57d199db8780e4b2c1cd9e8e3a95134e7e  qnx-fix.patch
 b2af5e75fc6885f2f09ecc3ff0fb7b444ae9b36c374d9993087c97a122452bdf324351401ee5202ea2ae0ae61ac10bae40e7d88dda3d1ad8eaed8c4f5f35bdf1  0002-qnx-taskbar.patch
-f6054f4cbc43f4fa0c1e77c2bec5ee8f9b91d5e697095d202f54942ce7bfb5b422eff62cdeff10050a2e815c1c85d3d66c2575a827a2beacb48ce11be7733f27  0003-qnx-xfce-weston-shell.patch
+2dc716efbf7dedd40b143753be277d37b1dfd9c4e80b6bab48ca297e9ccd9a70b76ad0018afc489dab1e9d6c3079a65fcca345dd4ee57838064815dfb2077a55  0003-qnx-xfce-weston-shell.patch
+97f9b718a2a8bcc54f55653e3d36ad78ba65c3ecfe174b7f94172ab9419f6b6664a5ebb88264729d67a84a9b0c891fa631a29a7c1ae08966b741feaa679206bf  0004-os-compatibility.patch
 "
