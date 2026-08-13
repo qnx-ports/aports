@@ -1,0 +1,56 @@
+# Maintainer: Ramya santoshi <rtimmaraju@qnx.com>
+
+pkgname=unixbench
+pkgver=6.0.1
+pkgrel=0
+pkgdesc="Unix system performance benchmark"
+url="https://github.com/kdlucas/byte-unixbench"
+arch="aarch64 x86_64"
+license="GPL-2.0-or-later"
+makedepends="build-base perl libc++-dev"
+depends="libc++"
+source="$pkgname-$pkgver.tar.gz::https://github.com/kdlucas/byte-unixbench/archive/refs/tags/v$pkgver.tar.gz
+	unixbench-qnx.patch
+	unixbench-graphic-qnx.patch
+"
+
+builddir="$srcdir/byte-unixbench-$pkgver"
+
+prepare() {
+	cd "$builddir"
+	default_prepare
+}
+
+build() {
+	cd "$builddir/UnixBench"
+	make
+}
+
+check() {
+	cd "$builddir/UnixBench"
+
+	# UnixBench tests were executed manually and all tests passed.
+	# The full test suite takes a long time, so it is disabled here.
+	# Enable the following command when required:
+	# ./Run
+}
+
+package() {
+	cd "$builddir/UnixBench"
+	install -Dm755 Run "$pkgdir/usr/bin/unixbench"
+	mkdir -p "$pkgdir/usr/share/unixbench"
+	cp -a pgms "$pkgdir/usr/share/unixbench/"
+	cp -a testdir "$pkgdir/usr/share/unixbench/"
+	cp -a src "$pkgdir/usr/share/unixbench/"
+	cp -a tmp "$pkgdir/usr/share/unixbench/" 2>/dev/null || true
+	for f in Makefile README LICENSE Run; do
+		if [ -f "$f" ]; then
+			install -Dm644 "$f" "$pkgdir/usr/share/unixbench/$f"
+		fi
+	done
+}
+
+sha512sums="
+a4b4de7a33726cec7d7ced7b44aaaf0750edfe9f6838ae330073b505b99ff1e38ac6c0b3b20e840ae38db27530d53da441f27b337d69e631a00527bfae32023a  unixbench-6.0.1.tar.gz
+e03d0f741436cd21b3cd18b35e4f50f761323bca112cd1429d98f143cbda1f21a0e85fc90d88b3bfba1c1b0fe7cd6005cd840d6080d5b2db6dd9c1a293424141  unixbench-qnx.patch
+"
