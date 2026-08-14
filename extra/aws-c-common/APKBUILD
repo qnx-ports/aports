@@ -1,6 +1,6 @@
 # Contributor: Holger Jaekel <holger.jaekel@gmx.de>
 # Alpine-Maintainer: Achill Gilgenast <achill@achill.org>
-# Maintainer: Deep Chordia <dchordia@blackberry.com>
+# Maintainer: Deep Chordia <dchordia@qnx.com>
 pkgname=aws-c-common
 pkgver=0.12.6
 pkgrel=0
