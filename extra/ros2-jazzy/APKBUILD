@@ -2,7 +2,7 @@
 # Maintainer: Felix Lionardo <flionardo@qnx.com>
 pkgname=ros2-jazzy
 pkgver=20260128
-pkgrel=0
+pkgrel=1
 pkgdesc="ROS 2 Jazzy desktop package"
 url="https://docs.ros.org/en/jazzy/index.html"
 arch="aarch64 x86_64"
