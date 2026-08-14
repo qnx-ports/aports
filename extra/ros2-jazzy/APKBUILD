@@ -7,7 +7,7 @@ pkgdesc="ROS 2 Jazzy desktop package"
 url="https://docs.ros.org/en/jazzy/index.html"
 arch="aarch64 x86_64"
 license="Apache-2.0"
-options="!check !tracedeps !fhs"
+options="!check !tracedeps !fhs net"
 
 source="
     ament_cmake.tar.gz::https://github.com/ament/ament_cmake/archive/refs/tags/2.5.5.tar.gz
