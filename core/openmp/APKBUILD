@@ -2,7 +2,7 @@
 pkgname=openmp
 _patch_rev=1
 pkgver=22.1.8_p$_patch_rev
-pkgrel=1
+pkgrel=0
 pkgdesc="LLVM OpenMP Runtime Library"
 arch="all"
 url="https://llvm.org"
