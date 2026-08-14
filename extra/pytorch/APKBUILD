@@ -90,7 +90,8 @@ build() {
         -Wno-error=character-conversion -Wno-character-conversion\
         -Wno-error=missing-field-initializers -Wno-missing-field-initializers\
         -Wno-error=thread-safety-analysis -Wno-thread-safety-analysis\
-        -Wno-error=unknown-warning-option \
+        -Wno-error=unknown-warning-option -Wno-unknown-warning-option \
+        -Wno-error=c2y-extensions -Wno-c2y-extensions \
         -DEIGEN_DONT_VECTORIZE"
 
     cmake -B build -G Ninja \
