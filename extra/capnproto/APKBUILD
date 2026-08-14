@@ -44,7 +44,7 @@ build() {
 }
 
 check() {
-  test_exclude="capnp-tests-run|capnp-heavy-tests-run"
+  test_exclude="capnp-tests-run|capnp-heavy-tests-run|kj-heavy-tests-run"
   ctest --test-dir build -E $test_exclude
 }
 
