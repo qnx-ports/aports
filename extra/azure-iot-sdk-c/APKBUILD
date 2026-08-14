@@ -39,10 +39,14 @@ source="$pkgname-$_pkgver.tar.gz::https://github.com/Azure/azure-iot-sdk-c/archi
         $pkgname-$_pkgver-umock_c.tar.gz::https://github.com/Azure/umock-c/archive/$_umock_c_commit.tar.gz
         $pkgname-$_pkgver-c_testrunnerswitcher.tar.gz::https://github.com/Azure/c-testrunnerswitcher/archive/$_azure_c_testrunnerswitcher_commit.tar.gz
         $pkgname-$_pkgver-ctest.tar.gz::https://github.com/Azure/azure-ctest/archive/$_azure_ctest_commit.tar.gz
+        0001-c-utility-qnx_patch
+        0002-azure-iot-qnx.patch
         "
 builddir="$srcdir/$pkgname-$_pkgver"
 
 prepare() {
+
+  (cd "$srcdir"/azure-c-shared-utility-$_azure_c_shared_utility_commit && patch ${patch_args:--p1} -i "$srcdir"/0001-c-utility-qnx_patch)
 
   mv "$srcdir"/azure-c-shared-utility-$_azure_c_shared_utility_commit/* "$builddir"/c-utility
   mv "$srcdir"/azure-umqtt-c-$_umqtt_commit/* "$builddir"/umqtt/
@@ -57,9 +61,6 @@ prepare() {
   mv "$srcdir"/ctest-$_azure_ctest_commit/* "$builddir"/deps/azure-ctest/
 
   default_prepare
-
-  patch -d ./c-utility -p1 < $srcdir/../0001-c-utility-qnx.patch
-  patch -d ./ -p1 < $srcdir/../0002-azure-iot-qnx.patch
 }
 
 build() {
@@ -101,4 +102,6 @@ b486bd04fc5669e16ec8d097efcdc98fb783634321fd76e607f2b1e67bac32a8f2a80634208a3ca5
 68d5d986314dbd46d20de2a9b9454154c11675c25d1b5a5b1cfecdd0c0945d9dc68d0348ec1dbb00b5d1a6a1f0356121ba561d7c8fffb97ab37864edade5a85b  azure-iot-sdk-c-LTS_03_2025-umock_c.tar.gz
 0b2d630228d65bf63be8c41ca998de24011165b3dc879a86df6372a253c1bfd9e928672fb0817ca8c036274ed05ef2ee58ec4b7102d3c5bf6222cac452da07d0  azure-iot-sdk-c-LTS_03_2025-c_testrunnerswitcher.tar.gz
 0bf0ccbb7c63e62beb62b690a9d4d173518bada9987cf7c569c27ab9d843f1f5ca844001a542d617b402637bd16969f22c50361421c39cbfce73d662b9f423bb  azure-iot-sdk-c-LTS_03_2025-ctest.tar.gz
+dd170c89ec7b7ac99ac616e2fd97d7ca305c57ff110c240ad9a4c59094032c29379c4aecb0e3d85a49604b2c933d5374e4c8c92f8770918c42d2cb036c0de3e2  0001-c-utility-qnx_patch
+2358c917266f4e6cee55f4a73e3389357d91694a3d47331e7c83d7412b39fb2016bdc9ee0931a571649a3c1496e831760418eb4db304fdedadf4004dcdafe7ba  0002-azure-iot-qnx.patch
 "
