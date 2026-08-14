@@ -1,8 +1,8 @@
 # Maintainer: Leo Shen <yishen@qnx.com>
 pkgname=flang22
 _patch_rev=1
-pkgver=22.1.4_p$_patch_rev
-pkgrel=1
+pkgver=22.1.8_p$_patch_rev
+pkgrel=0
 pkgdesc="Fortran language front-end for LLVM"
 arch="all"
 url="https://llvm.org"
