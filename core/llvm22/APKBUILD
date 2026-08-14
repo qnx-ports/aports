@@ -1,8 +1,8 @@
-# Maintainer: Felix Xing <fxing@qnx.com>
+# Maintainer: Leo Shen <yishen@qnx.com@qnx.com>
 pkgname=llvm22
-pkgver=22.1.7
-pkgrel=1
-_patch_rev=0
+_patch_rev=1
+pkgver="22.1.8_p$_patch_rev"
+pkgrel=0
 pkgdesc="Low Level Virtual Machine compiler system."
 arch="all"
 url="https://llvm.org/"
@@ -13,11 +13,11 @@ depends="$depends_libs qnx-gcc binutils"
 # the python3* makedepends are optional. remove them and corresponding llvm-lit build during bootstrap
 makedepends="python3 python3-build python3-pyproject-hooks python3-packaging python3-setuptools python3-installer sed cmake ninja perl compiler-rt $depends_dev"
 source="
-    https://github.com/qnx-ports/llvm-project/archive/refs/tags/qnx-${pkgver}_p${_patch_rev}.tar.gz
+    https://github.com/qnx-ports/llvm-project/archive/refs/tags/qnx-${pkgver}.tar.gz
     llvm.clang.cfg"
 options="!check" # takes too long
 subpackages="$pkgname-gtest:gtest $pkgname-libs $pkgname-static $pkgname-dev"
-builddir="$srcdir/llvm-project-qnx-${pkgver}_p${_patch_rev}"
+builddir="$srcdir/llvm-project-qnx-${pkgver}"
 #builddir="$srcdir/llvm-project-6db748f047f9e77aa97205e9e3754d21d9d9a266"
 _llvmver=${pkgver%%.*}
 _prefix="usr/lib/llvm$_llvmver"
@@ -159,6 +159,6 @@ dev() {
 }
 
 sha512sums="
-57ca6a1ada7e8452279c6b7ef80a60382d80a896b903b1fa7fed787ecafca402d7d8124d8e7e2165068924b4fce1c385f8a4bf5ebf032051bb72f521c82f8c80  qnx-22.1.7_p0.tar.gz
+4eaa186012335caf847d7244a071ecab2556bc3f97a4a6f6f291a00d0f9a7f6210b59f7b670803b93eba6763285c3e633b8f7f397aa3a55c1b6fc9070fa4f281  qnx-22.1.8_p1.tar.gz
 1135f904d893902ad83703a754a3cb7be772b6c08f66ed73c5b69a263d19eb9e1a13a28d80470e344eb7e0bd9bda2e24dc6291e1f3677ff4a0efb49100f3171c  llvm.clang.cfg
 "
