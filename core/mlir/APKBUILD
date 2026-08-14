@@ -1,7 +1,7 @@
 # Maintainer: Leo Shen <yishen@qnx.com>
 pkgname=mlir22
 _patch_rev=1
-pkgver=22.1.4_p$_patch_rev
+pkgver=22.1.8_p$_patch_rev
 pkgrel=0
 pkgdesc="Multi-Level IR Compiler for LLVM"
 arch="all"
