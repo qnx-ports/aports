@@ -1,4 +1,4 @@
-# Maintainer: Deep Chordia <dchordia@blackberry.com>
+# Maintainer: Deep Chordia <dchordia@qnx.com>
 pkgname=azure-iot-sdk-c
 pkgver=2025.03
 _pkgver=LTS_03_2025
