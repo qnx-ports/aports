@@ -1,6 +1,6 @@
 # Alpine-Contributor: Nick Black <dankamongmen@gmail.com>
 # Alpine-Maintainer: Luca Weiss <luca@lucaweiss.eu>
-# Maintainer: Deep Chordia <dchordia@blackberry.com>
+# Maintainer: Deep Chordia <dchordia@qnx.com>
 pkgname=capnproto
 pkgver=1.3.0
 pkgrel=0
