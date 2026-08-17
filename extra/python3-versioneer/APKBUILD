@@ -1,6 +1,6 @@
 # Alpine-Contributor: Bart Ribbers <bribbers@disroot.org>
 # Alpine-Maintainer: Bart Ribbers <bribbers@disroot.org>
-# Maintainer: Deep Chordia <dchordia@blackberry.com>
+# Maintainer: Deep Chordia <dchordia@qnx.com>
 pkgname=python3-versioneer
 pkgver=0.29
 pkgrel=0
