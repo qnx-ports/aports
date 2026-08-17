@@ -43,7 +43,7 @@ package() {
 }
 
 dbg() {
-    pkgdesc="$subpkgname $_dbg_pkgdesc"
+    pkgdesc="$pkgname $_dbg_pkgdesc"
     depends="
         $pkgname=$pkgver-r$pkgrel
         $pkgname-utils=$pkgver-r$pkgrel
@@ -53,7 +53,7 @@ dbg() {
 }
 
 utils() {
-    pkgdesc="$subpkgname $_utils_pkgdesc"
+    pkgdesc="$pkgname $_utils_pkgdesc"
     amove usr/bin/echo-actuator
     amove usr/bin/playback-connector
     amove usr/bin/playback-recorder
@@ -61,7 +61,7 @@ utils() {
 }
 
 samples() {
-    pkgdesc="$subpkgname $_samples_pkgdesc"
+    pkgdesc="$pkgname $_samples_pkgdesc"
     amove usr/bin/sample-message-publisher
     amove usr/bin/sample-message-subscriber
     amove usr/bin/sample-signal-consumer
