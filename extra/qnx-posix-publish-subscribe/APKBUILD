@@ -17,14 +17,12 @@ makedepends="
     qnx-slogger2-dev
     qnx-libjson-dev
     meson
-    help2man
 "
 options="!strip !check"
 subpackages="
     $pkgname-dbg:dbg
     $pkgname-utils:utils
     $pkgname-samples:samples
-    $pkgname-doc
 "
 source="
     $pkgname-$_commit_id.tar.gz::https://github.com/qnx/qnx-posix-publish-subscribe/archive/$_commit_id.tar.gz
