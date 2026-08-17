@@ -43,13 +43,13 @@ package() {
 }
 
 dbg() {
+    default_dbg
     pkgdesc="$pkgname $_dbg_pkgdesc"
     depends="
         $pkgname=$pkgver-r$pkgrel
         $pkgname-utils=$pkgver-r$pkgrel
         $pkgname-samples=$pkgver-r$pkgrel
     "
-    amove usr/bin/*.sym
 }
 
 utils() {
