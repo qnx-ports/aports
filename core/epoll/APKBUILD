@@ -1,4 +1,4 @@
-# Maintainer: Deep Chordia <dchordia@blackberry.com>
+# Maintainer: Deep Chordia <dchordia@qnx.com>
 pkgname=epoll
 pkgver=1.0.0
 pkgrel=0
