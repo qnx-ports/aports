@@ -255,6 +255,7 @@ makedepends="
         cmake
         ninja
         vcstool
+        ca-certificates
 "
 
 prepare() {
