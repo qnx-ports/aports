@@ -1,7 +1,7 @@
 #Maintainer: Aaron Bassett <abassett@qnx.com>
 pkgname=wayland
-pkgver=1.24.0
-pkgrel=2
+pkgver=1.26.0
+pkgrel=0
 pkgdesc="A computer display server protocol"
 url="https://wayland.freedesktop.org"
 arch="all"
@@ -74,7 +74,7 @@ package() {
 
 
 sha512sums="
-729d632f8501282f9421867c15675bceb9cdd98af89656c3e230cd5e2600eaa0aaa72f614cd1fea1e350fdd8d8f3b901a45ac7a455ea51eea0510254eca23dd8  wayland-1.24.0.tar.gz
+414cbb3fa2d67fc36896f4aea16a0a6e45150fcc85f3e46dbc27f7ed9a6d9a5f7310bf0ee30ea2e6e586e21ceb0854200b895240bca8227d6afbc3ef4ce29d18  wayland-1.26.0.tar.gz
 9cdbfc6396f46634f2f71910e813d03ad5910df55ea3151be923be2cd1682c399d573a12af9335f2e6d8902fe60d0c6fdabc16b5634cfabbece32b44bb718d70  0001-fix-missing-symbols-and-headers.patch
 88828b858716ddbac697f33b60fdc9164a09981859f7efcc611d5736bdaa4a2cbde5cf334ce8b423e0095c2a247afe398f35fbeeebeecdbfc9724882ea72a62f  0002-fix-non-supported-tests.patch
 "
