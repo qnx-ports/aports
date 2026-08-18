@@ -1,6 +1,7 @@
+#Maintainer: Aaron Bassett <abassett@qnx.com>
 pkgname=wayland-protocols
-pkgver=1.45
-pkgrel=1
+pkgver=1.49
+pkgrel=0
 pkgdesc="Protocols and protocol extensions complementing the Wayland core protocol"
 url="https://wayland.freedesktop.org"
 arch="noarch"
@@ -24,7 +25,7 @@ package() {
     DESTDIR="$pkgdir" meson install --no-rebuild -C build
 }
 
-sha512sums="
-3c7a8370498a6ed1767bbe1ad23c97805c1cb524157d88a83ecc79caa511f3fc9ad74bf6124f84e2edeffd5d5d2895a0c68f5100d3ef62d38de44a8e55a12605  wayland-protocols-1.45.tar.gz
-"
 
+sha512sums="
+f1095a667305dce9490b7fc2dddd263e50d90f505c7b2a281ff3a9f77f211589ec45c5124c07805f9d577484c80bf13f71b2dff6e0ae677fbb1bffdde60aec48  wayland-protocols-1.49.tar.gz
+"
