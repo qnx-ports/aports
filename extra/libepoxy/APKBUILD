@@ -1,13 +1,13 @@
 pkgname=libepoxy
 pkgver=1.5.10
-pkgrel=1
+pkgrel=2
 pkgdesc="Direct Rendering Manager runtime library"
 url="https://github.com/anholt/libepoxy"
 arch="all"
 license="MIT"
 options="!check"
 depends="qnx-gles"
-depends_dev="gles-headers egl-headers"
+depends_dev="gles-headers egl-headers qnx-screen-dev"
 makedepends="$depends_dev meson ninja pkgconf pkgconf-dev libexpat"
 subpackages="$pkgname-dev"
 source="$pkgname-$pkgver.tar.gz::https://github.com/anholt/libepoxy/archive/refs/tags/$pkgver.tar.gz
