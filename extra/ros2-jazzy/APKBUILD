@@ -287,8 +287,8 @@ build() {
 			-G Ninja \
 			-DBUILD_TESTING=OFF \
 			-DCMAKE_BUILD_TYPE=Release \
-			-DCMAKE_C_FLAGS="$CFLAGS -fvisibility=default -frtti -DSA_RESTART=0 -Wno-error=deprecated-literal-operator -Wno-error=old-style-cast" \
-			-DCMAKE_CXX_FLAGS="$CXXFLAGS -fvisibility=default -frtti -DSA_RESTART=0 -Wno-error=deprecated-literal-operator -Wno-error=old-style-cast" \
+			-DCMAKE_C_FLAGS="$CFLAGS -fvisibility=default -frtti -DSA_RESTART=0 -Wno-error=deprecated-literal-operator -Wno-error=old-style-cast -Wno-error=c2y-extensions" \
+			-DCMAKE_CXX_FLAGS="$CXXFLAGS -fvisibility=default -frtti -DSA_RESTART=0 -Wno-error=deprecated-literal-operator -Wno-error=old-style-cast -Wno-error=c2y-extensions" \
 			-DCMAKE_EXE_LINKER_FLAGS="$LDFLAGS" \
 			-DCMAKE_SHARED_LINKER_FLAGS="$LDFLAGS" \
 			-DTRACETOOLS_TRACEPOINTS_EXCLUDED=ON \
