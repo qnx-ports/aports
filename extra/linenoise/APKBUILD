@@ -1,5 +1,5 @@
-# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
-# Maintainer: Ramya santoshi <rtimmaraju@qnx.com>
+# Maintainer : Natanael Copa <ncopa@alpinelinux.org>
+# contributor: Ramya santoshi <rtimmaraju@qnx.com>
 pkgname=linenoise
 pkgver=1.0
 pkgrel=5
