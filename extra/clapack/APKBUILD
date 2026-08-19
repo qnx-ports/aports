@@ -10,7 +10,7 @@ makedepends="build-base"
 source="clapack-$pkgver.tgz::https://www.netlib.org/clapack/clapack.tgz
         fix-xberla.patch
         "
-builddir="$srcdir/CLAPACK-3.2.1"
+builddir="$srcdir/CLAPACK-$pkgver"
 
 prepare() {
 	default_prepare
