@@ -1,28 +1,21 @@
-# Contributor: Ramya Santoshi Timmaraju <rtimmaraju@qnx.com>
+# Maintainer: Ramya Santoshi Timmaraju <rtimmaraju@qnx.com>
 
 pkgname=apache-arrow
 pkgver=25.0.0
 pkgrel=0
-
 pkgdesc="Apache Arrow C++ core library"
 url="https://arrow.apache.org/"
 arch="aarch64 x86_64"
 license="Apache-2.0"
-
 source="
-    apache-arrow-$pkgver.tar.gz::https://github.com/rtimmaraju/arrow/archive/refs/heads/apache_arrow_test.tar.gz
-"
-
+    apache-arrow-$pkgver.tar.gz::https://github.com/rtimmaraju/arrow/archive/refs/heads/apache_arrow_test.tar.gz"
 builddir="$srcdir/arrow-apache_arrow_test/cpp"
-
+depends="libc++"
 makedepends="
     cmake
     ninja
-"
-
-subpackages="
-    $pkgname-dev
-"
+    libc++-dev"
+subpackages="$pkgname-dev"
 
 case "$(uname -m)" in
     x86_64)
@@ -75,17 +68,14 @@ build() {
 
     cmake --build "$builddir/build"
 }
-
 check() {
     cd "$builddir/build"
     ctest --output-on-failure || true
 }
-
 package() {
     DESTDIR="$pkgdir" \
         cmake --install "$builddir/build"
 }
-
 sha512sums="
 20b0092abd1b2c0754ebd60aa91e9adab3688c9918d6a4ef6893733951a03155e316442e90dd733d03b7874976144b9e0be0c8ccd822341283b5f890f1427463  apache-arrow-25.0.0.tar.gz
 "
