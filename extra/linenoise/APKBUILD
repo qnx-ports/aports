@@ -12,9 +12,10 @@ subpackages="$pkgname-dev"
 source="linenoise-$pkgver.tar.gz::https://github.com/antirez/linenoise/archive/$pkgver.tar.gz
 	build-shared-lib.patch
 	"
-depends="libc++"
+depends="libc++ qnx-io-sock-dev"
 makedepends="
 libc++-dev
+qnx-io-sock-dev
 "
 build() {
 	make
