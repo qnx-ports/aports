@@ -11,7 +11,7 @@ makedepends="
 cmake
 ninja
 libc++-dev
-"options="!check"
+"
 source="$pkgname-$pkgver.tar.gz::https://github.com/alibaba/MNN/archive/refs/tags/$pkgver.tar.gz"
 builddir="$srcdir/MNN-$pkgver"
 subpackages="$pkgname-dev"
