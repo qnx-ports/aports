@@ -33,7 +33,7 @@ build() {
 
 check() {
   _test_exclude="s2n_client_hello_test"
-  ctest --test-dir build -E _test_exclude
+  ctest --test-dir build -E $_test_exclude
 }
 
 package() {
