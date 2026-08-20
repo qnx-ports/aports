@@ -8,7 +8,8 @@ pkgdesc="C library for lightweight websocket clients and servers"
 url="https://libwebsockets.org/"
 arch="all"
 license="MIT"
-makedepends="cmake openssl-dev>3 zlib-dev libuv-dev ninja"
+depends="libcrypto3 libssl3 qnx-io-sock libuv"
+makedepends="cmake openssl-dev>3 zlib-dev libuv-dev ninja libc++-dev qnx-io-sock-dev"
 subpackages="$pkgname-doc $pkgname-dev $pkgname-test:_test $pkgname-evlib_uv:_evlib"
 source="
 	libwebsockets-$pkgver.tar.gz::https://github.com/warmcat/libwebsockets/archive/v$pkgver.tar.gz
@@ -65,6 +66,7 @@ package() {
 
 _test() {
     pkgdesc="$pkgdesc (test server)"
+    depends="$pkgname=$pkgver-r$pkgrel"
 
     amove \
         usr/bin/libwebsockets-test-* \
@@ -74,6 +76,8 @@ _test() {
 _evlib() {
 	local _plugin=${subpkgname#$pkgname-}
 	pkgdesc="libwebsocket $_plugin plugin"
+    depends="$pkgname=$pkgver-r$pkgrel"
+
 	amove usr/lib/libwebsockets-$_plugin.so
 }
 
