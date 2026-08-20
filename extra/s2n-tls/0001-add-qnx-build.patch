@@ -1,8 +1,8 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 0e976d0c1..b70d139d8 100644
+index 5d9a6d526..3449b47b7 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -89,7 +89,7 @@ else()
+@@ -93,7 +93,7 @@ else()
      find_package(Threads REQUIRED)
  endif()
  
@@ -12,10 +12,10 @@ index 0e976d0c1..b70d139d8 100644
  elseif(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
      set(OS_LIBS thr execinfo)
 diff --git a/tests/unit/s2n_rfc5952_test.c b/tests/unit/s2n_rfc5952_test.c
-index 47c8f333a..8b957aebf 100644
+index b4a0b24c6..a91b1932c 100644
 --- a/tests/unit/s2n_rfc5952_test.c
 +++ b/tests/unit/s2n_rfc5952_test.c
-@@ -17,7 +17,7 @@
+@@ -22,7 +22,7 @@
  
  #include "s2n_test.h"
  
@@ -24,11 +24,24 @@ index 47c8f333a..8b957aebf 100644
      #include <netinet/in.h>
      #include <sys/socket.h>
      #include <sys/types.h>
+diff --git a/tests/unit/s2n_self_talk_broken_pipe_test.c b/tests/unit/s2n_self_talk_broken_pipe_test.c
+index 87b237d11..1c5c19e2d 100644
+--- a/tests/unit/s2n_self_talk_broken_pipe_test.c
++++ b/tests/unit/s2n_self_talk_broken_pipe_test.c
+@@ -57,7 +57,7 @@ void mock_client(struct s2n_test_io_pair *io_pair)
+         exit(1);
+     }
+ 
+-#if defined(__FreeBSD__) || defined(__APPLE__) || defined(__OpenBSD__)
++#if defined(__FreeBSD__) || defined(__APPLE__) || defined(__OpenBSD__) || defined(__QNX__)
+     /* On FreeBSD shutdown from one end of the socket pair does not give EPIPE. Must use close. */
+     s2n_io_pair_close_one_end(io_pair, S2N_CLIENT);
+ #else
 diff --git a/tls/s2n_ktls_io.c b/tls/s2n_ktls_io.c
-index ad1d984c6..5b1726b54 100644
+index 212277661..db3d36f41 100644
 --- a/tls/s2n_ktls_io.c
 +++ b/tls/s2n_ktls_io.c
-@@ -211,7 +211,12 @@ S2N_RESULT s2n_ktls_sendmsg(void *io_context, uint8_t record_type, const struct
+@@ -213,7 +213,12 @@ S2N_RESULT s2n_ktls_sendmsg(void *io_context, uint8_t record_type, const struct
          .msg_iovlen = msg_iovlen,
      };
  
@@ -41,7 +54,7 @@ index ad1d984c6..5b1726b54 100644
      RESULT_GUARD(s2n_ktls_set_control_data(&msg, control_data, sizeof(control_data),
              S2N_TLS_SET_RECORD_TYPE, record_type));
  
-@@ -254,7 +259,12 @@ S2N_RESULT s2n_ktls_recvmsg(void *io_context, uint8_t *record_type, uint8_t *buf
+@@ -256,7 +261,12 @@ S2N_RESULT s2n_ktls_recvmsg(void *io_context, uint8_t *record_type, uint8_t *buf
       * member of the msghdr with the length of the control message
       * buffer.
       */
@@ -53,4 +66,20 @@ index ad1d984c6..5b1726b54 100644
 +#endif
      msg.msg_controllen = sizeof(control_data);
      msg.msg_control = control_data;
+ 
+diff --git a/tls/s2n_recv.c b/tls/s2n_recv.c
+index ccbe16525..0b50b16bf 100644
+--- a/tls/s2n_recv.c
++++ b/tls/s2n_recv.c
+@@ -14,7 +14,11 @@
+  */
+ 
+ /* Use usleep */
++#ifdef __QNX__
++#define _XOPEN_SOURCE 700
++#else
+ #define _XOPEN_SOURCE 500
++#endif
+ #include <errno.h>
+ #include <unistd.h>
  
