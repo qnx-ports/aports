@@ -30,5 +30,5 @@ package() {
 #Tests cannot be executed as the qnxuser, and the build must not be run as root. Therefore, 
 # test execution is being disabled and verified the functional tests on root user .
 sha512sums="
-2773235415fe88ef8dab51f76c6ed8000275010b241568d7446f4f6c595ee747145e9154488a7ea73d5993f7cd31e88d450185086fc678e7163d8bffecdd5fe5  rtl-sdr-2.0.2.tar.gz
+fdc958611fb1e21d974a2c08b29db20e3f7be72af39df1c5318b891d3d5949b5d0f4084ec3b4d688a606d48f627ee5c92e33d6d8314799d8201d3f69bb35182d  rtl-sdr-2.0.2.tar.gz
 "
