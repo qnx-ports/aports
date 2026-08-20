@@ -5,7 +5,6 @@ pkgname=freeimage
 _pkgname="FreeImage"
 pkgver=3.18.0
 pkgrel=0
-_qnx_branch="main"
 pkgdesc="Open Source library project for developers who would like to support popular graphics image formats."
 url="https://freeimage.sourceforge.net/"
 arch="all"
@@ -13,8 +12,8 @@ license="GPL-2.0-or-later AND FreeImage"
 makedepends="cmake ninja libc++-dev qnx-io-sock-dev"
 depends="qnx-io-sock"
 subpackages="$pkgname-dev"
-source="https://github.com/qnx-ports/FreeImage/archive/refs/heads/$_qnx_branch.tar.gz"
-builddir="$srcdir/$_pkgname-$_qnx_branch"
+source="$_pkgname-qnx-v$pkgver.tar.gz::https://github.com/qnx-ports/FreeImage/archive/refs/tags/qnx-v$pkgver.tar.gz"
+builddir="$srcdir/$_pkgname-qnx-v$pkgver"
 options="!check"
 
 prepare() {
@@ -36,5 +35,5 @@ package() {
 }
 
 sha512sums="
-d9845d003b4096ac16bac49f5533d415011ce370ea5fde48f04fce223daa5ca034a7251546128e12f85b2f52c4f519d2cb17c623225b095c06e81da562b9c3f3  main.tar.gz
+8706cdac06e5cf6e5a19929a56ea593b72c2eb46bd37ed9f44f408e4a0d6e9d80f1a7ca8ec9bb94ee0d642db5d750350a90229ae2d8b83a7067cad5a2aeb4be2  FreeImage-qnx-v3.18.0.tar.gz
 "
