@@ -1,0 +1,828 @@
+diff --color -U 6 -N -r before/common/JackAudioAdapterFactory.cpp after/common/JackAudioAdapterFactory.cpp
+--- before/common/JackAudioAdapterFactory.cpp	2026-04-06 11:05:26.491635051 -0400
++++ after/common/JackAudioAdapterFactory.cpp	2026-04-07 20:19:18.514440802 -0400
+@@ -37,12 +37,17 @@
+ 
+ #if defined(__sun__) || defined(sun) || defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
+ #include "JackOSSAdapter.h"
+ #define JackPlatformAdapter JackOSSAdapter
+ #endif
+ 
++#ifdef __QNX__
++#include "JackAlsaAdapter.h"
++#define JackPlatformAdapter JackAlsaAdapter
++#endif
++
+ #ifdef WIN32
+ #include "JackPortAudioAdapter.h"
+ #define JackPlatformAdapter JackPortAudioAdapter
+ #endif
+ 
+ #ifdef __cplusplus
+diff --color -U 6 -N -r before/common/wscript after/common/wscript
+--- before/common/wscript	2026-04-06 11:05:26.499635134 -0400
++++ after/common/wscript	2026-04-07 20:19:18.514440802 -0400
+@@ -30,21 +30,23 @@
+             process.framework = framework
+         env_includes = ['../macosx', '../posix', '../macosx/coreaudio']
+     if bld.env['IS_LINUX']:
+         env_includes = ['../linux', '../posix', '../linux/alsa']
+     if bld.env['IS_FREEBSD']:
+         env_includes = ['../freebsd', '../posix', '../solaris/oss']
++    if bld.env['IS_QNX']:
++        env_includes = ['../qnx', '../posix', '../linux/alsa']
+     if bld.env['IS_SUN']:
+         env_includes = ['../solaris', '../posix', '../solaris/oss']
+     if bld.env['IS_WINDOWS']:
+         env_includes = ['../windows', '../windows/portaudio']
+     process.includes = ['.'] + env_includes + ['jack', '..']
+     process.name = target
+     process.target = target
+     process.source = sources
+-    if bld.env['IS_LINUX'] or bld.env['IS_MACOSX'] or bld.env['IS_FREEBSD']:
++    if bld.env['IS_LINUX'] or bld.env['IS_MACOSX'] or bld.env['IS_FREEBSD'] or bld.env['IS_QNX']:
+         process.env.append_value('CPPFLAGS', '-fvisibility=hidden')
+     process.install_path = '${ADDON_DIR}/'
+     process.use = [uselib.name]
+     return process
+ 
+ 
+@@ -109,12 +111,26 @@
+             '../posix/JackPosixSemaphore.cpp',
+             '../posix/JackSocket.cpp',
+             '../posix/JackPosixTime.c',
+             ]
+         includes = ['../freebsd', '../posix'] + includes
+ 
++    if bld.env['IS_QNX']:
++        common_libsources += [
++            'JackDebugClient.cpp',
++            'timestamps.c',
++            'promiscuous.c',
++            '../posix/JackPosixThread.cpp',
++            '../posix/JackPosixProcessSync.cpp',
++            '../posix/JackPosixMutex.cpp',
++            '../posix/JackPosixSemaphore.cpp',
++            '../posix/JackSocket.cpp',
++            '../posix/JackPosixTime.c',
++            ]
++        includes = ['../qnx', '../posix'] + includes
++
+     if bld.env['IS_SUN']:
+         common_libsources += [
+             'JackDebugClient.cpp',
+             'timestamps.c',
+             'promiscuous.c',
+             '../posix/JackPosixThread.cpp',
+@@ -200,12 +216,18 @@
+     if bld.env['IS_FREEBSD']:
+         clientlib.source += [
+             '../posix/JackSocketClientChannel.cpp',
+             '../posix/JackPosixServerLaunch.cpp',
+             ]
+ 
++    if bld.env['IS_QNX']:
++        clientlib.source += [
++            '../posix/JackSocketClientChannel.cpp',
++            '../posix/JackPosixServerLaunch.cpp',
++            ]
++
+     if bld.env['IS_SUN']:
+         clientlib.source += [
+             '../posix/JackSocketClientChannel.cpp',
+             '../posix/JackPosixServerLaunch.cpp',
+             ]
+ 
+@@ -232,12 +254,16 @@
+     if bld.env['IS_LINUX']:
+         clientlib.env.append_value('CPPFLAGS', '-fvisibility=hidden')
+ 
+     if bld.env['IS_FREEBSD']:
+         clientlib.env.append_value('CPPFLAGS', '-fvisibility=hidden')
+ 
++    if bld.env['IS_QNX']:
++        clientlib.env.append_value('CPPFLAGS', '-fvisibility=hidden')
++        clientlib.env.append_value('LINKFLAGS', '-lsocket')
++
+     if bld.env['IS_MACOSX']:
+         clientlib.env.append_value('CPPFLAGS', '-fvisibility=hidden')
+         clientlib.env.append_value('LINKFLAGS', '-single_module')
+ 
+     if bld.env['IS_SUN']:
+         clientlib.env.append_value('LINKFLAGS', '-lnsl -lsocket')
+@@ -316,12 +342,20 @@
+             '../posix/JackSocketServerChannel.cpp',
+             '../posix/JackSocketNotifyChannel.cpp',
+             '../posix/JackSocketServerNotifyChannel.cpp',
+             '../posix/JackNetUnixSocket.cpp',
+             ]
+ 
++    if bld.env['IS_QNX']:
++        serverlib.source += [
++            '../posix/JackSocketServerChannel.cpp',
++            '../posix/JackSocketNotifyChannel.cpp',
++            '../posix/JackSocketServerNotifyChannel.cpp',
++            '../posix/JackNetUnixSocket.cpp',
++            ]
++
+     if bld.env['IS_SUN']:
+         serverlib.source += [
+             '../posix/JackSocketServerChannel.cpp',
+             '../posix/JackSocketNotifyChannel.cpp',
+             '../posix/JackSocketServerNotifyChannel.cpp',
+             '../posix/JackNetUnixSocket.cpp',
+@@ -351,12 +385,16 @@
+     elif not bld.env['IS_WINDOWS']:
+         serverlib.vnum = bld.env['JACK_API_VERSION']
+ 
+     if bld.env['IS_LINUX']:
+         serverlib.env.append_value('CPPFLAGS', '-fvisibility=hidden')
+ 
++    if bld.env['IS_QNX']:
++        serverlib.env.append_value('CPPFLAGS', '-fvisibility=hidden')
++        serverlib.env.append_value('LINKFLAGS', '-lsocket')
++
+     if bld.env['IS_MACOSX']:
+         serverlib.env.append_value('CPPFLAGS', '-fvisibility=hidden')
+         serverlib.env.append_value('LINKFLAGS', '-single_module')
+ 
+     if bld.env['IS_SUN']:
+         serverlib.env.append_value('LINKFLAGS', '-lnsl -lsocket')
+@@ -409,12 +447,22 @@
+                 '../posix/JackPosixThread.cpp',
+                 '../posix/JackPosixMutex.cpp',
+                 '../linux/JackLinuxTime.c',
+             ]
+             netlib.env.append_value('CPPFLAGS', '-fvisibility=hidden')
+ 
++        if bld.env['IS_QNX']:
++            netlib.source += [
++                '../posix/JackNetUnixSocket.cpp',
++                '../posix/JackPosixThread.cpp',
++                '../posix/JackPosixMutex.cpp',
++                '../linux/JackLinuxTime.c',
++            ]
++            netlib.env.append_value('CPPFLAGS', '-fvisibility=hidden')
++            netlib.env.append_value('LINKFLAGS', '-lsocket')
++
+         if bld.env['IS_SUN']:
+             netlib.source += [
+                 '../posix/JackNetUnixSocket.cpp',
+                 '../posix/JackPosixThread.cpp',
+                 '../posix/JackPosixMutex.cpp',
+                 '../solaris/JackSolarisTime.c',
+@@ -482,13 +530,13 @@
+                 'AudioToolbox',
+                 'CoreServices',
+             ]
+         )
+         process.use += ['SAMPLERATE']
+ 
+-    if bld.env['BUILD_ADAPTER'] and bld.env['IS_LINUX'] and bld.env['BUILD_DRIVER_ALSA']:
++    if bld.env['BUILD_ADAPTER'] and (bld.env['IS_LINUX'] or bld.env['IS_QNX']) and bld.env['BUILD_DRIVER_ALSA']:
+         audio_adapter_sources += ['../linux/alsa/JackAlsaAdapter.cpp']
+         process = create_jack_process_obj(bld, 'audioadapter', audio_adapter_sources, serverlib)
+         process.use += ['ALSA', 'SAMPLERATE']
+ 
+     if bld.env['BUILD_ADAPTER'] and (bld.env['IS_SUN'] or bld.env['IS_FREEBSD']):
+         audio_adapter_sources += ['../solaris/oss/JackOSSAdapter.cpp', 'memops.c']
+diff --color -U 6 -N -r before/dbus/wscript after/dbus/wscript
+--- before/dbus/wscript	2026-04-06 11:05:26.499635134 -0400
++++ after/dbus/wscript	2026-04-07 20:19:18.514440802 -0400
+@@ -50,12 +50,14 @@
+ def build(bld):
+     obj = bld(features=['c', 'cprogram'], idx=17)
+     if bld.env['IS_LINUX']:
+         sysdeps_dbus_include = ['../linux', '../posix']
+     if bld.env['IS_FREEBSD']:
+         sysdeps_dbus_include = ['../freebsd', '../posix']
++    if bld.env['IS_QNX']:
++        sysdeps_dbus_include = ['../qnx', '../posix']
+     if bld.env['IS_MACOSX']:
+         sysdeps_dbus_include = ['../macosx', '../posix']
+ 
+     obj.includes = sysdeps_dbus_include + ['.', '../', '../common', '../common/jack']
+     obj.defines = ['HAVE_CONFIG_H', 'SERVER_SIDE']
+     obj.source = [
+@@ -82,12 +84,17 @@
+         obj.use += ['PTHREAD', 'DL', 'RT', 'DBUS-1', 'EXPAT', 'STDC++']
+     if bld.env['IS_FREEBSD']:
+         obj.source += [
+             '../linux/uptime.c',
+         ]
+         obj.use += ['PTHREAD', 'EXECINFO', 'LIBSYSINFO', 'DBUS-1', 'EXPAT']
++    if bld.env['IS_QNX']:
++        obj.source += [
++            '../qnx/uptime.c',
++        ]
++        obj.use += ['DL', 'DBUS-1', 'EXPAT', 'C++']
+     if bld.env['IS_MACOSX']:
+         obj.source += [
+             '../macosx/uptime.c',
+         ]
+         obj.use += ['PTHREAD', 'DL', 'DBUS-1', 'EXPAT']
+     obj.target = 'jackdbus'
+diff --color -U 6 -N -r before/linux/alsa/alsa_driver.c after/linux/alsa/alsa_driver.c
+--- before/linux/alsa/alsa_driver.c	2026-04-06 11:05:26.499635134 -0400
++++ after/linux/alsa/alsa_driver.c	2026-04-07 20:19:18.514440802 -0400
+@@ -780,35 +780,25 @@
+ 			    "match requested rate (%d Hz)",
+ 			    pr, driver->frame_rate);
+ 		driver->frame_rate = pr;
+ 	}
+ 
+ 
+-	/* check the fragment size, since that's non-negotiable */
++	/* check the fragment size */
+ 
+ 	if (driver->playback_handle) {
+  		snd_pcm_access_t access;
+ 
+- 		err = snd_pcm_hw_params_get_period_size (
+- 			driver->playback_hw_params, &p_period_size, &dir);
+  		err = snd_pcm_hw_params_get_format (
+  			driver->playback_hw_params,
+ 			&(driver->playback_sample_format));
+  		err = snd_pcm_hw_params_get_access (driver->playback_hw_params,
+ 						    &access);
+  		driver->playback_interleaved =
+ 			(access == SND_PCM_ACCESS_MMAP_INTERLEAVED)
+ 			|| (access == SND_PCM_ACCESS_MMAP_COMPLEX);
+-
+-		if (p_period_size != driver->frames_per_cycle) {
+-			jack_error ("alsa_pcm: requested an interrupt every %"
+-				    PRIu32
+-				    " frames but got %u frames for playback",
+-				    driver->frames_per_cycle, p_period_size);
+-			return -1;
+-		}
+ 	}
+ 
+ 	if (driver->capture_handle) {
+  		snd_pcm_access_t access;
+ 
+  		err = snd_pcm_hw_params_get_period_size (
+@@ -876,37 +866,41 @@
+ 				    "type for capture");
+ 			exit (1);
+ 		}
+ 	}
+ 
+ 	if (driver->playback_interleaved) {
++#ifndef __QNX__
+ 		const snd_pcm_channel_area_t *my_areas;
+ 		snd_pcm_uframes_t offset, frames;
+ 		if (snd_pcm_mmap_begin(driver->playback_handle,
+ 				       &my_areas, &offset, &frames) < 0) {
+ 			jack_error ("ALSA: %s: mmap areas info error",
+ 				    driver->alsa_name_playback);
+ 			return -1;
+ 		}
++#endif
+ 		driver->interleave_unit =
+ 			snd_pcm_format_physical_width (
+ 				driver->playback_sample_format) / 8;
+ 	} else {
+ 		driver->interleave_unit = 0;  /* NOT USED */
+ 	}
+ 
++#ifndef __QNX__
+ 	if (driver->capture_interleaved) {
+ 		const snd_pcm_channel_area_t *my_areas;
+ 		snd_pcm_uframes_t offset, frames;
+ 		if (snd_pcm_mmap_begin(driver->capture_handle,
+ 				       &my_areas, &offset, &frames) < 0) {
+-			jack_error ("ALSA: %s: mmap areas info error",
+-				    driver->alsa_name_capture);
+-			return -1;
++            jack_error ("ALSA: %s: mmap areas info error",
++                    driver->alsa_name_capture);
++            return -1;
+ 		}
+ 	}
++#endif
+ 
+ 	if (driver->playback_nchannels > driver->capture_nchannels) {
+ 		driver->max_nchannels = driver->playback_nchannels;
+ 	} else {
+ 		driver->max_nchannels = driver->capture_nchannels;
+ 	}
+@@ -1012,14 +1006,14 @@
+ 
+ 	if (capture_avail) {
+ 		if ((err = snd_pcm_mmap_begin (
+ 			     driver->capture_handle, &driver->capture_areas,
+ 			     (snd_pcm_uframes_t *) capture_offset,
+ 			     (snd_pcm_uframes_t *) capture_avail)) < 0) {
+-			jack_error ("ALSA: %s: mmap areas info error",
+-				    driver->alsa_name_capture);
++			jack_error ("ALSA: %s: mmap areas info error (%s)",
++				    driver->alsa_name_capture, strerror(-err));
+ 			return -1;
+ 		}
+ 
+ 		for (chn = 0; chn < driver->capture_nchannels; chn++) {
+ 			const snd_pcm_channel_area_t *a =
+ 				&driver->capture_areas[chn];
+@@ -1031,14 +1025,14 @@
+ 
+ 	if (playback_avail) {
+ 		if ((err = snd_pcm_mmap_begin (
+ 			     driver->playback_handle, &driver->playback_areas,
+ 			     (snd_pcm_uframes_t *) playback_offset,
+ 			     (snd_pcm_uframes_t *) playback_avail)) < 0) {
+-			jack_error ("ALSA: %s: mmap areas info error ",
+-				    driver->alsa_name_playback);
++			jack_error ("ALSA: %s: mmap areas info error (%s)",
++				    driver->alsa_name_playback, strerror(-err));
+ 			return -1;
+ 		}
+ 
+ 		for (chn = 0; chn < driver->playback_nchannels; chn++) {
+ 			const snd_pcm_channel_area_t *a =
+ 				&driver->playback_areas[chn];
+@@ -1123,17 +1117,27 @@
+ 		/* fill playback buffer with zeroes, and mark
+ 		   all fragments as having data.
+ 		*/
+ 
+ 		pavail = snd_pcm_avail_update (driver->playback_handle);
+ 
++#ifdef __QNX__
++        if (pavail < 0) {
++			jack_error ("ALSA: snd_pcm_avail_update failed (%s)", strerror(-pavail));
++			return -1;
++        } else if (pavail !=
++		    driver->frames_per_cycle * driver->playback_nperiods) {
++			jack_info ("ALSA: full buffer not available at start");
++		}
++#else
+ 		if (pavail !=
+ 		    driver->frames_per_cycle * driver->playback_nperiods) {
+ 			jack_error ("ALSA: full buffer not available at start");
+ 			return -1;
+ 		}
++#endif
+ 
+ 		if (alsa_driver_get_channel_addresses (driver,
+ 					0, &pavail, 0, &poffset)) {
+ 			return -1;
+ 		}
+ 
+@@ -1155,15 +1159,20 @@
+ 
+ 		snd_pcm_mmap_commit (driver->playback_handle, poffset,
+ 				     driver->user_nperiods
+ 				     * driver->frames_per_cycle);
+ 
+ 		if ((err = snd_pcm_start (driver->playback_handle)) < 0) {
++#ifdef __QNX__
++			jack_info ("ALSA: could not start playback (%s)",
++				    snd_strerror (err));
++#else
+ 			jack_error ("ALSA: could not start playback (%s)",
+ 				    snd_strerror (err));
+ 			return -1;
++#endif
+ 		}
+ 	}
+ 
+ 	if ((driver->capture_handle && driver->capture_and_playback_not_synced)
+ 	    || !driver->playback_handle) {
+ 		if ((err = snd_pcm_start (driver->capture_handle)) < 0) {
+diff --color -U 6 -N -r before/linux/alsa/JackAlsaDriver.cpp after/linux/alsa/JackAlsaDriver.cpp
+--- before/linux/alsa/JackAlsaDriver.cpp	2026-04-06 11:05:26.499635134 -0400
++++ after/linux/alsa/JackAlsaDriver.cpp	2026-04-07 20:19:18.514440802 -0400
+@@ -298,13 +298,13 @@
+                               inchannels, outchannels, monitor, capture_driver_name, playback_driver_name,
+                               capture_latency, playback_latency) != 0) {
+         return -1;
+     }
+ 
+     alsa_midi_t *midi = 0;
+-#ifndef __ANDROID__
++#if !defined(__ANDROID__) && !defined(__QNX__)
+     if (strcmp(midi_driver_name, "seq") == 0)
+         midi = alsa_seqmidi_new((jack_client_t*)this, 0);
+     else if (strcmp(midi_driver_name, "raw") == 0)
+         midi = alsa_rawmidi_new((jack_client_t*)this);
+ #endif
+ 
+diff --color -U 6 -N -r before/posix/JackSocket.cpp after/posix/JackSocket.cpp
+--- before/posix/JackSocket.cpp	2026-04-06 11:05:26.503635176 -0400
++++ after/posix/JackSocket.cpp	2026-04-07 20:19:18.514440802 -0400
+@@ -138,13 +138,13 @@
+         jack_error("Cannot connect to server socket err = %s", strerror(errno));
+         close(fSocket);
+         fSocket = -1;
+         return -1;
+     }
+ 
+-#ifdef __APPLE__
++#if defined(__APPLE__) || defined(__QNX__)
+     int on = 1;
+     if (setsockopt(fSocket, SOL_SOCKET, SO_NOSIGPIPE, (const char*)&on, sizeof(on)) < 0) {
+         jack_log("setsockopt SO_NOSIGPIPE fd = %ld err = %s", fSocket, strerror(errno));
+     }
+ #endif
+ 
+diff --color -U 6 -N -r before/qnx/driver.h after/qnx/driver.h
+--- before/qnx/driver.h	1969-12-31 19:00:00.000000000 -0500
++++ after/qnx/driver.h	2026-04-07 20:19:18.514440802 -0400
+@@ -0,0 +1 @@
++#include "../linux/driver.h"
+diff --color -U 6 -N -r before/qnx/JackAtomic_os.h after/qnx/JackAtomic_os.h
+--- before/qnx/JackAtomic_os.h	1969-12-31 19:00:00.000000000 -0500
++++ after/qnx/JackAtomic_os.h	2026-04-07 20:20:11.955093444 -0400
+@@ -0,0 +1,83 @@
++/*
++Copyright (C) 2004-2008 Grame
++Copyright (C) 2026 BlackBerry Limited
++
++This program is free software; you can redistribute it and/or modify
++it under the terms of the GNU Lesser General Public License as published by
++the Free Software Foundation; either version 2.1 of the License, or
++(at your option) any later version.
++
++This program is distributed in the hope that it will be useful,
++but WITHOUT ANY WARRANTY; without even the implied warranty of
++MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++GNU Lesser General Public License for more details.
++
++You should have received a copy of the GNU Lesser General Public License
++along with this program; if not, write to the Free Software
++Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
++
++*/
++
++#ifndef __JackAtomic_qnx__
++#define __JackAtomic_qnx__
++
++#include "JackTypes.h"
++#include <cassert>
++
++#if defined(__ppc__) || defined(__ppc64__)
++
++static inline int CAS(register UInt32 value, register UInt32 newvalue, register volatile void* addr)
++{
++    register int result;
++    asm volatile (
++        "# CAS					\n"
++        "	lwarx	r0, 0, %1	\n"         // creates a reservation on addr
++        "	cmpw	r0, %2		\n"			//  test value at addr
++        "	bne-	1f          \n"
++        "	sync            	\n"         //  synchronize instructions
++        "	stwcx.	%3, 0, %1	\n"         //  if the reservation is not altered
++        //  stores the new value at addr
++        "	bne-	1f          \n"
++        "   li      %0, 1       \n"
++        "	b		2f          \n"
++        "1:                     \n"
++        "   li      %0, 0       \n"
++        "2:                     \n"
++        : "=r" (result)
++        : "r" (addr), "r" (value), "r" (newvalue)
++        : "r0"
++        );
++    return result;
++}
++
++#elif defined(__i386__) || defined(__x86_64__)
++
++#define LOCK "lock ; "
++
++static inline char CAS(volatile UInt32 value, UInt32 newvalue, volatile void* addr)
++{
++    register char ret;
++    __asm__ __volatile__ (
++        "# CAS \n\t"
++        LOCK "cmpxchg %2, (%1) \n\t"
++        "sete %0               \n\t"
++        : "=a" (ret)
++        : "c" (addr), "d" (newvalue), "a" (value)
++        );
++    return ret;
++}
++
++#else
++
++#include <stdio.h>
++static inline char CAS(volatile UInt32 value, UInt32 newvalue, volatile void* addr)
++{
++    // Assert pointer is 32-bit aligned
++    assert(((long)addr & (sizeof(int)-1)) == 0);
++    return __sync_bool_compare_and_swap ((UInt32*)addr, value, newvalue);
++}
++
++#endif
++
++#endif
++
+diff --color -U 6 -N -r before/qnx/JackPlatformPlug_os.h after/qnx/JackPlatformPlug_os.h
+--- before/qnx/JackPlatformPlug_os.h	1969-12-31 19:00:00.000000000 -0500
++++ after/qnx/JackPlatformPlug_os.h	2026-04-07 20:30:30.372059255 -0400
+@@ -0,0 +1,86 @@
++/*
++Copyright (C) 2004-2008 Grame
++Copyright (C) 2018 Greg V
++Copyright (C) 2026 BlackBerry Limited
++
++This program is free software; you can redistribute it and/or modify
++it under the terms of the GNU Lesser General Public License as published by
++the Free Software Foundation; either version 2.1 of the License, or
++(at your option) any later version.
++
++This program is distributed in the hope that it will be useful,
++but WITHOUT ANY WARRANTY; without even the implied warranty of
++MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++GNU Lesser General Public License for more details.
++
++You should have received a copy of the GNU Lesser General Public License
++along with this program; if not, write to the Free Software 
++Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
++
++*/
++
++#ifndef __JackPlatformPlug_qnx__
++#define __JackPlatformPlug_qnx__
++
++#define jack_server_dir "/tmp"
++#define jack_client_dir "/tmp"
++#define JACK_DEFAULT_DRIVER "alsa"
++
++namespace Jack
++{
++    struct JackRequest;
++    struct JackResult;
++
++    class JackPosixMutex;
++    class JackPosixThread;
++    class JackPosixSemaphore;
++
++    class JackSocketServerChannel;
++    class JackSocketClientChannel;
++    class JackSocketServerNotifyChannel;
++    class JackSocketNotifyChannel;
++    class JackClientSocket;
++    class JackNetUnixSocket;
++}
++
++/* __JackPlatformMutex__ */
++#include "JackPosixMutex.h"
++namespace Jack {typedef JackPosixMutex JackMutex; }
++
++/* __JackPlatformThread__ */
++#include "JackPosixThread.h"
++namespace Jack { typedef JackPosixThread JackThread; }
++
++/* __JackPlatformSynchro__  client activation */
++#include "JackPosixSemaphore.h"
++namespace Jack { typedef JackPosixSemaphore JackSynchro; }
++
++/* __JackPlatformChannelTransaction__ */
++#include "JackSocket.h"
++namespace Jack { typedef JackClientSocket JackChannelTransaction; }
++
++/* __JackPlatformProcessSync__ */
++#include "JackPosixProcessSync.h"
++namespace Jack { typedef JackPosixProcessSync JackProcessSync; }
++
++/* __JackPlatformServerChannel__ */ 
++#include "JackSocketServerChannel.h"
++namespace Jack { typedef JackSocketServerChannel JackServerChannel; }
++
++/* __JackPlatformClientChannel__ */
++#include "JackSocketClientChannel.h"
++namespace Jack { typedef JackSocketClientChannel JackClientChannel; }
++
++/* __JackPlatformServerNotifyChannel__ */
++#include "JackSocketServerNotifyChannel.h"
++namespace Jack { typedef JackSocketServerNotifyChannel JackServerNotifyChannel; }
++
++/* __JackPlatformNotifyChannel__ */
++#include "JackSocketNotifyChannel.h"
++namespace Jack { typedef JackSocketNotifyChannel JackNotifyChannel; }
++
++/* __JackPlatformNetSocket__ */
++#include "JackNetUnixSocket.h"
++namespace Jack { typedef JackNetUnixSocket JackNetSocket; }
++
++#endif
+diff --color -U 6 -N -r before/qnx/uptime.c after/qnx/uptime.c
+--- before/qnx/uptime.c	1969-12-31 19:00:00.000000000 -0500
++++ after/qnx/uptime.c	2026-04-07 20:19:18.514440802 -0400
+@@ -0,0 +1,7 @@
++#include <time.h>
++
++#define _NS_CONV_FACTOR 10e9
++
++long uptime(void) {
++    return (long)(clock_gettime_mon_ns() / _NS_CONV_FACTOR);
++}
+diff --color -U 6 -N -r before/qnx/uptime.h after/qnx/uptime.h
+--- before/qnx/uptime.h	1969-12-31 19:00:00.000000000 -0500
++++ after/qnx/uptime.h	2026-04-07 20:19:18.514440802 -0400
+@@ -0,0 +1,28 @@
++/*
++Copyright (C) 2004-2005 Grame
++Copyright (C) 2026 BlackBerry Limited
++
++This program is free software; you can redistribute it and/or modify
++it under the terms of the GNU General Public License as published by
++the Free Software Foundation; either version 2 of the License, or
++(at your option) any later version.
++
++This program is distributed in the hope that it will be useful,
++but WITHOUT ANY WARRANTY; without even the implied warranty of
++MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++GNU General Public License for more details.
++
++You should have received a copy of the GNU General Public License
++along with this program; if not, write to the Free Software
++Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
++
++*/
++
++#ifndef __uptime_QNX__
++#define __uptime_QNX__
++
++#define UPTIME_FUNCTION_NAME "clock_gettime_mon_ns"
++
++long uptime(void);
++
++#endif
+diff --color -U 6 -N -r before/tests/wscript after/tests/wscript
+--- before/tests/wscript	2026-04-06 11:05:26.503635176 -0400
++++ after/tests/wscript	2026-04-07 20:19:18.514440802 -0400
+@@ -20,12 +20,14 @@
+         if bld.env['IS_MACOSX']:
+             prog.includes = ['..', '../macosx', '../posix', '../common/jack', '../common']
+         if bld.env['IS_LINUX']:
+             prog.includes = ['..', '../linux', '../posix', '../common/jack', '../common']
+         if bld.env['IS_FREEBSD']:
+             prog.includes = ['..', '../freebsd', '../posix', '../common/jack', '../common']
++        if bld.env['IS_QNX']:
++            prog.includes = ['..', '../qnx', '../posix', '../common/jack', '../common']
+         if bld.env['IS_SUN']:
+             prog.includes = ['..', '../solaris', '../posix', '../common/jack', '../common']
+         prog.source = test_program_sources
+         if bld.env['IS_LINUX']:
+             prog.uselib = 'RT'
+         prog.use = 'clientlib'
+diff --color -U 6 -N -r before/wscript after/wscript
+--- before/wscript	2026-04-06 11:05:26.507635218 -0400
++++ after/wscript	2026-04-07 20:19:18.514440802 -0400
+@@ -211,12 +211,13 @@
+ 
+ def detect_platform(conf):
+     # GNU/kFreeBSD and GNU/Hurd are treated as Linux
+     platforms = [
+         # ('KEY, 'Human readable name', ['strings', 'to', 'check', 'for'])
+         ('IS_LINUX',   'Linux',   ['gnu0', 'gnukfreebsd', 'linux', 'posix']),
++        ('IS_QNX',   'QNX',   ['qnx', 'qnx8']),
+         ('IS_FREEBSD', 'FreeBSD', ['freebsd']),
+         ('IS_MACOSX',  'MacOS X', ['darwin']),
+         ('IS_SUN',     'SunOS',   ['sunos']),
+         ('IS_WINDOWS', 'Windows', ['cygwin', 'msys', 'win32'])
+     ]
+ 
+@@ -249,13 +250,16 @@
+                 msg='Checking for PortAudio ASIO support',
+                 define_name='HAVE_ASIO',
+                 mandatory=False)
+ 
+     conf.env.append_unique('CFLAGS', '-Wall')
+     conf.env.append_unique('CXXFLAGS', ['-Wall', '-Wno-invalid-offsetof'])
+-    conf.env.append_unique('CXXFLAGS', '-std=gnu++11')
++    if conf.env['IS_QNX']:
++        conf.env.append_unique('CXXFLAGS', ['-std=gnu++23', '-Wno-register'])
++    else:
++        conf.env.append_unique('CXXFLAGS', '-std=gnu++11')
+ 
+     if conf.env['IS_FREEBSD']:
+         conf.check(lib='execinfo', uselib='EXECINFO', define_name='EXECINFO')
+         conf.check_cfg(package='libsysinfo', args='--cflags --libs')
+ 
+     if not conf.env['IS_MACOSX']:
+@@ -534,12 +538,15 @@
+     if bld.env['BUILD_JACKDBUS']:
+         obj.includes += ['dbus']
+ 
+     if bld.env['IS_LINUX']:
+         obj.includes += ['linux', 'posix']
+ 
++    if bld.env['IS_QNX']:
++        obj.includes += ['qnx', 'posix']
++
+     if bld.env['IS_FREEBSD']:
+         obj.includes += ['freebsd', 'posix']
+ 
+     if bld.env['IS_MACOSX']:
+         obj.includes += ['macosx', 'posix']
+ 
+@@ -565,12 +572,15 @@
+         jackd.source += ['dbus/audio_reserve.c', 'dbus/reserve.c']
+         jackd.use += ['DBUS-1']
+ 
+     if bld.env['IS_LINUX']:
+         jackd.use += ['DL', 'M', 'PTHREAD', 'RT', 'STDC++']
+ 
++    if bld.env['IS_QNX']:
++        jackd.use += ['DL', 'M', 'C++']
++
+     if bld.env['IS_FREEBSD']:
+         jackd.use += ['M', 'PTHREAD']
+ 
+     if bld.env['IS_MACOSX']:
+         jackd.use += ['DL', 'PTHREAD']
+         jackd.framework = ['CoreFoundation']
+@@ -629,24 +639,36 @@
+ 
+     proxy_src = [
+         'common/JackProxyDriver.cpp'
+     ]
+ 
+     # Hardware driver sources. Lexically sorted.
+-    alsa_src = [
+-        'common/memops.c',
+-        'linux/alsa/JackAlsaDriver.cpp',
+-        'linux/alsa/alsa_rawmidi.c',
+-        'linux/alsa/alsa_seqmidi.c',
+-        'linux/alsa/alsa_midi_jackmp.cpp',
+-        'linux/alsa/generic_hw.c',
+-        'linux/alsa/hdsp.c',
+-        'linux/alsa/alsa_driver.c',
+-        'linux/alsa/hammerfall.c',
+-        'linux/alsa/ice1712.c'
+-    ]
++    alsa_src = []
++    if bld.env['IS_QNX']:
++        alsa_src += [
++            'common/memops.c',
++            'linux/alsa/JackAlsaDriver.cpp',
++            'linux/alsa/generic_hw.c',
++            'linux/alsa/hdsp.c',
++            'linux/alsa/alsa_driver.c',
++            'linux/alsa/hammerfall.c',
++            'linux/alsa/ice1712.c'
++        ]
++    else:
++        alsa_src += [
++            'common/memops.c',
++            'linux/alsa/JackAlsaDriver.cpp',
++            'linux/alsa/alsa_rawmidi.c',
++            'linux/alsa/alsa_seqmidi.c',
++            'linux/alsa/alsa_midi_jackmp.cpp',
++            'linux/alsa/generic_hw.c',
++            'linux/alsa/hdsp.c',
++            'linux/alsa/alsa_driver.c',
++            'linux/alsa/hammerfall.c',
++            'linux/alsa/ice1712.c'
++        ]
+ 
+     alsarawmidi_src = [
+         'linux/alsarawmidi/JackALSARawMidiDriver.cpp',
+         'linux/alsarawmidi/JackALSARawMidiInputPort.cpp',
+         'linux/alsarawmidi/JackALSARawMidiOutputPort.cpp',
+         'linux/alsarawmidi/JackALSARawMidiPort.cpp',
+@@ -744,17 +766,18 @@
+     if bld.env['BUILD_DRIVER_ALSA']:
+         create_driver_obj(
+             bld,
+             target='alsa',
+             source=alsa_src,
+             use=['ALSA'])
+-        create_driver_obj(
+-            bld,
+-            target='alsarawmidi',
+-            source=alsarawmidi_src,
+-            use=['ALSA'])
++        if not bld.env['IS_QNX']:
++            create_driver_obj(
++                bld,
++                target='alsarawmidi',
++                source=alsarawmidi_src,
++                use=['ALSA'])
+ 
+     if bld.env['BUILD_DRIVER_FFADO']:
+         create_driver_obj(
+             bld,
+             target='firewire',
+             source=ffado_src,
+@@ -828,14 +851,15 @@
+ 
+     if bld.env['BUILD_JACKD']:
+         build_jackd(bld)
+ 
+     build_drivers(bld)
+ 
+-    if bld.env['IS_LINUX'] or bld.env['IS_FREEBSD']:
++    if bld.env['IS_LINUX'] or bld.env['IS_FREEBSD'] or bld.env['IS_QNX']:
+         bld.recurse('man')
++    if bld.env['IS_LINUX'] or bld.env['IS_FREEBSD']:
+         bld.recurse('systemd')
+     if not bld.env['IS_WINDOWS'] and bld.env['BUILD_TESTS']:
+         bld.recurse('tests')
+     if bld.env['BUILD_JACKDBUS']:
+         bld.recurse('dbus')
+ 
