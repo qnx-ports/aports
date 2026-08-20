@@ -10,12 +10,11 @@ license="Apache-2.0"
 source="
     apache-arrow-$pkgver.tar.gz::https://github.com/rtimmaraju/arrow/archive/refs/heads/apache_arrow_test.tar.gz"
 builddir="$srcdir/arrow-apache_arrow_test/cpp"
-depends="libc++ boost "
+depends="libc++"
 makedepends="
     cmake
     ninja
-    libc++-dev
-    boost-dev "
+    libc++-dev"
 subpackages="$pkgname-dev"
 
 case "$(uname -m)" in
