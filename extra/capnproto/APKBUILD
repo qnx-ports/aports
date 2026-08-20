@@ -9,13 +9,13 @@ url="https://capnproto.org/"
 arch="all"
 license="MIT"
 depends="
-    zlib
+    zlib-ng
     openssl
     libucontext
     libc++
     "
 depends_dev="
-    zlib-dev
+    zlib-ng-dev
     openssl-dev
     libucontext-dev
     libc++-dev
