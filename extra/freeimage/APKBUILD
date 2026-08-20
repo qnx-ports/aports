@@ -10,7 +10,8 @@ pkgdesc="Open Source library project for developers who would like to support po
 url="https://freeimage.sourceforge.net/"
 arch="all"
 license="GPL-2.0-or-later AND FreeImage"
-makedepends="cmake ninja"
+makedepends="cmake ninja libc++-dev qnx-io-sock-dev"
+depends="qnx-io-sock"
 subpackages="$pkgname-dev"
 source="https://github.com/qnx-ports/FreeImage/archive/refs/heads/$_qnx_branch.tar.gz"
 builddir="$srcdir/$_pkgname-$_qnx_branch"
@@ -24,7 +25,6 @@ prepare() {
 build() {
 	case "$CARCH" in
 		aarch64) export CFLAGS="$CFLAGS -DPNG_ARM_NEON_OPT=0";;
-		ppc64le) export CFLAGS="$CFLAGS -U__ALTIVEC__";;
 	esac
 	CFLAGS="$CFLAGS -std=gnu89 -fPIC" \
 	CXXFLAGS="$CXXFLAGS -std=gnu++14 -fPIC" \
