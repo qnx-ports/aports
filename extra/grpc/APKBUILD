@@ -15,14 +15,33 @@ depends="ca-certificates"
 depends_dev="
     $pkgname-cpp=$pkgver-r$pkgrel
     $pkgname-plugins=$pkgver-r$pkgrel
+    abseil-cpp-dev libc++-dev protobuf-dev c-ares-dev openssl-dev>3 re2-dev
+    zlib-dev
     "
 makedepends="abseil-cpp-dev autoconf automake bash benchmark-dev c-ares-dev
     clang chrpath cmake libc++-dev clang libtool openssl-dev>3 protobuf-dev
     re2-dev ninja yaml-dev xxhash-dev zlib-dev qnx-io-sock-dev
     "
 checkdepends="coreutils python3 python3-six"
+_libgpr_depends="abseil-cpp libc++"
+_libgrpc_depends="libaddress_sorting libgpr libupb_base_lib libupb_hash_lib
+libupb_json_lib libupb_mem_lib libupb_message_lib libupb_reflection_lib
+libupb_textformat_lib libupb_wire_lib abseil-cpp c-ares libc++ libcrypto libssl3
+qnx-io-sock re2 zlib-ng"
+_lib_grpc_authorization_provider_depends="libaddress_sorting libgpr libupb_mem_lib
+libupb_message_lib libupb_reflection_lib libupb_textformat_lib libupb_wire_lib
+abseil-cpp c-ares libc++ qnx-io-sock re2 zlib-ng"
+_lib_grpc_unsecure_depends="libaddress_sorting libgpr libupb_mem_lib
+libupb_message_lib libupb_reflection_lib libupb_textformat_lib libupb_wire_lib
+abseil-cpp c-ares libc++ qnx-io-sock zlib-ng"
+_lib_udb_json_lib_depends="libupb_base_lib libupb_lex_lib libupb_mem_lib
+libupb_message_lib libupb_reflection_lib libupb_wire_lib"
+_lib_udb_message_lib_depends="libupb_hash_lib libupb_mem_lib libupb_mini_table_lib"
+_lib_udb_textformat_lib_depends="libupb_lex_lib libupb_mem_lib libupb_message_lib
+libupb_reflection_lib libupb_wire_lib libutf8_range_lib"
 subpackages="
     $pkgname-dev
+    $pkgname-cli
     $pkgname-cpp
     $pkgname-plugins
     $pkgname-doc
@@ -32,10 +51,16 @@ subpackages="
     libgrpc_authorization_provider:lib
     libgrpc_unsecure:lib
     libupb_base_lib:lib
+    libupb_hash_lib:lib
     libupb_json_lib:lib
+    libupb_lex_lib:lib
     libupb_mem_lib:lib
     libupb_message_lib:lib
+    libupb_mini_table_lib:lib
+    libupb_reflection_lib:lib
     libupb_textformat_lib:lib
+    libupb_wire_lib:lib
+    libutf8_range_lib:lib
     "
 _googletest_rev=52204f78f94d7512df1f0f3bea1d47437a2c3a58
 
@@ -147,7 +172,9 @@ package() {
 
 cpp() {
     pkgdesc="C++ language bindings for gRPC"
-    depends="$pkgname=$pkgver-r$pkgrel"
+    depends="$pkgname=$pkgver-r$pkgrel libc++ libgpr libupb_hash_lib
+        libupb_mem_lib libupb_message_lib libupb_wire_lib libgrpc libgrpc_unsecure
+        abseil-cpp libprotobuf libprotoc"
 
     amove usr/lib/libgrpc++*.so.*
     amove usr/lib/libgrpc_plugin_support.so.*
@@ -156,7 +183,8 @@ cpp() {
 
 plugins() {
     pkgdesc="Protocol buffers compiler plugins for gRPC"
-    depends="$pkgname-cpp=$pkgver-r$pkgrel protobuf"
+    depends="$pkgname-cpp=$pkgver-r$pkgrel protobuf abseil-cpp-hash
+        abseil-cpp-raw-hash-set libc++ libprotobuf libprotoc"
 
     amove usr/bin/grpc_*_plugin
 }
@@ -174,9 +202,15 @@ cli() {
 
 lib() {
     pkgdesc="$pkgdesc ($subpkgname library)"
-    depends="$pkgname=$pkgver-r$pkgrel"
+    depends="$pkgname=$pkgver-r$pkgrel $(getvar "_${subpkgname}_depends")"
 
     amove usr/lib/$subpkgname.so.*
+}
+
+# Print value of the specified variable, or the default if empty or not defined.
+# From https://github.com/alpinelinux/aports/blob/3d4f2edabc7cca3a16b88a2d3795f584ae40aff5/main/nginx/APKBUILD
+getvar() {
+	eval "printf '%s\n' \"\${$1:-$2}\""
 }
 
 sha512sums="
