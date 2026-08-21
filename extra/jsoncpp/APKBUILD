@@ -11,6 +11,7 @@ arch="all"
 license="MIT"
 #options="!check"
 makedepends="cmake doxygen graphviz python3 ninja libc++-dev"
+depends="libc++"
 subpackages="
     $pkgname-doc
     $pkgname-static
