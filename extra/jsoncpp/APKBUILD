@@ -1,6 +1,6 @@
-# Contributor: Andrea Scarpino <andrea@archlinux.org>
-# Contributor: Jonahtan Schaeffer <joschaeffer@gmail.com>
-# Contributor: Drake Arconis <lightdrake@gmail.com>
+# Alpine-Contributor: Andrea Scarpino <andrea@archlinux.org>
+# Alpine-Contributor: Jonahtan Schaeffer <joschaeffer@gmail.com>
+# Alpine-Contributor: Drake Arconis <lightdrake@gmail.com>
 # Maintainer: Terence Ang <taang@qnx.com>
 pkgname=jsoncpp
 pkgver=1.8.4
