@@ -16,17 +16,15 @@ subpackages="
     $pkgname-static
     $pkgname-dev
 "
-source="$pkgname-$pkgver.tar.gz::https://github.com/open-source-parsers/$pkgname/archive/refs/tags/$pkgver.tar.gz"
+source="
+    $pkgname-$pkgver.tar.gz::https://github.com/open-source-parsers/$pkgname/archive/refs/tags/$pkgver.tar.gz
+    001-fix-CMakeLists.patch
+"
 
 builddir="$srcdir/$pkgname-$pkgver"
 
 prepare() {
     default_prepare
-
-    sed -i \
-        -e 's/CMAKE_MINIMUM_REQUIRED(VERSION [0-9.]*)/CMAKE_MINIMUM_REQUIRED(VERSION 3.5)/' \
-        -e 's/-Werror=conversion//g' \
-        "$builddir/CMakeLists.txt"
 
     mkdir -p "$builddir/build"
 }
@@ -36,16 +34,16 @@ build() {
 
     python3 doxybuild.py --with-dot
 
-    cd build
-    cmake .. \
+    cmake -B build -G Ninja \
         -DCMAKE_INSTALL_PREFIX=/usr \
         -DCMAKE_INSTALL_LIBDIR=lib \
         -DCMAKE_BUILD_TYPE=Release \
         -DBUILD_SHARED_LIBS=ON \
         -DBUILD_STATIC_LIBS=ON \
+        -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
         -DJSONCPP_WITH_CMAKE_PACKAGE=ON
 
-    ninja
+    cmake --build build
 }
 
 check() {
@@ -77,4 +75,5 @@ package() {
 
 sha512sums="
 f70361a3263dd8b9441374a9a409462be1426c0d6587c865171a80448ab73b3f69de2b4d70d2f0c541764e1e6cccc727dd53178347901f625ec6fb54fb94f4f1  jsoncpp-1.8.4.tar.gz
+ef4ff2015f29a7977449958bab56184961a45d880abb0f75e2a456d778ad32b7618f054e7c2dd59925c32967c34762538399c899dcee82a62926e05667bff9b9  001-fix-CMakeLists.patch
 "
