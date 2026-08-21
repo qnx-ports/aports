@@ -68,23 +68,11 @@ package() {
     cd "$builddir"
 
     DESTDIR="$pkgdir" ninja -C build install
-}
 
-doc() {
-    pkgdesc="$pkgdesc (documentation)"
-
-    cd "$builddir"
-
-    install -Dm644 LICENSE \
-        "$subpkgdir/usr/share/licenses/$pkgname/LICENSE"
-
-    install -Dm644 README.md \
-        "$subpkgdir/usr/share/doc/$pkgname/README.md"
-
-    install -d "$subpkgdir/usr/share/doc/$pkgname"
+    mkdir -p "$pkgdir/usr/share/doc/$pkgname/html"
 
     cp -a "dist/doxygen/jsoncpp-api-html-$pkgver" \
-        "$subpkgdir/usr/share/doc/$pkgname/html"
+        "$pkgdir/usr/share/doc/$pkgname/html"
 }
 
 sha512sums="
