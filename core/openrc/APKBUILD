@@ -1,6 +1,6 @@
 # Maintainer: Leo Shen <yishen@qnx.com>
 pkgname=openrc
-pkgver=0.63.1_p1
+pkgver=0.63.1_p2
 pkgrel=0
 pkgdesc="OpenRC manages the services, startup and shutdown of a host"
 url="https://github.com/OpenRC/openrc"
@@ -32,5 +32,5 @@ package() {
 }
 
 sha512sums="
-ec2db756c5465f274874370f20c069720df7cb11f0c55f4d9fd8cc2cd9c4676ddb24f228d3978cc3bc76439a812471b847f2008d25c389e695aa83b777cee1d1  openrc-0.63.1_p1.tar.gz
+7081ac8f9161606cdfd2cf4f8a5bcaf29550f7f0b1e8d22830a946ca367d4152df34272baefdb4cf9317171e2e77daf3ca25aa9b99a71037710777fcdecb6367  openrc-0.63.1_p2.tar.gz
 "
