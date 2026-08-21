@@ -3,7 +3,6 @@
 # Maintainer: abdulahmoda <abahmoda@qnx.com>
 pkgname=libutempter
 pkgver=1.2.3
-_pkgver=$pkgver-alt1
 pkgrel=0
 pkgdesc="Library interface to record user sessions in utmp/wtmp files"
 url="http://freecode.com/projects/libutempter"
@@ -11,14 +10,14 @@ arch="all"
 license="LGPL-2.1-or-later"
 makedepends="qnx-io-sock-dev"
 subpackages="$pkgname-dev $pkgname-doc"
-options="suid !check"
+options="suid !check"  # NO TEST SUITE
 pkggroups="utmp"
-source="$pkgname-qnx-$pkgver.tar.gz::https://github.com/qnx-ports/libutempter/archive/refs/heads/qnx-v1.2.3.tar.gz"
+source="$pkgname-qnx-$pkgver.tar.gz::https://github.com/qnx-ports/libutempter/archive/refs/tags/qnx-v$pkgver.tar.gz"
 builddir="$srcdir/$pkgname-qnx-v$pkgver/$pkgname"
 
 build() {
 	cd $builddir
-	make CFLAGS="$CFLAGS -I/usr/include/utmps -DQNX=ON" LDLIBS="-Wl,--no-as-needed -Wl,--as-needed"
+	make CFLAGS="$CFLAGS -DQNX=ON" LDLIBS="-Wl,--no-as-needed -Wl,--as-needed"
 }
 
 package() {
