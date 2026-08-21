@@ -1,33 +1,3 @@
-diff --git a/lib/CMakeLists.txt b/lib/CMakeLists.txt
-index 85b43d59..d7e3b2d8 100644
---- a/lib/CMakeLists.txt
-+++ b/lib/CMakeLists.txt
-@@ -167,6 +167,12 @@ if (LWS_WITH_STATIC)
- 	target_include_directories(websockets PRIVATE ${LWS_LIB_BUILD_INC_PATHS})
- 	target_compile_definitions(websockets PRIVATE LWS_BUILDING_STATIC)
- 
-+	if (NOT ${IOSOCK_VARIANT} STREQUAL "")
-+		set_target_properties(websockets
-+			PROPERTIES
-+			OUTPUT_NAME websockets_iosock)
-+	endif()
-+
- 	if (WIN32)
- 		# Windows uses the same .lib ending for static libraries and shared
- 		# library linker files, so rename the static library.
-@@ -199,6 +205,12 @@ if (LWS_WITH_SHARED)
- 		PROPERTIES
- 		OUTPUT_NAME websockets)
- 
-+	if (NOT ${IOSOCK_VARIANT} STREQUAL "")
-+		set_target_properties(websockets_shared
-+			PROPERTIES
-+			OUTPUT_NAME websockets_iosock)
-+	endif()
-+
- 	if (WIN32)
- 		# Compile as DLL (export function declarations)
- 		set_property(
 diff --git a/lib/misc/dir.c b/lib/misc/dir.c
 index 94a07ca9..cc037215 100644
 --- a/lib/misc/dir.c
@@ -37,7 +7,7 @@ index 94a07ca9..cc037215 100644
  
  	for (i = 0; i < n; i++) {
 -#if !defined(__sun)
-+#if !defined(__sun) && !defined(__QNXNTO__)
++#if !defined(__sun) && !defined(__QNX__)
  		unsigned int type = namelist[i]->d_type;
  #endif
  		if (strchr(namelist[i]->d_name, '~'))
@@ -46,7 +16,7 @@ index 94a07ca9..cc037215 100644
  		 */
  
 -#if defined(__sun)
-+#if defined(__sun) || defined(__QNXNTO__)
++#if defined(__sun) || defined(__QNX__)
  		lws_dir_via_stat(combo, l, namelist[i]->d_name, &lde);
  #else
  		/*
@@ -100,26 +70,7 @@ index 6c99b5ec..df20cf34 100644
        !defined(__HAIKU__) && \
 -      !defined(__CYGWIN__)
 +      !defined(__CYGWIN__) && \
-+      !defined(__QNXNTO__)
++      !defined(__QNX__)
  
  	/* the BSDs don't have SO_PRIORITY */
  
-diff --git a/test-apps/CMakeLists.txt b/test-apps/CMakeLists.txt
-index cb3c9804..2df4f890 100644
---- a/test-apps/CMakeLists.txt
-+++ b/test-apps/CMakeLists.txt
-@@ -114,7 +114,13 @@ if ((LWS_ROLE_H1 OR LWS_ROLE_H2))
- 		set_target_properties(${TEST_NAME}
- 			PROPERTIES
- 			OUTPUT_NAME libwebsockets-${TEST_NAME})
--			
-+		
-+		if (NOT ${IOSOCK_VARIANT} STREQUAL "")
-+			set_target_properties(${TEST_NAME}
-+				PROPERTIES
-+				OUTPUT_NAME libwebsockets-${TEST_NAME}-iosock)
-+		endif()
-+		
- 		target_link_libraries(${TEST_NAME} ${LIB_LIST_AT_END})
- 
- 		# Add to the list of tests.
