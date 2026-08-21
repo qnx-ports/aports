@@ -71,6 +71,8 @@ package() {
 
     cp -a "dist/doxygen/jsoncpp-api-html-$pkgver" \
         "$pkgdir/usr/share/doc/$pkgname/html"
+
+    mv "$pkgdir/usr/lib/libjsoncpp_static.a" "$pkgdir/usr/lib/libjsoncpp.a"
 }
 
 sha512sums="
