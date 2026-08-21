@@ -8,14 +8,15 @@ pkgdesc="Asynchronous DNS/names resolver library"
 url="https://c-ares.org/"
 arch="all"
 license="MIT"
-makedepends="cmake ninja"
+depends="qnx-io-sock"
+makedepends="cmake ninja qnx-io-sock-dev"
 checkdepends="gtest-dev"
 subpackages="
 	$pkgname-doc
 	$pkgname-dev
 	$pkgname-utils
 	"
-source="https://github.com/c-ares/c-ares/releases/download/v$pkgver/c-ares-$pkgver.tar.gz
+source="https://github.com/c-ares/$pkgname/releases/download/v$pkgver/$pkgname-$pkgver.tar.gz
     add_qnx_support.patch
 "
 
