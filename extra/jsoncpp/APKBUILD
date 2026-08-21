@@ -9,7 +9,6 @@ pkgdesc="A C++ library for interacting with JSON."
 url="https://github.com/open-source-parsers/jsoncpp"
 arch="all"
 license="MIT"
-#options="!check"
 makedepends="cmake doxygen graphviz python3 ninja libc++-dev"
 depends="libc++"
 subpackages="
@@ -51,14 +50,12 @@ build() {
 
 check() {
     cd "$builddir/build"
-    #ninja test jsoncpp_test jsoncpp_readerwriter_tests
 
     ./src/test_lib_json/jsoncpp_test
 
     # Skip the test as EXP=4.1 and ACT=4.100000000000001
     rm "$builddir/test/data/test_comment_02.json"
 
-    cd src/jsontestrunner
     python3 \
         "$builddir/src/jsontestrunner/../../test/runjsontests.py" \
         "$builddir/build/src/jsontestrunner/jsontestrunner_exe" \
