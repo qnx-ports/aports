@@ -14,6 +14,7 @@ depends="libc++"
 subpackages="
     $pkgname-doc
     $pkgname-static
+    $pkgname-dbg
     $pkgname-dev
 "
 source="
