@@ -1,0 +1,61 @@
+# Maintainer: Cris Sinnott <csinnott@qnx.com>
+pkgname=c-blosc
+pkgver=1.21.6
+pkgrel=0
+pkgdesc="A blocking, shuffling and lossless compression library"
+url="https://github.com/Blosc/c-blosc"
+arch="all"
+license="BSD-3-Clause"
+depends="zlib-ng zstd-libs"
+makedepends="cmake ninja zlib-dev lz4-dev zstd-dev"
+subpackages="$pkgname-dev"
+# Built from the qnx-ports fork (github.com/qnx-ports/c-blosc, tag
+# qnx-v1.21.6-r0 -- same tag-naming convention as extra/grpc's fork), not
+# vanilla upstream + a local patch. The QNX fix is small enough that it
+# could stay a loose patch file, but this is intended to be upstreamed to
+# Blosc/c-blosc eventually, so the fork carries the real commit directly
+# (see the fork's own commit message for the full QNX rationale).
+source="
+	$pkgname-$pkgver.tar.gz::https://github.com/qnx-ports/c-blosc/archive/refs/tags/qnx-v1.21.6-r0.tar.gz
+	"
+builddir="$srcdir/c-blosc-qnx-v1.21.6-r0"
+
+# Building against system snappy is deliberately NOT enabled here even
+# though a QNX snappy port exists (see extra/snappy): blosc's own build
+# links snappy-c.cc's C++ symbols in, so PREFER_EXTERNAL_SNAPPY would need
+# it built as a matching (static-PIC or shared) library and pulls in a C++
+# runtime dependency for what's otherwise a pure-C library. Internal vendored
+# snappy sources build fine as-is (confirmed) -- revisit only if an actual
+# consumer needs BLOSC_SNAPPY_SUPPORT specifically.
+
+build() {
+	cmake -B build \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DBUILD_SHARED=ON \
+		-DBUILD_STATIC=OFF \
+		-DBUILD_TESTS=ON \
+		-DBUILD_BENCHMARKS=OFF \
+		-DBUILD_FUZZERS=OFF \
+		-DPREFER_EXTERNAL_ZLIB=ON \
+		-DPREFER_EXTERNAL_ZSTD=ON \
+		-DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+		-G Ninja
+	cmake --build build
+}
+
+check() {
+	# Real upstream CTest suite (tests/, ~15 test_*.c binaries + the full
+	# test_compat_*.cdata fixture corpus, 1630 individual CTest cases).
+	# CTest's own --output-junit is genuine JUnit XML natively.
+	mkdir -p "$startdir"/output-junit
+	( cd build && ctest --output-junit "$startdir"/output-junit/c-blosc.xml --output-on-failure )
+}
+
+package() {
+	DESTDIR="$pkgdir" cmake --install build
+}
+
+sha512sums="
+ba995df966d32cb32ac06d913c9391a3abd7cb02fabc20721a56f1ca0c1046c8bf8d65098710cae7889ba23c4d76eea825c4461fd1d08084baf6a4e8a3fe916f  c-blosc-1.21.6.tar.gz
+"
