@@ -9,15 +9,25 @@ url="https://github.com/awslabs/aws-c-io"
 arch="all"
 license="Apache-2.0"
 options="!check"
+depends="
+  qnx-fd-notify
+  openssl
+  aws-c-common
+  aws-c-cal
+  s2n-tls
+  "
+depends_dev="
+  qnx-fd-notify-dev
+  openssl-dev
+  aws-c-common-dev
+  aws-c-cal-dev
+  s2n-tls-dev
+  "
 makedepends="
-    aws-c-cal-dev
-    aws-c-common-dev
-    openssl-dev
-    s2n-tls-dev
-    epoll-dev
-    cmake
-    ninja
-    "
+  $depends_dev
+  cmake
+  ninja
+  "
 subpackages="$pkgname-dev"
 source="$pkgname-$pkgver.tar.gz::https://github.com/awslabs/aws-c-io/archive/refs/tags/v$pkgver.tar.gz
         0001-add-qnx-build.patch
