@@ -28,6 +28,7 @@ makedepends="
     flatc
     python3-setuptools
     python3-wheel
+    ca-certificates
     "
 subpackages="
     $pkgname-dev
@@ -38,6 +39,7 @@ source="
     0001-add-qnx-build.patch
     "
 builddir="$srcdir/$pkgname-$pkgver"
+options="net"
 
 prepare() {
   python onnxruntime/core/flatbuffers/schema/compile_schema.py --flatc /usr/bin/flatc
