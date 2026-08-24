@@ -1,0 +1,47 @@
+From 63358071e3a7e92ce29976dd33d2c8e8e33138ab Mon Sep 17 00:00:00 2001
+From: Arthur Clark <mydevstuff@mail.com>
+Date: Mon, 17 Aug 2026 05:18:56 +0000
+Subject: [PATCH 08/33] Seed headless QNX distro-config for the office build
+
+Change-Id: If143ddf6bda75d5a0c75117735f6874b0306d2b1
+---
+ distro-configs/LibreOfficeQNX.conf | 27 +++++++++++++++++++++++++++
+ 1 file changed, 27 insertions(+)
+ create mode 100644 distro-configs/LibreOfficeQNX.conf
+
+diff --git a/distro-configs/LibreOfficeQNX.conf b/distro-configs/LibreOfficeQNX.conf
+new file mode 100644
+index 000000000..74a81566c
+--- /dev/null
++++ b/distro-configs/LibreOfficeQNX.conf
+@@ -0,0 +1,27 @@
++--disable-gui
++--enable-headless
++--enable-mergelibs
++--disable-symbols
++--without-java
++--disable-odk
++--disable-skia
++--disable-dbconnectivity
++--disable-cups
++--disable-dbus
++--disable-avahi
++--disable-pdfimport
++--enable-mpl-subset
++--enable-python=system
++--with-system-icu
++--with-system-freetype
++--with-system-fontconfig
++--with-system-harfbuzz
++--with-system-graphite
++--with-system-cairo
++--with-system-libxml
++--with-system-expat
++--with-system-zlib
++--with-system-libpng
++--with-system-jpeg
++--with-system-lcms2
++--with-system-boost
+-- 
+2.51.0
+

@@ -1,0 +1,62 @@
+From 1d8cd1d3d41ed216871f38df3980c9a12b1595a3 Mon Sep 17 00:00:00 2001
+From: Arthur Clark <mydevstuff@mail.com>
+Date: Thu, 20 Aug 2026 20:19:37 +0000
+Subject: [PATCH 24/33] QNX: anchor the UNO exception RTTI in soffice.bin
+
+soffice.bin loads the office component DSOs via dlopen; on QNX's executable-
+first loader their weak exception type_infos do not unify, so a cross-DSO catch
+misses and a normally-caught NoSuchElementException on the absent
+registrymodifications.xcu escaped as a fatal DeploymentException during config
+bootstrap. Carry the same 241-type RTTI anchor and --dynamic-list-cpp-typeinfo
+export uno.bin uses, via a dedicated wrapper TU (fdo#47246 forbids sharing the
+object). Config bootstrap now completes.
+
+Change-Id: I6311ccf145a0bfbd136e4de348c9c4f8f9b87288
+---
+ cpputools/source/unoexe/rttianchor_soffice.cxx |  7 +++++++
+ desktop/Executable_soffice_bin.mk              | 17 +++++++++++++++++
+ 2 files changed, 24 insertions(+)
+ create mode 100644 cpputools/source/unoexe/rttianchor_soffice.cxx
+
+diff --git a/cpputools/source/unoexe/rttianchor_soffice.cxx b/cpputools/source/unoexe/rttianchor_soffice.cxx
+new file mode 100644
+index 000000000..586452d95
+--- /dev/null
++++ b/cpputools/source/unoexe/rttianchor_soffice.cxx
+@@ -0,0 +1,7 @@
++/*
++ * QNX: dedicated anchor TU for soffice.bin. gbuild forbids linking one object
++ * into two targets (fdo#47246), and uno.bin already owns rttianchor.cxx, so
++ * this thin wrapper carries the same generated UNO exception RTTI anchor into
++ * the office executable.
++ */
++#include "rttianchor.cxx"
+diff --git a/desktop/Executable_soffice_bin.mk b/desktop/Executable_soffice_bin.mk
+index 5987a9a4d..14b7414f6 100644
+--- a/desktop/Executable_soffice_bin.mk
++++ b/desktop/Executable_soffice_bin.mk
+@@ -102,4 +102,21 @@ endif
+ 
+ endif
+ 
++ifeq ($(OS),QNX)
++# QNX executable-first loader: the exe must anchor and export the UNO exception
++# type_infos, else cross-DSO catches miss (mirrors Executable_uno).
++$(eval $(call gb_Executable_use_internal_comprehensive_api,soffice_bin,\
++    udkapi \
++))
++$(eval $(call gb_Executable_use_api,soffice_bin,\
++    offapi \
++))
++$(eval $(call gb_Executable_add_exception_objects,soffice_bin,\
++    cpputools/source/unoexe/rttianchor_soffice \
++))
++$(eval $(call gb_Executable_add_ldflags,soffice_bin,\
++    -Wl$(COMMA)--dynamic-list-cpp-typeinfo \
++))
++endif
++
+ # vim: set ts=4 sw=4 et:
+-- 
+2.51.0
+

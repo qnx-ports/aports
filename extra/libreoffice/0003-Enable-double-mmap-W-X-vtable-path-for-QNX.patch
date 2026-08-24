@@ -1,0 +1,31 @@
+From daed1cd27cbf7e03c29f503abff6e491f32a18d0 Mon Sep 17 00:00:00 2001
+From: Arthur Clark <mydevstuff@mail.com>
+Date: Sun, 16 Aug 2026 04:22:22 +0000
+Subject: [PATCH 03/33] Enable double-mmap W^X vtable path for QNX
+
+QNX 8.0 forbids simultaneous write+exec on a mapping. Route vtable
+code-snippet generation through the existing USE_DOUBLE_MMAP path
+(mkstemp/ftruncate/mmap MAP_SHARED, pure POSIX). Verified on QDD:
+direct PROT_WRITE|PROT_EXEC and the double-mmap split both work.
+
+Change-Id: I030d991d3f173b4a771eb786b46f24209449eb24
+---
+ bridges/inc/vtablefactory.hxx | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/bridges/inc/vtablefactory.hxx b/bridges/inc/vtablefactory.hxx
+index 9afcb8370..33150b372 100644
+--- a/bridges/inc/vtablefactory.hxx
++++ b/bridges/inc/vtablefactory.hxx
+@@ -31,7 +31,7 @@
+ /*See: http://people.redhat.com/drepper/selinux-mem.html*/
+ #if defined(LINUX) || defined(OPENBSD) || defined(FREEBSD) \
+     || defined(NETBSD) || defined(DRAGONFLY) || defined (ANDROID) \
+-    || defined(HAIKU)
++    || defined(HAIKU) || defined(QNX)
+ #define USE_DOUBLE_MMAP
+ #endif
+ 
+-- 
+2.51.0
+

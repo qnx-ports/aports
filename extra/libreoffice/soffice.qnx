@@ -1,0 +1,23 @@
+#!/bin/sh
+# LibreOffice launcher for QNX (qt6 Wayland client).
+# QNX loader ignores $ORIGIN, so the library search path must be absolute.
+prefix=/usr/lib/libreoffice
+program="$prefix/program"
+
+# qt6 VCL on Wayland, cairo canvas
+export SAL_USE_VCLPLUGIN=qt6
+export QT_QPA_PLATFORM=wayland
+export QT_PLUGIN_PATH=/usr/lib/qt6/plugins
+export SAL_VCL_QT5_USE_CAIRO=true
+
+# office program dir + qt6 platform plugin + system libs
+export LD_LIBRARY_PATH="$program:/usr/lib/qt6/plugins/platforms:/usr/lib:/usr/lib/qt6${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+
+# per-user profile, kept out of the read-only install
+export UserInstallation="file://${XDG_CONFIG_HOME:-$HOME/.config}/libreoffice"
+
+# XDG_RUNTIME_DIR and WAYLAND_DISPLAY are supplied by the user's Wayland session and
+# are intentionally not set here. A weston session typically exports, e.g.:
+#   XDG_RUNTIME_DIR=/var/run/user/$(id -u)   WAYLAND_DISPLAY=wayland-1
+
+exec "$program/soffice.bin" "$@"

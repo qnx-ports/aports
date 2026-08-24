@@ -1,0 +1,31 @@
+From 7893ebb9fc62ec5624b7e1579ac4ebf8774b90ca Mon Sep 17 00:00:00 2001
+From: Arthur Clark <mydevstuff@mail.com>
+Date: Fri, 21 Aug 2026 20:29:00 +0000
+Subject: [PATCH 31/33] QNX: enable Draw/Impress via system NSS
+
+Draw and Impress (the sd module) hard-link xmlsecurity, which needs a
+crypto backend. The bundled NSS is unbuilt and unported on QNX, so point
+xmlsecurity at the apk-provided system nss/nspr with --with-system-nss.
+
+This sets SYSTEM_NSS=TRUE and drops bundled NSS from BUILD_TYPE; ENABLE_NSS
+stays TRUE. The change is config-only and invalidates no already-built
+module (Writer/Calc/Math/vcl/svx/sfx unchanged). It matches the Alpine
+--with-tls=nss posture, so system nss/nspr become build+runtime deps.
+
+Change-Id: I8fe859d7f54e50242ef3751cf65e4a3bb2fe2f58
+---
+ distro-configs/LibreOfficeQNX.conf | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/distro-configs/LibreOfficeQNX.conf b/distro-configs/LibreOfficeQNX.conf
+index 6408fbfe9..2e07d5e9d 100644
+--- a/distro-configs/LibreOfficeQNX.conf
++++ b/distro-configs/LibreOfficeQNX.conf
+@@ -31,3 +31,4 @@
+ --with-system-lcms2
+ --with-system-boost
+ --with-system-openssl
++--with-system-nss
+-- 
+2.51.0
+

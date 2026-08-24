@@ -1,0 +1,36 @@
+From 37936c4fb8c3c7c10f56f66baca28437eaf74660 Mon Sep 17 00:00:00 2001
+From: Arthur Clark <mydevstuff@mail.com>
+Date: Wed, 19 Aug 2026 16:13:39 +0000
+Subject: [PATCH 18/33] LOK: skip SEInitializer on QNX Crypto_None build
+
+doc_iniUnoCommands() creates an xml::crypto::SEInitializer to register
+signature-related UNO commands. The QNX port builds with Crypto_None
+(--with-tls=no), so that service is absent and its factory throws
+DeploymentException, which escaped the existing !is() guard and aborted the
+render-init path. Skip the security block on QNX like the other crypto-less
+platforms (iOS/Android/Emscripten) already do, falling through to command
+registration.
+
+Change-Id: Ib67b1b12cb4430ce9b50e6af793d5925c647be47
+---
+ desktop/source/lib/init.cxx | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/desktop/source/lib/init.cxx b/desktop/source/lib/init.cxx
+index be2f93d95..bb11014a8 100644
+--- a/desktop/source/lib/init.cxx
++++ b/desktop/source/lib/init.cxx
+@@ -3925,7 +3925,9 @@ static void doc_iniUnoCommands ()
+         return;
+     }
+ 
+-#if !defined IOS && !defined ANDROID && !defined __EMSCRIPTEN__
++// QNX: Crypto_None build has no SEInitializer (its factory throws); skip like
++// the crypto-less platforms above and fall through to command setup.
++#if !defined IOS && !defined ANDROID && !defined __EMSCRIPTEN__ && !defined __QNX__
+     uno::Reference<xml::crypto::XSEInitializer> xSEInitializer = xml::crypto::SEInitializer::create(xContext);
+     if (!xSEInitializer.is())
+     {
+-- 
+2.51.0
+

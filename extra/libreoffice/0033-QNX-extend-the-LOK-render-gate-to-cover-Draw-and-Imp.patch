@@ -1,0 +1,205 @@
+From c9a0523541fc1035302d8f7c8f6f0509bfd87a76 Mon Sep 17 00:00:00 2001
+From: Arthur Clark <mydevstuff@mail.com>
+Date: Fri, 21 Aug 2026 22:45:40 +0000
+Subject: [PATCH 33/33] QNX: extend the LOK render gate to cover Draw and
+ Impress
+
+Add draw.fodg and impress.fodp fixtures (flat ODF, derived from the sd qa
+data) and two gate cases that paint a whole-page 256x256 tile. The gate
+now checks Writer + Calc + Math + Draw + Impress against per-document
+non-white bands, with bad.odt as the negative control. This is both the
+no-regression proof for the first three and the render proof that the sd
+libraries load under the system-NSS build.
+
+Change-Id: I7e5d6b9b31e152c15999ca0910919923947223e8
+---
+ libreofficekit/qa/qnxrendergate/README        |  4 +-
+ .../qa/qnxrendergate/data/draw.fodg           | 56 +++++++++++++++
+ .../qa/qnxrendergate/data/impress.fodp        | 70 +++++++++++++++++++
+ .../qa/qnxrendergate/rendergate.cxx           |  7 +-
+ 4 files changed, 134 insertions(+), 3 deletions(-)
+ create mode 100644 libreofficekit/qa/qnxrendergate/data/draw.fodg
+ create mode 100644 libreofficekit/qa/qnxrendergate/data/impress.fodp
+
+diff --git a/libreofficekit/qa/qnxrendergate/README b/libreofficekit/qa/qnxrendergate/README
+index 60bfefb30..f71e8e227 100644
+--- a/libreofficekit/qa/qnxrendergate/README
++++ b/libreofficekit/qa/qnxrendergate/README
+@@ -6,6 +6,8 @@ Renders a 256x256 tile of each data/ document through LibreOfficeKit and checks
+ the non-white pixel count against a per-document band: the floor rejects a blank
+ tile, the ceiling rejects a garbage one. data/bad.odt is a negative control that
+ must fail to render. Covers Writer (hello.docx, clean.odt) and Calc (calc.fods,
+-flat ODF; painted over a fixed top-left twip region so the cells fill the tile), and Math (math.fodf, a flat ODF formula).
++flat ODF; painted over a fixed top-left twip region so the cells fill the tile),
++Math (math.fodf, a flat ODF formula), and Draw/Impress (draw.fodg, impress.fodp;
++flat ODF, whole-page tile).
+ Substitutes the upstream tiledrendering/smoketest tests, which are unusable here
+ (disabled/bit-rotted, and a whole-office build).
+diff --git a/libreofficekit/qa/qnxrendergate/data/draw.fodg b/libreofficekit/qa/qnxrendergate/data/draw.fodg
+new file mode 100644
+index 000000000..3672ad8e4
+--- /dev/null
++++ b/libreofficekit/qa/qnxrendergate/data/draw.fodg
+@@ -0,0 +1,56 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<office:document xmlns:anim="urn:oasis:names:tc:opendocument:xmlns:animation:1.0" xmlns:smil="urn:oasis:names:tc:opendocument:xmlns:smil-compatible:1.0" xmlns:presentation="urn:oasis:names:tc:opendocument:xmlns:presentation:1.0" xmlns:css3t="http://www.w3.org/TR/css3-text/" xmlns:grddl="http://www.w3.org/2003/g/data-view#" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xforms="http://www.w3.org/2002/xforms" xmlns:dom="http://www.w3.org/2001/xml-events" xmlns:script="urn:oasis:names:tc:opendocument:xmlns:script:1.0" xmlns:form="urn:oasis:names:tc:opendocument:xmlns:form:1.0" xmlns:math="http://www.w3.org/1998/Math/MathML" xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:ooo="http://openoffice.org/2004/office" xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0" xmlns:ooow="http://openoffice.org/2004/writer" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:drawooo="http://openoffice.org/2010/draw" xmlns:oooc="http://openoffice.org/2004/calc" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:calcext="urn:org:documentfoundation:names:experimental:calc:xmlns:calcext:1.0" xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0" xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0" xmlns:of="urn:oasis:names:tc:opendocument:xmlns:of:1.2" xmlns:tableooo="http://openoffice.org/2009/table" xmlns:draw="urn:oasis:names:tc:opendocument:xmlns:drawing:1.0" xmlns:dr3d="urn:oasis:names:tc:opendocument:xmlns:dr3d:1.0" xmlns:rpt="http://openoffice.org/2005/report" xmlns:formx="urn:openoffice:names:experimental:ooxml-odf-interop:xmlns:form:1.0" xmlns:svg="urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0" xmlns:chart="urn:oasis:names:tc:opendocument:xmlns:chart:1.0" xmlns:officeooo="http://openoffice.org/2009/office" xmlns:table="urn:oasis:names:tc:opendocument:xmlns:table:1.0" xmlns:field="urn:openoffice:names:experimental:ooo-ms-interop:xmlns:field:1.0" xmlns:number="urn:oasis:names:tc:opendocument:xmlns:datastyle:1.0" xmlns:meta="urn:oasis:names:tc:opendocument:xmlns:meta:1.0" xmlns:loext="urn:org:documentfoundation:names:experimental:office:xmlns:loext:1.0" office:version="1.3" office:mimetype="application/vnd.oasis.opendocument.graphics">
++  <office:scripts/>
++  <office:font-face-decls/>
++  <office:styles>
++    <style:style style:name="default" style:family="table-cell"/>
++    <style:style style:name="userdefined" style:family="table-cell"/>
++    <table:table-template table:name="default">
++      <table:first-row table:style-name="userdefined"/>
++      <table:last-row table:style-name="userdefined"/>
++      <table:first-column table:style-name="userdefined"/>
++      <table:last-column table:style-name="userdefined"/>
++      <table:body table:style-name="userdefined"/>
++      <table:odd-rows table:style-name="userdefined"/>
++      <table:odd-columns table:style-name="userdefined"/>
++    </table:table-template>
++    <table:table-template table:name="userdefined">
++      <table:first-row table:style-name="default"/>
++      <table:last-row table:style-name="default"/>
++      <table:first-column table:style-name="default"/>
++      <table:last-column table:style-name="default"/>
++      <table:body table:style-name="default"/>
++      <table:odd-rows table:style-name="default"/>
++      <table:odd-columns table:style-name="default"/>
++    </table:table-template>
++  </office:styles>
++  <office:automatic-styles>
++    <style:page-layout style:name="PM0">
++      <style:page-layout-properties fo:margin-top="1cm" fo:margin-bottom="1cm" fo:margin-left="1cm" fo:margin-right="1cm" fo:page-width="21.59cm" fo:page-height="27.94cm" style:print-orientation="portrait"/>
++    </style:page-layout>
++    <style:style style:name="dp1" style:family="drawing-page">
++      <style:drawing-page-properties draw:background-size="border" draw:fill="none"/>
++    </style:style>
++    <style:style style:name="dp2" style:family="drawing-page"/>
++    <style:style style:name="ce1" style:family="table-cell">
++      <style:table-cell-properties fo:background-color="#ffcc99" fo:border="4.51pt solid #99ccff" fo:padding="0.3cm" style:vertical-align="middle"/>
++    </style:style>
++  </office:automatic-styles>
++  <office:master-styles>
++    <style:master-page style:name="Default" style:page-layout-name="PM0" draw:style-name="dp1"/>
++  </office:master-styles>
++  <office:body>
++    <office:drawing>
++      <draw:page draw:name="page1" draw:style-name="dp2" draw:master-page-name="Default">
++        <draw:frame svg:width="14.098cm" svg:height="1.998cm" svg:x="3.448cm" svg:y="13.89cm">
++          <table:table>
++            <table:table-column/>
++            <table:table-row>
++              <table:table-cell table:style-name="ce1"/>
++            </table:table-row>
++          </table:table>
++        </draw:frame>
++      </draw:page>
++    </office:drawing>
++  </office:body>
++</office:document>
+diff --git a/libreofficekit/qa/qnxrendergate/data/impress.fodp b/libreofficekit/qa/qnxrendergate/data/impress.fodp
+new file mode 100644
+index 000000000..676fc8447
+--- /dev/null
++++ b/libreofficekit/qa/qnxrendergate/data/impress.fodp
+@@ -0,0 +1,70 @@
++<?xml version="1.0" encoding="UTF-8"?>
++
++<office:document xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0" xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0" xmlns:draw="urn:oasis:names:tc:opendocument:xmlns:drawing:1.0" xmlns:svg="urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0" xmlns:presentation="urn:oasis:names:tc:opendocument:xmlns:presentation:1.0" office:version="1.3" office:mimetype="application/vnd.oasis.opendocument.presentation">
++ <office:font-face-decls>
++  <style:font-face style:name="Liberation Sans" svg:font-family="&apos;Liberation Sans&apos;" style:font-family-generic="roman" style:font-pitch="variable"/>
++  <style:font-face style:name="Liberation Serif" svg:font-family="&apos;Liberation Serif&apos;" style:font-family-generic="roman" style:font-pitch="variable"/>
++ </office:font-face-decls>
++ <office:styles>
++  <style:style style:name="Object_20_with_20_no_20_fill_20_and_20_no_20_line" style:display-name="Object with no fill and no line" style:family="graphic" style:parent-style-name="standard">
++   <style:graphic-properties draw:stroke="none" draw:fill="none"/>
++  </style:style>
++  <style:presentation-page-layout style:name="AL1T0">
++   <presentation:placeholder presentation:object="title" svg:x="2cm" svg:y="1.7cm" svg:width="24cm" svg:height="3.5cm"/>
++   <presentation:placeholder presentation:object="subtitle" svg:x="2cm" svg:y="5.8cm" svg:width="24cm" svg:height="13cm"/>
++  </style:presentation-page-layout>
++ </office:styles>
++ <office:automatic-styles>
++  <style:page-layout style:name="PM1">
++   <style:page-layout-properties fo:margin-top="0" fo:margin-bottom="0" fo:margin-left="0" fo:margin-right="0" fo:page-width="254mm" fo:page-height="190.5mm" style:print-orientation="landscape"/>
++  </style:page-layout>
++  <style:style style:name="dp1" style:family="drawing-page">
++   <style:drawing-page-properties presentation:background-visible="true" presentation:background-objects-visible="true" presentation:display-footer="false" presentation:display-page-number="false" presentation:display-date-time="false"/>
++  </style:style>
++  <style:style style:name="gr1" style:family="graphic" style:parent-style-name="Object_20_with_20_no_20_fill_20_and_20_no_20_line">
++   <style:graphic-properties draw:stroke="none" svg:stroke-width="0" draw:fill="none" draw:textarea-horizontal-align="justify" draw:textarea-vertical-align="top" draw:auto-grow-height="true" draw:fit-to-size="false" style:shrink-to-fit="false" fo:padding-top="0.125cm" fo:padding-bottom="0.125cm" fo:padding-left="0.25cm" fo:padding-right="0.25cm" fo:wrap-option="no-wrap" draw:ole-draw-aspect="1" style:protect="size"/>
++  </style:style>
++ </office:automatic-styles>
++ <office:master-styles>
++  <draw:layer-set>
++   <draw:layer draw:name="layout"/>
++   <draw:layer draw:name="background"/>
++   <draw:layer draw:name="backgroundobjects"/>
++   <draw:layer draw:name="controls"/>
++   <draw:layer draw:name="measurelines"/>
++  </draw:layer-set>
++  <style:master-page style:name="Title_20_Slide" style:display-name="Title Slide" style:page-layout-name="PM1" draw:style-name="dp1"/>
++ </office:master-styles>
++ <office:body>
++  <office:presentation>
++   <draw:page draw:name="page1" draw:master-page-name="Title_20_Slide" presentation:presentation-page-layout-name="AL1T0">
++    <draw:frame draw:name="Formula" draw:style-name="gr1" draw:layer="layout" svg:width="14cm" svg:height="2cm" svg:x="8cm" svg:y="8cm">
++     <draw:object>
++      <math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
++       <semantics>
++        <mrow>
++         <mrow>
++          <msup>
++           <mi mathvariant="italic">𝑎</mi>
++           <mn>2</mn>
++          </msup>
++          <mo stretchy="false">+</mo>
++          <msup>
++           <mi mathvariant="italic">𝑏</mi>
++           <mn>2</mn>
++          </msup>
++         </mrow>
++         <mo stretchy="false">=</mo>
++         <msup>
++          <mi mathvariant="italic">𝑐</mi>
++          <mn>2</mn>
++         </msup>
++        </mrow>
++       </semantics>
++      </math>
++     </draw:object>
++    </draw:frame>
++   </draw:page>
++  </office:presentation>
++ </office:body>
++</office:document>
+\ No newline at end of file
+diff --git a/libreofficekit/qa/qnxrendergate/rendergate.cxx b/libreofficekit/qa/qnxrendergate/rendergate.cxx
+index 71fdddd9a..f9b5137ac 100644
+--- a/libreofficekit/qa/qnxrendergate/rendergate.cxx
++++ b/libreofficekit/qa/qnxrendergate/rendergate.cxx
+@@ -5,9 +5,10 @@
+ // proves real content rendered (a blank tile is all-white -> 0 non-white), the
+ // ceiling rejects an all-black/garbage tile. A malformed input is carried as a
+ // negative control that must fail to render, so the gate discriminates rather
+-// than rubber-stamps. Cases cover Writer (.docx/.odt) and Calc (flat-ODF .fods,
++// than rubber-stamps. Cases cover Writer (.docx/.odt), Calc (flat-ODF .fods,
+ // which paints a fixed top-left twip region so the populated cells fill the
+-// tile). rc=0 iff every case meets its expectation.
++// tile), Math (.fodf), and Draw/Impress (flat-ODF .fodg/.fodp, whole page).
++// rc=0 iff every case meets its expectation.
+ //
+ // build: see build.sh (must link the UNO exception RTTI anchor with
+ //        -Wl,--dynamic-list-cpp-typeinfo; on the QNX executable-first loader an
+@@ -79,6 +80,8 @@ int main(int argc, char** argv)
+         { "clean.odt",  "clean.odt",  1000, 9000,  false, 0,    0    },
+         { "calc.fods",  "calc.fods",  1000, 60000, false, 6000, 6000 },
+         { "math.fodf",  "math.fodf",  8000, 30000, false, 0,    0    },
++        { "draw.fodg",   "draw.fodg",   8000, 30000, false, 0,    0    },
++        { "impress.fodp","impress.fodp",8000, 30000, false, 0,    0    },
+         { "bad.odt",    "bad.odt",    0,    0,     true,  0,    0    }, // malformed zip -> empty load
+     };
+ 
+-- 
+2.51.0
+

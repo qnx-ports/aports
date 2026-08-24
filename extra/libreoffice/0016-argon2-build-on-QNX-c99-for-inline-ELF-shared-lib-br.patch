@@ -1,0 +1,68 @@
+From e1959d611970eb3cc4203906480f9b57d9ea4e0c Mon Sep 17 00:00:00 2001
+From: Arthur Clark <mydevstuff@mail.com>
+Date: Wed, 19 Aug 2026 00:40:02 +0000
+Subject: [PATCH 16/33] argon2: build on QNX (c99 for inline; ELF shared-lib
+ branch)
+
+QNX system headers use static inline, which strict -std=c89 rejects
+(unknown type name inline). And uname -s=QNX matched no OS branch in
+the upstream Makefile, leaving LIB_EXT/LIB_CFLAGS empty so the shared
+library linked as an executable (undefined reference to main).
+
+Add a QNX-gated patch: -std=c99, and a QNX branch (ELF -shared, soname)
+mirroring the BSD/Linux cases. package2 links the static libargon2.a.
+
+Change-Id: If824e1783a0e3e990be89af157b8ae2a21527407
+---
+ external/argon2/UnpackedTarball_argon2.mk |  1 +
+ external/argon2/argon2-qnx.patch          | 26 +++++++++++++++++++++++
+ 2 files changed, 27 insertions(+)
+ create mode 100644 external/argon2/argon2-qnx.patch
+
+diff --git a/external/argon2/UnpackedTarball_argon2.mk b/external/argon2/UnpackedTarball_argon2.mk
+index dc379cca9..82bb45e16 100644
+--- a/external/argon2/UnpackedTarball_argon2.mk
++++ b/external/argon2/UnpackedTarball_argon2.mk
+@@ -14,6 +14,7 @@ $(eval $(call gb_UnpackedTarball_set_tarball,argon2,$(ARGON2_TARBALL)))
+ $(eval $(call gb_UnpackedTarball_add_patches,argon2,\
+ 	external/argon2/0001-Fix-possible-compiler-error-due-to-undefined-_MSC_VE.patch \
+ 	$(if $(filter WNT_AARCH64,$(OS)_$(CPUNAME)),external/argon2/0002-Add-WinARM64-vcxproj-config.patch) \
++	$(if $(filter QNX,$(OS)),external/argon2/argon2-qnx.patch) \
+ 	external/argon2/private-symbols.patch.0 \
+ ))
+ 
+diff --git a/external/argon2/argon2-qnx.patch b/external/argon2/argon2-qnx.patch
+new file mode 100644
+index 000000000..768e8b504
+--- /dev/null
++++ b/external/argon2/argon2-qnx.patch
+@@ -0,0 +1,26 @@
++--- a/Makefile
+++++ b/Makefile
++@@ -37,7 +37,7 @@
++ SRC_GENKAT = src/genkat.c
++ OBJ = $(SRC:.c=.o)
++
++-CFLAGS += -std=c89 -O3 -Wall -g -Iinclude -Isrc
+++CFLAGS += -std=c99 -O3 -Wall -g -Iinclude -Isrc
++
++ ifeq ($(NO_THREADS), 1)
++ CFLAGS += -DARGON2_NO_THREADS
++@@ -109,6 +109,14 @@
++ 	LIB_CFLAGS := -shared -fPIC
++ 	PC_EXTRA_LIBS ?=
++ endif
+++
+++ifeq ($(KERNEL_NAME), QNX)
+++	LIB_EXT := so.$(ABI_VERSION)
+++	LIB_CFLAGS := -shared -fPIC -fvisibility=hidden -DA2_VISCTL=1
+++	SO_LDFLAGS := -Wl,-soname,lib$(LIB_NAME).$(LIB_EXT)
+++	LINKED_LIB_EXT := so
+++	PC_EXTRA_LIBS ?=
+++endif
++
++ ifeq ($(KERNEL_NAME), Linux)
++ ifeq ($(CC), clang)
+-- 
+2.51.0
+

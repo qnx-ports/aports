@@ -1,0 +1,117 @@
+From ba6092d5851f549ab221a89c4e9b4c49d991a1b9 Mon Sep 17 00:00:00 2001
+From: Arthur Clark <mydevstuff@mail.com>
+Date: Tue, 18 Aug 2026 16:23:59 +0000
+Subject: [PATCH 14/33] Add QNX arms for headless vcl build
+
+- LibreOfficeKitInit.h: add __QNX__ to the platform guard so lok_init_2 is
+  declared (vcl/source/app/lok.cxx compiles the lok_cpp_init inline).
+- epoxy: QNX has no X11; select the no-windowing GL path like iOS/MACOSX
+  (dispatch_common.h PLATFORM_HAS_GLX/EGL/WGL 0) via epoxy.qnx.patch.
+- unxgcc.mk: QNX ARG_MAX is 60KB; pass objects to the linker through a
+  response file (@file) for large libraries such as libvcllo (566 objects),
+  else the link fails with Arg list too long. QNX-gated; other platforms
+  keep the inline object list unchanged.
+- QNX_X86_64_GCC.mk: link -lintl; GNU gettext (bindtextdomain) lives in
+  libintl on QNX, not libc as on glibc.
+
+Change-Id: I8680d2b15c9333d60e9900b8876fe9f686767e22
+---
+ external/epoxy/UnpackedTarball_epoxy.mk     |  1 +
+ external/epoxy/epoxy.qnx.patch              | 13 +++++++++++++
+ include/LibreOfficeKit/LibreOfficeKitInit.h |  2 +-
+ solenv/gbuild/platform/QNX_X86_64_GCC.mk    |  4 ++--
+ solenv/gbuild/platform/unxgcc.mk            |  4 +++-
+ 5 files changed, 20 insertions(+), 4 deletions(-)
+ create mode 100644 external/epoxy/epoxy.qnx.patch
+
+diff --git a/external/epoxy/UnpackedTarball_epoxy.mk b/external/epoxy/UnpackedTarball_epoxy.mk
+index 7dd319988..51c6ef461 100644
+--- a/external/epoxy/UnpackedTarball_epoxy.mk
++++ b/external/epoxy/UnpackedTarball_epoxy.mk
+@@ -33,6 +33,7 @@ $(eval $(call gb_UnpackedTarball_add_patches,epoxy, \
+     external/epoxy/epoxy.noegl.by.default.patch \
+     external/epoxy/clang-cl.patch \
+     external/epoxy/Wint-conversion.patch \
++    external/epoxy/epoxy.qnx.patch \
+ ))
+ 
+ # vim: set noet sw=4 ts=4:
+diff --git a/external/epoxy/epoxy.qnx.patch b/external/epoxy/epoxy.qnx.patch
+new file mode 100644
+index 000000000..6a2a3f8b1
+--- /dev/null
++++ b/external/epoxy/epoxy.qnx.patch
+@@ -0,0 +1,13 @@
++--- src/dispatch_common.h
+++++ src/dispatch_common.h
++@@ -35,6 +35,10 @@
++ #define PLATFORM_HAS_EGL 1
++ #define PLATFORM_HAS_GLX 0
++ #define PLATFORM_HAS_WGL 0
+++#elif defined(__QNX__)
+++#define PLATFORM_HAS_EGL 0
+++#define PLATFORM_HAS_GLX 0
+++#define PLATFORM_HAS_WGL 0
++ #else
++ #define PLATFORM_HAS_GLX 1
++ #define PLATFORM_HAS_WGL 0
+diff --git a/include/LibreOfficeKit/LibreOfficeKitInit.h b/include/LibreOfficeKit/LibreOfficeKitInit.h
+index 2192322c7..881afbcc8 100644
+--- a/include/LibreOfficeKit/LibreOfficeKitInit.h
++++ b/include/LibreOfficeKit/LibreOfficeKitInit.h
+@@ -20,7 +20,7 @@
+ 
+ #if defined(__linux__) || defined (__FreeBSD__) ||\
+     defined(_WIN32) || defined(__APPLE__) || defined (__NetBSD__) ||\
+-    defined (__sun) || defined(__OpenBSD__) || defined(__EMSCRIPTEN__)
++    defined (__sun) || defined(__OpenBSD__) || defined(__EMSCRIPTEN__) || defined(__QNX__)
+ 
+ #include <stdio.h>
+ #include <stdlib.h>
+diff --git a/solenv/gbuild/platform/QNX_X86_64_GCC.mk b/solenv/gbuild/platform/QNX_X86_64_GCC.mk
+index e5e09138d..84f58d1ec 100644
+--- a/solenv/gbuild/platform/QNX_X86_64_GCC.mk
++++ b/solenv/gbuild/platform/QNX_X86_64_GCC.mk
+@@ -12,8 +12,8 @@
+ 
+ include $(GBUILDDIR)/platform/unxgcc.mk
+ 
+-# QNX: BSD sockets + resolver (accept/bind/connect/getaddrinfo/...) live in libsocket, not libc
+-gb_LinkTarget_LDFLAGS += -lsocket
++# QNX: BSD sockets + resolver live in libsocket, and GNU gettext (bindtextdomain) in libintl — not libc as on glibc
++gb_LinkTarget_LDFLAGS += -lsocket -lintl
+ 
+ # QNX: GNU configure must re-exec under bash, not the minimal boot ksh that the
+ # restricted build PATH (/proc/boot:/system/bin) puts first (else it dies with an empty log)
+diff --git a/solenv/gbuild/platform/unxgcc.mk b/solenv/gbuild/platform/unxgcc.mk
+index 16601e83f..df8d25c34 100644
+--- a/solenv/gbuild/platform/unxgcc.mk
++++ b/solenv/gbuild/platform/unxgcc.mk
+@@ -137,6 +137,7 @@ $(if $(call gb_LinkTarget__WantLock,$2), \
+ )
+ 	+$(if $(filter EMSCRIPTEN,$(OS)),unset PYTHONWARNINGS &&) \
+ $(call gb_Helper_abbreviate_dirs,\
++	$(if $(filter QNX,$(OS)),LINKOBJS=$(call gb_var2file,$(WORKDIR)/LinkTarget/$(2).linkobjs,$(foreach object,$(COBJECTS),$(call gb_CObject_get_target,$(object))) $(foreach object,$(CXXOBJECTS),$(call gb_CxxObject_get_target,$(object))) $(foreach object,$(ASMOBJECTS),$(call gb_AsmObject_get_target,$(object))) $(foreach object,$(GENCOBJECTS),$(call gb_GenCObject_get_target,$(object))) $(foreach object,$(GENCXXOBJECTS),$(call gb_GenCxxObject_get_target,$(object))) $(foreach object,$(GENASMOBJECTS),$(call gb_GenAsmObject_get_target,$(object))) $(foreach object,$(GENNASMOBJECTS),$(call gb_GenNasmObject_get_target,$(object))) $(foreach extraobjectlist,$(EXTRAOBJECTLISTS),$(shell cat $(extraobjectlist)))) && ) \
+ 	$(if $(call gb_LinkTarget__NeedsCxxLinker),$(or $(T_CXX),$(gb_CXX)) $(gb_CXX_LINKFLAGS),$(or $(T_CC),$(gb_CC))) \
+ 		$(if $(filter Library CppunitTest,$(TARGETTYPE)),$(gb_Library_TARGETTYPEFLAGS)) \
+ 		$(T_LTOFLAGS) \
+@@ -144,6 +145,7 @@ $(call gb_Helper_abbreviate_dirs,\
+ 			-Wl$(COMMA)--version-script=$(SOVERSIONSCRIPT)) \
+ 		$(subst \d,$$,$(RPATH)) \
+ 		$(T_USE_LD) $(T_LDFLAGS) $(foreach pre_js,$(T_PREJS), --pre-js $(pre_js)) \
++		$(if $(filter QNX,$(OS)),@$${LINKOBJS},\
+ 		$(foreach object,$(COBJECTS),$(call gb_CObject_get_target,$(object))) \
+ 		$(foreach object,$(CXXOBJECTS),$(call gb_CxxObject_get_target,$(object))) \
+ 		$(foreach object,$(ASMOBJECTS),$(call gb_AsmObject_get_target,$(object))) \
+@@ -151,7 +153,7 @@ $(call gb_Helper_abbreviate_dirs,\
+ 		$(foreach object,$(GENCXXOBJECTS),$(call gb_GenCxxObject_get_target,$(object))) \
+ 		$(foreach object,$(GENASMOBJECTS),$(call gb_GenAsmObject_get_target,$(object))) \
+ 		$(foreach object,$(GENNASMOBJECTS),$(call gb_GenNasmObject_get_target,$(object))) \
+-		$(foreach extraobjectlist,$(EXTRAOBJECTLISTS),`cat $(extraobjectlist)`) \
++		$(foreach extraobjectlist,$(EXTRAOBJECTLISTS),`cat $(extraobjectlist)`)) \
+ 		$(if $(filter TRUE,$(DISABLE_DYNLOADING)), \
+ 		    -Wl$(COMMA)--start-group \
+ 			$(shell echo -n \
+-- 
+2.51.0
+

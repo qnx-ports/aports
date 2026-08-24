@@ -1,0 +1,72 @@
+From 70b7acf373702557cce40c70dea62d285e1251d5 Mon Sep 17 00:00:00 2001
+From: Arthur Clark <mydevstuff@mail.com>
+Date: Fri, 21 Aug 2026 19:14:26 +0000
+Subject: [PATCH 30/33] QNX: extend the LOK render gate to cover Math
+
+Change-Id: I2c13b86e85a18e4fc36fca6d84082baf30b97c69
+---
+ libreofficekit/qa/qnxrendergate/README        |  2 +-
+ .../qa/qnxrendergate/data/math.fodf           | 26 +++++++++++++++++++
+ .../qa/qnxrendergate/rendergate.cxx           |  1 +
+ 3 files changed, 28 insertions(+), 1 deletion(-)
+ create mode 100644 libreofficekit/qa/qnxrendergate/data/math.fodf
+
+diff --git a/libreofficekit/qa/qnxrendergate/README b/libreofficekit/qa/qnxrendergate/README
+index b9bed8481..60bfefb30 100644
+--- a/libreofficekit/qa/qnxrendergate/README
++++ b/libreofficekit/qa/qnxrendergate/README
+@@ -6,6 +6,6 @@ Renders a 256x256 tile of each data/ document through LibreOfficeKit and checks
+ the non-white pixel count against a per-document band: the floor rejects a blank
+ tile, the ceiling rejects a garbage one. data/bad.odt is a negative control that
+ must fail to render. Covers Writer (hello.docx, clean.odt) and Calc (calc.fods,
+-flat ODF; painted over a fixed top-left twip region so the cells fill the tile).
++flat ODF; painted over a fixed top-left twip region so the cells fill the tile), and Math (math.fodf, a flat ODF formula).
+ Substitutes the upstream tiledrendering/smoketest tests, which are unusable here
+ (disabled/bit-rotted, and a whole-office build).
+diff --git a/libreofficekit/qa/qnxrendergate/data/math.fodf b/libreofficekit/qa/qnxrendergate/data/math.fodf
+new file mode 100644
+index 000000000..d8528a09d
+--- /dev/null
++++ b/libreofficekit/qa/qnxrendergate/data/math.fodf
+@@ -0,0 +1,26 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<office:document
++    xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"
++    office:version="1.3"
++    office:mimetype="application/vnd.oasis.opendocument.formula">
++ <office:body>
++  <office:math>
++   <math xmlns="http://www.w3.org/1998/Math/MathML">
++    <semantics>
++     <mrow>
++      <msqrt>
++       <mrow>
++        <msup><mi>a</mi><mn>2</mn></msup>
++        <mo>+</mo>
++        <msup><mi>b</mi><mn>2</mn></msup>
++       </mrow>
++      </msqrt>
++      <mo>=</mo>
++      <mi>c</mi>
++     </mrow>
++     <annotation encoding="StarMath 5.0">sqrt{a^2 + b^2} = c</annotation>
++    </semantics>
++   </math>
++  </office:math>
++ </office:body>
++</office:document>
+diff --git a/libreofficekit/qa/qnxrendergate/rendergate.cxx b/libreofficekit/qa/qnxrendergate/rendergate.cxx
+index a88331904..71fdddd9a 100644
+--- a/libreofficekit/qa/qnxrendergate/rendergate.cxx
++++ b/libreofficekit/qa/qnxrendergate/rendergate.cxx
+@@ -78,6 +78,7 @@ int main(int argc, char** argv)
+         { "hello.docx", "hello.docx", 3000, 9000,  false, 0,    0    },
+         { "clean.odt",  "clean.odt",  1000, 9000,  false, 0,    0    },
+         { "calc.fods",  "calc.fods",  1000, 60000, false, 6000, 6000 },
++        { "math.fodf",  "math.fodf",  8000, 30000, false, 0,    0    },
+         { "bad.odt",    "bad.odt",    0,    0,     true,  0,    0    }, // malformed zip -> empty load
+     };
+ 
+-- 
+2.51.0
+

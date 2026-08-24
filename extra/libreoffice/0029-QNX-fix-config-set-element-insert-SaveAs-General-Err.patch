@@ -1,0 +1,119 @@
+From 79d0445a03a20fbd77cf6ddbba79e4e954148654 Mon Sep 17 00:00:00 2001
+From: Arthur Clark <mydevstuff@mail.com>
+Date: Fri, 21 Aug 2026 15:19:28 +0000
+Subject: [PATCH 29/33] QNX: fix config set-element insert (SaveAs "General
+ Error")
+
+configmgr Access::getFreeSetMember recovered the ChildAccess impl from a UNO
+reference with dynamic_cast<ChildAccess*>. On QNX that cross-DSO cast returns
+null even for a live ChildAccess (type_info is not unified across DSOs under
+the executable-first loader), so every configuration set-element insert failed
+with IllegalArgumentException "inappropriate set element". It is swallowed
+during startup but escapes SfxStoringHelper::GUIStoreModel on an interactive
+Save As, where sfx2 flattens it to ERRCODE_IO_GENERAL and shows "General
+input/output error" with no file written.
+
+Recover the impl through XUnoTunnel (comphelper::getFromUnoTunnel) instead,
+which uses queryInterface and a tunnel id rather than RTTI. QNX-gated; off-QNX
+keeps the dynamic_cast and is byte-identical.
+
+Change-Id: I9977c0ae93c92c78901b73a84f6941dae87cab17
+---
+ configmgr/source/access.cxx      | 10 ++++++++++
+ configmgr/source/childaccess.cxx | 10 +++++++++-
+ configmgr/source/childaccess.hxx | 13 +++++++++++++
+ 3 files changed, 32 insertions(+), 1 deletion(-)
+
+diff --git a/configmgr/source/access.cxx b/configmgr/source/access.cxx
+index f6c897e14..8c073a99b 100644
+--- a/configmgr/source/access.cxx
++++ b/configmgr/source/access.cxx
+@@ -85,6 +85,9 @@
+ #include <sal/types.h>
+ #include <o3tl/string_view.hxx>
+ 
++#ifdef __QNXNTO__
++#include <comphelper/servicehelper.hxx>
++#endif
+ #include "access.hxx"
+ #include "broadcaster.hxx"
+ #include "childaccess.hxx"
+@@ -2266,7 +2269,14 @@ rtl::Reference< ChildAccess > Access::getFreeSetMember(
+ {
+     css::uno::Reference<XInterface> xTmp;
+     value >>= xTmp;
++#ifdef __QNXNTO__
++    // QNX: cross-DSO dynamic_cast to the impl returns null even for a live
++    // ChildAccess (type_info is not unified across DSOs), which made every
++    // config set-element insert fail. Recover through XUnoTunnel instead.
++    rtl::Reference< ChildAccess > freeAcc = comphelper::getFromUnoTunnel<ChildAccess>(xTmp);
++#else
+     rtl::Reference< ChildAccess > freeAcc = dynamic_cast<ChildAccess*>(xTmp.get());
++#endif
+     if (!freeAcc.is() || freeAcc->getParentAccess().is() ||
+         (freeAcc->isInTransaction() &&
+          freeAcc->getRootAccess() != getRootAccess()))
+diff --git a/configmgr/source/childaccess.cxx b/configmgr/source/childaccess.cxx
+index c25682ced..9417b764b 100644
+--- a/configmgr/source/childaccess.cxx
++++ b/configmgr/source/childaccess.cxx
+@@ -324,9 +324,17 @@ css::uno::Any ChildAccess::queryInterface(css::uno::Type const & aType)
+     return res.hasValue()
+         ? res
+         : cppu::queryInterface(
+-            aType, static_cast< css::container::XChild * >(this));
++            aType, static_cast< css::container::XChild * >(this)
++#ifdef __QNXNTO__
++            , static_cast< css::lang::XUnoTunnel * >(this)
++#endif
++            );
+ }
+ 
++#ifdef __QNXNTO__
++UNO3_GETIMPLEMENTATION_IMPL(ChildAccess)
++#endif
++
+ }
+ 
+ /* vim:set shiftwidth=4 softtabstop=4 expandtab: */
+diff --git a/configmgr/source/childaccess.hxx b/configmgr/source/childaccess.hxx
+index dc8729731..bca1faf76 100644
+--- a/configmgr/source/childaccess.hxx
++++ b/configmgr/source/childaccess.hxx
+@@ -25,6 +25,10 @@
+ #include <optional>
+ 
+ #include <com/sun/star/container/XChild.hpp>
++#ifdef __QNXNTO__
++#include <com/sun/star/lang/XUnoTunnel.hpp>
++#include <comphelper/servicehelper.hxx>
++#endif
+ #include <rtl/ref.hxx>
+ #include <sal/types.h>
+ 
+@@ -39,6 +43,9 @@ class RootAccess;
+ 
+ class ChildAccess:
+     public Access, public css::container::XChild
++#ifdef __QNXNTO__
++    , public css::lang::XUnoTunnel
++#endif
+ {
+ public:
+ 
+@@ -95,6 +102,12 @@ public:
+ 
+     void commitChanges(bool valid, Modifications * globalModifications);
+ 
++#ifdef __QNXNTO__
++    // QNX: recover this impl from a UNO ref via XUnoTunnel; the cross-DSO
++    // dynamic_cast configmgr would otherwise use returns null here.
++    UNO3_GETIMPLEMENTATION_DECL(ChildAccess)
++#endif
++
+ private:
+     virtual ~ChildAccess() override;
+ 
+-- 
+2.51.0
+

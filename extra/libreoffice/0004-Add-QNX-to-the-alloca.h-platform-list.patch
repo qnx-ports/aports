@@ -1,0 +1,29 @@
+From 103fcf991394e7196768aee986ae3ef72a9d3525 Mon Sep 17 00:00:00 2001
+From: Arthur Clark <mydevstuff@mail.com>
+Date: Sun, 16 Aug 2026 05:40:43 +0000
+Subject: [PATCH 04/33] Add QNX to the alloca.h platform list
+
+QNX provides alloca via <alloca.h> (verified: /usr/include/alloca.h,
+compile+run probe rc=0). Gate on __QNX__ (public SAL header).
+
+Change-Id: Ic3fde8641de45ca7a4d21620fd9770031f74664c
+---
+ include/sal/alloca.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/include/sal/alloca.h b/include/sal/alloca.h
+index 87df55c9f..13995390e 100644
+--- a/include/sal/alloca.h
++++ b/include/sal/alloca.h
+@@ -25,7 +25,7 @@
+ #define INCLUDED_SAL_ALLOCA_H
+ 
+ #if defined(__sun) || defined(LINUX) || defined(ANDROID) || defined(HAIKU) || defined(MACOSX)      \
+-    || defined(IOS) || defined(__EMSCRIPTEN__)
++    || defined(IOS) || defined(__EMSCRIPTEN__) || defined(__QNX__)
+ 
+ #ifndef INCLUDED_ALLOCA_H
+ #include <alloca.h>
+-- 
+2.51.0
+

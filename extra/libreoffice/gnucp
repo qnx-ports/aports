@@ -1,0 +1,15 @@
+#!/system/bin/sh
+# QNX build shim: satisfy configure GNU-cp check AND translate the GNU cp long-opts
+# gbuild deliver uses (--no-dereference/--force/--preserve/--remove-destination) to toybox cp flags.
+if [ "$1" = "--version" ]; then echo "cp (GNU coreutils shim) 9.0"; exit 0; fi
+args=""
+for a in "$@"; do
+  case "$a" in
+    --no-dereference)     args="$args -P" ;;
+    --force)              args="$args -f" ;;
+    --remove-destination) args="$args -F" ;;
+    --preserve=*)         args="$args -p" ;;   # toybox -p preserves timestamps (+own+mode)
+    *)                    args="$args $a" ;;    # short opts + file paths pass through
+  esac
+done
+exec /system/bin/cp $args

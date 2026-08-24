@@ -1,0 +1,49 @@
+From 5d88c79a66c6125632425c652610d6eb8c8ccc84 Mon Sep 17 00:00:00 2001
+From: Arthur Clark <mydevstuff@mail.com>
+Date: Sun, 16 Aug 2026 05:41:22 +0000
+Subject: [PATCH 05/33] Deliver QNX libtool sonames for libxml2 and libxslt
+
+QNX libtool names shared objects by soname=current (libxml2.so.17,
+libxslt.so.2, libexslt.so.8) rather than the Linux
+.so.(current-age).age.revision layout. Add QNX delivery arms.
+
+Change-Id: I8ff5a2a90ffd3a8e446bed6d5f9065b2bd5b4537
+---
+ external/libxml2/ExternalPackage_libxml2.mk | 4 ++++
+ external/libxslt/ExternalPackage_libxslt.mk | 5 +++++
+ 2 files changed, 9 insertions(+)
+
+diff --git a/external/libxml2/ExternalPackage_libxml2.mk b/external/libxml2/ExternalPackage_libxml2.mk
+index d9546820a..bfec5df6e 100644
+--- a/external/libxml2/ExternalPackage_libxml2.mk
++++ b/external/libxml2/ExternalPackage_libxml2.mk
+@@ -20,6 +20,10 @@ $(eval $(call gb_ExternalPackage_add_file,libxml2,$(LIBO_URE_LIB_FOLDER)/libxml2
+ else # COM=MSC
+ $(eval $(call gb_ExternalPackage_add_file,libxml2,$(LIBO_URE_LIB_FOLDER)/libxml2$(if $(MSVC_USE_DEBUG_RUNTIME),d).dll,$(if $(MSVC_USE_DEBUG_RUNTIME),Debug,Release)/libxml2$(if $(MSVC_USE_DEBUG_RUNTIME),d).dll))
+ endif
++else ifeq ($(OS),QNX)
++# QNX libtool names the shared object by soname=current (libxml2.so.17), not the
++# Linux .so.(current-age).age.revision layout (libxml2.so.16.1.x)
++$(eval $(call gb_ExternalPackage_add_file,libxml2,$(LIBO_URE_LIB_FOLDER)/libxml2.so.17,.libs/libxml2.so.17))
+ else # OS!=WNT
+ $(eval $(call gb_ExternalPackage_add_file,libxml2,$(LIBO_URE_LIB_FOLDER)/libxml2.so.16,.libs/libxml2.so.16.1.$(LIBXML_VERSION_MICRO)))
+ endif
+diff --git a/external/libxslt/ExternalPackage_libxslt.mk b/external/libxslt/ExternalPackage_libxslt.mk
+index 287c529b4..6b7773332 100644
+--- a/external/libxslt/ExternalPackage_libxslt.mk
++++ b/external/libxslt/ExternalPackage_libxslt.mk
+@@ -23,6 +23,11 @@ else # COM=MSC
+ $(eval $(call gb_ExternalPackage_add_file,libxslt,$(LIBO_LIB_FOLDER)/libxslt.dll,win32/bin.msvc/libxslt.dll))
+ $(eval $(call gb_ExternalPackage_add_file,libxslt,$(LIBO_LIB_FOLDER)/libexslt.dll,win32/bin.msvc/libexslt.dll))
+ endif
++else ifeq ($(OS),QNX)
++# QNX libtool names shared objects by soname=current (libxslt.so.2 / libexslt.so.8),
++# not the Linux .so.(current-age).age.revision layout
++$(eval $(call gb_ExternalPackage_add_file,libxslt,$(LIBO_LIB_FOLDER)/libxslt.so.2,libxslt/.libs/libxslt.so.2))
++$(eval $(call gb_ExternalPackage_add_file,libxslt,$(LIBO_LIB_FOLDER)/libexslt.so.8,libexslt/.libs/libexslt.so.8))
+ else # OS!=WNT
+ $(eval $(call gb_ExternalPackage_add_file,libxslt,$(LIBO_LIB_FOLDER)/libxslt.so.1,libxslt/.libs/libxslt.so.1.1.$(LIBXSLT_VERSION_MICRO)))
+ $(eval $(call gb_ExternalPackage_add_file,libxslt,$(LIBO_LIB_FOLDER)/libexslt.so.0,libexslt/.libs/libexslt.so.0.8.25))
+-- 
+2.51.0
+

@@ -1,0 +1,41 @@
+From bdac2254342a7e60b2473a6b3e024ac6b117a368 Mon Sep 17 00:00:00 2001
+From: Arthur Clark <mydevstuff@mail.com>
+Date: Mon, 17 Aug 2026 22:03:28 +0000
+Subject: [PATCH 13/33] Add QNX arms for sal_osl statfs header and headless
+ epoxy
+
+Change-Id: I72e265736bfb5c6679324584874288ad6b3d4d80
+---
+ external/epoxy/Library_epoxy.mk  | 2 +-
+ sal/qa/osl/file/osl_File_Const.h | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/external/epoxy/Library_epoxy.mk b/external/epoxy/Library_epoxy.mk
+index 2c89f5ad3..704ed62de 100644
+--- a/external/epoxy/Library_epoxy.mk
++++ b/external/epoxy/Library_epoxy.mk
+@@ -35,7 +35,7 @@ $(eval $(call gb_Library_add_generated_cobjects,epoxy,\
+ 	UnpackedTarball/epoxy/src/dispatch_wgl \
+ 	UnpackedTarball/epoxy/src/wgl_generated_dispatch \
+ ))
+-else ifneq ($(filter iOS MACOSX,$(OS)),)
++else ifneq ($(filter iOS MACOSX QNX,$(OS)),)
+ # nothing
+ else ifeq ($(OS),ANDROID)
+ $(eval $(call gb_Library_add_generated_cobjects,epoxy,\
+diff --git a/sal/qa/osl/file/osl_File_Const.h b/sal/qa/osl/file/osl_File_Const.h
+index 46f6264dc..217cf4ef6 100644
+--- a/sal/qa/osl/file/osl_File_Const.h
++++ b/sal/qa/osl/file/osl_File_Const.h
+@@ -87,7 +87,7 @@ const char pBuffer_Blank[]  = "";
+ #   include <errno.h>
+ #   include <fcntl.h>
+ #   include <sys/stat.h>
+-#   if !defined(MACOSX) && !defined(IOS) && !defined(__OpenBSD__) && !defined(__FreeBSD__) && !defined(__NetBSD__) && !defined (DRAGONFLY) && !defined(HAIKU)
++#   if !defined(MACOSX) && !defined(IOS) && !defined(__OpenBSD__) && !defined(__FreeBSD__) && !defined(__NetBSD__) && !defined (DRAGONFLY) && !defined(HAIKU) && !defined(QNX)
+ #       include <sys/statfs.h>
+ #   else
+ #       include <sys/param.h>
+-- 
+2.51.0
+

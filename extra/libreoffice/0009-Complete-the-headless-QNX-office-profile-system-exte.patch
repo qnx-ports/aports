@@ -1,0 +1,49 @@
+From 51ffe51b8d68177aae1e25ec8e0a01d1f9b002aa Mon Sep 17 00:00:00 2001
+From: Arthur Clark <mydevstuff@mail.com>
+Date: Mon, 17 Aug 2026 19:08:35 +0000
+Subject: [PATCH 09/33] Complete the headless QNX office profile: system
+ externals plus QNX arms
+
+Change-Id: I5e0bd840f7586d1e4cb92521d361d73c3888c120
+---
+ distro-configs/LibreOfficeQNX.conf | 13 ++++++++-----
+ 1 file changed, 8 insertions(+), 5 deletions(-)
+
+diff --git a/distro-configs/LibreOfficeQNX.conf b/distro-configs/LibreOfficeQNX.conf
+index 74a81566c..f06bc06ae 100644
+--- a/distro-configs/LibreOfficeQNX.conf
++++ b/distro-configs/LibreOfficeQNX.conf
+@@ -1,22 +1,25 @@
+---disable-gui
+ --enable-headless
+ --enable-mergelibs
+ --disable-symbols
+ --without-java
++--disable-python
+ --disable-odk
+ --disable-skia
+---disable-dbconnectivity
+ --disable-cups
+ --disable-dbus
+ --disable-avahi
++--disable-gtk3
++--disable-gstreamer-1-0
++--disable-database-connectivity
+ --disable-pdfimport
+ --enable-mpl-subset
+---enable-python=system
++--disable-lotuswordpro
++--with-theme=colibre
++--with-tls=no
++--with-gnu-cp=/data/home/qnxuser/bin/gnucp
+ --with-system-icu
+ --with-system-freetype
+ --with-system-fontconfig
+---with-system-harfbuzz
+---with-system-graphite
+ --with-system-cairo
+ --with-system-libxml
+ --with-system-expat
+-- 
+2.51.0
+

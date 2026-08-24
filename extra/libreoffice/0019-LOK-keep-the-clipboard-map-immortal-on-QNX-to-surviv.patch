@@ -1,0 +1,67 @@
+From f7ec1ba6c2e4bbc402a38c81899f5e5ef4f79318 Mon Sep 17 00:00:00 2001
+From: Arthur Clark <mydevstuff@mail.com>
+Date: Wed, 19 Aug 2026 19:00:49 +0000
+Subject: [PATCH 19/33] LOK: keep the clipboard map immortal on QNX to survive
+ shutdown
+
+On QNX the loader finalizes libsofficeapp's static objects before
+libswlo's, so SwDLL::~SwDLL - which clears the system clipboard on
+shutdown - reaches LOKClipboardFactory's DeleteOnDeinit map after it has
+been destroyed and crashes dereferencing the freed hash buckets. The
+std::optional inside DeleteOnDeinit still reports engaged there, so a
+null check does not help.
+
+Give the map an immortal, never-deleted backing on QNX only; other
+platforms keep DeleteOnDeinit unchanged and the call sites are untouched.
+
+Change-Id: I8a8fb46e2048e326ac371d1514ad6aaa933eaaba
+---
+ desktop/source/lib/lokclipboard.cxx | 29 ++++++++++++++++++++++++++---
+ 1 file changed, 26 insertions(+), 3 deletions(-)
+
+diff --git a/desktop/source/lib/lokclipboard.cxx b/desktop/source/lib/lokclipboard.cxx
+index 2d5d12d73..bcadb403e 100644
+--- a/desktop/source/lib/lokclipboard.cxx
++++ b/desktop/source/lib/lokclipboard.cxx
+@@ -20,12 +20,35 @@ using namespace css;
+ using namespace css::uno;
+ 
+ /* static */ osl::Mutex LOKClipboardFactory::gMutex;
+-static tools::DeleteOnDeinit<std::unordered_map<int, rtl::Reference<LOKClipboard>>>& getClipboards()
++
++typedef std::unordered_map<int, rtl::Reference<LOKClipboard>> LOKClipboardMap;
++
++#ifdef __QNX__
++// QNX finalizes libsofficeapp's statics before libswlo's, so SwDLL::~SwDLL
++// reaches this map after DeleteOnDeinit would have destroyed it and crashes on
++// the freed buckets. Keep the map immortal here; the call sites are unchanged.
++namespace {
++struct ImmortalClipboards
++{
++    LOKClipboardMap* get()
++    {
++        static LOKClipboardMap* pMap = new LOKClipboardMap();
++        return pMap;
++    }
++};
++}
++static ImmortalClipboards& getClipboards()
++{
++    static ImmortalClipboards gClipboards;
++    return gClipboards;
++}
++#else
++static tools::DeleteOnDeinit<LOKClipboardMap>& getClipboards()
+ {
+-    static tools::DeleteOnDeinit<std::unordered_map<int, rtl::Reference<LOKClipboard>>>
+-        gClipboards{};
++    static tools::DeleteOnDeinit<LOKClipboardMap> gClipboards{};
+     return gClipboards;
+ }
++#endif
+ 
+ rtl::Reference<LOKClipboard> LOKClipboardFactory::getClipboardForCurView()
+ {
+-- 
+2.51.0
+

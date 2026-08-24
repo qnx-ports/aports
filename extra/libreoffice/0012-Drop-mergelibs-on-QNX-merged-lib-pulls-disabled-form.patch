@@ -1,0 +1,24 @@
+From 6797508b5e00f73742187737fa36a1ddf94a26e8 Mon Sep 17 00:00:00 2001
+From: Arthur Clark <mydevstuff@mail.com>
+Date: Mon, 17 Aug 2026 21:22:41 +0000
+Subject: [PATCH 12/33] Drop mergelibs on QNX: merged lib pulls disabled forms
+ lib
+
+Change-Id: I839a2e29d731a2bb48271677da6192d6d7cc9271
+---
+ distro-configs/LibreOfficeQNX.conf | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/distro-configs/LibreOfficeQNX.conf b/distro-configs/LibreOfficeQNX.conf
+index e8a0e69d1..6db1e7479 100644
+--- a/distro-configs/LibreOfficeQNX.conf
++++ b/distro-configs/LibreOfficeQNX.conf
+@@ -1,5 +1,4 @@
+ --enable-headless
+---enable-mergelibs
+ --disable-symbols
+ --without-java
+ --disable-python
+-- 
+2.51.0
+

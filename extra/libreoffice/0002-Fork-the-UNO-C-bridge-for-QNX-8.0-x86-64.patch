@@ -1,0 +1,2639 @@
+From c07adf9e511e6ffa65a33c7d50ce51a755298fb3 Mon Sep 17 00:00:00 2001
+From: Arthur Clark <mydevstuff@mail.com>
+Date: Sun, 16 Aug 2026 04:21:24 +0000
+Subject: [PATCH 02/33] Fork the UNO C++ bridge for QNX 8.0 (x86-64)
+
+Fork gcc3_linux_x86-64 to gcc3_qnx_x86-64 and repoint the bridge
+selection in Library_cpp_uno.mk. Built native-on-QDD against
+libc++abi.so.1; x86-64 SysV code generation is shared with Linux.
+
+Change-Id: If6f84839402974f48ac291607d3bb6426a6cccfd
+---
+ bridges/Library_cpp_uno.mk                    |   9 +-
+ .../source/cpp_uno/gcc3_qnx_x86-64/abi.cxx    | 300 ++++++++++
+ .../source/cpp_uno/gcc3_qnx_x86-64/abi.hxx    |  67 +++
+ .../source/cpp_uno/gcc3_qnx_x86-64/call.hxx   |  31 +
+ bridges/source/cpp_uno/gcc3_qnx_x86-64/call.s | 142 +++++
+ .../gcc3_qnx_x86-64/callvirtualmethod.cxx     | 196 +++++++
+ .../gcc3_qnx_x86-64/callvirtualmethod.hxx     |  37 ++
+ .../cpp_uno/gcc3_qnx_x86-64/cpp2uno.cxx       | 541 ++++++++++++++++++
+ .../source/cpp_uno/gcc3_qnx_x86-64/except.cxx | 259 +++++++++
+ .../source/cpp_uno/gcc3_qnx_x86-64/rtti.cxx   | 273 +++++++++
+ .../source/cpp_uno/gcc3_qnx_x86-64/rtti.hxx   |  33 ++
+ .../source/cpp_uno/gcc3_qnx_x86-64/share.hxx  | 193 +++++++
+ .../cpp_uno/gcc3_qnx_x86-64/uno2cpp.cxx       | 434 ++++++++++++++
+ 13 files changed, 2513 insertions(+), 2 deletions(-)
+ create mode 100644 bridges/source/cpp_uno/gcc3_qnx_x86-64/abi.cxx
+ create mode 100644 bridges/source/cpp_uno/gcc3_qnx_x86-64/abi.hxx
+ create mode 100644 bridges/source/cpp_uno/gcc3_qnx_x86-64/call.hxx
+ create mode 100644 bridges/source/cpp_uno/gcc3_qnx_x86-64/call.s
+ create mode 100644 bridges/source/cpp_uno/gcc3_qnx_x86-64/callvirtualmethod.cxx
+ create mode 100644 bridges/source/cpp_uno/gcc3_qnx_x86-64/callvirtualmethod.hxx
+ create mode 100644 bridges/source/cpp_uno/gcc3_qnx_x86-64/cpp2uno.cxx
+ create mode 100644 bridges/source/cpp_uno/gcc3_qnx_x86-64/except.cxx
+ create mode 100644 bridges/source/cpp_uno/gcc3_qnx_x86-64/rtti.cxx
+ create mode 100644 bridges/source/cpp_uno/gcc3_qnx_x86-64/rtti.hxx
+ create mode 100644 bridges/source/cpp_uno/gcc3_qnx_x86-64/share.hxx
+ create mode 100644 bridges/source/cpp_uno/gcc3_qnx_x86-64/uno2cpp.cxx
+
+diff --git a/bridges/Library_cpp_uno.mk b/bridges/Library_cpp_uno.mk
+index f7156162c..1bf395617 100644
+--- a/bridges/Library_cpp_uno.mk
++++ b/bridges/Library_cpp_uno.mk
+@@ -178,8 +178,13 @@ bridge_exception_objects := except
+ 
+ else ifeq ($(CPUNAME),X86_64)
+ 
+-# QNX: reuse gcc3_linux_x86-64 to satisfy gbuild init for the sal build (bridge not built for sal); Phase 4 swaps to gcc3_qnx_x86-64.
+-ifneq ($(filter ANDROID DRAGONFLY FREEBSD LINUX NETBSD OPENBSD HAIKU QNX,$(OS)),)
++# QNX: forked bridge (gcc3_qnx_x86-64), built native-on-QDD against libc++abi.so.1
++ifeq ($(OS),QNX)
++bridges_SELECTED_BRIDGE := gcc3_qnx_x86-64
++bridge_asm_objects := call
++bridge_noncallexception_noopt_objects := callvirtualmethod
++bridge_exception_objects := abi cpp2uno except rtti uno2cpp
++else ifneq ($(filter ANDROID DRAGONFLY FREEBSD LINUX NETBSD OPENBSD HAIKU,$(OS)),)
+ bridges_SELECTED_BRIDGE := gcc3_linux_x86-64
+ bridge_asm_objects := call
+ bridge_noncallexception_noopt_objects := callvirtualmethod
+diff --git a/bridges/source/cpp_uno/gcc3_qnx_x86-64/abi.cxx b/bridges/source/cpp_uno/gcc3_qnx_x86-64/abi.cxx
+new file mode 100644
+index 000000000..dbd4ef1a1
+--- /dev/null
++++ b/bridges/source/cpp_uno/gcc3_qnx_x86-64/abi.cxx
+@@ -0,0 +1,300 @@
++/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
++/*
++ * This file is part of the LibreOffice project.
++ *
++ * This Source Code Form is subject to the terms of the Mozilla Public
++ * License, v. 2.0. If a copy of the MPL was not distributed with this
++ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
++ *
++ * This file incorporates work covered by the following license notice:
++ *
++ *   Licensed to the Apache Software Foundation (ASF) under one or more
++ *   contributor license agreements. See the NOTICE file distributed
++ *   with this work for additional information regarding copyright
++ *   ownership. The ASF licenses this file to you under the Apache
++ *   License, Version 2.0 (the "License"); you may not use this file
++ *   except in compliance with the License. You may obtain a copy of
++ *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
++ */
++
++
++// This is an implementation of the x86-64 ABI as described in 'System V
++// Application Binary Interface, AMD64 Architecture Processor Supplement'
++// (http://www.x86-64.org/documentation/abi-0.95.pdf)
++//
++// The code in this file is a modification of src/x86/ffi64.c from libffi
++// (http://sources.redhat.com/libffi/) which is under the following license:
++
++/* -----------------------------------------------------------------------
++   ffi.c - Copyright (c) 2002  Bo Thorsen <bo@suse.de>
++
++   x86-64 Foreign Function Interface
++
++   Permission is hereby granted, free of charge, to any person obtaining
++   a copy of this software and associated documentation files (the
++   ``Software''), to deal in the Software without restriction, including
++   without limitation the rights to use, copy, modify, merge, publish,
++   distribute, sublicense, and/or sell copies of the Software, and to
++   permit persons to whom the Software is furnished to do so, subject to
++   the following conditions:
++
++   The above copyright notice and this permission notice shall be included
++   in all copies or substantial portions of the Software.
++
++   THE SOFTWARE IS PROVIDED ``AS IS'', WITHOUT WARRANTY OF ANY KIND, EXPRESS
++   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
++   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
++   IN NO EVENT SHALL CYGNUS SOLUTIONS BE LIABLE FOR ANY CLAIM, DAMAGES OR
++   OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
++   ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
++   OTHER DEALINGS IN THE SOFTWARE.
++   ----------------------------------------------------------------------- */
++
++#include <sal/config.h>
++
++#include "abi.hxx"
++
++#include <o3tl/unreachable.hxx>
++
++using namespace x86_64;
++
++namespace {
++
++/* Register class used for passing given 64bit part of the argument.
++   These represent classes as documented by the PS ABI, with the exception
++   of SSESF, SSEDF classes, that are basically SSE class, just gcc will
++   use SF or DFmode move instead of DImode to avoid reformatting penalties.
++
++   Similarly we play games with INTEGERSI_CLASS to use cheaper SImode moves
++   whenever possible (upper half does contain padding).
++ */
++enum x86_64_reg_class
++{
++    X86_64_NO_CLASS,
++    X86_64_INTEGER_CLASS,
++    X86_64_INTEGERSI_CLASS,
++    X86_64_SSE_CLASS,
++    X86_64_SSESF_CLASS,
++    X86_64_MEMORY_CLASS
++};
++
++}
++
++#define MAX_CLASSES 4
++
++/* x86-64 register passing implementation.  See x86-64 ABI for details.  Goal
++   of this code is to classify each 8bytes of incoming argument by the register
++   class and assign registers accordingly.  */
++
++/* Return the union class of CLASS1 and CLASS2.
++   See the x86-64 PS ABI for details.  */
++
++static enum x86_64_reg_class
++merge_classes (enum x86_64_reg_class class1, enum x86_64_reg_class class2)
++    noexcept
++{
++    /* Rule #1: If both classes are equal, this is the resulting class.  */
++    if (class1 == class2)
++        return class1;
++
++    /* Rule #2: If one of the classes is NO_CLASS, the resulting class is
++       the other class.  */
++    if (class1 == X86_64_NO_CLASS)
++        return class2;
++    if (class2 == X86_64_NO_CLASS)
++        return class1;
++
++    /* Rule #3: If one of the classes is MEMORY, the result is MEMORY.  */
++    if (class1 == X86_64_MEMORY_CLASS || class2 == X86_64_MEMORY_CLASS)
++        return X86_64_MEMORY_CLASS;
++
++    /* Rule #4: If one of the classes is INTEGER, the result is INTEGER.  */
++    if ((class1 == X86_64_INTEGERSI_CLASS && class2 == X86_64_SSESF_CLASS)
++            || (class2 == X86_64_INTEGERSI_CLASS && class1 == X86_64_SSESF_CLASS))
++        return X86_64_INTEGERSI_CLASS;
++    if (class1 == X86_64_INTEGER_CLASS || class1 == X86_64_INTEGERSI_CLASS
++            || class2 == X86_64_INTEGER_CLASS || class2 == X86_64_INTEGERSI_CLASS)
++        return X86_64_INTEGER_CLASS;
++
++    /* Rule #6: Otherwise class SSE is used.  */
++    return X86_64_SSE_CLASS;
++}
++
++/* Classify a parameter/return type.
++   CLASSES will be filled by the register class used to pass each word
++   of the operand.  The number of words is returned.  In case the operand
++   should be passed in memory, 0 is returned.
++
++   See the x86-64 PS ABI for details.
++*/
++static int
++classify_argument( typelib_TypeDescriptionReference *pTypeRef, enum x86_64_reg_class classes[], int byteOffset ) noexcept
++{
++    switch ( pTypeRef->eTypeClass )
++    {
++        case typelib_TypeClass_CHAR:
++        case typelib_TypeClass_BOOLEAN:
++        case typelib_TypeClass_BYTE:
++        case typelib_TypeClass_SHORT:
++        case typelib_TypeClass_UNSIGNED_SHORT:
++        case typelib_TypeClass_LONG:
++        case typelib_TypeClass_UNSIGNED_LONG:
++        case typelib_TypeClass_HYPER:
++        case typelib_TypeClass_UNSIGNED_HYPER:
++        case typelib_TypeClass_ENUM:
++            if ( ( byteOffset % 8 + pTypeRef->pType->nSize ) <= 4 )
++                classes[0] = X86_64_INTEGERSI_CLASS;
++            else
++                classes[0] = X86_64_INTEGER_CLASS;
++            return 1;
++        case typelib_TypeClass_FLOAT:
++            if ( ( byteOffset % 8 ) == 0 )
++                classes[0] = X86_64_SSESF_CLASS;
++            else
++                classes[0] = X86_64_SSE_CLASS;
++            return 1;
++        case typelib_TypeClass_DOUBLE:
++            classes[0] = X86_64_SSE_CLASS;
++            return 1;
++        case typelib_TypeClass_STRING:
++        case typelib_TypeClass_TYPE:
++        case typelib_TypeClass_ANY:
++        case typelib_TypeClass_SEQUENCE:
++        case typelib_TypeClass_INTERFACE:
++            return 0;
++        case typelib_TypeClass_STRUCT:
++            {
++                typelib_TypeDescription * pTypeDescr = nullptr;
++                TYPELIB_DANGER_GET( &pTypeDescr, pTypeRef );
++
++                const int UNITS_PER_WORD = 8;
++                int words = ( pTypeDescr->nSize + UNITS_PER_WORD - 1 ) / UNITS_PER_WORD;
++                enum x86_64_reg_class subclasses[MAX_CLASSES];
++
++                /* If the struct is larger than 16 bytes, pass it on the stack.  */
++                if ( pTypeDescr->nSize > 16 )
++                {
++                    TYPELIB_DANGER_RELEASE( pTypeDescr );
++                    return 0;
++                }
++
++                for ( int i = 0; i < words; i++ )
++                    classes[i] = X86_64_NO_CLASS;
++
++                const typelib_CompoundTypeDescription *pStruct = reinterpret_cast<const typelib_CompoundTypeDescription*>( pTypeDescr );
++
++                /* Merge the fields of structure.  */
++                for ( sal_Int32 nMember = 0; nMember < pStruct->nMembers; ++nMember )
++                {
++                    typelib_TypeDescriptionReference *pTypeInStruct = pStruct->ppTypeRefs[ nMember ];
++                    int offset = byteOffset + pStruct->pMemberOffsets[ nMember ];
++
++                    int num = classify_argument( pTypeInStruct, subclasses, offset );
++
++                    if ( num == 0 )
++                    {
++                        TYPELIB_DANGER_RELEASE( pTypeDescr );
++                        return 0;
++                    }
++
++                    for ( int i = 0; i < num; i++ )
++                    {
++                        int pos = offset / 8;
++                        classes[i + pos] = merge_classes( subclasses[i], classes[i + pos] );
++                        if (classes[i + pos] == X86_64_MEMORY_CLASS) {
++                            TYPELIB_DANGER_RELEASE( pTypeDescr );
++                            return 0;
++                        }
++                    }
++                }
++
++                TYPELIB_DANGER_RELEASE( pTypeDescr );
++
++                return words;
++            }
++
++        default:
++            O3TL_UNREACHABLE;
++    }
++}
++
++/* Examine the argument and return set number of register required in each
++   class.  Return 0 iff parameter should be passed in memory.  */
++bool x86_64::examine_argument( typelib_TypeDescriptionReference *pTypeRef, int &nUsedGPR, int &nUsedSSE ) noexcept
++{
++    enum x86_64_reg_class classes[MAX_CLASSES];
++    int n = classify_argument( pTypeRef, classes, 0 );
++
++    if ( n == 0 )
++        return false;
++
++    nUsedGPR = 0;
++    nUsedSSE = 0;
++    for ( n--; n >= 0; n-- )
++        switch ( classes[n] )
++        {
++            case X86_64_INTEGER_CLASS:
++            case X86_64_INTEGERSI_CLASS:
++                nUsedGPR++;
++                break;
++            case X86_64_SSE_CLASS:
++            case X86_64_SSESF_CLASS:
++                nUsedSSE++;
++                break;
++            default:
++                O3TL_UNREACHABLE;
++        }
++    return true;
++}
++
++bool x86_64::return_in_hidden_param( typelib_TypeDescriptionReference *pTypeRef ) noexcept
++{
++    if (pTypeRef->eTypeClass == typelib_TypeClass_VOID) {
++        return false;
++    }
++    enum x86_64_reg_class classes[MAX_CLASSES];
++    return classify_argument(pTypeRef, classes, 0) == 0;
++}
++
++x86_64::ReturnKind x86_64::getReturnKind(typelib_TypeDescriptionReference * type) noexcept {
++    x86_64_reg_class classes[MAX_CLASSES];
++    auto const n = classify_argument(type, classes, 0);
++    if (n == 0) {
++        return ReturnKind::Memory;
++    }
++    if (n == 2 && (classes[0] == X86_64_SSE_CLASS || classes[0] == X86_64_SSESF_CLASS)
++        && (classes[1] == X86_64_INTEGER_CLASS || classes[1] == X86_64_INTEGERSI_CLASS))
++    {
++        return ReturnKind::RegistersFpInt;
++    }
++    if (n == 2 && (classes[0] == X86_64_INTEGER_CLASS || classes[0] == X86_64_INTEGERSI_CLASS)
++        && (classes[1] == X86_64_SSE_CLASS || classes[1] == X86_64_SSESF_CLASS))
++    {
++        return ReturnKind::RegistersIntFp;
++    }
++    return ReturnKind::RegistersGeneral;
++}
++
++void x86_64::fill_struct( typelib_TypeDescriptionReference *pTypeRef, const sal_uInt64 *pGPR, const double *pSSE, void *pStruct ) noexcept
++{
++    enum x86_64_reg_class classes[MAX_CLASSES];
++    int n = classify_argument( pTypeRef, classes, 0 );
++
++    sal_uInt64 *pStructAlign = static_cast<sal_uInt64 *>( pStruct );
++    for ( int i = 0; i != n; ++i )
++        switch ( classes[i] )
++        {
++            case X86_64_INTEGER_CLASS:
++            case X86_64_INTEGERSI_CLASS:
++                *pStructAlign++ = *pGPR++;
++                break;
++            case X86_64_SSE_CLASS:
++            case X86_64_SSESF_CLASS:
++                *pStructAlign++ = *reinterpret_cast<const sal_uInt64 *>( pSSE++ );
++                break;
++            default:
++                O3TL_UNREACHABLE;
++        }
++}
++
++/* vim:set shiftwidth=4 softtabstop=4 expandtab: */
+diff --git a/bridges/source/cpp_uno/gcc3_qnx_x86-64/abi.hxx b/bridges/source/cpp_uno/gcc3_qnx_x86-64/abi.hxx
+new file mode 100644
+index 000000000..3ef80543a
+--- /dev/null
++++ b/bridges/source/cpp_uno/gcc3_qnx_x86-64/abi.hxx
+@@ -0,0 +1,67 @@
++/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
++/*
++ * This file is part of the LibreOffice project.
++ *
++ * This Source Code Form is subject to the terms of the Mozilla Public
++ * License, v. 2.0. If a copy of the MPL was not distributed with this
++ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
++ *
++ * This file incorporates work covered by the following license notice:
++ *
++ *   Licensed to the Apache Software Foundation (ASF) under one or more
++ *   contributor license agreements. See the NOTICE file distributed
++ *   with this work for additional information regarding copyright
++ *   ownership. The ASF licenses this file to you under the Apache
++ *   License, Version 2.0 (the "License"); you may not use this file
++ *   except in compliance with the License. You may obtain a copy of
++ *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
++ */
++
++#pragma once
++
++// This is an implementation of the x86-64 ABI as described in 'System V
++// Application Binary Interface, AMD64 Architecture Processor Supplement'
++// (http://www.x86-64.org/documentation/abi-0.95.pdf)
++
++#include <typelib/typedescription.hxx>
++
++namespace x86_64
++{
++
++/* 6 general purpose registers are used for parameter passing */
++const sal_uInt32 MAX_GPR_REGS = 6;
++
++/* 8 SSE registers are used for parameter passing */
++const sal_uInt32 MAX_SSE_REGS = 8;
++
++/* Count number of required registers.
++
++ Examine the argument and return set number of register required in each
++ class.
++
++ Return false iff parameter should be passed in memory.
++*/
++bool examine_argument( typelib_TypeDescriptionReference *pTypeRef, int &nUsedGPR, int &nUsedSSE ) noexcept;
++
++/** Does function that returns this type use a hidden parameter, or registers?
++
++ The value can be returned either in a hidden 1st parameter (which is a
++ pointer to a structure allocated by the caller), or in registers (rax, rdx
++ for the integers, xmm0, xmm1 for the floating point numbers).
++*/
++bool return_in_hidden_param( typelib_TypeDescriptionReference *pTypeRef ) noexcept;
++
++enum class ReturnKind {
++    Memory,
++    RegistersGeneral,
++    RegistersFpInt,
++    RegistersIntFp
++};
++
++ReturnKind getReturnKind(typelib_TypeDescriptionReference * type) noexcept;
++
++void fill_struct( typelib_TypeDescriptionReference *pTypeRef, const sal_uInt64* pGPR, const double* pSSE, void *pStruct ) noexcept;
++
++} // namespace x86_64
++
++/* vim:set shiftwidth=4 softtabstop=4 expandtab: */
+diff --git a/bridges/source/cpp_uno/gcc3_qnx_x86-64/call.hxx b/bridges/source/cpp_uno/gcc3_qnx_x86-64/call.hxx
+new file mode 100644
+index 000000000..08b19f06b
+--- /dev/null
++++ b/bridges/source/cpp_uno/gcc3_qnx_x86-64/call.hxx
+@@ -0,0 +1,31 @@
++/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
++/*
++ * This file is part of the LibreOffice project.
++ *
++ * This Source Code Form is subject to the terms of the Mozilla Public
++ * License, v. 2.0. If a copy of the MPL was not distributed with this
++ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
++ *
++ * This file incorporates work covered by the following license notice:
++ *
++ *   Licensed to the Apache Software Foundation (ASF) under one or more
++ *   contributor license agreements. See the NOTICE file distributed
++ *   with this work for additional information regarding copyright
++ *   ownership. The ASF licenses this file to you under the Apache
++ *   License, Version 2.0 (the "License"); you may not use this file
++ *   except in compliance with the License. You may obtain a copy of
++ *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
++ */
++
++#pragma once
++
++#include <sal/config.h>
++
++#include <sal/types.h>
++
++extern "C" int cpp_vtable_call(
++    sal_Int32 nFunctionIndex, sal_Int32 nVtableOffset,
++    void ** gpreg, void ** fpreg, void ** ovrflw,
++    sal_uInt64 * pRegisterReturn /* space for register return */ );
++
++/* vim:set shiftwidth=4 softtabstop=4 expandtab: */
+diff --git a/bridges/source/cpp_uno/gcc3_qnx_x86-64/call.s b/bridges/source/cpp_uno/gcc3_qnx_x86-64/call.s
+new file mode 100644
+index 000000000..e7ff10624
+--- /dev/null
++++ b/bridges/source/cpp_uno/gcc3_qnx_x86-64/call.s
+@@ -0,0 +1,142 @@
++/*
++ * This file is part of the LibreOffice project.
++ *
++ * This Source Code Form is subject to the terms of the Mozilla Public
++ * License, v. 2.0. If a copy of the MPL was not distributed with this
++ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
++ *
++ * This file incorporates work covered by the following license notice:
++ *
++ *   Licensed to the Apache Software Foundation (ASF) under one or more
++ *   contributor license agreements. See the NOTICE file distributed
++ *   with this work for additional information regarding copyright
++ *   ownership. The ASF licenses this file to you under the Apache
++ *   License, Version 2.0 (the "License"); you may not use this file
++ *   except in compliance with the License. You may obtain a copy of
++ *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
++ */
++
++	.text
++	.align 2
++.globl privateSnippetExecutor
++	.type	privateSnippetExecutor, @function
++privateSnippetExecutor:
++.LFB3:
++#if defined(END_BRANCH_INS_SUPPORT)
++	endbr64
++#endif
++	pushq	%rbp
++.LCFI0:
++	movq	%rsp, %rbp
++.LCFI1:
++	subq	$160, %rsp
++.LCFI2:
++	movq	%r10, -152(%rbp)		# Save (nVtableOffset << 32) + nFunctionIndex
++
++	movq	%rdi, -112(%rbp)		# Save GP registers
++	movq	%rsi, -104(%rbp)
++	movq	%rdx, -96(%rbp)
++	movq	%rcx, -88(%rbp)
++	movq	%r8 , -80(%rbp)
++	movq	%r9 , -72(%rbp)
++	
++	movsd	%xmm0, -64(%rbp)		# Save FP registers
++	movsd	%xmm1, -56(%rbp)
++	movsd	%xmm2, -48(%rbp)
++	movsd	%xmm3, -40(%rbp)
++	movsd	%xmm4, -32(%rbp)
++	movsd	%xmm5, -24(%rbp)
++	movsd	%xmm6, -16(%rbp)
++	movsd	%xmm7, -8(%rbp)
++
++	leaq	-144(%rbp), %r9			# 6th param: sal_uInt64 * pRegisterReturn
++	leaq	16(%rbp), %r8			# 5rd param: void ** ovrflw
++	leaq	-64(%rbp), %rcx			# 4th param: void ** fpreg
++	leaq	-112(%rbp), %rdx		# 3rd param: void ** gpreg
++	movl	-148(%rbp), %esi		# 2nd param: sal_int32 nVtableOffset
++	movl	-152(%rbp), %edi		# 1st param: sal_int32 nFunctionIndex
++	
++	call	cpp_vtable_call
++
++	testl	%eax, %eax
++	je	.Lfpint
++	jg	.Lintfp
++
++	movq	-144(%rbp), %rax		# Potential return value (general case)
++	movq	-136(%rbp), %rdx		# Potential return value (general case)
++	movq	-144(%rbp), %xmm0		# Potential return value (general case)
++	movq	-136(%rbp), %xmm1		# Potential return value (general case)
++	jmp	.Lfinish
++.Lfpint:
++	movq	-144(%rbp), %xmm0		# Return value (special fp and integer case)
++	movq	-136(%rbp), %rax		# Return value (special fp and integer case)
++	jmp	.Lfinish
++.Lintfp:
++	movq	-144(%rbp), %rax		# Return value (special integer and fp case)
++	movq	-136(%rbp), %xmm0		# Return value (special integer and fp case)
++
++.Lfinish:
++	leave
++	ret
++.LFE3:
++	.size	privateSnippetExecutor, .-privateSnippetExecutor
++	# see http://refspecs.linuxfoundation.org/LSB_3.0.0/LSB-Core-generic/LSB-Core-generic/ehframechpt.html
++	# for details of the .eh_frame, the "Common Information Entry" and "Frame Description Entry" formats
++	# and http://mentorembedded.github.io/cxx-abi/exceptions.pdf for more info
++	.section	.eh_frame,"a",@unwind
++.Lframe1:
++	.long	.LECIE1-.LSCIE1         # CIE Length
++.LSCIE1:
++	.long	0x0                     # CIE ID
++	.byte	0x1                     # CIE Version
++	.string	"zR"                    # CIE Augmentation String
++	.uleb128 0x1                    # CIE Code Alignment Factor
++	.sleb128 -8                     # CIE Data Alignment Factor
++	.byte	0x10                    # CIE Return Address Register: pseudo "Return Address RA"
++	.uleb128 0x1                    # CIE Augmentation Data Length
++	.byte	0x1b                    # CIE Augmentation Data
++	                                # CIE Initial Instructions:
++	.byte	0xc                     #  DW_CFA_def_cfa %rsp +8
++	.uleb128 0x7
++	.uleb128 0x8
++	.byte	0x90                    #  DW_CFA_offset (pseudo "Return Address RA") +1 (i.e., -8)
++	.uleb128 0x1
++	.align 8
++.LECIE1:
++.LSFDE1:
++	.long	.LEFDE1-.LASFDE1        # FDE Length
++.LASFDE1:
++	.long	.LASFDE1-.Lframe1       # FDE CIE Pointer
++	.long	.LFB3-.                 # FDE PC Begin
++	.long	.LFE3-.LFB3             # FDE PC Range
++	.uleb128 0x0                    # FDE Augmentation Data Length
++	                                # FDE Call Frame Instructions:
++	.byte	0x4                     #  DW_CFA_advance_loc4 .LCFI0
++	.long	.LCFI0-.LFB3
++	.byte	0xe                     #  DW_CFA_def_cfa_offset +16
++	.uleb128 0x10
++	.byte	0x86                    #  DW_CFA_offset %rbp +2 (i.e., -16)
++	.uleb128 0x2
++	.byte	0x4                     #  DW_CFA_advance_loc4 .LCFI1
++	.long	.LCFI1-.LCFI0
++	.byte	0xd                     #  DW_CFA_def_cfa_register %rbp
++	.uleb128 0x6
++	.align 8
++.LEFDE1:
++	.section	.note.GNU-stack,"",@progbits
++	.section	.note.gnu.property,"a"
++	.p2align 3
++	.long	 1f - 0f
++	.long	 4f - 1f
++	.long	 5
++0:
++	.string	 "GNU"
++1:
++	.p2align 3
++	.long	 0xc0000002
++	.long	 3f - 2f
++2:
++	.long	 0x3
++3:
++	.p2align 3
++4:
+diff --git a/bridges/source/cpp_uno/gcc3_qnx_x86-64/callvirtualmethod.cxx b/bridges/source/cpp_uno/gcc3_qnx_x86-64/callvirtualmethod.cxx
+new file mode 100644
+index 000000000..e0bb1d54a
+--- /dev/null
++++ b/bridges/source/cpp_uno/gcc3_qnx_x86-64/callvirtualmethod.cxx
+@@ -0,0 +1,196 @@
++/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
++/*
++ * This file is part of the LibreOffice project.
++ *
++ * This Source Code Form is subject to the terms of the Mozilla Public
++ * License, v. 2.0. If a copy of the MPL was not distributed with this
++ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
++ *
++ * This file incorporates work covered by the following license notice:
++ *
++ *   Licensed to the Apache Software Foundation (ASF) under one or more
++ *   contributor license agreements. See the NOTICE file distributed
++ *   with this work for additional information regarding copyright
++ *   ownership. The ASF licenses this file to you under the Apache
++ *   License, Version 2.0 (the "License"); you may not use this file
++ *   except in compliance with the License. You may obtain a copy of
++ *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
++ */
++
++#include <sal/config.h>
++
++#include <cppu/macros.hxx>
++#include <sal/types.h>
++#include <typelib/typeclass.h>
++#include <typelib/typedescription.h>
++
++#include "abi.hxx"
++#include "callvirtualmethod.hxx"
++
++#ifndef __has_feature
++#  define __has_feature(x) 0
++#endif
++
++#if __has_feature(memory_sanitizer)
++#  include <sanitizer/msan_interface.h>
++   // In the absence of a better idea just unpoison this
++#  define MSAN_UNPOISON_RETURN_REGISTER() __msan_unpoison(pRegisterReturn, pReturnTypeRef->pType->nSize)
++#else
++#  define MSAN_UNPOISON_RETURN_REGISTER()
++#endif
++
++// The call instruction within the asm block of callVirtualMethod may throw
++// exceptions.  At least GCC 4.7.0 with -O0 would create (unnecessary)
++// .gcc_exception_table call-site table entries around all other calls in this
++// function that can throw, leading to std::terminate if the asm call throws an
++// exception and the unwinding C++ personality routine finds the unexpected hole
++// in the .gcc_exception_table.  Therefore, make sure this function explicitly
++// only calls nothrow-functions (so GCC 4.7.0 with -O0 happens to not create a
++// .gcc_exception_table section at all for this function).  For some reason,
++// this also needs to be in a source file of its own.
++//
++// Also, this file should be compiled with -fnon-call-exceptions, and ideally
++// there would be a way to tell the compiler that the asm block contains calls
++// to functions that can potentially throw; see the mail thread starting at
++// <http://gcc.gnu.org/ml/gcc/2012-03/msg00454.html> "C++: Letting compiler know
++// asm block can call function that can throw?"
++
++void CPPU_CURRENT_NAMESPACE::callVirtualMethod(
++    void * pThis, sal_uInt32 nVtableIndex, void * pRegisterReturn,
++    typelib_TypeDescriptionReference * pReturnTypeRef, bool bSimpleReturn,
++    sal_uInt64 *pStack, sal_uInt32 nStack, sal_uInt64 *pGPR, double * pFPR)
++{
++    // Work around Clang -fsanitize=address "inline assembly requires more
++    // registers than available" error:
++    struct Data {
++        sal_uInt64 pMethod;
++        sal_uInt64 * pStack;
++        sal_uInt32 nStack;
++        sal_uInt64 * pGPR;
++        double * pFPR;
++        // Return values:
++        sal_uInt64 rax;
++        sal_uInt64 rdx;
++        double xmm0;
++        double xmm1;
++    } data;
++    data.pStack = pStack;
++    data.nStack = nStack;
++    data.pGPR = pGPR;
++    data.pFPR = pFPR;
++
++    // Get pointer to method
++    sal_uInt64 pMethod = *static_cast<sal_uInt64 *>(pThis);
++    pMethod += 8 * nVtableIndex;
++    data.pMethod = *reinterpret_cast<sal_uInt64 *>(pMethod);
++
++    asm volatile (
++        // Push arguments to stack
++        "movq %%rsp, %%r12\n\t"
++        "movl 16%0, %%ecx\n\t"
++        "jrcxz .Lpushed\n\t"
++        "xor %%rax, %%rax\n\t"
++        "leaq (%%rax, %%rcx, 8), %%rax\n\t"
++        "subq %%rax, %%rsp\n\t"
++        "andq $-9, %%rsp\n\t" // 16-bytes aligned
++        "movq 8%0, %%rsi\n\t"
++        "\n.Lpush:\n\t"
++        "decq %%rcx\n\t"
++        "movq (%%rsi, %%rcx, 8), %%rax\n\t"
++        "movq %%rax, (%%rsp, %%rcx, 8)\n\t"
++        "jnz .Lpush\n\t"
++        "\n.Lpushed:\n\t"
++
++        // Fill the xmm registers
++        "movq 32%0, %%rax\n\t"
++
++        "movsd   (%%rax), %%xmm0\n\t"
++        "movsd  8(%%rax), %%xmm1\n\t"
++        "movsd 16(%%rax), %%xmm2\n\t"
++        "movsd 24(%%rax), %%xmm3\n\t"
++        "movsd 32(%%rax), %%xmm4\n\t"
++        "movsd 40(%%rax), %%xmm5\n\t"
++        "movsd 48(%%rax), %%xmm6\n\t"
++        "movsd 56(%%rax), %%xmm7\n\t"
++
++        // Fill the general purpose registers
++        "movq 24%0, %%rax\n\t"
++
++        "movq    (%%rax), %%rdi\n\t"
++        "movq   8(%%rax), %%rsi\n\t"
++        "movq  16(%%rax), %%rdx\n\t"
++        "movq  24(%%rax), %%rcx\n\t"
++        "movq  32(%%rax), %%r8\n\t"
++        "movq  40(%%rax), %%r9\n\t"
++
++        // Perform the call
++        "movq 0%0, %%r11\n\t"
++        "call *%%r11\n\t"
++
++        // Fill the return values
++        "movq   %%rax, 40%0\n\t"
++        "movq   %%rdx, 48%0\n\t"
++        "movsd %%xmm0, 56%0\n\t"
++        "movsd %%xmm1, 64%0\n\t"
++
++        // Reset %rsp
++        "movq %%r12, %%rsp\n\t"
++        :: "o" (data)
++        : "rax", "rdi", "rsi", "rdx", "rcx", "r8", "r9", "r10", "r11", "r12",
++          "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7",
++          "xmm8", "xmm9", "xmm10", "xmm11", "xmm12", "xmm13", "xmm14", "xmm15",
++          "memory"
++    );
++
++    switch (pReturnTypeRef->eTypeClass)
++    {
++    case typelib_TypeClass_HYPER:
++    case typelib_TypeClass_UNSIGNED_HYPER:
++        *static_cast<sal_uInt64 *>( pRegisterReturn ) = data.rax;
++        MSAN_UNPOISON_RETURN_REGISTER();
++        break;
++    case typelib_TypeClass_LONG:
++    case typelib_TypeClass_UNSIGNED_LONG:
++    case typelib_TypeClass_ENUM:
++        *static_cast<sal_uInt32 *>( pRegisterReturn ) = *reinterpret_cast<sal_uInt32*>( &data.rax );
++        MSAN_UNPOISON_RETURN_REGISTER();
++        break;
++    case typelib_TypeClass_CHAR:
++    case typelib_TypeClass_SHORT:
++    case typelib_TypeClass_UNSIGNED_SHORT:
++        *static_cast<sal_uInt16 *>( pRegisterReturn ) = *reinterpret_cast<sal_uInt16*>( &data.rax );
++        MSAN_UNPOISON_RETURN_REGISTER();
++        break;
++    case typelib_TypeClass_BOOLEAN:
++    case typelib_TypeClass_BYTE:
++        *static_cast<sal_uInt8 *>( pRegisterReturn ) = *reinterpret_cast<sal_uInt8*>( &data.rax );
++        MSAN_UNPOISON_RETURN_REGISTER();
++        break;
++    case typelib_TypeClass_FLOAT:
++        *static_cast<float *>(pRegisterReturn) = *reinterpret_cast<float *>(&data.xmm0);
++        MSAN_UNPOISON_RETURN_REGISTER();
++        break;
++    case typelib_TypeClass_DOUBLE:
++        *static_cast<double *>( pRegisterReturn ) = data.xmm0;
++        MSAN_UNPOISON_RETURN_REGISTER();
++        break;
++    default:
++        {
++            sal_Int32 const nRetSize = pReturnTypeRef->pType->nSize;
++            if (bSimpleReturn && nRetSize <= 16 && nRetSize > 0)
++            {
++                sal_uInt64 longs[2];
++                longs[0] = data.rax;
++                longs[1] = data.rdx;
++
++                double doubles[2];
++                doubles[0] = data.xmm0;
++                doubles[1] = data.xmm1;
++                x86_64::fill_struct( pReturnTypeRef, &longs[0], &doubles[0], pRegisterReturn);
++            }
++            break;
++        }
++    }
++}
++
++/* vim:set shiftwidth=4 softtabstop=4 expandtab: */
+diff --git a/bridges/source/cpp_uno/gcc3_qnx_x86-64/callvirtualmethod.hxx b/bridges/source/cpp_uno/gcc3_qnx_x86-64/callvirtualmethod.hxx
+new file mode 100644
+index 000000000..ac87c1c85
+--- /dev/null
++++ b/bridges/source/cpp_uno/gcc3_qnx_x86-64/callvirtualmethod.hxx
+@@ -0,0 +1,37 @@
++/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
++/*
++ * This file is part of the LibreOffice project.
++ *
++ * This Source Code Form is subject to the terms of the Mozilla Public
++ * License, v. 2.0. If a copy of the MPL was not distributed with this
++ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
++ *
++ * This file incorporates work covered by the following license notice:
++ *
++ *   Licensed to the Apache Software Foundation (ASF) under one or more
++ *   contributor license agreements. See the NOTICE file distributed
++ *   with this work for additional information regarding copyright
++ *   ownership. The ASF licenses this file to you under the Apache
++ *   License, Version 2.0 (the "License"); you may not use this file
++ *   except in compliance with the License. You may obtain a copy of
++ *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
++ */
++
++#pragma once
++
++#include <sal/config.h>
++
++#include <cppu/macros.hxx>
++#include <sal/types.h>
++#include <typelib/typedescription.h>
++
++namespace CPPU_CURRENT_NAMESPACE {
++
++void callVirtualMethod(
++    void * pThis, sal_uInt32 nVtableIndex, void * pRegisterReturn,
++    typelib_TypeDescriptionReference * pReturnTypeRef, bool bSimpleReturn,
++    sal_uInt64 *pStack, sal_uInt32 nStack, sal_uInt64 *pGPR, double * pFPR);
++
++}
++
++/* vim:set shiftwidth=4 softtabstop=4 expandtab: */
+diff --git a/bridges/source/cpp_uno/gcc3_qnx_x86-64/cpp2uno.cxx b/bridges/source/cpp_uno/gcc3_qnx_x86-64/cpp2uno.cxx
+new file mode 100644
+index 000000000..ac06a7de4
+--- /dev/null
++++ b/bridges/source/cpp_uno/gcc3_qnx_x86-64/cpp2uno.cxx
+@@ -0,0 +1,541 @@
++/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
++/*
++ * This file is part of the LibreOffice project.
++ *
++ * This Source Code Form is subject to the terms of the Mozilla Public
++ * License, v. 2.0. If a copy of the MPL was not distributed with this
++ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
++ *
++ * This file incorporates work covered by the following license notice:
++ *
++ *   Licensed to the Apache Software Foundation (ASF) under one or more
++ *   contributor license agreements. See the NOTICE file distributed
++ *   with this work for additional information regarding copyright
++ *   ownership. The ASF licenses this file to you under the Apache
++ *   License, Version 2.0 (the "License"); you may not use this file
++ *   except in compliance with the License. You may obtain a copy of
++ *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
++ */
++
++
++#include <sal/log.hxx>
++
++#include <com/sun/star/uno/genfunc.hxx>
++#include <com/sun/star/uno/RuntimeException.hpp>
++#include <config_options.h>
++#include <uno/data.h>
++#include <typelib/typedescription.hxx>
++
++#include <bridge.hxx>
++#include <cppinterfaceproxy.hxx>
++#include <types.hxx>
++#include <vtablefactory.hxx>
++
++#include "abi.hxx"
++#include "call.hxx"
++#include "share.hxx"
++
++#if !ENABLE_RUNTIME_OPTIMIZATIONS
++#include "rtti.hxx"
++#endif
++
++using namespace ::com::sun::star::uno;
++
++// Perform the UNO call
++//
++// We must convert the parameters stored in gpreg, fpreg and ovrflw to UNO
++// arguments and call pThis->getUnoI()->pDispatcher.
++//
++// gpreg:  [ret *], this, [gpr params]
++// fpreg:  [fpr params]
++// ovrflw: [gpr or fpr params (properly aligned)]
++//
++// [ret *] is present when we are returning a structure bigger than 16 bytes
++// Simple types are returned in rax, rdx (int), or xmm0, xmm1 (fp).
++// Similarly structures <= 16 bytes are in rax, rdx, xmm0, xmm1 as necessary.
++//
++// The return value is the same as for cpp_vtable_call.
++static int cpp2uno_call(
++    bridges::cpp_uno::shared::CppInterfaceProxy * pThis,
++    const typelib_TypeDescription * pMemberTypeDescr,
++    typelib_TypeDescriptionReference * pReturnTypeRef, // 0 indicates void return
++    sal_Int32 nParams, typelib_MethodParameter * pParams,
++    void ** gpreg, void ** fpreg, void ** ovrflw,
++    sal_uInt64 * pRegisterReturn /* space for register return */ )
++{
++    unsigned int nr_gpr = 0; //number of gpr registers used
++    unsigned int nr_fpr = 0; //number of fpr registers used
++
++    // return
++    typelib_TypeDescription * pReturnTypeDescr = nullptr;
++    if (pReturnTypeRef)
++        TYPELIB_DANGER_GET( &pReturnTypeDescr, pReturnTypeRef );
++    x86_64::ReturnKind returnKind
++        = (pReturnTypeRef == nullptr || pReturnTypeRef->eTypeClass == typelib_TypeClass_VOID)
++        ? x86_64::ReturnKind::RegistersGeneral : x86_64::getReturnKind(pReturnTypeRef);
++
++    void * pUnoReturn = nullptr;
++    void * pCppReturn = nullptr; // complex return ptr: if != 0 && != pUnoReturn, reconversion need
++
++    if ( pReturnTypeDescr )
++    {
++        if ( returnKind == x86_64::ReturnKind::Memory )
++        {
++            pCppReturn = *gpreg++;
++            nr_gpr++;
++
++            pUnoReturn = ( bridges::cpp_uno::shared::relatesToInterfaceType( pReturnTypeDescr )
++                           ? alloca( pReturnTypeDescr->nSize )
++                           : pCppReturn ); // direct way
++        }
++        else
++            pUnoReturn = pRegisterReturn; // direct way for simple types
++    }
++
++    // pop this
++    gpreg++;
++    nr_gpr++;
++
++    // stack space
++    // parameters
++    void ** pUnoArgs = static_cast<void **>(alloca( 4 * sizeof(void *) * nParams ));
++    void ** pCppArgs = pUnoArgs + nParams;
++    // indices of values this have to be converted (interface conversion cpp<=>uno)
++    sal_Int32 * pTempIndices = reinterpret_cast<sal_Int32 *>(pUnoArgs + (2 * nParams));
++    // type descriptions for reconversions
++    typelib_TypeDescription ** ppTempParamTypeDescr = reinterpret_cast<typelib_TypeDescription **>(pUnoArgs + (3 * nParams));
++
++    sal_Int32 nTempIndices = 0;
++
++    for ( sal_Int32 nPos = 0; nPos < nParams; ++nPos )
++    {
++        const typelib_MethodParameter & rParam = pParams[nPos];
++
++        if ( !rParam.bOut && bridges::cpp_uno::shared::isSimpleType( rParam.pTypeRef ) ) // value
++        {
++            int nUsedGPR = 0;
++            int nUsedSSE = 0;
++            bool bFitsRegisters = x86_64::examine_argument( rParam.pTypeRef, nUsedGPR, nUsedSSE );
++
++            // Simple types must fit exactly one register on x86_64
++            assert( bFitsRegisters && ( ( nUsedSSE == 1 && nUsedGPR == 0 ) || ( nUsedSSE == 0 && nUsedGPR == 1 ) ) ); (void)bFitsRegisters;
++
++            if ( nUsedSSE == 1 )
++            {
++                if ( nr_fpr < x86_64::MAX_SSE_REGS )
++                {
++                    pCppArgs[nPos] = pUnoArgs[nPos] = fpreg++;
++                    nr_fpr++;
++                }
++                else
++                    pCppArgs[nPos] = pUnoArgs[nPos] = ovrflw++;
++            }
++            else if ( nUsedGPR == 1 )
++            {
++                if ( nr_gpr < x86_64::MAX_GPR_REGS )
++                {
++                    pCppArgs[nPos] = pUnoArgs[nPos] = gpreg++;
++                    nr_gpr++;
++                }
++                else
++                    pCppArgs[nPos] = pUnoArgs[nPos] = ovrflw++;
++            }
++        }
++        else // ref
++        {
++            typelib_TypeDescription * pParamTypeDescr = nullptr;
++            TYPELIB_DANGER_GET( &pParamTypeDescr, rParam.pTypeRef );
++
++            void *pCppStack;
++            if ( nr_gpr < x86_64::MAX_GPR_REGS )
++            {
++                pCppArgs[nPos] = pCppStack = *gpreg++;
++                nr_gpr++;
++            }
++            else
++                pCppArgs[nPos] = pCppStack = *ovrflw++;
++
++            if (! rParam.bIn) // is pure out
++            {
++                // uno out is unconstructed mem!
++                pUnoArgs[nPos] = alloca( pParamTypeDescr->nSize );
++                pTempIndices[nTempIndices] = nPos;
++                // will be released at reconversion
++                ppTempParamTypeDescr[nTempIndices++] = pParamTypeDescr;
++            }
++            else if ( bridges::cpp_uno::shared::relatesToInterfaceType( pParamTypeDescr ) ) // is in/inout
++            {
++                pUnoArgs[nPos] = alloca( pParamTypeDescr->nSize );
++                uno_copyAndConvertData( pUnoArgs[nPos],
++                                        pCppStack, pParamTypeDescr,
++                                        pThis->getBridge()->getCpp2Uno() );
++                pTempIndices[nTempIndices] = nPos; // has to be reconverted
++                // will be released at reconversion
++                ppTempParamTypeDescr[nTempIndices++] = pParamTypeDescr;
++            }
++            else // direct way
++            {
++                pUnoArgs[nPos] = pCppStack;
++                // no longer needed
++                TYPELIB_DANGER_RELEASE( pParamTypeDescr );
++            }
++        }
++    }
++
++    // ExceptionHolder
++    uno_Any aUnoExc; // Any will be constructed by callee
++    uno_Any * pUnoExc = &aUnoExc;
++
++    // invoke uno dispatch call
++    (*pThis->getUnoI()->pDispatcher)( pThis->getUnoI(), pMemberTypeDescr, pUnoReturn, pUnoArgs, &pUnoExc );
++
++    // in case an exception occurred...
++    if ( pUnoExc )
++    {
++        // destruct temporary in/inout params
++        for ( ; nTempIndices--; )
++        {
++            sal_Int32 nIndex = pTempIndices[nTempIndices];
++
++            if (pParams[nIndex].bIn) // is in/inout => was constructed
++                uno_destructData( pUnoArgs[nIndex], ppTempParamTypeDescr[nTempIndices], nullptr );
++            TYPELIB_DANGER_RELEASE( ppTempParamTypeDescr[nTempIndices] );
++        }
++        if (pReturnTypeDescr)
++            TYPELIB_DANGER_RELEASE( pReturnTypeDescr );
++
++        CPPU_CURRENT_NAMESPACE::raiseException( &aUnoExc, pThis->getBridge()->getUno2Cpp() ); // has to destruct the any
++        // is here for dummy
++        return 0;
++    }
++    else // else no exception occurred...
++    {
++        // temporary params
++        for ( ; nTempIndices--; )
++        {
++            sal_Int32 nIndex = pTempIndices[nTempIndices];
++            typelib_TypeDescription * pParamTypeDescr = ppTempParamTypeDescr[nTempIndices];
++
++            if ( pParams[nIndex].bOut ) // inout/out
++            {
++                // convert and assign
++                uno_destructData( pCppArgs[nIndex], pParamTypeDescr, cpp_release );
++                uno_copyAndConvertData( pCppArgs[nIndex], pUnoArgs[nIndex], pParamTypeDescr,
++                                        pThis->getBridge()->getUno2Cpp() );
++            }
++            // destroy temp uno param
++            uno_destructData( pUnoArgs[nIndex], pParamTypeDescr, nullptr );
++
++            TYPELIB_DANGER_RELEASE( pParamTypeDescr );
++        }
++        // return
++        if ( pCppReturn ) // has complex return
++        {
++            if ( pUnoReturn != pCppReturn ) // needs reconversion
++            {
++                uno_copyAndConvertData( pCppReturn, pUnoReturn, pReturnTypeDescr,
++                                        pThis->getBridge()->getUno2Cpp() );
++                // destroy temp uno return
++                uno_destructData( pUnoReturn, pReturnTypeDescr, nullptr );
++            }
++            // complex return ptr is set to return reg
++            *reinterpret_cast<void **>(pRegisterReturn) = pCppReturn;
++        }
++        if ( pReturnTypeDescr )
++        {
++            TYPELIB_DANGER_RELEASE( pReturnTypeDescr );
++        }
++        switch (returnKind) {
++        case x86_64::ReturnKind::RegistersFpInt:
++            return 0;
++        case x86_64::ReturnKind::RegistersIntFp:
++            return 1;
++        default:
++            return -1;
++        }
++    }
++}
++
++// Returns -1 for the general case where potential return values from privateSnippetExecutor can be
++// copied from pRegisterReturn to both %rax and %rdx (in that order) and to %xmm0 and %xmm1 (in that
++// order)---each specific return type will only require a subset of that copy operations, but the
++// other copies to those non--callee-saved registers will be redundant and harmless.  Returns 0 for
++// the special case where return values from privateSnippetExecutor must be copied from
++// pRegisterReturn to %xmm0 and %rax (in that order).  Returns 1 for the special case where return
++// privateSnippetExecutor must be copied from pRegisterReturn to %rax and %xmm0 (in that order).
++int cpp_vtable_call(
++    sal_Int32 nFunctionIndex, sal_Int32 nVtableOffset,
++    void ** gpreg, void ** fpreg, void ** ovrflw,
++    sal_uInt64 * pRegisterReturn /* space for register return */ )
++{
++    // gpreg:  [ret *], this, [other gpr params]
++    // fpreg:  [fpr params]
++    // ovrflw: [gpr or fpr params (properly aligned)]
++    void * pThis;
++    if ( nFunctionIndex & 0x80000000 )
++    {
++        nFunctionIndex &= 0x7fffffff;
++        pThis = gpreg[1];
++    }
++    else
++    {
++        pThis = gpreg[0];
++    }
++    pThis = static_cast<char *>( pThis ) - nVtableOffset;
++
++    bridges::cpp_uno::shared::CppInterfaceProxy * pCppI =
++        bridges::cpp_uno::shared::CppInterfaceProxy::castInterfaceToProxy( pThis );
++
++    typelib_InterfaceTypeDescription * pTypeDescr = pCppI->getTypeDescr();
++
++    if ( nFunctionIndex >= pTypeDescr->nMapFunctionIndexToMemberIndex )
++    {
++        SAL_WARN(
++            "bridges",
++            "illegal " << OUString::unacquired(&pTypeDescr->aBase.pTypeName)
++                << " vtable index " << nFunctionIndex << "/"
++                << pTypeDescr->nMapFunctionIndexToMemberIndex);
++        throw RuntimeException(
++            ("illegal " + OUString::unacquired(&pTypeDescr->aBase.pTypeName)
++             + " vtable index " + OUString::number(nFunctionIndex) + "/"
++             + OUString::number(pTypeDescr->nMapFunctionIndexToMemberIndex)),
++            reinterpret_cast<XInterface *>( pCppI ) );
++    }
++
++    // determine called method
++    sal_Int32 nMemberPos = pTypeDescr->pMapFunctionIndexToMemberIndex[nFunctionIndex];
++    assert(nMemberPos < pTypeDescr->nAllMembers);
++
++    TypeDescription aMemberDescr( pTypeDescr->ppAllMembers[nMemberPos] );
++
++    int eRet;
++    switch ( aMemberDescr.get()->eTypeClass )
++    {
++        case typelib_TypeClass_INTERFACE_ATTRIBUTE:
++        {
++            typelib_TypeDescriptionReference *pAttrTypeRef =
++                reinterpret_cast<typelib_InterfaceAttributeTypeDescription *>( aMemberDescr.get() )->pAttributeTypeRef;
++
++            if ( pTypeDescr->pMapMemberIndexToFunctionIndex[nMemberPos] == nFunctionIndex )
++            {
++                // is GET method
++                eRet = cpp2uno_call( pCppI, aMemberDescr.get(), pAttrTypeRef,
++                        0, nullptr, // no params
++                        gpreg, fpreg, ovrflw, pRegisterReturn );
++            }
++            else
++            {
++                // is SET method
++                typelib_MethodParameter aParam;
++                aParam.pTypeRef = pAttrTypeRef;
++                aParam.bIn      = true;
++                aParam.bOut     = false;
++
++                eRet = cpp2uno_call( pCppI, aMemberDescr.get(),
++                        nullptr, // indicates void return
++                        1, &aParam,
++                        gpreg, fpreg, ovrflw, pRegisterReturn );
++            }
++            break;
++        }
++        case typelib_TypeClass_INTERFACE_METHOD:
++        {
++            // is METHOD
++            switch ( nFunctionIndex )
++            {
++                case 1: // acquire()
++                    pCppI->acquireProxy(); // non virtual call!
++                    eRet = 0;
++                    break;
++                case 2: // release()
++                    pCppI->releaseProxy(); // non virtual call!
++                    eRet = 0;
++                    break;
++                case 0: // queryInterface() opt
++                {
++                    typelib_TypeDescription * pTD = nullptr;
++                    TYPELIB_DANGER_GET( &pTD, static_cast<Type *>( gpreg[2] )->getTypeLibType() );
++                    if ( pTD )
++                    {
++                        XInterface * pInterface = nullptr;
++                        (*pCppI->getBridge()->getCppEnv()->getRegisteredInterface)
++                            ( pCppI->getBridge()->getCppEnv(),
++                              reinterpret_cast<void **>(&pInterface),
++                              pCppI->getOid().pData,
++                              reinterpret_cast<typelib_InterfaceTypeDescription *>( pTD ) );
++
++                        if ( pInterface )
++                        {
++                            ::uno_any_construct( static_cast<uno_Any *>( gpreg[0] ),
++                                                 &pInterface, pTD, cpp_acquire );
++
++                            pInterface->release();
++                            TYPELIB_DANGER_RELEASE( pTD );
++
++                            reinterpret_cast<void **>( pRegisterReturn )[0] = gpreg[0];
++                            eRet = 0;
++                            break;
++                        }
++                        TYPELIB_DANGER_RELEASE( pTD );
++                    }
++                    [[fallthrough]]; // else perform queryInterface()
++                }
++                default:
++                {
++                    typelib_InterfaceMethodTypeDescription *pMethodTD =
++                        reinterpret_cast<typelib_InterfaceMethodTypeDescription *>( aMemberDescr.get() );
++
++                    eRet = cpp2uno_call( pCppI, aMemberDescr.get(),
++                                         pMethodTD->pReturnTypeRef,
++                                         pMethodTD->nParams,
++                                         pMethodTD->pParams,
++                                         gpreg, fpreg, ovrflw, pRegisterReturn );
++                }
++            }
++            break;
++        }
++        default:
++        {
++            throw RuntimeException(u"no member description found!"_ustr,
++                                    reinterpret_cast<XInterface *>( pCppI ) );
++        }
++    }
++
++    return eRet;
++}
++
++const int codeSnippetSize = 24;
++
++// Generate a trampoline that redirects method calls to
++// privateSnippetExecutor().
++//
++// privateSnippetExecutor() saves all the registers that are used for
++// parameter passing on x86_64, and calls the cpp_vtable_call().
++// When it returns, privateSnippetExecutor() sets the return value.
++//
++// Note: The code snippet we build here must not create a stack frame,
++// otherwise the UNO exceptions stop working thanks to non-existing
++// unwinding info.
++static unsigned char * codeSnippet( unsigned char * code,
++        sal_Int32 nFunctionIndex, sal_Int32 nVtableOffset,
++        bool bHasHiddenParam )
++{
++    sal_uInt64 nOffsetAndIndex = ( static_cast<sal_uInt64>(nVtableOffset) << 32 ) | static_cast<sal_uInt64>(nFunctionIndex);
++
++    if ( bHasHiddenParam )
++        nOffsetAndIndex |= 0x80000000;
++
++    // movq $<nOffsetAndIndex>, %r10
++    *reinterpret_cast<sal_uInt16 *>( code ) = 0xba49;
++    *reinterpret_cast<sal_uInt16 *>( code + 2 ) = nOffsetAndIndex & 0xFFFF;
++    *reinterpret_cast<sal_uInt32 *>( code + 4 ) = nOffsetAndIndex >> 16;
++    *reinterpret_cast<sal_uInt16 *>( code + 8 ) = nOffsetAndIndex >> 48;
++
++    // movq $<address of the privateSnippetExecutor>, %r11
++    *reinterpret_cast<sal_uInt16 *>( code + 10 ) = 0xbb49;
++    *reinterpret_cast<sal_uInt32 *>( code + 12 )
++        = reinterpret_cast<sal_uInt64>(privateSnippetExecutor);
++    *reinterpret_cast<sal_uInt32 *>( code + 16 )
++        = reinterpret_cast<sal_uInt64>(privateSnippetExecutor) >> 32;
++
++    // jmpq *%r11
++    *reinterpret_cast<sal_uInt32 *>( code + 20 ) = 0x00e3ff49;
++
++    return code + codeSnippetSize;
++}
++
++struct bridges::cpp_uno::shared::VtableFactory::Slot { void const * fn; };
++
++bridges::cpp_uno::shared::VtableFactory::Slot *
++bridges::cpp_uno::shared::VtableFactory::mapBlockToVtable(void * block)
++{
++    return static_cast< Slot * >(block) + 2;
++}
++
++std::size_t bridges::cpp_uno::shared::VtableFactory::getBlockSize(
++    sal_Int32 slotCount)
++{
++    return (slotCount + 2) * sizeof (Slot) + slotCount * codeSnippetSize;
++}
++
++#if ENABLE_RUNTIME_OPTIMIZATIONS
++namespace {
++// Some dummy type whose RTTI is used in the synthesized proxy vtables to make uses of dynamic_cast
++// on such proxy objects not crash:
++struct ProxyRtti {};
++}
++#endif
++
++bridges::cpp_uno::shared::VtableFactory::Slot *
++bridges::cpp_uno::shared::VtableFactory::initializeBlock(
++    void * block, sal_Int32 slotCount, sal_Int32 vtableNumber,
++    typelib_InterfaceTypeDescription * type)
++{
++    Slot * slots = mapBlockToVtable(block);
++#if ENABLE_RUNTIME_OPTIMIZATIONS
++    slots[-2].fn = nullptr;
++    slots[-1].fn = &typeid(ProxyRtti);
++    (void)vtableNumber;
++    (void)type;
++#else
++    slots[-2].fn = reinterpret_cast<void *>(-(vtableNumber * sizeof (void *)));
++    slots[-1].fn = x86_64::getRtti(type->aBase);
++#endif
++    return slots + slotCount;
++}
++
++
++unsigned char * bridges::cpp_uno::shared::VtableFactory::addLocalFunctions(
++    Slot ** slots, unsigned char * code, sal_PtrDiff writetoexecdiff,
++    typelib_InterfaceTypeDescription const * type, sal_Int32 nFunctionOffset,
++    sal_Int32 functionCount, sal_Int32 nVtableOffset )
++{
++    (*slots) -= functionCount;
++    Slot * s = *slots;
++    for ( sal_Int32 nPos = 0; nPos < type->nMembers; ++nPos )
++    {
++        typelib_TypeDescription * pTD = nullptr;
++
++        TYPELIB_DANGER_GET( &pTD, type->ppMembers[ nPos ] );
++        assert(pTD);
++
++        if ( pTD->eTypeClass == typelib_TypeClass_INTERFACE_ATTRIBUTE )
++        {
++            typelib_InterfaceAttributeTypeDescription *pAttrTD =
++                reinterpret_cast<typelib_InterfaceAttributeTypeDescription *>( pTD );
++
++            // get method
++            (s++)->fn = code + writetoexecdiff;
++            code = codeSnippet( code, nFunctionOffset++, nVtableOffset,
++                                x86_64::return_in_hidden_param( pAttrTD->pAttributeTypeRef ) );
++
++            if ( ! pAttrTD->bReadOnly )
++            {
++                // set method
++                (s++)->fn = code + writetoexecdiff;
++                code = codeSnippet( code, nFunctionOffset++, nVtableOffset, false );
++            }
++        }
++        else if ( pTD->eTypeClass == typelib_TypeClass_INTERFACE_METHOD )
++        {
++            typelib_InterfaceMethodTypeDescription *pMethodTD =
++                reinterpret_cast<typelib_InterfaceMethodTypeDescription *>( pTD );
++
++            (s++)->fn = code + writetoexecdiff;
++            code = codeSnippet( code, nFunctionOffset++, nVtableOffset,
++                                x86_64::return_in_hidden_param( pMethodTD->pReturnTypeRef ) );
++        }
++        else
++            assert(false);
++
++        TYPELIB_DANGER_RELEASE( pTD );
++    }
++    return code;
++}
++
++void bridges::cpp_uno::shared::VtableFactory::flushCode(
++    SAL_UNUSED_PARAMETER unsigned char const *,
++    SAL_UNUSED_PARAMETER unsigned char const * )
++{}
++
++/* vim:set shiftwidth=4 softtabstop=4 expandtab: */
+diff --git a/bridges/source/cpp_uno/gcc3_qnx_x86-64/except.cxx b/bridges/source/cpp_uno/gcc3_qnx_x86-64/except.cxx
+new file mode 100644
+index 000000000..2b0b50f53
+--- /dev/null
++++ b/bridges/source/cpp_uno/gcc3_qnx_x86-64/except.cxx
+@@ -0,0 +1,259 @@
++/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
++/*
++ * This file is part of the LibreOffice project.
++ *
++ * This Source Code Form is subject to the terms of the Mozilla Public
++ * License, v. 2.0. If a copy of the MPL was not distributed with this
++ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
++ *
++ * This file incorporates work covered by the following license notice:
++ *
++ *   Licensed to the Apache Software Foundation (ASF) under one or more
++ *   contributor license agreements. See the NOTICE file distributed
++ *   with this work for additional information regarding copyright
++ *   ownership. The ASF licenses this file to you under the Apache
++ *   License, Version 2.0 (the "License"); you may not use this file
++ *   except in compliance with the License. You may obtain a copy of
++ *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
++ */
++
++#include <rtl/ustrbuf.hxx>
++#include <sal/log.hxx>
++
++#include <com/sun/star/uno/genfunc.hxx>
++#include <com/sun/star/uno/RuntimeException.hpp>
++#include <typelib/typedescription.hxx>
++#include <uno/any2.h>
++
++#include "rtti.hxx"
++#include "share.hxx"
++
++#ifndef _GLIBCXX_CDTOR_CALLABI // new in GCC 4.7 cxxabi.h
++#define _GLIBCXX_CDTOR_CALLABI
++#endif
++
++using namespace ::std;
++using namespace ::com::sun::star::uno;
++using namespace ::__cxxabiv1;
++
++
++namespace CPPU_CURRENT_NAMESPACE
++{
++
++static OUString toUNOname( char const * p )
++{
++#if OSL_DEBUG_LEVEL > 1
++    char const * start = p;
++#endif
++
++    // example: N3com3sun4star4lang24IllegalArgumentExceptionE
++
++    OUStringBuffer buf( 64 );
++    assert( *p == 'N' );
++    ++p; // skip N
++
++    while (*p != 'E')
++    {
++        // read chars count
++        int n = *p++ - '0';
++        while ('0' <= *p && '9' >= *p)
++        {
++            n *= 10;
++            n += (*p++ - '0');
++        }
++        buf.appendAscii( p, n );
++        p += n;
++        if (*p != 'E')
++            buf.append( '.' );
++    }
++
++#if OSL_DEBUG_LEVEL > 1
++    OUString ret( buf.makeStringAndClear() );
++    OString c_ret( OUStringToOString( ret, RTL_TEXTENCODING_ASCII_US ) );
++    fprintf( stderr, "> toUNOname(): %s => %s\n", start, c_ret.getStr() );
++    return ret;
++#else
++    return buf.makeStringAndClear();
++#endif
++}
++
++extern "C" {
++static void _GLIBCXX_CDTOR_CALLABI deleteException( void * pExc )
++{
++    __cxxabiv1::__cxa_exception const * header = static_cast<__cxxabiv1::__cxa_exception const *>(pExc) - 1;
++#if defined _LIBCPPABI_VERSION // detect libc++abi
++    // First, the libcxxabi commit
++    // <http://llvm.org/viewvc/llvm-project?view=revision&revision=303175>
++    // "[libcxxabi] Align unwindHeader on a double-word boundary" towards
++    // LLVM 5.0 changed the size of __cxa_exception by adding
++    //
++    //   __attribute__((aligned))
++    //
++    // to the final member unwindHeader, on x86-64 effectively adding a hole of
++    // size 8 in front of that member (changing its offset from 88 to 96,
++    // sizeof(__cxa_exception) from 120 to 128, and alignof(__cxa_exception)
++    // from 8 to 16); the "header1" hack below to dynamically determine whether we run against a
++    // LLVM 5 libcxxabi is to look at the exceptionDestructor member, which must
++    // point to this function (the use of __cxa_exception in fillUnoException is
++    // unaffected, as it only accesses members towards the start of the struct,
++    // through a pointer known to actually point at the start).  The libcxxabi commit
++    // <https://github.com/llvm/llvm-project/commit/9ef1daa46edb80c47d0486148c0afc4e0d83ddcf>
++    // "Insert padding before the __cxa_exception header to ensure the thrown" in LLVM 6
++    // removes the need for this hack, so the "header1" hack can be removed again once we can be
++    // sure that we only run against libcxxabi from LLVM >= 6.
++    //
++    // Second, the libcxxabi commit
++    // <https://github.com/llvm/llvm-project/commit/674ec1eb16678b8addc02a4b0534ab383d22fa77>
++    // "[libcxxabi] Insert padding in __cxa_exception struct for compatibility" in LLVM 10 changed
++    // the layout of the start of __cxa_exception to
++    //
++    //  [8 byte  void *reserve]
++    //   8 byte  size_t referenceCount
++    //
++    // so the "header2" hack below to dynamically determine whether we run against a LLVM >= 10
++    // libcxxabi is to look whether the exceptionDestructor (with its known value) has increased its
++    // offset by 8.  As described in the definition of __cxa_exception
++    // (bridges/source/cpp_uno/gcc3_linux_x86-64/share.hxx), the "header2" hack (together with the
++    // "#if 0" in the definition of __cxa_exception and the corresponding hack in fillUnoException)
++    // can be dropped once we can be sure that we only run against new libcxxabi that has the
++    // reserve member.
++    if (header->exceptionDestructor != &deleteException) {
++        auto const header1 = reinterpret_cast<__cxa_exception const *>(
++            reinterpret_cast<char const *>(header) - 8);
++        if (header1->exceptionDestructor == &deleteException) {
++            header = header1;
++        } else {
++            auto const header2 = reinterpret_cast<__cxa_exception const *>(
++                reinterpret_cast<char const *>(header) + 8);
++            if (header2->exceptionDestructor == &deleteException) {
++                header = header2;
++            } else {
++                assert(false);
++            }
++        }
++    }
++#endif
++    assert(header->exceptionDestructor == &deleteException);
++    typelib_TypeDescription * pTD = nullptr;
++    OUString unoName( toUNOname( header->exceptionType->name() ) );
++    ::typelib_typedescription_getByName( &pTD, unoName.pData );
++    assert(pTD && "### unknown exception type! leaving out destruction => leaking!!!");
++    if (pTD)
++    {
++        ::uno_destructData( pExc, pTD, cpp_release );
++        ::typelib_typedescription_release( pTD );
++    }
++}
++}
++
++void raiseException( uno_Any * pUnoExc, uno_Mapping * pUno2Cpp )
++{
++#if OSL_DEBUG_LEVEL > 1
++    OString cstr(
++        OUStringToOString(
++            OUString::unacquired( &pUnoExc->pType->pTypeName ),
++            RTL_TEXTENCODING_ASCII_US ) );
++    fprintf( stderr, "> uno exception occurred: %s\n", cstr.getStr() );
++#endif
++    void * pCppExc;
++    type_info * rtti;
++
++    {
++    // construct cpp exception object
++    typelib_TypeDescription * pTypeDescr = nullptr;
++    TYPELIB_DANGER_GET( &pTypeDescr, pUnoExc->pType );
++    assert(pTypeDescr);
++    if (! pTypeDescr)
++    {
++        throw RuntimeException(
++            "cannot get typedescription for type " +
++            OUString::unacquired( &pUnoExc->pType->pTypeName ) );
++    }
++
++    pCppExc = __cxxabiv1::__cxa_allocate_exception( pTypeDescr->nSize );
++    ::uno_copyAndConvertData( pCppExc, pUnoExc->pData, pTypeDescr, pUno2Cpp );
++
++    // destruct uno exception
++    ::uno_any_destruct( pUnoExc, nullptr );
++    // avoiding locked counts
++    rtti = x86_64::getRtti(*pTypeDescr);
++    TYPELIB_DANGER_RELEASE( pTypeDescr );
++    assert(rtti && "### no rtti for throwing exception!");
++    if (! rtti)
++    {
++        throw RuntimeException(
++            "no rtti for type " +
++            OUString::unacquired( &pUnoExc->pType->pTypeName ) );
++    }
++    }
++
++    __cxxabiv1::__cxa_throw( pCppExc, rtti, deleteException );
++}
++
++void fillUnoException(uno_Any * pUnoExc, uno_Mapping * pCpp2Uno)
++{
++    __cxxabiv1::__cxa_exception * header = __cxxabiv1::__cxa_get_globals()->caughtExceptions;
++    if (! header)
++    {
++        RuntimeException aRE( u"no exception header!"_ustr );
++        Type const & rType = cppu::UnoType<decltype(aRE)>::get();
++        uno_type_any_constructAndConvert( pUnoExc, &aRE, rType.getTypeLibType(), pCpp2Uno );
++        SAL_WARN("bridges", aRE.Message);
++        return;
++    }
++
++#if defined _LIBCPPABI_VERSION // detect libc++abi
++    // Very bad HACK to find out whether we run against a libcxxabi that has a new
++    // __cxa_exception::reserved member at the start, introduced with LLVM 10
++    // <https://github.com/llvm/llvm-project/commit/674ec1eb16678b8addc02a4b0534ab383d22fa77>
++    // "[libcxxabi] Insert padding in __cxa_exception struct for compatibility".  The layout of the
++    // start of __cxa_exception is
++    //
++    //  [8 byte  void *reserve]
++    //   8 byte  size_t referenceCount
++    //
++    // where the (bad, hacky) assumption is that reserve (if present) is null
++    // (__cxa_allocate_exception in at least LLVM 11 zero-fills the object, and nothing actively
++    // sets reserve) while referenceCount is non-null (__cxa_throw sets it to 1, and
++    // __cxa_decrement_exception_refcount destroys the exception as soon as it drops to 0; for a
++    // __cxa_dependent_exception, the referenceCount member is rather
++    //
++    //   8 byte  void* primaryException
++    //
++    // but which also will always be set to a non-null value in __cxa_rethrow_primary_exception).
++    // As described in the definition of __cxa_exception
++    // (bridges/source/cpp_uno/gcc3_linux_x86-64/share.hxx), this hack (together with the "#if 0"
++    // there) can be dropped once we can be sure that we only run against new libcxxabi that has the
++    // reserve member:
++    if (*reinterpret_cast<void **>(header) == nullptr) {
++        header = reinterpret_cast<__cxxabiv1::__cxa_exception*>(reinterpret_cast<void **>(header) + 1);
++    }
++#endif
++
++    std::type_info *exceptionType = __cxxabiv1::__cxa_current_exception_type();
++
++    typelib_TypeDescription * pExcTypeDescr = nullptr;
++    OUString unoName( toUNOname( exceptionType->name() ) );
++#if OSL_DEBUG_LEVEL > 1
++    OString cstr_unoName( OUStringToOString( unoName, RTL_TEXTENCODING_ASCII_US ) );
++    fprintf( stderr, "> c++ exception occurred: %s\n", cstr_unoName.getStr() );
++#endif
++    typelib_typedescription_getByName( &pExcTypeDescr, unoName.pData );
++    if (pExcTypeDescr == nullptr)
++    {
++        RuntimeException aRE( "exception type not found: " + unoName );
++        Type const & rType = cppu::UnoType<decltype(aRE)>::get();
++        uno_type_any_constructAndConvert( pUnoExc, &aRE, rType.getTypeLibType(), pCpp2Uno );
++        SAL_WARN("bridges", aRE.Message);
++    }
++    else
++    {
++        // construct uno exception any
++        uno_any_constructAndConvert( pUnoExc, header->adjustedPtr, pExcTypeDescr, pCpp2Uno );
++        typelib_typedescription_release( pExcTypeDescr );
++    }
++}
++
++}
++
++/* vim:set shiftwidth=4 softtabstop=4 expandtab: */
+diff --git a/bridges/source/cpp_uno/gcc3_qnx_x86-64/rtti.cxx b/bridges/source/cpp_uno/gcc3_qnx_x86-64/rtti.cxx
+new file mode 100644
+index 000000000..adcf9da80
+--- /dev/null
++++ b/bridges/source/cpp_uno/gcc3_qnx_x86-64/rtti.cxx
+@@ -0,0 +1,273 @@
++/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
++/*
++ * This file is part of the LibreOffice project.
++ *
++ * This Source Code Form is subject to the terms of the Mozilla Public
++ * License, v. 2.0. If a copy of the MPL was not distributed with this
++ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
++ *
++ * This file incorporates work covered by the following license notice:
++ *
++ *   Licensed to the Apache Software Foundation (ASF) under one or more
++ *   contributor license agreements. See the NOTICE file distributed
++ *   with this work for additional information regarding copyright
++ *   ownership. The ASF licenses this file to you under the Apache
++ *   License, Version 2.0 (the "License"); you may not use this file
++ *   except in compliance with the License. You may obtain a copy of
++ *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
++ */
++
++#include <sal/config.h>
++
++#include <cassert>
++#include <cxxabi.h>
++#include <memory>
++#include <mutex>
++#include <typeinfo>
++#include <unordered_map>
++#include <utility>
++#include <vector>
++
++#include <dlfcn.h>
++
++#include <rtl/strbuf.hxx>
++#include <rtl/ustring.hxx>
++#include <sal/log.hxx>
++#include <typelib/typedescription.h>
++#include <o3tl/string_view.hxx>
++
++#include "rtti.hxx"
++#include "share.hxx"
++
++namespace {
++
++class Generated {
++public:
++    virtual ~Generated() {};
++
++    virtual std::type_info * get() const = 0;
++};
++
++class GeneratedPlain: public Generated {
++public:
++    GeneratedPlain(std::unique_ptr<std::type_info> && info): info_(std::move(info)) {};
++
++    std::type_info * get() const override { return info_.get(); }
++
++private:
++    std::unique_ptr<std::type_info> info_;
++};
++
++class GeneratedPad: public Generated {
++public:
++    GeneratedPad(std::unique_ptr<char[]> && pad): pad_(std::move(pad)) {};
++
++    ~GeneratedPad() override { get()->~type_info(); }
++
++    std::type_info * get() const override final
++    { return reinterpret_cast<std::type_info *>(pad_.get()); }
++
++private:
++    std::unique_ptr<char[]> pad_;
++};
++
++class RTTI
++{
++    typedef std::unordered_map< OUString, std::type_info * > t_rtti_map;
++
++    t_rtti_map m_rttis;
++    std::vector<OString> m_rttiNames;
++    std::unordered_map<OUString, std::unique_ptr<Generated>> m_generatedRttis;
++
++#if !defined ANDROID
++    void * m_hApp;
++#endif
++
++public:
++    RTTI();
++    ~RTTI();
++
++    std::type_info * getRTTI(typelib_TypeDescription const &);
++};
++
++RTTI::RTTI()
++#if !defined ANDROID
++    : m_hApp( dlopen( nullptr, RTLD_LAZY ) )
++#endif
++{
++}
++
++RTTI::~RTTI()
++{
++#if !defined ANDROID
++    dlclose( m_hApp );
++#endif
++}
++
++std::type_info * RTTI::getRTTI(typelib_TypeDescription const & pTypeDescr)
++{
++    OUString const & unoName = OUString::unacquired(&pTypeDescr.pTypeName);
++
++    t_rtti_map::const_iterator iFind( m_rttis.find( unoName ) );
++    if (iFind != m_rttis.end())
++        return iFind->second;
++
++    std::type_info * rtti;
++
++    // RTTI symbol
++    OStringBuffer buf( 64 );
++    buf.append( "_ZTIN" );
++    sal_Int32 index = 0;
++    do
++    {
++        std::u16string_view token( o3tl::getToken(unoName, 0, '.', index ) );
++        buf.append( static_cast<sal_Int32>(token.size()) );
++        OString c_token( OUStringToOString( token, RTL_TEXTENCODING_ASCII_US ) );
++        buf.append( c_token );
++    }
++    while (index >= 0);
++    buf.append( 'E' );
++
++    OString symName( buf.makeStringAndClear() );
++#if !defined ANDROID
++    rtti = static_cast<std::type_info *>(dlsym( m_hApp, symName.getStr() ));
++#else
++    rtti = static_cast<std::type_info *>(dlsym( RTLD_DEFAULT, symName.getStr() ));
++#endif
++
++    if (rtti)
++    {
++        std::pair< t_rtti_map::iterator, bool > insertion (
++            m_rttis.insert( t_rtti_map::value_type( unoName, rtti ) ) );
++        SAL_WARN_IF( !insertion.second, "bridges", "key " << unoName << " already in rtti map" );
++        return rtti;
++    }
++
++    // try to lookup the symbol in the generated rtti map
++    auto iFind2( m_generatedRttis.find( unoName ) );
++    if (iFind2 != m_generatedRttis.end())
++    {
++        // taking already generated rtti
++        rtti = iFind2->second->get();
++        return rtti;
++    }
++
++    // we must generate it !
++    // symbol and rtti-name is nearly identical,
++    // the symbol is prefixed with _ZTI
++    char const * rttiName = symName.getStr() +4;
++
++    SAL_INFO("bridges", "Generated rtti for " << rttiName);
++
++    std::unique_ptr<Generated> newRtti;
++    switch (pTypeDescr.eTypeClass) {
++    case typelib_TypeClass_EXCEPTION:
++        {
++            typelib_CompoundTypeDescription const & ctd
++                = reinterpret_cast<
++                    typelib_CompoundTypeDescription const &>(
++                        pTypeDescr);
++            if (ctd.pBaseTypeDescription)
++            {
++                // ensure availability of base
++                std::type_info * base_rtti = getRTTI(
++                    ctd.pBaseTypeDescription->aBase);
++                m_rttiNames.emplace_back(OString(rttiName));
++                std::unique_ptr<std::type_info> info(
++                    new __cxxabiv1::__si_class_type_info(
++                       m_rttiNames.back().getStr(), static_cast<__cxxabiv1::__class_type_info *>(base_rtti) ));
++                newRtti.reset(new GeneratedPlain(std::move(info)));
++            }
++            else
++            {
++                // this class has no base class
++                m_rttiNames.emplace_back(OString(rttiName));
++                std::unique_ptr<std::type_info> info(
++                    new __cxxabiv1::__class_type_info(m_rttiNames.back().getStr()));
++                newRtti.reset(new GeneratedPlain(std::move(info)));
++            }
++            break;
++        }
++    case typelib_TypeClass_INTERFACE:
++        {
++            typelib_InterfaceTypeDescription const & itd
++                = reinterpret_cast<
++                   typelib_InterfaceTypeDescription const &>(
++                        pTypeDescr);
++            std::vector<std::type_info *> bases;
++            for (sal_Int32 i = 0; i != itd.nBaseTypes; ++i) {
++                bases.push_back(getRTTI(itd.ppBaseTypes[i]->aBase));
++            }
++            switch (itd.nBaseTypes) {
++            case 0:
++                {
++                    m_rttiNames.emplace_back(OString(rttiName));
++                    std::unique_ptr<std::type_info> info(
++                        new __cxxabiv1::__class_type_info(
++                            m_rttiNames.back().getStr()));
++                    newRtti.reset(new GeneratedPlain(std::move(info)));
++                    break;
++                }
++            case 1:
++                {
++                    m_rttiNames.emplace_back(OString(rttiName));
++                    std::unique_ptr<std::type_info> info(
++                        new __cxxabiv1::__si_class_type_info(
++                            m_rttiNames.back().getStr(),
++                            static_cast<
++                                __cxxabiv1::__class_type_info *>(
++                                    bases[0])));
++                    newRtti.reset(new GeneratedPlain(std::move(info)));
++                    break;
++                }
++            default:
++                {
++                    m_rttiNames.emplace_back(OString(rttiName));
++                    auto pad = std::make_unique<char[]>(
++                        sizeof (__cxxabiv1::__vmi_class_type_info)
++                        + ((itd.nBaseTypes - 1)
++                           * sizeof (
++                               __cxxabiv1::__base_class_type_info)));
++                    __cxxabiv1::__vmi_class_type_info * info
++                       = new(pad.get())
++                            __cxxabiv1::__vmi_class_type_info(
++                                m_rttiNames.back().getStr(),
++                                __cxxabiv1::__vmi_class_type_info::__flags_unknown_mask);
++                    info->__base_count = itd.nBaseTypes;
++                    for (sal_Int32 i = 0; i != itd.nBaseTypes; ++i)
++                    {
++                        info->__base_info[i].__base_type
++                            = static_cast<
++                                __cxxabiv1::__class_type_info *>(
++                                    bases[i]);
++                        info->__base_info[i].__offset_flags
++                           = (__cxxabiv1::__base_class_type_info::__public_mask
++                              | ((8 * i) << __cxxabiv1::__base_class_type_info::__offset_shift));
++                    }
++                    newRtti.reset(new GeneratedPad(std::move(pad)));
++                    break;
++                }
++            }
++            break;
++        }
++    default:
++        assert(false); // cannot happen
++    }
++    rtti = newRtti->get();
++
++    auto insertion(m_generatedRttis.emplace(unoName, std::move(newRtti)));
++    SAL_WARN_IF( !insertion.second, "bridges", "key " << unoName << " already in generated rtti map" );
++
++    return rtti;
++}
++
++}
++
++std::type_info * x86_64::getRtti(typelib_TypeDescription const & type) {
++    static RTTI theRttiFactory;
++    static std::mutex theMutex;
++    std::lock_guard aGuard(theMutex);
++    return theRttiFactory.getRTTI(type);
++}
++
++/* vim:set shiftwidth=4 softtabstop=4 expandtab: */
+diff --git a/bridges/source/cpp_uno/gcc3_qnx_x86-64/rtti.hxx b/bridges/source/cpp_uno/gcc3_qnx_x86-64/rtti.hxx
+new file mode 100644
+index 000000000..b056f2e64
+--- /dev/null
++++ b/bridges/source/cpp_uno/gcc3_qnx_x86-64/rtti.hxx
+@@ -0,0 +1,33 @@
++/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
++/*
++ * This file is part of the LibreOffice project.
++ *
++ * This Source Code Form is subject to the terms of the Mozilla Public
++ * License, v. 2.0. If a copy of the MPL was not distributed with this
++ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
++ *
++ * This file incorporates work covered by the following license notice:
++ *
++ *   Licensed to the Apache Software Foundation (ASF) under one or more
++ *   contributor license agreements. See the NOTICE file distributed
++ *   with this work for additional information regarding copyright
++ *   ownership. The ASF licenses this file to you under the Apache
++ *   License, Version 2.0 (the "License"); you may not use this file
++ *   except in compliance with the License. You may obtain a copy of
++ *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
++ */
++
++#pragma once
++
++#include <sal/config.h>
++
++#include <typeinfo>
++
++#include <typelib/typedescription.h>
++
++namespace x86_64
++{
++std::type_info* getRtti(typelib_TypeDescription const& type);
++}
++
++/* vim:set shiftwidth=4 softtabstop=4 expandtab: */
+diff --git a/bridges/source/cpp_uno/gcc3_qnx_x86-64/share.hxx b/bridges/source/cpp_uno/gcc3_qnx_x86-64/share.hxx
+new file mode 100644
+index 000000000..58f8ec467
+--- /dev/null
++++ b/bridges/source/cpp_uno/gcc3_qnx_x86-64/share.hxx
+@@ -0,0 +1,193 @@
++/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
++/*
++ * This file is part of the LibreOffice project.
++ *
++ * This Source Code Form is subject to the terms of the Mozilla Public
++ * License, v. 2.0. If a copy of the MPL was not distributed with this
++ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
++ *
++ * This file incorporates work covered by the following license notice:
++ *
++ *   Licensed to the Apache Software Foundation (ASF) under one or more
++ *   contributor license agreements. See the NOTICE file distributed
++ *   with this work for additional information regarding copyright
++ *   ownership. The ASF licenses this file to you under the Apache
++ *   License, Version 2.0 (the "License"); you may not use this file
++ *   except in compliance with the License. You may obtain a copy of
++ *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
++ */
++
++// QNX fork of gcc3_linux_x86-64. Same Itanium C++ ABI family (the gcc3_ name
++// denotes the ABI, not the compiler). Built with clang-21 against QNX's native
++// libc++abi.so.1, natively on QNX. __cxa_exception layout verified against that
++// runtime: reserve@0, exceptionType@16, exceptionDestructor@24, adjustedPtr@88,
++// sizeof 128 -- matches the bridge's LLVM>=10 assumption, no new case needed.
++
++#include <sal/config.h>
++
++#include <typeinfo>
++#include <exception>
++
++#include <cxxabi.h> // we need this here for _LIBCPPABI_VERSION, etc
++#include <unwind.h>
++
++#include <config_cxxabi.h>
++#include <uno/any2.h>
++#include <uno/mapping.h>
++
++#if !HAVE_CXXABI_H_CLASS_TYPE_INFO
++// <https://mentorembedded.github.io/cxx-abi/abi.html>,
++// libstdc++-v3/libsupc++/cxxabi.h:
++namespace __cxxabiv1 {
++class __class_type_info: public std::type_info {
++public:
++    explicit __class_type_info(char const * n): type_info(n) {}
++    ~__class_type_info() override;
++};
++}
++#endif
++
++#if !HAVE_CXXABI_H_SI_CLASS_TYPE_INFO
++// <https://mentorembedded.github.io/cxx-abi/abi.html>,
++// libstdc++-v3/libsupc++/cxxabi.h:
++namespace __cxxabiv1 {
++class __si_class_type_info: public __class_type_info {
++public:
++    __class_type_info const * __base_type;
++    explicit __si_class_type_info(
++        char const * n, __class_type_info const *base):
++        __class_type_info(n), __base_type(base) {}
++    ~__si_class_type_info() override;
++};
++}
++#endif
++
++#if !HAVE_CXXABI_H_BASE_CLASS_TYPE_INFO
++// <https://mentorembedded.github.io/cxx-abi/abi.html>,
++// libstdc++-v3/libsupc++/cxxabi.h:
++namespace __cxxabiv1 {
++struct __base_class_type_info {
++    __class_type_info const * __base_type;
++#if defined _GLIBCXX_LLP64
++    long long __offset_flags;
++#else
++    long __offset_flags;
++#endif
++    enum __offset_flags_masks {
++        __virtual_mask = 0x1,
++        __public_mask = 0x2,
++        __offset_shift = 8
++    };
++};
++}
++#endif
++
++#if !HAVE_CXXABI_H_VMI_CLASS_TYPE_INFO
++// <https://mentorembedded.github.io/cxx-abi/abi.html>,
++// libstdc++-v3/libsupc++/cxxabi.h:
++namespace __cxxabiv1 {
++class __vmi_class_type_info: public __class_type_info {
++public:
++    unsigned int __flags;
++    unsigned int __base_count;
++    __base_class_type_info __base_info[1];
++    enum __flags_masks {
++        __non_diamond_repeat_mask = 0x1,
++        __diamond_shaped_mask = 0x2,
++        __flags_unknown_mask = 0x10
++    };
++    explicit __vmi_class_type_info(char const * n, int flags):
++        __class_type_info(n), __flags(flags), __base_count(0) {}
++    ~__vmi_class_type_info() override;
++};
++}
++#endif
++
++#if !HAVE_CXXABI_H_CXA_EXCEPTION
++// <https://mentorembedded.github.io/cxx-abi/abi-eh.html>,
++// libcxxabi/src/cxa_exception.hpp:
++namespace __cxxabiv1 {
++struct __cxa_exception {
++#if defined _LIBCPPABI_VERSION // detect libc++abi
++#if defined __LP64__ || LIBCXXABI_ARM_EHABI
++#if 0
++    // This is a new field added with LLVM 10
++    // <https://github.com/llvm/llvm-project/commit/674ec1eb16678b8addc02a4b0534ab383d22fa77>
++    // "[libcxxabi] Insert padding in __cxa_exception struct for compatibility".  The HACK in
++    // fillUnoException (bridges/source/cpp_uno/gcc3_linux_x86-64/except.cxx) tries to find out at
++    // runtime whether a __cxa_exception has this member.  Once we can be sure that we only run
++    // against new libcxxabi that has this member, we can drop the "#if 0" here and drop the hack
++    // in fillUnoException.
++
++    // Now _Unwind_Exception is marked with __attribute__((aligned)),
++    // which implies __cxa_exception is also aligned. Insert padding
++    // in the beginning of the struct, rather than before unwindHeader.
++    void *reserve;
++#endif
++    std::size_t referenceCount;
++#endif
++#endif
++    std::type_info * exceptionType;
++    void (* exceptionDestructor)(void *);
++    void (*unexpectedHandler)(); // std::unexpected_handler dropped from C++17
++    std::terminate_handler terminateHandler;
++    __cxa_exception * nextException;
++    int handlerCount;
++    int handlerSwitchValue;
++    char const * actionRecord;
++    char const * languageSpecificData;
++    void * catchTemp;
++    void * adjustedPtr;
++    _Unwind_Exception unwindHeader;
++};
++}
++#endif
++
++#if !HAVE_CXXABI_H_CXA_EH_GLOBALS
++// <https://mentorembedded.github.io/cxx-abi/abi-eh.html>:
++namespace __cxxabiv1 {
++struct __cxa_eh_globals {
++    __cxa_exception * caughtExceptions;
++    unsigned int uncaughtExceptions;
++};
++}
++#endif
++
++#if !HAVE_CXXABI_H_CXA_GET_GLOBALS
++namespace __cxxabiv1 {
++extern "C" __cxa_eh_globals * __cxa_get_globals() noexcept;
++}
++#endif
++
++#if !HAVE_CXXABI_H_CXA_CURRENT_EXCEPTION_TYPE
++namespace __cxxabiv1 {
++extern "C" std::type_info *__cxa_current_exception_type() noexcept;
++}
++#endif
++
++#if !HAVE_CXXABI_H_CXA_ALLOCATE_EXCEPTION
++namespace __cxxabiv1 {
++extern "C" void * __cxa_allocate_exception(std::size_t thrown_size) noexcept;
++}
++#endif
++
++#if !HAVE_CXXABI_H_CXA_THROW
++namespace __cxxabiv1 {
++extern "C" void __cxa_throw(
++    void * thrown_exception, void * tinfo, void (* dest)(void *))
++    __attribute__((noreturn));
++}
++#endif
++
++extern "C" void privateSnippetExecutor( ... );
++
++namespace CPPU_CURRENT_NAMESPACE
++{
++
++void raiseException(
++    uno_Any * pUnoExc, uno_Mapping * pUno2Cpp );
++
++void fillUnoException(uno_Any *, uno_Mapping * pCpp2Uno);
++}
++
++/* vim:set shiftwidth=4 softtabstop=4 expandtab: */
+diff --git a/bridges/source/cpp_uno/gcc3_qnx_x86-64/uno2cpp.cxx b/bridges/source/cpp_uno/gcc3_qnx_x86-64/uno2cpp.cxx
+new file mode 100644
+index 000000000..6423c184e
+--- /dev/null
++++ b/bridges/source/cpp_uno/gcc3_qnx_x86-64/uno2cpp.cxx
+@@ -0,0 +1,434 @@
++/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
++/*
++ * This file is part of the LibreOffice project.
++ *
++ * This Source Code Form is subject to the terms of the Mozilla Public
++ * License, v. 2.0. If a copy of the MPL was not distributed with this
++ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
++ *
++ * This file incorporates work covered by the following license notice:
++ *
++ *   Licensed to the Apache Software Foundation (ASF) under one or more
++ *   contributor license agreements. See the NOTICE file distributed
++ *   with this work for additional information regarding copyright
++ *   ownership. The ASF licenses this file to you under the Apache
++ *   License, Version 2.0 (the "License"); you may not use this file
++ *   except in compliance with the License. You may obtain a copy of
++ *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
++ */
++
++#include <exception>
++#include <typeinfo>
++
++#include <com/sun/star/uno/genfunc.hxx>
++#include <com/sun/star/uno/RuntimeException.hpp>
++#include <o3tl/runtimetooustring.hxx>
++#include <uno/data.h>
++
++#include <bridge.hxx>
++#include <types.hxx>
++#include <unointerfaceproxy.hxx>
++#include <vtables.hxx>
++
++#include "abi.hxx"
++#include "callvirtualmethod.hxx"
++#include "share.hxx"
++
++using namespace ::com::sun::star::uno;
++
++namespace {
++
++// Functions for easier insertion of values to registers or stack
++// pSV - pointer to the source
++// nr - order of the value [will be increased if stored to register]
++// pFPR, pGPR - pointer to the registers
++// pDS - pointer to the stack [will be increased if stored here]
++
++// The value in %xmm register is already prepared to be retrieved as a float,
++// thus we treat float and double the same
++void INSERT_FLOAT_DOUBLE(
++    void const * pSV, sal_uInt32 & nr, double * pFPR, sal_uInt64 *& pDS)
++{
++    if ( nr < x86_64::MAX_SSE_REGS )
++        pFPR[nr++] = *static_cast<double const *>( pSV );
++    else
++        *pDS++ = *static_cast<sal_uInt64 const *>( pSV ); // verbatim!
++}
++
++void INSERT_INT64(
++    void const * pSV, sal_uInt32 & nr, sal_uInt64 * pGPR, sal_uInt64 *& pDS)
++{
++    if ( nr < x86_64::MAX_GPR_REGS )
++        pGPR[nr++] = *static_cast<sal_uInt64 const *>( pSV );
++    else
++        *pDS++ = *static_cast<sal_uInt64 const *>( pSV );
++}
++
++void INSERT_INT32(
++    void const * pSV, sal_uInt32 & nr, sal_uInt64 * pGPR, sal_uInt64 *& pDS)
++{
++    if ( nr < x86_64::MAX_GPR_REGS )
++        pGPR[nr++] = *static_cast<sal_uInt32 const *>( pSV );
++    else
++        *pDS++ = *static_cast<sal_uInt32 const *>( pSV );
++}
++
++void INSERT_INT16(
++    void const * pSV, sal_uInt32 & nr, sal_uInt64 * pGPR, sal_uInt64 *& pDS)
++{
++    if ( nr < x86_64::MAX_GPR_REGS )
++        pGPR[nr++] = *static_cast<sal_uInt16 const *>( pSV );
++    else
++        *pDS++ = *static_cast<sal_uInt16 const *>( pSV );
++}
++
++void INSERT_INT8(
++    void const * pSV, sal_uInt32 & nr, sal_uInt64 * pGPR, sal_uInt64 *& pDS)
++{
++    if ( nr < x86_64::MAX_GPR_REGS )
++        pGPR[nr++] = *static_cast<sal_uInt8 const *>( pSV );
++    else
++        *pDS++ = *static_cast<sal_uInt8 const *>( pSV );
++}
++
++}
++
++static void cpp_call(
++    bridges::cpp_uno::shared::UnoInterfaceProxy * pThis,
++    bridges::cpp_uno::shared::VtableSlot aVtableSlot,
++    typelib_TypeDescriptionReference * pReturnTypeRef,
++    sal_Int32 nParams, typelib_MethodParameter * pParams,
++    void * pUnoReturn, void * pUnoArgs[], uno_Any ** ppUnoExc )
++{
++    // Maximum space for [complex ret ptr], values | ptr ...
++    // (but will be used less - some of the values will be in pGPR and pFPR)
++    sal_uInt64 *pStack = static_cast<sal_uInt64 *>(__builtin_alloca( (nParams + 3) * sizeof(sal_uInt64) ));
++    sal_uInt64 *pStackStart = pStack;
++
++    sal_uInt64 pGPR[x86_64::MAX_GPR_REGS];
++    sal_uInt32 nGPR = 0;
++
++    double pFPR[x86_64::MAX_SSE_REGS];
++    sal_uInt32 nFPR = 0;
++
++    // Return
++    typelib_TypeDescription * pReturnTypeDescr = nullptr;
++    // coverity[freed_arg] 2024.6.1 - pReturnTypeRef's nRefCount is > 1 here
++    TYPELIB_DANGER_GET( &pReturnTypeDescr, pReturnTypeRef );
++    assert(pReturnTypeDescr);
++
++    void * pCppReturn = nullptr; // if != 0 && != pUnoReturn, needs reconversion (see below)
++
++    bool bSimpleReturn = true;
++    if ( pReturnTypeDescr )
++    {
++        if ( x86_64::return_in_hidden_param( pReturnTypeRef ) )
++            bSimpleReturn = false;
++
++        if ( bSimpleReturn )
++            pCppReturn = pUnoReturn; // direct way for simple types
++        else
++        {
++            // complex return via ptr
++            pCppReturn = bridges::cpp_uno::shared::relatesToInterfaceType( pReturnTypeDescr )?
++                         __builtin_alloca( pReturnTypeDescr->nSize ) : pUnoReturn;
++            INSERT_INT64( &pCppReturn, nGPR, pGPR, pStack );
++        }
++    }
++
++    // Push "this" pointer
++    void * pAdjustedThisPtr = reinterpret_cast< void ** >( pThis->getCppI() ) + aVtableSlot.offset;
++    INSERT_INT64( &pAdjustedThisPtr, nGPR, pGPR, pStack );
++
++    // Args
++    void ** pCppArgs = static_cast<void **>(alloca( 3 * sizeof(void *) * nParams ));
++    // Indices of values this have to be converted (interface conversion cpp<=>uno)
++    sal_Int32 * pTempIndices = reinterpret_cast<sal_Int32 *>(pCppArgs + nParams);
++    // Type descriptions for reconversions
++    typelib_TypeDescription ** ppTempParamTypeDescr = reinterpret_cast<typelib_TypeDescription **>(pCppArgs + (2 * nParams));
++
++    sal_Int32 nTempIndices = 0;
++
++    for ( sal_Int32 nPos = 0; nPos < nParams; ++nPos )
++    {
++        const typelib_MethodParameter & rParam = pParams[nPos];
++        typelib_TypeDescription * pParamTypeDescr = nullptr;
++        TYPELIB_DANGER_GET( &pParamTypeDescr, rParam.pTypeRef );
++
++        if (!rParam.bOut && bridges::cpp_uno::shared::isSimpleType( pParamTypeDescr ))
++        {
++            pCppArgs[nPos] = alloca( 8 );
++            uno_copyAndConvertData( pCppArgs[nPos], pUnoArgs[nPos], pParamTypeDescr,
++                                    pThis->getBridge()->getUno2Cpp() );
++
++            switch (pParamTypeDescr->eTypeClass)
++            {
++            case typelib_TypeClass_HYPER:
++            case typelib_TypeClass_UNSIGNED_HYPER:
++                INSERT_INT64( pCppArgs[nPos], nGPR, pGPR, pStack );
++                break;
++            case typelib_TypeClass_LONG:
++            case typelib_TypeClass_UNSIGNED_LONG:
++            case typelib_TypeClass_ENUM:
++                INSERT_INT32( pCppArgs[nPos], nGPR, pGPR, pStack );
++                break;
++            case typelib_TypeClass_SHORT:
++            case typelib_TypeClass_CHAR:
++            case typelib_TypeClass_UNSIGNED_SHORT:
++                INSERT_INT16( pCppArgs[nPos], nGPR, pGPR, pStack );
++                break;
++            case typelib_TypeClass_BOOLEAN:
++            case typelib_TypeClass_BYTE:
++                INSERT_INT8( pCppArgs[nPos], nGPR, pGPR, pStack );
++                break;
++            case typelib_TypeClass_FLOAT:
++            case typelib_TypeClass_DOUBLE:
++                INSERT_FLOAT_DOUBLE( pCppArgs[nPos], nFPR, pFPR, pStack );
++                break;
++            default:
++                break;
++            }
++
++            // no longer needed
++            TYPELIB_DANGER_RELEASE( pParamTypeDescr );
++        }
++        else // ptr to complex value | ref
++        {
++            if (! rParam.bIn) // is pure out
++            {
++                // cpp out is constructed mem, uno out is not!
++                pCppArgs[nPos] = alloca( pParamTypeDescr->nSize );
++                uno_constructData( pCppArgs[nPos], pParamTypeDescr );
++                pTempIndices[nTempIndices] = nPos; // default constructed for cpp call
++                // will be released at reconversion
++                ppTempParamTypeDescr[nTempIndices++] = pParamTypeDescr;
++            }
++            // is in/inout
++            else if (bridges::cpp_uno::shared::relatesToInterfaceType( pParamTypeDescr ))
++            {
++                pCppArgs[nPos] = alloca( pParamTypeDescr->nSize );
++                uno_copyAndConvertData(
++                    pCppArgs[nPos], pUnoArgs[nPos], pParamTypeDescr, pThis->getBridge()->getUno2Cpp() );
++
++                pTempIndices[nTempIndices] = nPos; // has to be reconverted
++                // will be released at reconversion
++                ppTempParamTypeDescr[nTempIndices++] = pParamTypeDescr;
++            }
++            else // direct way
++            {
++                pCppArgs[nPos] = pUnoArgs[nPos];
++                // no longer needed
++                TYPELIB_DANGER_RELEASE( pParamTypeDescr );
++            }
++            INSERT_INT64( &(pCppArgs[nPos]), nGPR, pGPR, pStack );
++        }
++    }
++
++    try
++    {
++        try {
++            CPPU_CURRENT_NAMESPACE::callVirtualMethod(
++                pAdjustedThisPtr, aVtableSlot.index,
++                pCppReturn, pReturnTypeRef, bSimpleReturn,
++                pStackStart, ( pStack - pStackStart ),
++                pGPR, pFPR );
++        } catch (const Exception &) {
++            throw;
++        } catch (const std::exception & e) {
++            throw RuntimeException(
++                "C++ code threw " + o3tl::runtimeToOUString(typeid(e).name())
++                + ": " + o3tl::runtimeToOUString(e.what()));
++        } catch (...) {
++            throw RuntimeException(u"C++ code threw unknown exception"_ustr);
++        }
++
++        *ppUnoExc = nullptr;
++
++        // reconvert temporary params
++        for ( ; nTempIndices--; )
++        {
++            sal_Int32 nIndex = pTempIndices[nTempIndices];
++            typelib_TypeDescription * pParamTypeDescr = ppTempParamTypeDescr[nTempIndices];
++
++            if (pParams[nIndex].bIn)
++            {
++                if (pParams[nIndex].bOut) // inout
++                {
++                    uno_destructData( pUnoArgs[nIndex], pParamTypeDescr, nullptr ); // destroy uno value
++                    uno_copyAndConvertData( pUnoArgs[nIndex], pCppArgs[nIndex], pParamTypeDescr,
++                                            pThis->getBridge()->getCpp2Uno() );
++                }
++            }
++            else // pure out
++            {
++                uno_copyAndConvertData( pUnoArgs[nIndex], pCppArgs[nIndex], pParamTypeDescr,
++                                        pThis->getBridge()->getCpp2Uno() );
++            }
++            // destroy temp cpp param => cpp: every param was constructed
++            uno_destructData( pCppArgs[nIndex], pParamTypeDescr, cpp_release );
++
++            TYPELIB_DANGER_RELEASE( pParamTypeDescr );
++        }
++        // return value
++        if (pCppReturn && pUnoReturn != pCppReturn)
++        {
++            uno_copyAndConvertData( pUnoReturn, pCppReturn, pReturnTypeDescr,
++                                    pThis->getBridge()->getCpp2Uno() );
++            uno_destructData( pCppReturn, pReturnTypeDescr, cpp_release );
++        }
++    }
++     catch (...)
++     {
++        // fill uno exception
++        CPPU_CURRENT_NAMESPACE::fillUnoException(*ppUnoExc, pThis->getBridge()->getCpp2Uno());
++
++        // temporary params
++        for ( ; nTempIndices--; )
++        {
++            sal_Int32 nIndex = pTempIndices[nTempIndices];
++            // destroy temp cpp param => cpp: every param was constructed
++            uno_destructData( pCppArgs[nIndex], ppTempParamTypeDescr[nTempIndices], cpp_release );
++            TYPELIB_DANGER_RELEASE( ppTempParamTypeDescr[nTempIndices] );
++        }
++        // return type
++        if (pReturnTypeDescr)
++            TYPELIB_DANGER_RELEASE( pReturnTypeDescr );
++    }
++}
++
++
++namespace bridges::cpp_uno::shared {
++
++void unoInterfaceProxyDispatch(
++    uno_Interface * pUnoI, const typelib_TypeDescription * pMemberDescr,
++    void * pReturn, void * pArgs[], uno_Any ** ppException )
++{
++    // is my surrogate
++    bridges::cpp_uno::shared::UnoInterfaceProxy * pThis
++        = static_cast< bridges::cpp_uno::shared::UnoInterfaceProxy * >(pUnoI);
++
++    switch (pMemberDescr->eTypeClass)
++    {
++    case typelib_TypeClass_INTERFACE_ATTRIBUTE:
++    {
++        assert(
++            (reinterpret_cast<typelib_InterfaceMemberTypeDescription const *>(pMemberDescr)
++             ->nPosition)
++            < pThis->pTypeDescr->nAllMembers);
++        VtableSlot aVtableSlot(
++                getVtableSlot(
++                    reinterpret_cast<
++                    typelib_InterfaceAttributeTypeDescription const * >(
++                        pMemberDescr)));
++
++        if (pReturn)
++        {
++            // dependent dispatch
++            cpp_call(
++                pThis, aVtableSlot,
++                reinterpret_cast<typelib_InterfaceAttributeTypeDescription const *>(pMemberDescr)->pAttributeTypeRef,
++                0, nullptr, // no params
++                pReturn, pArgs, ppException );
++        }
++        else
++        {
++            // is SET
++            typelib_MethodParameter aParam;
++            aParam.pTypeRef =
++                reinterpret_cast<typelib_InterfaceAttributeTypeDescription const *>(pMemberDescr)->pAttributeTypeRef;
++            aParam.bIn      = true;
++            aParam.bOut     = false;
++
++            typelib_TypeDescriptionReference * pReturnTypeRef = nullptr;
++            OUString aVoidName(u"void"_ustr);
++            typelib_typedescriptionreference_new(
++                &pReturnTypeRef, typelib_TypeClass_VOID, aVoidName.pData );
++
++            // dependent dispatch
++            aVtableSlot.index += 1; // get, then set method
++            cpp_call(
++                pThis, aVtableSlot, // get, then set method
++                pReturnTypeRef,
++                1, &aParam,
++                pReturn, pArgs, ppException );
++
++            typelib_typedescriptionreference_release( pReturnTypeRef );
++        }
++
++        break;
++    }
++    case typelib_TypeClass_INTERFACE_METHOD:
++    {
++        assert(
++            (reinterpret_cast<typelib_InterfaceMemberTypeDescription const *>(pMemberDescr)
++             ->nPosition)
++            < pThis->pTypeDescr->nAllMembers);
++        VtableSlot aVtableSlot(
++                getVtableSlot(
++                    reinterpret_cast<
++                    typelib_InterfaceMethodTypeDescription const * >(
++                        pMemberDescr)));
++
++        switch (aVtableSlot.index)
++        {
++            // standard calls
++        case 1: // acquire uno interface
++            (*pUnoI->acquire)( pUnoI );
++            *ppException = nullptr;
++            break;
++        case 2: // release uno interface
++            (*pUnoI->release)( pUnoI );
++            *ppException = nullptr;
++            break;
++        case 0: // queryInterface() opt
++        {
++            typelib_TypeDescription * pTD = nullptr;
++            TYPELIB_DANGER_GET( &pTD, static_cast< Type * >( pArgs[0] )->getTypeLibType() );
++            if (pTD)
++            {
++                uno_Interface * pInterface = nullptr;
++                (*pThis->getBridge()->getUnoEnv()->getRegisteredInterface)(
++                    pThis->getBridge()->getUnoEnv(),
++                    reinterpret_cast<void **>(&pInterface), pThis->oid.pData, reinterpret_cast<typelib_InterfaceTypeDescription *>(pTD) );
++
++                if (pInterface)
++                {
++                    ::uno_any_construct(
++                        static_cast< uno_Any * >( pReturn ),
++                        &pInterface, pTD, nullptr );
++                    (*pInterface->release)( pInterface );
++                    TYPELIB_DANGER_RELEASE( pTD );
++                    *ppException = nullptr;
++                    break;
++                }
++                TYPELIB_DANGER_RELEASE( pTD );
++            }
++            [[fallthrough]]; // else perform queryInterface()
++        }
++        default:
++            // dependent dispatch
++            cpp_call(
++                pThis, aVtableSlot,
++                reinterpret_cast<typelib_InterfaceMethodTypeDescription const *>(pMemberDescr)->pReturnTypeRef,
++                reinterpret_cast<typelib_InterfaceMethodTypeDescription const *>(pMemberDescr)->nParams,
++                reinterpret_cast<typelib_InterfaceMethodTypeDescription const *>(pMemberDescr)->pParams,
++                pReturn, pArgs, ppException );
++        }
++        break;
++    }
++    default:
++    {
++        ::com::sun::star::uno::RuntimeException aExc(
++            u"illegal member type description!"_ustr,
++            ::com::sun::star::uno::Reference< ::com::sun::star::uno::XInterface >() );
++
++        Type const & rExcType = cppu::UnoType<decltype(aExc)>::get();
++        // binary identical null reference
++        ::uno_type_any_construct( *ppException, &aExc, rExcType.getTypeLibType(), nullptr );
++    }
++    }
++}
++
++}
++
++/* vim:set shiftwidth=4 softtabstop=4 expandtab: */
+-- 
+2.51.0
+
