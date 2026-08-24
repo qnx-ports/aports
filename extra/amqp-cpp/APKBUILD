@@ -7,7 +7,7 @@ url="https://github.com/CopernicaMarketingSoftware/AMQP-CPP"
 arch="all"
 license="Apache-2.0"
 depends="libc++ qnx-gcc-libs qnx-io-sock"
-makedepends="cmake openssl-dev qnx-io-sock-dev"
+makedepends="cmake openssl-dev libc++-dev qnx-io-sock-dev"
 source="
   $pkgname-$pkgver.tar.gz::https://github.com/CopernicaMarketingSoftware/AMQP-CPP/archive/refs/tags/v$pkgver.tar.gz
     add_qnx_support.patch
@@ -19,7 +19,7 @@ prepare() {
 }
 
 build() {
-export LDFLAGS="$LDFLAGS -lm -lsocket"
+  export LDFLAGS="$LDFLAGS -lm -lsocket"
 
   cd "$builddir"
 
