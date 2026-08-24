@@ -1,0 +1,242 @@
+From 92dab0fcf7f655ac1e6e4236d936a56e3a05775d Mon Sep 17 00:00:00 2001
+From: Arthur Clark <mydevstuff@mail.com>
+Date: Sun, 16 Aug 2026 03:41:59 +0000
+Subject: [PATCH 01/33] Add QNX 8.0 (x86-64) platform support for the sal build
+
+- configure.ac: nto-qnx* host arm, minimal-headless configuration
+- solenv/gbuild/platform/QNX_X86_64_GCC.mk: unxgcc-based platform;
+  -lsocket, bash recipe shell, CONFIG_SHELL for GNU configure
+- include/sal/config.h, include/osl/endian.h: __QNX__ platform arms
+- sal/osl/unx/system.hxx, signal.cxx: POSIX osl backend; SA_RESTART=0
+- solenv/bin/concat-deps.c: QNX little-endian
+- Repository.mk, bridges/Library_cpp_uno.mk: build wiring
+
+Change-Id: Icee7ad6198ac9b162c6eed99fb5257d8fc3ad09e
+---
+ Repository.mk                            |  2 +-
+ bridges/Library_cpp_uno.mk               |  3 +-
+ configure.ac                             | 42 ++++++++++++++++++++++++
+ include/osl/endian.h                     |  2 ++
+ include/sal/config.h                     |  2 +-
+ sal/osl/unx/signal.cxx                   |  4 +++
+ sal/osl/unx/system.hxx                   | 19 ++++++++++-
+ solenv/bin/concat-deps.c                 |  5 +++
+ solenv/gbuild/platform/QNX_X86_64_GCC.mk | 25 ++++++++++++++
+ 9 files changed, 100 insertions(+), 4 deletions(-)
+ create mode 100644 solenv/gbuild/platform/QNX_X86_64_GCC.mk
+
+diff --git a/Repository.mk b/Repository.mk
+index 015b12ca1..902508be0 100644
+--- a/Repository.mk
++++ b/Repository.mk
+@@ -1052,7 +1052,7 @@ $(eval $(call gb_Helper_register_packages_for_install,ooo,\
+ 
+ $(eval $(call gb_Helper_register_packages_for_install,ooo_fonts,\
+ 	extras_fonts \
+-	$(if $(USING_X11)$(DISABLE_GUI)$(filter FONTCONFIG,$(BUILD_TYPE))$(filter ANDROID EMSCRIPTEN,$(OS)), \
++	$(if $(USING_X11)$(DISABLE_GUI)$(filter FONTCONFIG,$(BUILD_TYPE))$(filter ANDROID EMSCRIPTEN QNX,$(OS)), \
+ 		postprocess_fontconfig) \
+ 	$(call gb_Helper_optional,MORE_FONTS,\
+ 		fonts_alef \
+diff --git a/bridges/Library_cpp_uno.mk b/bridges/Library_cpp_uno.mk
+index 94f17f014..f7156162c 100644
+--- a/bridges/Library_cpp_uno.mk
++++ b/bridges/Library_cpp_uno.mk
+@@ -178,7 +178,8 @@ bridge_exception_objects := except
+ 
+ else ifeq ($(CPUNAME),X86_64)
+ 
+-ifneq ($(filter ANDROID DRAGONFLY FREEBSD LINUX NETBSD OPENBSD HAIKU,$(OS)),)
++# QNX: reuse gcc3_linux_x86-64 to satisfy gbuild init for the sal build (bridge not built for sal); Phase 4 swaps to gcc3_qnx_x86-64.
++ifneq ($(filter ANDROID DRAGONFLY FREEBSD LINUX NETBSD OPENBSD HAIKU QNX,$(OS)),)
+ bridges_SELECTED_BRIDGE := gcc3_linux_x86-64
+ bridge_asm_objects := call
+ bridge_noncallexception_noopt_objects := callvirtualmethod
+diff --git a/configure.ac b/configure.ac
+index 40801a18f..1d876527d 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -1286,6 +1286,29 @@ haiku*)
+     _os=Haiku
+     ;;
+ 
++nto-qnx*)
++    using_freetype_fontconfig=yes
++    using_x11=no
++    test_gtk3=no
++    test_gtk3_kde5=no
++    test_kf5=no
++    test_kf6=no
++    enable_odk=no
++    enable_coinmp=no
++    enable_pdfium=no
++    enable_sdremote=no
++    enable_postgresql_sdbc=no
++    enable_firebird_sdbc=no
++    build_crypto=no
++    test_openldap=no
++    test_webdav=no
++    with_gssapi=no
++    enable_cairo_canvas=no
++    enable_xmlhelp=no
++    disable_database_connectivity_dependencies
++    _os=QNX
++    ;;
++
+ emscripten)
+     # API currently just exists in headers, not code
+     usable_dlapi=no
+@@ -5612,6 +5635,25 @@ haiku*)
+     esac
+     ;;
+ 
++nto-qnx*)
++    COM=GCC
++    GUIBASE=unx
++    RTL_OS=QNX
++    OS=QNX
++    P_SEP=:
++
++    case "$host_cpu" in
++    x86_64|amd64)
++        CPUNAME=X86_64
++        RTL_ARCH=X86_64
++        PLATFORMID=qnx_x86_64
++        ;;
++    *)
++        AC_MSG_ERROR([Unsupported host_cpu $host_cpu for host_os $host_os])
++        ;;
++    esac
++    ;;
++
+ kfreebsd*)
+     COM=GCC
+     OS=LINUX
+diff --git a/include/osl/endian.h b/include/osl/endian.h
+index 00ad2352f..383d968ea 100644
+--- a/include/osl/endian.h
++++ b/include/osl/endian.h
+@@ -69,6 +69,8 @@ extern "C" {
+ #   endif
+ #elif defined __EMSCRIPTEN__
+ #   define OSL_LITENDIAN
++#elif defined __QNX__
++#   define OSL_LITENDIAN
+ #else
+ #   error "Target platform not specified !"
+ #endif
+diff --git a/include/sal/config.h b/include/sal/config.h
+index b2b71b262..040269df7 100644
+--- a/include/sal/config.h
++++ b/include/sal/config.h
+@@ -48,7 +48,7 @@
+ #endif /* defined _WIN32 */
+ 
+ #if defined(__sun) || defined(LINUX) || defined(NETBSD) || defined(FREEBSD) || defined(OPENBSD)    \
+-    || defined(DRAGONFLY) || defined(ANDROID) || defined(HAIKU)
++    || defined(DRAGONFLY) || defined(ANDROID) || defined(HAIKU) || defined(QNX)
+ #define SAL_UNX
+ #define SAL_DLLEXTENSION ".so"
+ #define SAL_EXEEXTENSION ""
+diff --git a/sal/osl/unx/signal.cxx b/sal/osl/unx/signal.cxx
+index 70edcdf71..da315ac11 100644
+--- a/sal/osl/unx/signal.cxx
++++ b/sal/osl/unx/signal.cxx
+@@ -48,6 +48,10 @@
+ #include <signal.h>
+ #include <unistd.h>
+ 
++#ifndef SA_RESTART
++#  define SA_RESTART 0   // QNX 8.0: no restartable syscalls; the flag is inert (kernel never restarts)
++#endif
++
+ namespace
+ {
+ extern "C" using Handler1_t = void (*)(int);
+diff --git a/sal/osl/unx/system.hxx b/sal/osl/unx/system.hxx
+index f349170ed..b416e4763 100644
+--- a/sal/osl/unx/system.hxx
++++ b/sal/osl/unx/system.hxx
+@@ -92,6 +92,22 @@
+ #   define  NO_PTHREAD_PRIORITY
+ #endif
+ 
++// QNX: POSIX backend; NO_PTHREAD_PRIORITY per on-target probe (band 1-63, set is EPERM)
++#ifdef QNX
++#   include <pthread.h>
++#   include <sys/file.h>
++#   include <sys/ioctl.h>
++#   include <sys/uio.h>
++#   include <sys/un.h>
++#   include <netinet/tcp.h>
++#   include <dlfcn.h>
++#   include <sys/time.h>
++#   define  IORESOURCE_TRANSFER_BSD
++#   define  IOCHANNEL_TRANSFER_BSD_RENO
++#   define  pthread_testcancel()
++#   define  NO_PTHREAD_PRIORITY
++#endif
++
+ #ifdef NETBSD
+ #   define  NO_PTHREAD_RTL
+ #endif
+@@ -231,7 +247,8 @@ int macxp_resolveAlias(char *path, int buflen);
+     !defined(__sun) && !defined(MACOSX) && \
+     !defined(OPENBSD) && !defined(DRAGONFLY) && \
+     !defined(IOS) && !defined(ANDROID) && \
+-    !defined(HAIKU) && !defined(__EMSCRIPTEN__)
++    !defined(HAIKU) && !defined(__EMSCRIPTEN__) && \
++    !defined(QNX)
+ #   error "Target platform not specified!"
+ #endif
+ 
+diff --git a/solenv/bin/concat-deps.c b/solenv/bin/concat-deps.c
+index 844b8bbd3..590c16fda 100644
+--- a/solenv/bin/concat-deps.c
++++ b/solenv/bin/concat-deps.c
+@@ -328,6 +328,11 @@ struct hash
+ #define rot(x,k) (((x)<<(k)) | ((x)>>(32-(k))))
+ 
+ 
++/* QNX: x86-64 target is little-endian */
++#if defined(__QNX__) && !defined(CORE_LITTLE_ENDIAN) && !defined(CORE_BIG_ENDIAN)
++#define CORE_LITTLE_ENDIAN
++#endif
++
+ #if defined CORE_BIG_ENDIAN
+ #define MASK_C1 0xFFFFFF00
+ #define MASK_C2 0xFFFF0000
+diff --git a/solenv/gbuild/platform/QNX_X86_64_GCC.mk b/solenv/gbuild/platform/QNX_X86_64_GCC.mk
+new file mode 100644
+index 000000000..e5e09138d
+--- /dev/null
++++ b/solenv/gbuild/platform/QNX_X86_64_GCC.mk
+@@ -0,0 +1,25 @@
++# -*- Mode: makefile-gmake; tab-width: 4; indent-tabs-mode: t -*-
++#
++# This file is part of the LibreOffice project.
++#
++# This Source Code Form is subject to the terms of the Mozilla Public
++# License, v. 2.0. If a copy of the MPL was not distributed with this
++# file, You can obtain one at http://mozilla.org/MPL/2.0/.
++#
++
++# please make generic modifications to unxgcc.mk
++# QNX-specific link overrides (-lsocket, -rdynamic, absolute RPATH) added in Phase 2.
++
++include $(GBUILDDIR)/platform/unxgcc.mk
++
++# QNX: BSD sockets + resolver (accept/bind/connect/getaddrinfo/...) live in libsocket, not libc
++gb_LinkTarget_LDFLAGS += -lsocket
++
++# QNX: GNU configure must re-exec under bash, not the minimal boot ksh that the
++# restricted build PATH (/proc/boot:/system/bin) puts first (else it dies with an empty log)
++# QNX: run gbuild recipes under bash — the minimal boot ksh (default /bin/sh) cannot
++# execute GNU configure or the ExternalProject compound (dies with an empty log)
++SHELL := /usr/bin/bash
++gb_RUN_CONFIGURE := CONFIG_SHELL=/system/bin/sh
++
++# vim: set noet sw=4:
+-- 
+2.51.0
+

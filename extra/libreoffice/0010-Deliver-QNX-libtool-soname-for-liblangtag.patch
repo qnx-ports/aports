@@ -1,0 +1,28 @@
+From 671a38bc8872235dac47805e5c1c497103802ac9 Mon Sep 17 00:00:00 2001
+From: Arthur Clark <mydevstuff@mail.com>
+Date: Mon, 17 Aug 2026 20:39:04 +0000
+Subject: [PATCH 10/33] Deliver QNX libtool soname for liblangtag
+
+Change-Id: I5b2e0707336cefe1ae948a2617cee3eafabbbb07
+---
+ external/liblangtag/ExternalPackage_liblangtag.mk | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/external/liblangtag/ExternalPackage_liblangtag.mk b/external/liblangtag/ExternalPackage_liblangtag.mk
+index 385d54ddb..b1cdd361a 100644
+--- a/external/liblangtag/ExternalPackage_liblangtag.mk
++++ b/external/liblangtag/ExternalPackage_liblangtag.mk
+@@ -13,6 +13,10 @@ $(eval $(call gb_ExternalPackage_use_external_project,liblangtag,liblangtag))
+ 
+ ifeq ($(OS),MACOSX)
+ $(eval $(call gb_ExternalPackage_add_file,liblangtag,$(LIBO_LIB_FOLDER)/liblangtag.1.dylib,liblangtag/.libs/liblangtag.1.dylib))
++else ifeq ($(OS),QNX)
++# QNX libtool names the shared object by soname=current (liblangtag-lo.so.5), not the
++# Linux .so.(current-age).age.revision layout (liblangtag-lo.so.1.4.2)
++$(eval $(call gb_ExternalPackage_add_file,liblangtag,$(LIBO_LIB_FOLDER)/liblangtag-lo.so.5,liblangtag/.libs/liblangtag-lo.so.5))
+ else ifeq ($(DISABLE_DYNLOADING),)
+ $(eval $(call gb_ExternalPackage_add_file,liblangtag,$(LIBO_LIB_FOLDER)/liblangtag-lo.so.1,liblangtag/.libs/liblangtag-lo.so.1.4.2))
+ endif
+-- 
+2.51.0
+

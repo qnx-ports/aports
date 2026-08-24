@@ -1,0 +1,44 @@
+From daba7d9465da0663164f64fd18f77508114ebd3a Mon Sep 17 00:00:00 2001
+From: Arthur Clark <mydevstuff@mail.com>
+Date: Thu, 20 Aug 2026 04:02:14 +0000
+Subject: [PATCH 21/33] QNX: enable the qt6 VCL plugin on the QNX Screen QPA
+
+The nto-qnx case was headless-only, so --enable-qt6 was inert. Declare
+qt6 available there (test_qt6=yes) and opt in from the distro config;
+QtMultimedia is absent from QNX qt6-base, so disable it. The svp
+headless plugin still builds and stays the default -- qt6 coexists and
+is runtime-selectable via SAL_USE_VCLPLUGIN.
+
+Change-Id: Id26cb009fb541fe8f4b38843e43c72a39616afbd
+---
+ configure.ac                       | 3 +++
+ distro-configs/LibreOfficeQNX.conf | 1 +
+ 2 files changed, 4 insertions(+)
+
+diff --git a/configure.ac b/configure.ac
+index 1d876527d..ea49236d9 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -1293,6 +1293,9 @@ nto-qnx*)
+     test_gtk3_kde5=no
+     test_kf5=no
+     test_kf6=no
++    # GUI is the qt6 VCL plugin on the QNX Screen QPA (no X11); svp still builds
++    test_qt6=yes
++    enable_qt6_multimedia=no
+     enable_odk=no
+     enable_coinmp=no
+     enable_pdfium=no
+diff --git a/distro-configs/LibreOfficeQNX.conf b/distro-configs/LibreOfficeQNX.conf
+index de6f8372e..6408fbfe9 100644
+--- a/distro-configs/LibreOfficeQNX.conf
++++ b/distro-configs/LibreOfficeQNX.conf
+@@ -1,4 +1,5 @@
+ --enable-headless
++--enable-qt6
+ --disable-symbols
+ --without-java
+ --disable-python
+-- 
+2.51.0
+

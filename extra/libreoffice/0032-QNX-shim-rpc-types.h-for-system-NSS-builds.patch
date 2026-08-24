@@ -1,0 +1,59 @@
+From 949a39901a3aa7f48ec0105b91ee2e8db613e308 Mon Sep 17 00:00:00 2001
+From: Arthur Clark <mydevstuff@mail.com>
+Date: Fri, 21 Aug 2026 21:19:55 +0000
+Subject: [PATCH 32/33] QNX: shim <rpc/types.h> for system NSS builds
+
+Building xmlsecurity/xsec_xmlsec against system NSS on QNX 8 fails with
+prinet.h:55: rpc/types.h file not found. The system NSPR header still
+takes its legacy QNX branch (the build defines -DQNX via -D$(OS)) and
+includes <rpc/types.h> solely for INADDR_LOOPBACK. QNX 8 ships no
+<rpc/types.h>; INADDR_LOOPBACK comes from <netinet/in.h>.
+
+Add a minimal shim header and place it on the include path only for QNX,
+only for system-NSS consumers, through gb_LinkTarget__use_nss3. Verified
+by A/B: the NSS backend sources fail to compile without the shim and
+build with it. The -DQNX define is load-bearing and left untouched.
+
+Change-Id: Ib2d46900c19c5e6aeb35f6a7ef7f6474cb1e00ac
+---
+ RepositoryExternal.mk               | 9 +++++++++
+ external/nss/qnx-compat/rpc/types.h | 7 +++++++
+ 2 files changed, 16 insertions(+)
+ create mode 100644 external/nss/qnx-compat/rpc/types.h
+
+diff --git a/RepositoryExternal.mk b/RepositoryExternal.mk
+index ef9d1f014..3573764bd 100644
+--- a/RepositoryExternal.mk
++++ b/RepositoryExternal.mk
+@@ -3607,6 +3607,15 @@ $(call gb_LinkTarget_set_include,$(1),\
+     $(NSS_CFLAGS) \
+ )
+ 
++# QNX: system NSPR's prinet.h includes <rpc/types.h> (absent on QNX 8) only for
++# INADDR_LOOPBACK, which QNX has in <netinet/in.h>. Shim it onto the search path.
++ifeq ($(OS),QNX)
++$(call gb_LinkTarget_set_include,$(1),\
++    $$(INCLUDE) \
++    -I$(SRCDIR)/external/nss/qnx-compat \
++)
++endif
++
+ $(call gb_LinkTarget_add_libs,$(1),\
+     $(NSS_LIBS) \
+ )
+diff --git a/external/nss/qnx-compat/rpc/types.h b/external/nss/qnx-compat/rpc/types.h
+new file mode 100644
+index 000000000..c4411c3e8
+--- /dev/null
++++ b/external/nss/qnx-compat/rpc/types.h
+@@ -0,0 +1,7 @@
++/* QNX 8 has no <rpc/types.h>. System NSPR (prinet.h) includes it only for
++   INADDR_LOOPBACK, which QNX provides in <netinet/in.h>. Shim on the search
++   path so the stale include resolves; not a port of Sun RPC. */
++#ifndef LO_QNX_COMPAT_RPC_TYPES_H
++#define LO_QNX_COMPAT_RPC_TYPES_H
++#include <netinet/in.h>
++#endif
+-- 
+2.51.0
+

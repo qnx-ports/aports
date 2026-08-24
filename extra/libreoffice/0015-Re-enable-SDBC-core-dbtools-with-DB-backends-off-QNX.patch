@@ -1,0 +1,56 @@
+From 2ccb6e70e82eccde185f5d7b913ba5ee4ab02991 Mon Sep 17 00:00:00 2001
+From: Arthur Clark <mydevstuff@mail.com>
+Date: Tue, 18 Aug 2026 17:35:58 +0000
+Subject: [PATCH 15/33] Re-enable SDBC core (dbtools) with DB backends off; QNX
+ curl soname
+
+- Drop --disable-database-connectivity so connectivity/commontools (dbtools)
+  and the SDBC core build; svx form sources reference dbtools/OSQLParser
+  unconditionally, so executables linking svxcore (gengal, and later the
+  office/LOK binaries) need it. Keep the DB engines out to stay lean:
+  --disable-firebird-sdbc --disable-mariadb-sdbc --disable-postgresql-sdbc
+  (postgresql is also required off by --enable-mpl-subset). Verified: only
+  DBCONNECTIVITY added to BUILD_TYPE; no Firebird/PostgreSQL/MariaDB external
+  pulled; HAVE_FEATURE_DBCONNECTIVITY=1; gengal.bin links.
+- curl: QNX libtool names the shared object by soname (libcurl.so.12), not
+  the Linux current-age.age.revision (libcurl.so.4.8.0).
+
+Change-Id: I0f9338dd616bc15b1558c454459d1ad94d2b2ea8
+---
+ distro-configs/LibreOfficeQNX.conf    | 4 +++-
+ external/curl/ExternalPackage_curl.mk | 4 ++++
+ 2 files changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/distro-configs/LibreOfficeQNX.conf b/distro-configs/LibreOfficeQNX.conf
+index 6db1e7479..de6f8372e 100644
+--- a/distro-configs/LibreOfficeQNX.conf
++++ b/distro-configs/LibreOfficeQNX.conf
+@@ -9,7 +9,9 @@
+ --disable-avahi
+ --disable-gtk3
+ --disable-gstreamer-1-0
+---disable-database-connectivity
++--disable-firebird-sdbc
++--disable-mariadb-sdbc
++--disable-postgresql-sdbc
+ --disable-pdfimport
+ --enable-mpl-subset
+ --disable-lotuswordpro
+diff --git a/external/curl/ExternalPackage_curl.mk b/external/curl/ExternalPackage_curl.mk
+index 3cb38400b..0deba4b4e 100644
+--- a/external/curl/ExternalPackage_curl.mk
++++ b/external/curl/ExternalPackage_curl.mk
+@@ -17,6 +17,10 @@ ifeq ($(COM),MSC)
+ $(eval $(call gb_ExternalPackage_add_file,curl,$(LIBO_LIB_FOLDER)/libcurl$(if $(MSVC_USE_DEBUG_RUNTIME),-d).dll,lib/$(if $(MSVC_USE_DEBUG_RUNTIME),Debug,Release)/libcurl$(if $(MSVC_USE_DEBUG_RUNTIME),-d).dll))
+ else ifeq ($(OS),MACOSX)
+ $(eval $(call gb_ExternalPackage_add_file,curl,$(LIBO_LIB_FOLDER)/libcurl.4.dylib,lib/.libs/libcurl.4.dylib))
++else ifeq ($(OS),QNX)
++# QNX libtool names the shared object by soname=current (libcurl.so.12), not the
++# Linux current-age.age.revision (libcurl.so.4.8.0).
++$(eval $(call gb_ExternalPackage_add_file,curl,$(LIBO_LIB_FOLDER)/libcurl.so.12,lib/.libs/libcurl.so.12))
+ else
+ $(eval $(call gb_ExternalPackage_add_file,curl,$(LIBO_LIB_FOLDER)/libcurl.so.4,lib/.libs/libcurl.so.4.8.0))
+ endif
+-- 
+2.51.0
+

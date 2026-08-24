@@ -1,0 +1,148 @@
+From 158aae8f4be8c531b079dfc5e651eb21840a7251 Mon Sep 17 00:00:00 2001
+From: Arthur Clark <mydevstuff@mail.com>
+Date: Fri, 21 Aug 2026 14:11:02 +0000
+Subject: [PATCH 28/33] QNX: extend the LOK render gate to cover Calc
+
+Add a flat-ODF spreadsheet case (data/calc.fods) to the render-regression
+gate. sc renders it through the same documentLoad/paintTile path as the
+Writer cases; the spreadsheet paints a fixed top-left twip region so the
+populated cells fill the tile instead of shrinking to nothing over the whole
+sheet. The Writer cases are unchanged and the gate still passes.
+
+Change-Id: I65f861e565fa58fa57bdad29e12762b7f150b513
+---
+ libreofficekit/qa/qnxrendergate/README        |  6 ++--
+ .../qa/qnxrendergate/data/calc.fods           | 34 +++++++++++++++++++
+ .../qa/qnxrendergate/rendergate.cxx           | 24 ++++++++-----
+ 3 files changed, 54 insertions(+), 10 deletions(-)
+ create mode 100644 libreofficekit/qa/qnxrendergate/data/calc.fods
+
+diff --git a/libreofficekit/qa/qnxrendergate/README b/libreofficekit/qa/qnxrendergate/README
+index dd5568ea7..b9bed8481 100644
+--- a/libreofficekit/qa/qnxrendergate/README
++++ b/libreofficekit/qa/qnxrendergate/README
+@@ -5,5 +5,7 @@ QNX LibreOfficeKit render-regression gate.
+ Renders a 256x256 tile of each data/ document through LibreOfficeKit and checks
+ the non-white pixel count against a per-document band: the floor rejects a blank
+ tile, the ceiling rejects a garbage one. data/bad.odt is a negative control that
+-must fail to render. Substitutes the upstream tiledrendering/smoketest tests,
+-which are unusable here (disabled/bit-rotted, and a whole-office build).
++must fail to render. Covers Writer (hello.docx, clean.odt) and Calc (calc.fods,
++flat ODF; painted over a fixed top-left twip region so the cells fill the tile).
++Substitutes the upstream tiledrendering/smoketest tests, which are unusable here
++(disabled/bit-rotted, and a whole-office build).
+diff --git a/libreofficekit/qa/qnxrendergate/data/calc.fods b/libreofficekit/qa/qnxrendergate/data/calc.fods
+new file mode 100644
+index 000000000..8ee5d9b84
+--- /dev/null
++++ b/libreofficekit/qa/qnxrendergate/data/calc.fods
+@@ -0,0 +1,34 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<office:document xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:table="urn:oasis:names:tc:opendocument:xmlns:table:1.0" xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0" office:version="1.2" office:mimetype="application/vnd.oasis.opendocument.spreadsheet">
++ <office:body>
++  <office:spreadsheet>
++   <table:table table:name="Sheet1">
++    <table:table-column table:number-repeated-columns="4"/>
++    <table:table-row>
++     <table:table-cell office:value-type="string"><text:p>Hello</text:p></table:table-cell>
++     <table:table-cell office:value-type="string"><text:p>QNX</text:p></table:table-cell>
++     <table:table-cell office:value-type="string"><text:p>Calc</text:p></table:table-cell>
++     <table:table-cell office:value-type="string"><text:p>Gate</text:p></table:table-cell>
++    </table:table-row>
++    <table:table-row>
++     <table:table-cell office:value-type="float" office:value="10"><text:p>10</text:p></table:table-cell>
++     <table:table-cell office:value-type="float" office:value="20"><text:p>20</text:p></table:table-cell>
++     <table:table-cell office:value-type="float" office:value="30"><text:p>30</text:p></table:table-cell>
++     <table:table-cell office:value-type="float" office:value="40"><text:p>40</text:p></table:table-cell>
++    </table:table-row>
++    <table:table-row>
++     <table:table-cell office:value-type="string"><text:p>alpha</text:p></table:table-cell>
++     <table:table-cell office:value-type="string"><text:p>beta</text:p></table:table-cell>
++     <table:table-cell office:value-type="string"><text:p>gamma</text:p></table:table-cell>
++     <table:table-cell office:value-type="string"><text:p>delta</text:p></table:table-cell>
++    </table:table-row>
++    <table:table-row>
++     <table:table-cell office:value-type="string"><text:p>row4a</text:p></table:table-cell>
++     <table:table-cell office:value-type="string"><text:p>row4b</text:p></table:table-cell>
++     <table:table-cell office:value-type="string"><text:p>row4c</text:p></table:table-cell>
++     <table:table-cell office:value-type="string"><text:p>row4d</text:p></table:table-cell>
++    </table:table-row>
++   </table:table>
++  </office:spreadsheet>
++ </office:body>
++</office:document>
+diff --git a/libreofficekit/qa/qnxrendergate/rendergate.cxx b/libreofficekit/qa/qnxrendergate/rendergate.cxx
+index 4f060afa1..a88331904 100644
+--- a/libreofficekit/qa/qnxrendergate/rendergate.cxx
++++ b/libreofficekit/qa/qnxrendergate/rendergate.cxx
+@@ -5,7 +5,9 @@
+ // proves real content rendered (a blank tile is all-white -> 0 non-white), the
+ // ceiling rejects an all-black/garbage tile. A malformed input is carried as a
+ // negative control that must fail to render, so the gate discriminates rather
+-// than rubber-stamps. rc=0 iff every case meets its expectation.
++// than rubber-stamps. Cases cover Writer (.docx/.odt) and Calc (flat-ODF .fods,
++// which paints a fixed top-left twip region so the populated cells fill the
++// tile). rc=0 iff every case meets its expectation.
+ //
+ // build: see build.sh (must link the UNO exception RTTI anchor with
+ //        -Wl,--dynamic-list-cpp-typeinfo; on the QNX executable-first loader an
+@@ -26,6 +28,7 @@ struct Case
+     const char* file;   // input file name within the data dir
+     long lo, hi;        // accepted non-white band (ignored when expectFail)
+     bool expectFail;    // negative control: must NOT produce a valid tile
++    long paintW, paintH;// twip region painted from (0,0); 0 = whole document
+ };
+ 
+ long countNonWhite(const std::vector<unsigned char>& buf)
+@@ -38,7 +41,7 @@ long countNonWhite(const std::vector<unsigned char>& buf)
+ }
+ 
+ // non-white pixel count of a 256x256 tile, or -1 if load/render failed
+-long renderOne(lok::Office* office, const char* url)
++long renderOne(lok::Office* office, const char* url, long paintW, long paintH)
+ {
+     lok::Document* doc = office->documentLoad(url);
+     if (!doc)
+@@ -46,8 +49,10 @@ long renderOne(lok::Office* office, const char* url)
+     doc->initializeForRendering("{}");
+     long w = 0, h = 0;
+     doc->getDocumentSize(&w, &h);
++    long pw = paintW > 0 ? paintW : (w > 0 ? w : 15000);
++    long ph = paintH > 0 ? paintH : (h > 0 ? h : 15000);
+     std::vector<unsigned char> buf(256 * 256 * 4);
+-    doc->paintTile(buf.data(), 256, 256, 0, 0, (w > 0 ? w : 15000), (h > 0 ? h : 15000));
++    doc->paintTile(buf.data(), 256, 256, 0, 0, pw, ph);
+     long nw = countNonWhite(buf);
+     delete doc;
+     return nw;
+@@ -66,11 +71,14 @@ int main(int argc, char** argv)
+     const char* datadir = argv[2];
+ 
+     // Bands are set around the measured known-good counts with margin; the aim
+-    // is blank<->real discrimination, not an exact match.
++    // is blank<->real discrimination, not an exact match. Calc paints the
++    // top-left 6000x6000 twips where the cells sit (whole-sheet would shrink the
++    // few populated rows to near nothing).
+     const Case cases[] = {
+-        { "hello.docx", "hello.docx", 3000, 9000, false },
+-        { "clean.odt",  "clean.odt",  1000, 9000, false },
+-        { "bad.odt",    "bad.odt",    0,    0,    true  }, // malformed zip -> empty load
++        { "hello.docx", "hello.docx", 3000, 9000,  false, 0,    0    },
++        { "clean.odt",  "clean.odt",  1000, 9000,  false, 0,    0    },
++        { "calc.fods",  "calc.fods",  1000, 60000, false, 6000, 6000 },
++        { "bad.odt",    "bad.odt",    0,    0,     true,  0,    0    }, // malformed zip -> empty load
+     };
+ 
+     lok::Office* office = lok::lok_cpp_init(install, nullptr);
+@@ -85,7 +93,7 @@ int main(int argc, char** argv)
+     {
+         char url[1024];
+         std::snprintf(url, sizeof url, "file://%s/%s", datadir, c.file);
+-        long nw = renderOne(office, url);
++        long nw = renderOne(office, url, c.paintW, c.paintH);
+         if (c.expectFail)
+         {
+             bool tripped = (nw <= 0); // -1 (no load) or 0 (blank) both count
+-- 
+2.51.0
+

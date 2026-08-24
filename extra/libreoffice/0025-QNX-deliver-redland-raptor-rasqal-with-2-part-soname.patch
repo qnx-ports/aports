@@ -1,0 +1,64 @@
+From 849a9855ba79a5ad8ed115892a0afce28ecc9303 Mon Sep 17 00:00:00 2001
+From: Arthur Clark <mydevstuff@mail.com>
+Date: Thu, 20 Aug 2026 21:24:04 +0000
+Subject: [PATCH 25/33] QNX: deliver redland/raptor/rasqal with 2-part sonames
+ QNX libtool emits
+
+QNX libtool builds librdf, libraptor2 and librasqal as libX-lo.so.N, not the
+Linux 3-part libX-lo.so.N.0.0, so the ExternalPackage delivery could not find the
+source files and unordf (the com.sun.star.rdf.URI service) failed to build. Add a
+QNX branch to each ExternalPackage referencing the 2-part soname, mirroring the
+liborcus fix. No effect on other platforms.
+
+Change-Id: I48eab82268056ab92d1200143f5ddce16431e171
+---
+ external/redland/ExternalPackage_raptor.mk  | 3 +++
+ external/redland/ExternalPackage_rasqal.mk  | 3 +++
+ external/redland/ExternalPackage_redland.mk | 3 +++
+ 3 files changed, 9 insertions(+)
+
+diff --git a/external/redland/ExternalPackage_raptor.mk b/external/redland/ExternalPackage_raptor.mk
+index 119e52f9e..627450258 100644
+--- a/external/redland/ExternalPackage_raptor.mk
++++ b/external/redland/ExternalPackage_raptor.mk
+@@ -15,6 +15,9 @@ ifeq ($(OS),MACOSX)
+ $(eval $(call gb_ExternalPackage_add_file,raptor,$(LIBO_LIB_FOLDER)/libraptor2-lo.$(RAPTOR_MAJOR).dylib,src/.libs/libraptor2-lo.$(RAPTOR_MAJOR).dylib))
+ else ifeq ($(COM),MSC)
+ $(eval $(call gb_ExternalPackage_add_file,raptor,$(LIBO_LIB_FOLDER)/libraptor2.dll,src/.libs/libraptor2.dll))
++else ifeq ($(OS),QNX)
++# QNX libtool emits the 2-part soname, not the Linux 3-part .so.N.0.0.
++$(eval $(call gb_ExternalPackage_add_file,raptor,$(LIBO_LIB_FOLDER)/libraptor2-lo.so.$(RAPTOR_MAJOR),src/.libs/libraptor2-lo.so.$(RAPTOR_MAJOR)))
+ else ifeq ($(DISABLE_DYNLOADING),)
+ $(eval $(call gb_ExternalPackage_add_file,raptor,$(LIBO_LIB_FOLDER)/libraptor2-lo.so.$(RAPTOR_MAJOR),src/.libs/libraptor2-lo.so.$(RAPTOR_MAJOR).0.0))
+ endif
+diff --git a/external/redland/ExternalPackage_rasqal.mk b/external/redland/ExternalPackage_rasqal.mk
+index 57fe97c38..6eee1f716 100644
+--- a/external/redland/ExternalPackage_rasqal.mk
++++ b/external/redland/ExternalPackage_rasqal.mk
+@@ -15,6 +15,9 @@ ifeq ($(OS),MACOSX)
+ $(eval $(call gb_ExternalPackage_add_file,rasqal,$(LIBO_LIB_FOLDER)/librasqal-lo.$(RASQAL_MAJOR).dylib,src/.libs/librasqal-lo.$(RASQAL_MAJOR).dylib))
+ else ifeq ($(COM),MSC)
+ $(eval $(call gb_ExternalPackage_add_file,rasqal,$(LIBO_LIB_FOLDER)/librasqal.dll,src/.libs/librasqal.dll))
++else ifeq ($(OS),QNX)
++# QNX libtool emits the 2-part soname, not the Linux 3-part .so.N.0.0.
++$(eval $(call gb_ExternalPackage_add_file,rasqal,$(LIBO_LIB_FOLDER)/librasqal-lo.so.$(RASQAL_MAJOR),src/.libs/librasqal-lo.so.$(RASQAL_MAJOR)))
+ else ifeq ($(DISABLE_DYNLOADING),)
+ $(eval $(call gb_ExternalPackage_add_file,rasqal,$(LIBO_LIB_FOLDER)/librasqal-lo.so.$(RASQAL_MAJOR),src/.libs/librasqal-lo.so.$(RASQAL_MAJOR).0.0))
+ endif
+diff --git a/external/redland/ExternalPackage_redland.mk b/external/redland/ExternalPackage_redland.mk
+index 8c35d850e..71bbbdf06 100644
+--- a/external/redland/ExternalPackage_redland.mk
++++ b/external/redland/ExternalPackage_redland.mk
+@@ -15,6 +15,9 @@ ifeq ($(OS),MACOSX)
+ $(eval $(call gb_ExternalPackage_add_file,redland,$(LIBO_LIB_FOLDER)/librdf-lo.$(REDLAND_MAJOR).dylib,src/.libs/librdf-lo.$(REDLAND_MAJOR).dylib))
+ else ifeq ($(COM),MSC)
+ $(eval $(call gb_ExternalPackage_add_file,redland,$(LIBO_LIB_FOLDER)/librdf.dll,src/.libs/librdf.dll))
++else ifeq ($(OS),QNX)
++# QNX libtool emits the 2-part soname, not the Linux 3-part .so.N.0.0.
++$(eval $(call gb_ExternalPackage_add_file,redland,$(LIBO_LIB_FOLDER)/librdf-lo.so.$(REDLAND_MAJOR),src/.libs/librdf-lo.so.$(REDLAND_MAJOR)))
+ else ifeq ($(DISABLE_DYNLOADING),)
+ $(eval $(call gb_ExternalPackage_add_file,redland,$(LIBO_LIB_FOLDER)/librdf-lo.so.$(REDLAND_MAJOR),src/.libs/librdf-lo.so.$(REDLAND_MAJOR).0.0))
+ endif
+-- 
+2.51.0
+

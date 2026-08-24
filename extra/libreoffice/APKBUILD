@@ -1,0 +1,294 @@
+# Maintainer: Arthur Clark <mydevstuff@mail.com>
+# Structure adapted from the Alpine community/libreoffice recipe:
+# Alpine-Contributor: (upstream Alpine aports contributors)
+#
+# LibreOffice on QNX 8.0 - five-app alpha (Writer, Calc, Math, Draw, Impress).
+# Source is pinned to a LibreOffice master commit plus this port's 33-patch series.
+# TODO(qnx-ports): confirm pinned-commit vs release-tag policy with the branch-803
+#   maintainers before PR. pkgver below encodes the commit-pin as the working convention.
+pkgname=libreoffice
+pkgver=27.2.0.0_alpha0
+pkgrel=0
+_commit=fb02e9d1fc6277a4dbd493b8956c599dc5237f62
+pkgdesc="LibreOffice office suite - QNX alpha (Writer, Calc, Math, Draw, Impress)"
+url="https://www.libreoffice.org"
+arch="x86_64"
+license="MPL-2.0"
+# Tests are impractical on target; do not strip - the port relies on exported UNO
+# exception RTTI (--dynamic-list-cpp-typeinfo) and stripping risks the anchors.
+options="!check !strip"
+
+# Runtime shared-lib deps (derived from readelf NEEDED over the built instdir,
+# resolved to owning packages via apk who-owns; 0 unresolved).
+# Per QNX rule: libc/libm/libregex (qnx-microkernel) and libgcc_s (qnx-gcc-libs)
+# are base and NOT listed. libc++ and qnx-io-sock ARE listed (matches the depends
+# of nss/icu-libs/libxml2/qt6-base). abuild also auto-adds so:* from the ELF scan.
+depends="
+	qt6-base
+	boost-filesystem
+	boost-iostreams
+	boost-locale
+	libc++
+	cairo
+	libcrypto3
+	libssl3
+	libexpat
+	fontconfig
+	icu-libs
+	libintl
+	libjpeg-turbo
+	lcms2
+	lcms2-plugins
+	nspr
+	nss
+	libpng
+	libxml2
+	zlib-ng
+	qnx-io-sock
+	"
+
+# Build tools perl/python3/clang/make/etc. are QNX base (/system/bin, build-base).
+# -dev names verified present in the repo (apk search -e). The system_* -dev libs
+# match config_host.mk's SYSTEM_* set (expat, libxml2, libxslt, boost, cairo,
+# freetype, icu, lcms2, libjpeg-turbo, libpng, nss, openssl, zlib) - built against,
+# not bundled. libxslt-dev is required by --with-system-libxslt at configure time.
+# perl-archive-zip: configure requires Perl Archive::Zip (rewrite_zip_timestamps.pl).
+# patch: gbuild passes GNU-long --fuzz=0 to every external patch; QNX base toybox
+# patch rejects it, so real GNU patch is required.
+# SEQUENCING(qnx-ports): perl-archive-zip and patch are separate aports pending in
+# extra/ (branch 803); this recipe's makedepends resolve once those land.
+makedepends="
+	qt6-base-dev
+	boost-dev
+	cairo-dev
+	fontconfig-dev
+	freetype-dev
+	icu-dev
+	libjpeg-turbo-dev
+	lcms2-dev
+	libpng-dev
+	libxml2-dev
+	libxslt-dev
+	nss-dev
+	nspr-dev
+	openssl-dev
+	zlib-ng-dev
+	expat-dev
+	gettext-dev
+	gperf
+	flex
+	bison
+	perl-archive-zip
+	patch
+	"
+
+# Alpha ships as a single package. Per-app subpackage splitting is a later refinement.
+subpackages=""
+
+# Core source = a byte-stable pristine snapshot of LibreOffice core at $_commit,
+# hosted as a GitHub RELEASE ASSET (a fixed uploaded file). A github .../archive/<ref>
+# auto-tarball is byte-UNSTABLE across re-generation and would break the checksum, so
+# it is NOT used. The pristine tarball + this dir's 0001-0033 patches reproduce the
+# port tree exactly (verified: tree == qnx-port HEAD). The ::rename keeps the local
+# filename stable regardless of the release URL.
+#
+# The snapshot (352037459 bytes) was produced by
+#   `git archive --format=tar --prefix=core-$_commit/ $_commit | gzip -9n`
+# and uploaded as the release asset below; its sha512 matches the pinned sum (the
+# downloaded asset was re-hashed byte-for-byte: sha512 == the sha512sums line,
+# sha256 375a4e11c0218024134c1e7bfafaad93da4b7acba6f3972040ae8f6a5d449c02).
+_addsrcurl="https://dev-www.libreoffice.org/src"
+
+source="
+	libreoffice-$_commit.tar.gz::https://github.com/fsck-pro/lo-qnx-dist/releases/download/lo-qnx-fb02e9d1f/libreoffice-$_commit.tar.gz
+	$_addsrcurl/phc-winner-argon2-20190702.tar.gz
+	$_addsrcurl/curl-8.21.0.tar.xz
+	$_addsrcurl/dragonbox-1.1.3.tar.gz
+	$_addsrcurl/libepoxy-1.5.10.tar.gz
+	$_addsrcurl/fast_float-8.2.10.tar.gz
+	$_addsrcurl/frozen-1.2.0.tar.gz
+	$_addsrcurl/graphite2-minimal-1.3.15.tgz
+	$_addsrcurl/harfbuzz-14.3.0.tar.xz
+	$_addsrcurl/liblangtag-0.6.8.tar.bz2
+	$_addsrcurl/language-subtag-registry-2026-06-14.tar.bz2
+	$_addsrcurl/liborcus-0.21.0.tar.xz
+	$_addsrcurl/tiff-4.7.2.tar.xz
+	$_addsrcurl/libwebp-1.6.0.tar.gz
+	$_addsrcurl/md4c-release-0.5.3.tar.gz
+	$_addsrcurl/mdds-3.2.1.tar.xz
+	$_addsrcurl/raptor2-2.0.16.tar.gz
+	$_addsrcurl/1f5def51ca0026cd192958ef07228b52-rasqal-0.9.33.tar.gz
+	$_addsrcurl/e5be03eda13ef68aabab6e42aa67715e-redland-1.0.17.tar.gz
+	$_addsrcurl/xmlsec1-1.3.12.tar.gz
+	$_addsrcurl/zstd-1.5.7.tar.gz
+	$_addsrcurl/zxcvbn-c-2.6.tar.gz
+	$_addsrcurl/zxing-cpp-3.1.1.tar.gz
+	0001-Add-QNX-8.0-x86-64-platform-support-for-the-sal-buil.patch
+	0002-Fork-the-UNO-C-bridge-for-QNX-8.0-x86-64.patch
+	0003-Enable-double-mmap-W-X-vtable-path-for-QNX.patch
+	0004-Add-QNX-to-the-alloca.h-platform-list.patch
+	0005-Deliver-QNX-libtool-sonames-for-libxml2-and-libxslt.patch
+	0006-Anchor-UNO-exception-RTTI-in-the-uno-launcher-for-QN.patch
+	0007-Anchor-the-full-URE-exception-RTTI-in-the-uno-launch.patch
+	0008-Seed-headless-QNX-distro-config-for-the-office-build.patch
+	0009-Complete-the-headless-QNX-office-profile-system-exte.patch
+	0010-Deliver-QNX-libtool-soname-for-liblangtag.patch
+	0011-Use-system-OpenSSL-on-QNX.patch
+	0012-Drop-mergelibs-on-QNX-merged-lib-pulls-disabled-form.patch
+	0013-Add-QNX-arms-for-sal_osl-statfs-header-and-headless-.patch
+	0014-Add-QNX-arms-for-headless-vcl-build.patch
+	0015-Re-enable-SDBC-core-dbtools-with-DB-backends-off-QNX.patch
+	0016-argon2-build-on-QNX-c99-for-inline-ELF-shared-lib-br.patch
+	0017-Anchor-the-offapi-exception-RTTI-in-the-QNX-test-hos.patch
+	0018-LOK-skip-SEInitializer-on-QNX-Crypto_None-build.patch
+	0019-LOK-keep-the-clipboard-map-immortal-on-QNX-to-surviv.patch
+	0020-QNX-add-a-LibreOfficeKit-render-regression-gate.patch
+	0021-QNX-enable-the-qt6-VCL-plugin-on-the-QNX-Screen-QPA.patch
+	0022-QNX-teach-the-qt-VCL-backend-about-the-QNX-platform.patch
+	0023-QNX-deliver-liborcus-with-the-2-part-soname-QNX-libt.patch
+	0024-QNX-anchor-the-UNO-exception-RTTI-in-soffice.bin.patch
+	0025-QNX-deliver-redland-raptor-rasqal-with-2-part-soname.patch
+	0026-QNX-fix-RDF-document-repository-weak-ref-lifetime.patch
+	0027-QNX-fix-DOM-node-map-weak-ref-liveness-check.patch
+	0028-QNX-extend-the-LOK-render-gate-to-cover-Calc.patch
+	0029-QNX-fix-config-set-element-insert-SaveAs-General-Err.patch
+	0030-QNX-extend-the-LOK-render-gate-to-cover-Math.patch
+	0031-QNX-enable-Draw-Impress-via-system-NSS.patch
+	0032-QNX-shim-rpc-types.h-for-system-NSS-builds.patch
+	0033-QNX-extend-the-LOK-render-gate-to-cover-Draw-and-Imp.patch
+	soffice.qnx
+	gnucp
+	"
+
+builddir="$srcdir/core-$_commit"
+
+prepare() {
+	default_prepare
+
+	# LibreOffice consumes externals from external/tarballs; stage the pinned set there.
+	mkdir -p "$builddir"/external/tarballs
+	local f
+	for f in $source; do
+		case "$f" in
+		*argon2*|*curl-*|*dragonbox*|*libepoxy*|*fast_float*|*frozen*|*graphite2*|\
+		*harfbuzz*|*liblangtag*|*language-subtag*|*liborcus*|*tiff-*|*libwebp*|\
+		*md4c*|*mdds*|*raptor2*|*rasqal*|*redland*|*xmlsec1*|*zstd*|*zxcvbn*|*zxing*)
+			cp "$srcdir"/"${f##*/}" "$builddir"/external/tarballs/ 2>/dev/null || true
+			;;
+		esac
+	done
+
+	# The gnu-cp shim adapts QNX toybox cp to the GNU long-opts gbuild uses (no GNU
+	# coreutils on QNX; distro-config hardcodes --with-gnu-cp). Stage it for the build.
+	# GNU patch comes from the packaged `patch` makedepend (/usr/bin/patch), not a shim.
+	mkdir -p "$builddir"/.qnxtools
+	install -m755 "$srcdir"/gnucp "$builddir"/.qnxtools/gnucp
+}
+
+build() {
+	cd "$builddir"
+
+	export SHELL=/bin/bash
+	# autogen.input is not tracked; create it. --with-distro pulls the QNX arm set from
+	# distro-configs/LibreOfficeQNX.conf. That config points --with-gnu-cp at a
+	# machine-specific path, so override it (last-wins) to the staged shim.
+	# WATCH-ITEM: fix the hardcoded path in distro-configs/LibreOfficeQNX.conf upstream.
+	cat > autogen.input <<-EOF
+		--with-distro=LibreOfficeQNX
+		--with-gnu-cp=$builddir/.qnxtools/gnucp
+	EOF
+
+	./autogen.sh
+
+	# One make invocation. Guest RAM policy noted for a memory-constrained builder:
+	# -j2 during the Library_sd link, -j4 elsewhere. GNUPATCH = the packaged GNU patch
+	# (toybox patch rejects gbuild's GNU-long --fuzz=0; on merged /usr this shadows it).
+	make GNUPATCH=/usr/bin/patch ${JOBS:+-j${JOBS}}
+}
+
+package() {
+	cd "$builddir"
+
+	# The proven QNX artifact is the dev-install tree instdir/. Relocate it under the
+	# package prefix (the QNX loader ignores $ORIGIN, so the launcher sets an absolute
+	# LD_LIBRARY_PATH rather than relying on RPATH-relative discovery).
+	local dest="$pkgdir"/usr/lib/libreoffice
+	mkdir -p "$dest"
+	cp -a instdir/. "$dest"/
+
+	install -Dm755 "$srcdir"/soffice.qnx "$pkgdir"/usr/bin/libreoffice
+
+	# WATCH-ITEM: the runtime loads UNO components from services/office.rdb via the
+	# fundamentalrc "services/*" glob. Confirm the installed rdb filename matches that
+	# glob (the build may install it as services/services.rdb).
+	if [ ! -e "$dest"/program/services/office.rdb ] \
+	   && [ ! -e "$dest"/program/services/services.rdb ]; then
+		error "no services rdb under program/services - registration glob will miss"
+		return 1
+	fi
+}
+
+# sha512sums generated on-target from the pinned files. The core-source line is the
+# real sha512 of the byte-stable pristine snapshot (git archive of $_commit, gzip -9n);
+# only its release-asset URL above is a TODO. Re-running `abuild checksum` after the
+# upload must leave this line unchanged (that is the byte-stability check).
+sha512sums="
+	042ef32dc6ac5a5ce1ae00a893ad93eb8d29245aaf99c04506ff59c7ef7038e845035f5fefa6e5f42bcc8d6bd2fe86b78d5c5e0aab3762c5ce28086b77d81737  libreoffice-fb02e9d1fc6277a4dbd493b8956c599dc5237f62.tar.gz
+	0a4cb89e8e63399f7df069e2862ccd05308b7652bf4ab74372842f66bcc60776399e0eaf979a7b7e31436b5e6913fe5b0a6949549d8c82ebd06e0629b106e85f  phc-winner-argon2-20190702.tar.gz
+	5f7c646e5a3d4d3d8b8a3675adfa29c266a3148599d510d24f91c82d6ff064bfafce420af01522f8be973019619f3eee5e970398fa79be168b77f697c52bf8e5  curl-8.21.0.tar.xz
+	41ac356ebced3312c0f9ea0f07ff372337ab78af69071f63f63dc12bd2b0088d5d89aae3792276599dd0393bfdfd2b979946c43d36042e43105080bcdcbe089d  dragonbox-1.1.3.tar.gz
+	6786f31c6e2865e68a90eb912900a86bf56fd3df4d78a477356886ac3b6ef52ac887b9c7a77aa027525f868ae9e88b12e5927ba56069c2e115acd631fca3abee  libepoxy-1.5.10.tar.gz
+	eec563358117b593e882a9069074a269d811e8989457a0d57e50c5d2f4d534b6820308082bb70c0a8a8388513e92b64f12c5213389eff726ad0483eacba961ff  fast_float-8.2.10.tar.gz
+	644b29f60458fc5193a3fb16a347c190f9694d1bdbc75202aafe8d43eb72ce0433bbeaeb692f8ca485000d68b451ddc0236a1880ebbd64477f73198043d046b3  frozen-1.2.0.tar.gz
+	b9f5b9152d422f2226f8117fb03cf9f64350e40f6b1af00dc2f9e92bdd580c214a09846ab9bb094f71ef3150245048bfba4d36e6da35df7b6a5718f4adf50a80  graphite2-minimal-1.3.15.tgz
+	ec65064fae210a0d67e7a48cd3d075919e8e6891adff85a2ae8cf2dbe6b422c6764e236f3251c9f7ea37b4231469e54118bdc8c5be7a6e0aa17b58bd5b427d75  harfbuzz-14.3.0.tar.xz
+	3072527ff6b2030d632d406ff6af854bf136112619d463c189f08a7f56bd68ffceb47fdce54ccee54a0199a017c800e68a78f8d90cc110aa6a81f9ad0a2fa69d  liblangtag-0.6.8.tar.bz2
+	a6972d35664d04ff151c26b7ea2c099f813ab5964b8a7087f7336736f2ebcae1ae2851abc01c823e950c135ce058acc7504cd6f9bd094b6c94e17715970bf684  language-subtag-registry-2026-06-14.tar.bz2
+	1f34cf3da2d3296bbeb318c7581829d2df51dcbb741a47fc8ef574c1cd302e4176504340f803a6ab2a0d9b37bf5a41cbe396013e003154adbb064a40dbe8a57d  liborcus-0.21.0.tar.xz
+	884dbd26f9eebcff4676696757ac315836c460696d403609a3f804368be3571f5f0e99a96dd7cc9fedc5dc2adfc087175d5d6823dca9eba10c733aa1676d78de  tiff-4.7.2.tar.xz
+	5c159d9760efcb92749092536daada22c0a73c20926c76097a5f0448ddbf874cf761324ca97925ca5f578b30477564b2b072b47667e504673797128b31cafcbf  libwebp-1.6.0.tar.gz
+	213d6b9fbad24b2bfb4fa0a8124cb4c20861da2cb57790882aa0e5ff8c18903450f1d9ffdbcc0547debd103137777059f27a526cd818294f698b5ffdbfe7fbcb  md4c-release-0.5.3.tar.gz
+	5f4ab528014cfc6cffdc466ae32b6b919ede7d14e2de70d73cc0fcf05a3d81d10a4f071060644a14c6b184aa4f87def5eb3916fb2011c51e8281d6d6e228ccb5  mdds-3.2.1.tar.xz
+	9bd5cff36390e1e0ef15ac56e5413ecfceb4018cb531a4da8850d3623615f12a93690a78be61f9d9ae7a24e16f6446e356bc2b7f34051ddc077761d85a9b7c44  raptor2-2.0.16.tar.gz
+	05728682797470db9e51d156012e8fde9dec1554d107372faa11cbe6cdc3356e92386f4f8de6d7c41e3100b76f9b1c6809102a913829cddbd2ff29043c04d522  1f5def51ca0026cd192958ef07228b52-rasqal-0.9.33.tar.gz
+	363323ffc9e75d4f0e3a3b40952f6241fd0d8b9f46bfd4dd86cf0a5162de35257a8b70ce408a6083c03ba7c388982231a3774e5e9024b262ebb02968f778b850  e5be03eda13ef68aabab6e42aa67715e-redland-1.0.17.tar.gz
+	dff897cbe3d0235f6f99505d699ab7998bfb80fe1d8239493ae6d0fd760b41d4d3993c4c2dc2c75d87198f797a9b98c91c76929d39056cc4c6db10237d256f38  xmlsec1-1.3.12.tar.gz
+	b4de208f179b68d4c6454139ca60d66ed3ef3893a560d6159a056640f83d3ee67cdf6ffb88971cdba35449dba4b597eaa8b4ae908127ef7fd58c89f40bf9a705  zstd-1.5.7.tar.gz
+	fd9c7dc7d5d584db320d9a2d15035605396afdcba44de6236e481eea91bf21f8d0ef289dff2f34b0050178d8de43e7c6bd6b07087abe883204acf8c269abbaee  zxcvbn-c-2.6.tar.gz
+	154a9ed31ef8a9b442f552ce479fd2beb1ebc5c6789fcffa2fbcbbc9ec2bbd57aabcc05cb1dd96d1d72459018524fc1f976dd85d95f2da0bc074fd5fe76ae8dc  zxing-cpp-3.1.1.tar.gz
+	0eb3f29f64852f790e0522129f01b7f3363620fbcf378143f306352173059fbecbe31feb475cedfc7844762214ef7f0b024805f660c1245ef181b020a65a29cf  0001-Add-QNX-8.0-x86-64-platform-support-for-the-sal-buil.patch
+	81b8dbc6bc895a33c6048c9a79539e1d8a7aae8f88e9684ea742aec1c5bfa50904415f85b630446863521f7e6b4b3b428e53bd580baf323084ccfc05aa5e2e2e  0002-Fork-the-UNO-C-bridge-for-QNX-8.0-x86-64.patch
+	23039adf8263dd24dbbb79c5bf3071b267722f8a04da4daf5ff2b33d75b482ec54199bfe6405e03d18e503314838a8a32f10b58878e17b578e6a1554237bb5ea  0003-Enable-double-mmap-W-X-vtable-path-for-QNX.patch
+	1d837e5511813fddeb7526e3cc7b1bc2d39642a5fcbc1a147e3393524b5839a5ffa63205e5692e6fd1c4f8b786a75bdae61c218cf0fa5e8eb5b0157c98b6def7  0004-Add-QNX-to-the-alloca.h-platform-list.patch
+	50198d1bf8739bcc827345243bca8eb9cb2372a5956a79d58e3522bb2bb0c7322ccdab08aaba76f705996f1a0df81cb6712e0a212bffa1ed7bb2d75af27bae63  0005-Deliver-QNX-libtool-sonames-for-libxml2-and-libxslt.patch
+	0f9f466fc6f4f483be4734c6abc1c79b2e8ecf25f5d0c1b8c4491db46dbb5bf9b0a60a069db639e58409ea0ae0db98eb6beb75ab62ac05299736ab0eeff8edc9  0006-Anchor-UNO-exception-RTTI-in-the-uno-launcher-for-QN.patch
+	b976d89689545e65a2cec575241c40fb6ae95701ae7429d8524e8a12464cd271c5ca480ae81e06726ec2b680e29417222eead37b1a1b8b0f2f8de94fe36bc324  0007-Anchor-the-full-URE-exception-RTTI-in-the-uno-launch.patch
+	b62d69dab01457a592b904394e79b4dd803106d3eaa225c1280134c0dc526f4cc7a24af2f57406037a02cfb2b55d447393b25c35452e48d43d9d57f5599c1c75  0008-Seed-headless-QNX-distro-config-for-the-office-build.patch
+	fad95387e1f2bb3aaa1c1750a61718a05a74f6ef71ac161228b106a3098279d4cc52a7a276b915a0c89b623be01680ce629d88494af2aa9fb4b32d53d69a2cd8  0009-Complete-the-headless-QNX-office-profile-system-exte.patch
+	53bd3e310414052651d96d4d95049b2ab63b7443d863c7ef788098fc1a12207d63218f2a5d3683291d2fcf42f49f8d67b2819b5deaa54e9492c0c3fd7fe8befa  0010-Deliver-QNX-libtool-soname-for-liblangtag.patch
+	075cdd3725e90b125468ae1545a6064f367650f0b55ead7719a851ecb15fd68da004010acfd6194901032b48c171e39280d9e6ae217d97195731ee429048700f  0011-Use-system-OpenSSL-on-QNX.patch
+	6f4b3c5de5c93f2c61be574872a46b32647f5036640b2c791856a66fbbb1f445a9571002b46084dedc144dc5ff3e73a859665bdfdcc9882c180db1f7c9503e09  0012-Drop-mergelibs-on-QNX-merged-lib-pulls-disabled-form.patch
+	7b3aa7ba2ae395ebe9f9784e58b77f9fff25ecc37443ce08869b1bb38aa6ec0929cee36e8301c8b718be33356696cd99bbef6f6d725c8a4beecb52b9ab0705f8  0013-Add-QNX-arms-for-sal_osl-statfs-header-and-headless-.patch
+	8066e46726fcc1458c61b821f38551991abb90549824815f28108e09ed30d3d4832fd6447fc42b4930100389f4f08dd0bee61b64989ba407ddd1dc55d351325f  0014-Add-QNX-arms-for-headless-vcl-build.patch
+	8e39d8cb0662f1bce9afd0d3ae982c3fda75cb1b31f55ba38e74a80ed2eff39e1f7163b418852e882eb3c687c63e49a4204f3dc06e78cca60bb6b7ef1312b5df  0015-Re-enable-SDBC-core-dbtools-with-DB-backends-off-QNX.patch
+	1b71ecc21f9e421b3dff2f1412715bd7915d952970a62d4f994c568c70e519276b057bbf7d0a07b99c30a30caf1d2871e084e749464ae4b1fd17e50a6f56dc4b  0016-argon2-build-on-QNX-c99-for-inline-ELF-shared-lib-br.patch
+	189bea77bc75c9f7fa7c16ac75acf26b1f792579e1baa9c8bedafaf3824a6f96b3fb4dcd1a1eb0cf3196190db66ee6493d64e02a6980c6198b6ccd68aada9ede  0017-Anchor-the-offapi-exception-RTTI-in-the-QNX-test-hos.patch
+	30810bd602b7f45133de616c7e3628747d140b31d6b3a102548bab3214d913528f23f3fd87f096b4d9d624e568cda00773363e8dd6503b56dc5a11def58e9c88  0018-LOK-skip-SEInitializer-on-QNX-Crypto_None-build.patch
+	d986f64dd367b20c035b8413d45ba4a123f9db9611c2a696e674fa4cc9d18fa88427eea735f78eb77f94596be4c942d9caea2662065959be24a62eb2597d21f3  0019-LOK-keep-the-clipboard-map-immortal-on-QNX-to-surviv.patch
+	4a0b8d588c5cd301c77b66064a6e488133a85174b6de9aa32257af2f827ecb6a913fb24877f46a1b8121ee409b7ad184603e6b57fb1f8a1c1beaaff085706b16  0020-QNX-add-a-LibreOfficeKit-render-regression-gate.patch
+	97c4e9679d0d6dd69f106c8fba0a590f60448c9aaaf9d35f45720aa49851c35a7efd7acc99b2620a2bf1d99906831a9202384a4cca88f6555d3245c8771d55a9  0021-QNX-enable-the-qt6-VCL-plugin-on-the-QNX-Screen-QPA.patch
+	94ee014a205e25e1843673ebb212783b36d2052670a52b6541c2ba6e5d3f050fe5c32fa76f3ea3468aa5f0bdd60e1cc413063c25e6eecdd1d8d7610dbaf21247  0022-QNX-teach-the-qt-VCL-backend-about-the-QNX-platform.patch
+	14cc82e17476e8762f29da0087e46edc41905af661ff9319d10c84ac9853d257aa40f6a62a2f4f0d1ddd36ab83983ed5480e0bf65c030ea6e72a13daf70f61de  0023-QNX-deliver-liborcus-with-the-2-part-soname-QNX-libt.patch
+	dfb8d88a232df2ec1a076e0b18e104a83a49f6be82c5d2463c60fd5588a9aed3bf8626be8ddf16b5a07de18b0271d47891580e14838373e47126a0be333a070f  0024-QNX-anchor-the-UNO-exception-RTTI-in-soffice.bin.patch
+	dc1552cee468a23ddb0a5b3e3d8c13bc5ba8ddbc75a9c0061670e1498d709e7475733410205baec1c830cf750cd0fc5a56fda596afcbf4e30b0fb16dbaf4f9cd  0025-QNX-deliver-redland-raptor-rasqal-with-2-part-soname.patch
+	f059aa6a22f8be500a7ffee0c6fb3aa00bb91e5e47f0ca0f27a21890485bcb6ed35a89557076af7a5279724c51f01901cc8492201a1a551bf9e407bd022c16d0  0026-QNX-fix-RDF-document-repository-weak-ref-lifetime.patch
+	5769226d7cfad139b7ee2a733679cd49e0565dfe91ca711199b468196d36ff274481272db5aae78ef8101fb162c908d727750eb1670dca9c7f35fc464e0a2ce2  0027-QNX-fix-DOM-node-map-weak-ref-liveness-check.patch
+	e8a4c04ea7d43285dcfaeaf73026001b3bc26e55fce6e5797656b653cecb9c9af94247dde7b3e6e57bf3fa513fa0bb91f5f7bad5c9f106a982849fb38fb0be34  0028-QNX-extend-the-LOK-render-gate-to-cover-Calc.patch
+	c77b13279b15771fcf5895e82d8b326e6ca0b1dd4809fe0c787ffc30eaac056eb7e033921d0332b29ec9a090ade9823bc2aba8d59f4b67a008523d6b4afa2260  0029-QNX-fix-config-set-element-insert-SaveAs-General-Err.patch
+	ca994b47bc77cad481a904b078aa34fc29699487ed50b67e2a9b49cf403699497f3e1281d16e97001462fe8f666846fe76885e772fd82cb99e047f090b90a6dc  0030-QNX-extend-the-LOK-render-gate-to-cover-Math.patch
+	1c9c283825da51ab3bbb60c1d6f916e55946a5e52dbba22bdf0c37dc16184840f7cd3544c3601afc4671afef90ebc1989152a7420f97246771d1a9f2dd2b97bb  0031-QNX-enable-Draw-Impress-via-system-NSS.patch
+	9a39030bb4abfda1d9247e857bb802bca03d8d1b4930111a82eb62d90a64a5af486d033d77a2dedb7379d9a7f8e6fe6c68fe911b17dc14aa2fd22dd6e9f88c4b  0032-QNX-shim-rpc-types.h-for-system-NSS-builds.patch
+	0e627526fe84910fc3d91c0b0b14e328552184063ff1621e36839ffc57eaef3a572b4ebce5497dca0beaa39f4705296ec1c2d8326f5cc0da12e7ddf6dc881108  0033-QNX-extend-the-LOK-render-gate-to-cover-Draw-and-Imp.patch
+	dd100c385cc88b0b9fe6a92ae35dd85dbb523ec663da247ce2a5373a3d4efd744e34dfd300ff2da5318d33fca8fb972800560a2fe7fc21e2aa3c933794ac21eb  soffice.qnx
+	e07ed60e57e8fd52767ed66c381c822724666dede4a4283a149f90fb7497f4a3b808571e76875dea6adbf682cd87215cf11703362ecd22f17516ec76d9c9bfee  gnucp
+"

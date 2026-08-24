@@ -1,0 +1,60 @@
+From 230883bdbe921d3f5a9b97db91cdfeb9ee6058c3 Mon Sep 17 00:00:00 2001
+From: Arthur Clark <mydevstuff@mail.com>
+Date: Thu, 20 Aug 2026 15:09:25 +0000
+Subject: [PATCH 22/33] QNX: teach the qt VCL backend about the QNX platform
+
+QtInstance::GetPlatform() had no case for the "qnx" QPA plugin, so it
+returned Platform::Other. QtFrame::windowHandle() then hit
+case Platform::Other: std::abort(), which killed every attempt to show a
+window. Add a Platform::Qnx value, map QGuiApplication::platformName()
+"qnx" to it, and handle it like the other native-window platforms by
+setting Qt::WA_NativeWindow. A qt6 window now shows and paints on the
+QNX Screen server.
+
+Change-Id: Idefa39784bf22d09bfadd05bece6df7b1dd42308
+---
+ include/vcl/Platform.hxx | 1 +
+ vcl/qt5/QtFrame.cxx      | 1 +
+ vcl/qt5/QtInstance.cxx   | 2 ++
+ 3 files changed, 4 insertions(+)
+
+diff --git a/include/vcl/Platform.hxx b/include/vcl/Platform.hxx
+index 08ec1be1c..217116806 100644
+--- a/include/vcl/Platform.hxx
++++ b/include/vcl/Platform.hxx
+@@ -16,6 +16,7 @@ enum class Platform
+     WASM,
+     Windows,
+     Mac,
++    Qnx,
+     Other
+ };
+ 
+diff --git a/vcl/qt5/QtFrame.cxx b/vcl/qt5/QtFrame.cxx
+index 6cbb446d4..64c976e84 100644
+--- a/vcl/qt5/QtFrame.cxx
++++ b/vcl/qt5/QtFrame.cxx
+@@ -221,6 +221,7 @@ QWindow* QtFrame::windowHandle() const
+         case Platform::Windows:
+         case Platform::Xcb:
+         case Platform::Mac:
++        case Platform::Qnx:
+             pChild->setAttribute(Qt::WA_NativeWindow);
+             break;
+         case Platform::Other:
+diff --git a/vcl/qt5/QtInstance.cxx b/vcl/qt5/QtInstance.cxx
+index d7f4a7677..fba019c63 100644
+--- a/vcl/qt5/QtInstance.cxx
++++ b/vcl/qt5/QtInstance.cxx
+@@ -651,6 +651,8 @@ Platform QtInstance::GetPlatform() const
+         return Platform::Windows;
+     if (sPlatformName == u"cocoa")
+         return Platform::Mac;
++    if (sPlatformName == u"qnx")
++        return Platform::Qnx;
+ 
+     assert(false && "Unsupported qt VCL platform");
+     return Platform::Other;
+-- 
+2.51.0
+

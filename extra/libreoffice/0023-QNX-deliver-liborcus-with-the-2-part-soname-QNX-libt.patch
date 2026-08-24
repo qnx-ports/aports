@@ -1,0 +1,34 @@
+From 346aa1ba01227f8848a128f45d83e8862bdfa988 Mon Sep 17 00:00:00 2001
+From: Arthur Clark <mydevstuff@mail.com>
+Date: Thu, 20 Aug 2026 19:43:31 +0000
+Subject: [PATCH 23/33] QNX: deliver liborcus with the 2-part soname QNX
+ libtool emits
+
+QNX libtool builds liborcus and orcus-parser as liborcus-0.21.so.0, not the
+Linux 3-part liborcus-0.21.so.0.0.0, so the ExternalPackage delivery could not
+find the source files and cui failed to link. Add a QNX branch referencing the
+2-part soname. No effect on other platforms.
+
+Change-Id: Iab1c5403dbec8c71d7dcf7a083a9f834c09109f1
+---
+ external/liborcus/ExternalPackage_liborcus.mk | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/external/liborcus/ExternalPackage_liborcus.mk b/external/liborcus/ExternalPackage_liborcus.mk
+index e4682fe14..1cf4527fa 100644
+--- a/external/liborcus/ExternalPackage_liborcus.mk
++++ b/external/liborcus/ExternalPackage_liborcus.mk
+@@ -14,6 +14,10 @@ $(eval $(call gb_ExternalPackage_use_external_project,liborcus,liborcus))
+ ifeq ($(OS),MACOSX)
+ $(eval $(call gb_ExternalPackage_add_file,liborcus,$(LIBO_LIB_FOLDER)/liborcus-0.21.0.dylib,src/liborcus/.libs/liborcus-0.21.0.dylib))
+ $(eval $(call gb_ExternalPackage_add_file,liborcus,$(LIBO_LIB_FOLDER)/liborcus-parser-0.21.0.dylib,src/parser/.libs/liborcus-parser-0.21.0.dylib))
++else ifeq ($(OS),QNX)
++# QNX libtool emits the 2-part soname, not the Linux 3-part .so.0.0.0.
++$(eval $(call gb_ExternalPackage_add_file,liborcus,$(LIBO_LIB_FOLDER)/liborcus-0.21.so.0,src/liborcus/.libs/liborcus-0.21.so.0))
++$(eval $(call gb_ExternalPackage_add_file,liborcus,$(LIBO_LIB_FOLDER)/liborcus-parser-0.21.so.0,src/parser/.libs/liborcus-parser-0.21.so.0))
+ else ifeq ($(DISABLE_DYNLOADING),)
+ $(eval $(call gb_ExternalPackage_add_file,liborcus,$(LIBO_LIB_FOLDER)/liborcus-0.21.so.0,src/liborcus/.libs/liborcus-0.21.so.0.0.0))
+ $(eval $(call gb_ExternalPackage_add_file,liborcus,$(LIBO_LIB_FOLDER)/liborcus-parser-0.21.so.0,src/parser/.libs/liborcus-parser-0.21.so.0.0.0))
+-- 
+2.51.0
+

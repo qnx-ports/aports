@@ -1,0 +1,115 @@
+From 64c33f6433b2cbee66b5f9e19b5b014bfdba7cfe Mon Sep 17 00:00:00 2001
+From: Arthur Clark <mydevstuff@mail.com>
+Date: Fri, 21 Aug 2026 02:49:37 +0000
+Subject: [PATCH 26/33] QNX: fix RDF document-repository weak-ref lifetime
+
+unotools::WeakReference<librdf_Repository>::get() locks the referent via a
+cross-DSO dynamic_cast to the impl type (XInterface is an ambiguous base of the
+WeakImplHelper), which returns null on QNX even when the object is alive because
+type_info is not unified across DSOs under the executable-first loader. That made
+the librdf named-graph report its repository gone during metadata edits.
+
+Under QNX, hold the repository through a uno::WeakReference to its XDocumentRepository
+interface (base WeakReferenceHelper::get(), no dynamic_cast) plus a non-owning raw
+pointer, and lock via the interface weak ref. Off-QNX behavior is unchanged.
+
+Change-Id: I90d20891c5893f1d8055f58d960a6525d6bb0625
+---
+ unoxml/source/rdf/librdf_repository.cxx | 34 ++++++++++++++++++++++---
+ 1 file changed, 30 insertions(+), 4 deletions(-)
+
+diff --git a/unoxml/source/rdf/librdf_repository.cxx b/unoxml/source/rdf/librdf_repository.cxx
+index 7fc696705..46e2f3713 100644
+--- a/unoxml/source/rdf/librdf_repository.cxx
++++ b/unoxml/source/rdf/librdf_repository.cxx
+@@ -60,6 +60,7 @@
+ #include <cppuhelper/implbase.hxx>
+ #include <cppuhelper/supportsservice.hxx>
+ #include <unotools/weakref.hxx>
++#include <cppuhelper/weakref.hxx>
+ 
+ #include <comphelper/sequence.hxx>
+ #include <comphelper/xmltools.hxx>
+@@ -697,10 +698,30 @@ class librdf_NamedGraph:
+ public:
+     librdf_NamedGraph(librdf_Repository * i_pRep,
+             uno::Reference<rdf::XURI> i_xName)
++#if defined(QNX)
++        // QNX: unotools::WeakReference::get() locks via a cross-DSO dynamic_cast to
++        // the impl type, which returns null under QNX type_info non-unification.
++        // Track liveness through the UNO interface weak reference instead.
++        : m_wRep(uno::Reference< rdf::XDocumentRepository >(i_pRep))
++        , m_pRep(i_pRep)
++        , m_xName(std::move(i_xName))
++#else
+         : m_wRep(i_pRep)
+         , m_xName(std::move(i_xName))
++#endif
+     { };
+ 
++    /// lock the owning repository; null if it is gone
++    rtl::Reference< librdf_Repository > lockRepository() const {
++#if defined(QNX)
++        uno::Reference< rdf::XDocumentRepository > const xAlive(m_wRep);
++        return xAlive.is() ? rtl::Reference< librdf_Repository >(m_pRep)
++                           : rtl::Reference< librdf_Repository >();
++#else
++        return m_wRep.get();
++#endif
++    }
++
+     // css::rdf::XNode:
+     virtual OUString SAL_CALL getStringValue() override;
+ 
+@@ -735,7 +756,12 @@ private:
+         const uno::Reference< rdf::XNode > & i_xObject);
+ 
+     /// weak reference: this is needed to check if m_pRep is valid
++#if defined(QNX)
++    uno::WeakReference< rdf::XDocumentRepository > const m_wRep;
++    librdf_Repository * const m_pRep;
++#else
+     unotools::WeakReference< librdf_Repository > const m_wRep;
++#endif
+     uno::Reference< rdf::XURI > const m_xName;
+ 
+     /// Querying is rather slow, so cache the results.
+@@ -769,7 +795,7 @@ uno::Reference< rdf::XURI > SAL_CALL librdf_NamedGraph::getName()
+ 
+ void SAL_CALL librdf_NamedGraph::clear()
+ {
+-    rtl::Reference< librdf_Repository > xRep( m_wRep );
++    rtl::Reference< librdf_Repository > xRep( lockRepository() );
+     if (!xRep.is()) {
+         throw rdf::RepositoryException(
+             u"librdf_NamedGraph::clear: repository is gone"_ustr, *this);
+@@ -791,7 +817,7 @@ void SAL_CALL librdf_NamedGraph::addStatement(
+     const uno::Reference< rdf::XURI > & i_xPredicate,
+     const uno::Reference< rdf::XNode > & i_xObject)
+ {
+-    rtl::Reference< librdf_Repository > xRep( m_wRep );
++    rtl::Reference< librdf_Repository > xRep( lockRepository() );
+     if (!xRep.is()) {
+         throw rdf::RepositoryException(
+             u"librdf_NamedGraph::addStatement: repository is gone"_ustr, *this);
+@@ -809,7 +835,7 @@ void SAL_CALL librdf_NamedGraph::removeStatements(
+     const uno::Reference< rdf::XURI > & i_xPredicate,
+     const uno::Reference< rdf::XNode > & i_xObject)
+ {
+-    rtl::Reference< librdf_Repository > xRep( m_wRep );
++    rtl::Reference< librdf_Repository > xRep( lockRepository() );
+     if (!xRep.is()) {
+         throw rdf::RepositoryException(
+             u"librdf_NamedGraph::removeStatements: repository is gone"_ustr, *this);
+@@ -851,7 +877,7 @@ librdf_NamedGraph::getStatements(
+         }
+     }
+ 
+-    rtl::Reference< librdf_Repository > xRep( m_wRep );
++    rtl::Reference< librdf_Repository > xRep( lockRepository() );
+     if (!xRep.is()) {
+         throw rdf::RepositoryException(
+             u"librdf_NamedGraph::getStatements: repository is gone"_ustr, *this);
+-- 
+2.51.0
+

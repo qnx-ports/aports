@@ -1,0 +1,54 @@
+From 790d40041a1361ea8b5a70ff542baff13634ed60 Mon Sep 17 00:00:00 2001
+From: Arthur Clark <mydevstuff@mail.com>
+Date: Fri, 21 Aug 2026 02:50:35 +0000
+Subject: [PATCH 27/33] QNX: fix DOM node-map weak-ref liveness check
+
+CDocument::GetCNode checks a cached wrapper is still alive via
+unotools::WeakReference<CNode>::get(), which locks through a cross-DSO dynamic_cast
+to CNode (XInterface is an ambiguous base of the WeakImplHelper). On QNX that cast
+returns null even for a live wrapper (type_info not unified across DSOs), so every
+cached node looked dead: getParentNode() returned null and a remove-and-re-add during
+metadata edits threw HIERARCHY_REQUEST_ERR.
+
+Under QNX, test liveness through the base UNO weak reference (WeakReferenceHelper::get(),
+no dynamic_cast) and return the stored raw CNode*. The node-map holds the weak ref and
+the raw pointer as a pair set together at insertion, and RemoveCNode erases the entry
+before the object dies, so the raw pointer is valid exactly when the weak ref reports
+alive. Off-QNX behavior is unchanged.
+
+Change-Id: I1e21ec56b4a49921ad537e41447c758685f3e8d9
+---
+ unoxml/source/dom/document.cxx | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/unoxml/source/dom/document.cxx b/unoxml/source/dom/document.cxx
+index f7058a3fa..1e3964aaf 100644
+--- a/unoxml/source/dom/document.cxx
++++ b/unoxml/source/dom/document.cxx
+@@ -176,11 +176,23 @@ namespace DOM
+         nodemap_t::const_iterator const i = m_NodeMap.find(pNode);
+         if (i != m_NodeMap.end()) {
+             // #i113681# check that the CNode is still alive
++#if defined(QNX)
++            // QNX: unotools::WeakReference<CNode>::get() locks via a cross-DSO
++            // dynamic_cast to the impl type, which returns null under QNX type_info
++            // non-unification, making live wrappers look dead. Check liveness through
++            // the base UNO weak reference and return the stored raw pointer.
++            if (static_cast<css::uno::WeakReferenceHelper const&>(
++                        i->second.first).get().is())
++            {
++                return i->second.second;
++            }
++#else
+             rtl::Reference<CNode> const xNode(i->second.first);
+             if (xNode.is())
+             {
+                 return xNode;
+             }
++#endif
+         }
+ 
+         if (!bCreate) { return nullptr; }
+-- 
+2.51.0
+

@@ -1,0 +1,290 @@
+From dde54406896328b1a9c8ce10f1c11f81ba1c7c43 Mon Sep 17 00:00:00 2001
+From: Arthur Clark <mydevstuff@mail.com>
+Date: Wed, 19 Aug 2026 19:00:50 +0000
+Subject: [PATCH 20/33] QNX: add a LibreOfficeKit render-regression gate
+
+The upstream LOK render tests are unusable as a QNX discovery gate:
+tiledrendering is disabled (tdf#113311) and its source no longer matches the
+paintTile API, and smoketest pulls in the whole office application layer. This
+standalone gate renders a 256x256 tile of each fixed input through
+LibreOfficeKit and checks the non-white pixel count against a per-document band
+- the floor rejects a blank tile, the ceiling rejects a garbage one - with a
+malformed input carried as a negative control that must fail to render. rc=0 iff
+every case meets its expectation.
+
+Built native-on-QDD with clang++; links the UNO exception RTTI anchor with
+--dynamic-list-cpp-typeinfo, without which the QNX executable-first loader
+returns an empty documentLoad.
+
+Change-Id: I4957c61c390cb7f039cb0c1464d017354d3f4ce8
+---
+ libreofficekit/qa/qnxrendergate/.gitignore    |   3 +
+ libreofficekit/qa/qnxrendergate/README        |   9 ++
+ libreofficekit/qa/qnxrendergate/build.sh      |  22 ++++
+ libreofficekit/qa/qnxrendergate/data/bad.odt  | Bin 0 -> 972 bytes
+ .../qa/qnxrendergate/data/clean.odt           | Bin 0 -> 642 bytes
+ .../qa/qnxrendergate/data/hello.docx          | Bin 0 -> 973 bytes
+ .../qa/qnxrendergate/rendergate.cxx           | 109 ++++++++++++++++++
+ libreofficekit/qa/qnxrendergate/run.sh        |   6 +
+ 8 files changed, 149 insertions(+)
+ create mode 100644 libreofficekit/qa/qnxrendergate/.gitignore
+ create mode 100644 libreofficekit/qa/qnxrendergate/README
+ create mode 100755 libreofficekit/qa/qnxrendergate/build.sh
+ create mode 100644 libreofficekit/qa/qnxrendergate/data/bad.odt
+ create mode 100644 libreofficekit/qa/qnxrendergate/data/clean.odt
+ create mode 100644 libreofficekit/qa/qnxrendergate/data/hello.docx
+ create mode 100644 libreofficekit/qa/qnxrendergate/rendergate.cxx
+ create mode 100755 libreofficekit/qa/qnxrendergate/run.sh
+
+diff --git a/libreofficekit/qa/qnxrendergate/.gitignore b/libreofficekit/qa/qnxrendergate/.gitignore
+new file mode 100644
+index 000000000..53e49f615
+--- /dev/null
++++ b/libreofficekit/qa/qnxrendergate/.gitignore
+@@ -0,0 +1,3 @@
++rttianchor.o
++rendergate
++data/*.bak
+diff --git a/libreofficekit/qa/qnxrendergate/README b/libreofficekit/qa/qnxrendergate/README
+new file mode 100644
+index 000000000..dd5568ea7
+--- /dev/null
++++ b/libreofficekit/qa/qnxrendergate/README
+@@ -0,0 +1,9 @@
++QNX LibreOfficeKit render-regression gate.
++
++  sh build.sh && sh run.sh      # rc=0 = pass
++
++Renders a 256x256 tile of each data/ document through LibreOfficeKit and checks
++the non-white pixel count against a per-document band: the floor rejects a blank
++tile, the ceiling rejects a garbage one. data/bad.odt is a negative control that
++must fail to render. Substitutes the upstream tiledrendering/smoketest tests,
++which are unusable here (disabled/bit-rotted, and a whole-office build).
+diff --git a/libreofficekit/qa/qnxrendergate/build.sh b/libreofficekit/qa/qnxrendergate/build.sh
+new file mode 100755
+index 000000000..2af27b1c4
+--- /dev/null
++++ b/libreofficekit/qa/qnxrendergate/build.sh
+@@ -0,0 +1,22 @@
++#!/bin/sh
++# Build the QNX LOK render-regression gate native-on-QDD (clang++, libc++abi.so.1).
++set -e
++C=${CORE:-/data/home/qnxuser/core-qnx}
++here=$(cd "$(dirname "$0")" && pwd)
++UDK="$C/workdir/UnoApiHeadersTarget/udkapi/normal"
++OFF="$C/workdir/UnoApiHeadersTarget/offapi/normal"
++
++# UNO exception RTTI anchor (241 types), reused from the committed source. The
++# QNX executable-first loader needs it in the host exe or documentLoad is empty.
++clang++ -std=c++20 -DLIBO_INTERNAL_ONLY -DQNX -DUNIX -DUNX -D_PTHREADS \
++    -D_FILE_OFFSET_BITS=64 -DCPPU_ENV=gcc3 \
++    -I"$C/include" -I"$C/config_host" -I"$UDK" -I"$OFF" \
++    -c "$C/cpputools/source/unoexe/rttianchor.cxx" -o "$here/rttianchor.o"
++
++clang++ -std=c++20 -DLIBO_INTERNAL_ONLY \
++    -I"$C/include" -I"$C/config_host" \
++    "$here/rendergate.cxx" "$here/rttianchor.o" \
++    -Wl,--dynamic-list-cpp-typeinfo \
++    -L"$C/instdir/program" -l:libuno_sal.so.3 \
++    -o "$here/rendergate"
++echo "built: $here/rendergate"
+diff --git a/libreofficekit/qa/qnxrendergate/data/bad.odt b/libreofficekit/qa/qnxrendergate/data/bad.odt
+new file mode 100644
+index 0000000000000000000000000000000000000000..0922f60f71c3eb5e53477f642bf20b7c977368d4
+GIT binary patch
+literal 972
+zcmWIWW@Zs#00Gl2La}kjjCj-;7#Kj9gMon|H#0Z2q_QA2v7jI)GdZy&Ge1wiEH6bb
+zKe0HoSTDaIH7_MUximL5uSBmTwW0)O7zYE$Fdyk-mp6e7VPs$sWnf_Nbq#UU_4ISo
+z&rQtBOiL{;(W}VKnHq4GugQRC-*1s6<uj^`xDU_vU%<biXOZ`|yu{W6x4Bi6j#YfP
+zrvLZftxq-;)4$$OllC~c@P>0+ic{{(bq~t+K2f&_-+d{26R+B|^@_7gri86nknPDf
+zH)qlkTeXvJZ5<)(mn&7K&9B+1vNj|50mtnf$E?n%S6c5o>H9oJ&eUF{qqqI|tygo7
+zcW{;ToRc~`dHIW#def4QZu38AVbEc}$wy&c>t#jzpmcA;_36<czixWPiRwwE|2*Zl
+z85kIP85tP385kIn^YcnT!BLT$(>uY@|F8j1>-#@k+TXV|Ulv(<lef@ef#>Wk*|T>k
+zui5H7DNlC)yftr+lsP;Sv8<bafAiI>3~7r+pQmYx_rG*vnDp?}B|GukXNxz9X#ZWX
+zW8GTE$c-<fmrRgYCJ^6YQfXOQe9?MROvP(eQQa!Zo+o@Sy-r4NmD#&&euMK5{o0Fu
+zZ)~2c{h9ouH>#-g+Vw|FnWl^8)*W1y7_t9t!c0Ad#_(vX8u?a%@3WpC?7Vw$`G%hk
+zKVGf1ba?s0CEzo|{My@<4_34Y-1hxg+t&4c<*798sdpvQ%V%z~?^{{VfEorx%BRBf
+z7#J9)FfcH1F)%O`msIAY7K38fx7VAi#es)){iT%m<*Em-%~hXa*{~&0>Wzz!b<g(j
+z61F?GE5bwW)*a5V+p<c0Tfh=ai6r&r=O+*SzN#v^#aH+73)zPXdE7?~FYY+M<XK7N
+z$2PHTQv<8McHLnQ>fuXO{OA3n=5gq+x9<B|)>twGcr!AIFyl_mpi~aR4U8ZXmbMYP
+zuqRuPS`cnv^u?8k(TzY)6d>&&+`wqWh>}FmHKK<kND~M*Fq$zThiia0D;r3hg@J|P
+M6$1mq872@90GKdh+5i9m
+
+literal 0
+HcmV?d00001
+
+diff --git a/libreofficekit/qa/qnxrendergate/data/clean.odt b/libreofficekit/qa/qnxrendergate/data/clean.odt
+new file mode 100644
+index 0000000000000000000000000000000000000000..d2a8dc274c6c4476648f4fafe5771789eecee606
+GIT binary patch
+literal 642
+zcmWIWW@Zs#0D;fa^4@XBjCj-;7#Kj9gMon|H#0Z2q_QA2v7jI)GdZy&Ge1wiEH6bb
+zKe0HoSTDaIH7_MUximL5uSBmTwW0)O7ze{$U!lNP)1ReJVqjn}WMp6vWnf_Nbq#UU
+z_4ISo&rQtBOiL{;(W}VKnHu28*KEME`@QIj@>_4Ew*FDoa$J37nJBODAGsMOH%#7c
+zh)%NJCOUh<VTaHMrY6N*G5uFpW~Q8oaArN`B6`GG??~;pU?s61R}TBehn8o)VdPN^
+z+Rb@<spUq^W7`(onQQc_MffXYbR?H$>(V0+0-e%6KZvu}e(^m;*QDF%f6LD^o8t54
+z)*pE{FKxMbeD=P5m)9aZF~LtLFe=G0qn?3*;V}aP12+Q$Lvnsz3COz@xjC`@7r72A
+z@VMUpExP#qy4%?={)me!b7Xl5FZ}zPGuri=NZz@<J5!ztC<#>@o3(O<qu#A&Z%?e`
+zsCk*au9~q-h_&mq$^wo(fjff?c0H`DKT{S}?^V!0`&80;*9=}Y3zf&5ml<M0&-p1!
+zT{I3<{(EBf-<!2w?c1&xZCZKyzyBNd0B=Sn5oX+R2Z~b=UeX96VKIr&g*}o$YC(8O
+qqc5%~LpB0i5P`IV@RCL$Mw9>x@MdKLNiZ`oGi+jDVA#b7;sF4757yuS
+
+literal 0
+HcmV?d00001
+
+diff --git a/libreofficekit/qa/qnxrendergate/data/hello.docx b/libreofficekit/qa/qnxrendergate/data/hello.docx
+new file mode 100644
+index 0000000000000000000000000000000000000000..14b16e965628bd80d29eb471b09c2faeeabfda00
+GIT binary patch
+literal 973
+zcmWIWW@Zs#U|`^2Fx?^)D?Wqa`fCOThE0qN48jZy4AIW{c_pcNCGjDZ1*yfcdKI}j
+zwE-vnm<@UMeiog$K0}R}y(M6|?FN}f=bsGPAJ4d)U1p*C_Wt9{h3p{~xAHgNPuj{K
+z_jbhw?~U!Vw=uh3RC)dA#^K|?mhNOfD!SNpzS7qMg|@4ovNqbKB&j|+Ve7N?8T;Cs
+zJ|YutPtoKuS|YUJRD|2yi#Y`<wYN*lZ!L+?yteF|oI;wv$%AX*U-wM^`*M=gJV)Dk
+zGm0blXKXHKTm7I){O$S~&#V`TKAm`Y^645~mJ8FB(_Xx9k$*UQO7I-juYF7RB?-*>
+z=W{e`_8GH|Er0JnKeRMcV$Q<Nb!DejC6lIIYtBFK;UIoq{zdZB)B31kW54#_uk{QJ
+z3_6Sq4BQM14Dm&&ImP;VAhP$oHQylv9)=5ZgI(@rMzOU7IE%Mj5uM8H(m6ZKME>Z*
+z%eN;tGHS88{h#-CSLLnFyM~uu%xzeu(YP=;uKygzj*{hH`6N_dZke;knbBCtq&>9u
+znCCJZ=fe^msYfO@C@$Ube9o1Iu%L&`yJB9}ZZUdlASJhCmsfL5@U&<-d)|lzYpyaS
+zt=3MsEAv7A&iB77KD@Ykc9FMznU2*aoy7-L9z0z9?AKg9BW|1dhxgC3*~5V9ud8=f
+z^WA1(U{GabU=U<rU?|ToO3_crPcF?(%_{-LxNHALzas`bZRPV0ovQOpbXdOXZEgo+
+z;{?7=Q{OvgF+%MsOT*{Q+oG_sW?Jg&&+ng=l#1;$P;=gwx_wVlL)=8Ox}2N0e?BZo
+znXu_gRMe*%n?!}JOU=&)We06`p1)9{X4Uj*zLxD#9ZS?oj0(A4oX%PBB1JD(=BQI(
+zy9ZaW7W*90^3YQKIVSVoo}2gO)>J98BfLASU9vgj=HGvKLfhiN<d@3(c$xz_y8gtM
+zX}t1&R4`A#E`71y1@|Z$o|4x7o2@J%W{T4{PQ9<4Ayuht_W#%p<2QfKD*TgwQ^yeC
+z&B!Fej63}^KtTf|h=C<Hpc{amNI=>^xPeiI5hcl>YebI)kR}jrVEn>}B~AjoS=m6+
+Q%nZy7I~f=l{xN}g07z(pZvX%Q
+
+literal 0
+HcmV?d00001
+
+diff --git a/libreofficekit/qa/qnxrendergate/rendergate.cxx b/libreofficekit/qa/qnxrendergate/rendergate.cxx
+new file mode 100644
+index 000000000..4f060afa1
+--- /dev/null
++++ b/libreofficekit/qa/qnxrendergate/rendergate.cxx
+@@ -0,0 +1,109 @@
++// QNX LOK render-regression gate.
++//
++// Loads fixed documents through LibreOfficeKit, renders a 256x256 tile of each,
++// and checks the non-white pixel count against a per-document band: the floor
++// proves real content rendered (a blank tile is all-white -> 0 non-white), the
++// ceiling rejects an all-black/garbage tile. A malformed input is carried as a
++// negative control that must fail to render, so the gate discriminates rather
++// than rubber-stamps. rc=0 iff every case meets its expectation.
++//
++// build: see build.sh (must link the UNO exception RTTI anchor with
++//        -Wl,--dynamic-list-cpp-typeinfo; on the QNX executable-first loader an
++//        unanchored host gets an empty documentLoad).
++// run:   env SAL_USE_VCLPLUGIN=svp LD_LIBRARY_PATH=<inst>/program \
++//        ./rendergate <inst>/program <data-dir>
++
++#include <cstdio>
++#include <cstring>
++#include <vector>
++#include <LibreOfficeKit/LibreOfficeKit.hxx>
++
++namespace {
++
++struct Case
++{
++    const char* name;   // label
++    const char* file;   // input file name within the data dir
++    long lo, hi;        // accepted non-white band (ignored when expectFail)
++    bool expectFail;    // negative control: must NOT produce a valid tile
++};
++
++long countNonWhite(const std::vector<unsigned char>& buf)
++{
++    long n = 0;
++    for (size_t i = 0; i + 3 < buf.size(); i += 4)
++        if (buf[i] != 0xff || buf[i + 1] != 0xff || buf[i + 2] != 0xff)
++            ++n;
++    return n;
++}
++
++// non-white pixel count of a 256x256 tile, or -1 if load/render failed
++long renderOne(lok::Office* office, const char* url)
++{
++    lok::Document* doc = office->documentLoad(url);
++    if (!doc)
++        return -1;
++    doc->initializeForRendering("{}");
++    long w = 0, h = 0;
++    doc->getDocumentSize(&w, &h);
++    std::vector<unsigned char> buf(256 * 256 * 4);
++    doc->paintTile(buf.data(), 256, 256, 0, 0, (w > 0 ? w : 15000), (h > 0 ? h : 15000));
++    long nw = countNonWhite(buf);
++    delete doc;
++    return nw;
++}
++
++} // namespace
++
++int main(int argc, char** argv)
++{
++    if (argc < 3)
++    {
++        std::fprintf(stderr, "usage: %s <install/program> <data-dir>\n", argv[0]);
++        return 2;
++    }
++    const char* install = argv[1];
++    const char* datadir = argv[2];
++
++    // Bands are set around the measured known-good counts with margin; the aim
++    // is blank<->real discrimination, not an exact match.
++    const Case cases[] = {
++        { "hello.docx", "hello.docx", 3000, 9000, false },
++        { "clean.odt",  "clean.odt",  1000, 9000, false },
++        { "bad.odt",    "bad.odt",    0,    0,    true  }, // malformed zip -> empty load
++    };
++
++    lok::Office* office = lok::lok_cpp_init(install, nullptr);
++    if (!office)
++    {
++        std::fprintf(stderr, "GATE FAIL: lok_cpp_init returned null\n");
++        return 3;
++    }
++
++    int failures = 0;
++    for (const Case& c : cases)
++    {
++        char url[1024];
++        std::snprintf(url, sizeof url, "file://%s/%s", datadir, c.file);
++        long nw = renderOne(office, url);
++        if (c.expectFail)
++        {
++            bool tripped = (nw <= 0); // -1 (no load) or 0 (blank) both count
++            std::printf("[%-11s] non-white=%-6ld expect=FAIL -> %s\n",
++                        c.name, nw, tripped ? "ok" : "UNEXPECTED-PASS");
++            if (!tripped)
++                ++failures;
++        }
++        else
++        {
++            bool pass = (nw >= c.lo) && (nw <= c.hi);
++            std::printf("[%-11s] non-white=%-6ld band=[%ld,%ld] -> %s\n",
++                        c.name, nw, c.lo, c.hi, pass ? "PASS" : "FAIL");
++            if (!pass)
++                ++failures;
++        }
++    }
++
++    std::printf("%s: %d failure(s)\n", failures ? "GATE FAIL" : "GATE PASS", failures);
++    return failures ? 1 : 0;
++}
+diff --git a/libreofficekit/qa/qnxrendergate/run.sh b/libreofficekit/qa/qnxrendergate/run.sh
+new file mode 100755
+index 000000000..89844ee46
+--- /dev/null
++++ b/libreofficekit/qa/qnxrendergate/run.sh
+@@ -0,0 +1,6 @@
++#!/bin/sh
++# Run the QNX LOK render-regression gate against the delivered install.
++C=${CORE:-/data/home/qnxuser/core-qnx}
++here=$(cd "$(dirname "$0")" && pwd)
++exec env SAL_USE_VCLPLUGIN=svp LD_LIBRARY_PATH="$C/instdir/program" \
++    "$here/rendergate" "$C/instdir/program" "$here/data"
+-- 
+2.51.0
+

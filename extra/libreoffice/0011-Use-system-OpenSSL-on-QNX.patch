@@ -1,0 +1,22 @@
+From e19666aaeef70692fd9d6133c48d4e7b3a932e95 Mon Sep 17 00:00:00 2001
+From: Arthur Clark <mydevstuff@mail.com>
+Date: Mon, 17 Aug 2026 20:40:06 +0000
+Subject: [PATCH 11/33] Use system OpenSSL on QNX
+
+Change-Id: I1cd1aa05559f581fb7b1e5f01cbd332e605d48d4
+---
+ distro-configs/LibreOfficeQNX.conf | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/distro-configs/LibreOfficeQNX.conf b/distro-configs/LibreOfficeQNX.conf
+index f06bc06ae..e8a0e69d1 100644
+--- a/distro-configs/LibreOfficeQNX.conf
++++ b/distro-configs/LibreOfficeQNX.conf
+@@ -28,3 +28,4 @@
+ --with-system-jpeg
+ --with-system-lcms2
+ --with-system-boost
++--with-system-openssl
+-- 
+2.51.0
+

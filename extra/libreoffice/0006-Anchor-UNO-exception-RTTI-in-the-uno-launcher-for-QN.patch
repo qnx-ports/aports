@@ -1,0 +1,72 @@
+From 6c61d887d6077ae7f2620790d4c4c0ec4502aa1c Mon Sep 17 00:00:00 2001
+From: Arthur Clark <mydevstuff@mail.com>
+Date: Sun, 16 Aug 2026 14:27:52 +0000
+Subject: [PATCH 06/33] Anchor UNO exception RTTI in the uno launcher for QNX
+
+QNX's loader is executable-first: a weak type_info defined in the
+executable preempts each dlopen'd component's own copy. UNO exception
+RTTI is otherwise emitted weak per-component and the QNX loader does not
+unify it across separately dlopen'd components, so a bridge re-raise and
+a handler in different components see distinct type_info instances and the
+specific catch degrades to catch(...). Referencing the exception hierarchy
+via typeid in a launcher TU lands the leaf and every base type_info in
+uno.bin, so all components bind those copies and cross-boundary catch
+matches. Build-gated to QNX; real exception types and the bridge untouched.
+
+Change-Id: Ia32d20db795a3f6d19cb86207ab9e69caf4f9f3e
+---
+ cpputools/Executable_uno.mk            |  8 ++++++++
+ cpputools/source/unoexe/rttianchor.cxx | 22 ++++++++++++++++++++++
+ 2 files changed, 30 insertions(+)
+ create mode 100644 cpputools/source/unoexe/rttianchor.cxx
+
+diff --git a/cpputools/Executable_uno.mk b/cpputools/Executable_uno.mk
+index f3106c304..bdb2ee532 100644
+--- a/cpputools/Executable_uno.mk
++++ b/cpputools/Executable_uno.mk
+@@ -24,6 +24,14 @@ $(eval $(call gb_Executable_add_exception_objects,uno,\
+     cpputools/source/unoexe/unoexe \
+ ))
+ 
++# QNX: anchor UNO exception RTTI in the executable (executable-first loader
++# unifies type_info across dlopened UNO components; see rttianchor.cxx)
++ifeq ($(OS),QNX)
++$(eval $(call gb_Executable_add_exception_objects,uno,\
++    cpputools/source/unoexe/rttianchor \
++))
++endif
++
+ $(eval $(call gb_Executable_add_default_nativeres,uno))
+ 
+ # vim:set noet sw=4 ts=4:
+diff --git a/cpputools/source/unoexe/rttianchor.cxx b/cpputools/source/unoexe/rttianchor.cxx
+new file mode 100644
+index 000000000..030b25fa5
+--- /dev/null
++++ b/cpputools/source/unoexe/rttianchor.cxx
+@@ -0,0 +1,22 @@
++/*
++ * QNX: anchor UNO exception RTTI in the launcher executable. QNX's loader is
++ * executable-first, so a weak type_info defined here preempts each dlopen'd UNO
++ * component's own copy, unifying exception identity across the C++ UNO bridge.
++ */
++
++#include <typeinfo>
++
++#include <com/sun/star/uno/Exception.hpp>
++#include <com/sun/star/uno/RuntimeException.hpp>
++#include <com/sun/star/lang/IllegalArgumentException.hpp>
++
++namespace
++{
++// leaf + every base, so the whole __si chain resolves to executable copies
++[[gnu::used, gnu::retain]]
++::std::type_info const * const g_aUnoExceptionRtti[] = {
++    &typeid(::com::sun::star::uno::Exception),
++    &typeid(::com::sun::star::uno::RuntimeException),
++    &typeid(::com::sun::star::lang::IllegalArgumentException),
++};
++}
+-- 
+2.51.0
+
