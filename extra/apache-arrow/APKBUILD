@@ -15,7 +15,8 @@ makedepends="
     cmake
     ninja
     libc++-dev
-    ca-certificates"
+    ca-certificates
+    qnx-io-sock-dev"
 subpackages="$pkgname-dev"
 
 case "$(uname -m)" in
