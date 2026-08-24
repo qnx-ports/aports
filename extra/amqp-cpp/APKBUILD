@@ -6,8 +6,8 @@ pkgdesc="C++ library for communicating with a RabbitMQ message broker"
 url="https://github.com/CopernicaMarketingSoftware/AMQP-CPP"
 arch="all"
 license="Apache-2.0"
-depends="libc++ qnx-microkernel qnx-gcc-libs"
-makedepends="cmake openssl-dev"
+depends="libc++ qnx-gcc-libs qnx-io-sock"
+makedepends="cmake openssl-dev qnx-io-sock-dev"
 source="
   $pkgname-$pkgver.tar.gz::https://github.com/CopernicaMarketingSoftware/AMQP-CPP/archive/refs/tags/v$pkgver.tar.gz
     add_qnx_support.patch
