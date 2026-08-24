@@ -14,7 +14,8 @@ depends="libc++"
 makedepends="
     cmake
     ninja
-    libc++-dev"
+    libc++-dev
+    ca-certificates"
 subpackages="$pkgname-dev"
 
 case "$(uname -m)" in
@@ -28,7 +29,7 @@ case "$(uname -m)" in
         ARROW_CPU_FLAG=$(uname -m)
         ;;
 esac
-
+options="net"
 build() {
 
     (
