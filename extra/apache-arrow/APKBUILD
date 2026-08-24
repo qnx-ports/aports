@@ -63,9 +63,15 @@ build() {
         
     (
     cd "$builddir/build"
+
     patch -p3 < "$startdir/apache-arrow-qnx.patch"
     patch -p3 < "$startdir/boost-process-qnx.patch"
-    )
+
+    echo "===== Boost.Process cmd.cpp after patch ====="
+    grep -A8 -B5 \
+        "cmd(boost::process::v2::pid_type" \
+        _deps/boost-src/libs/process/src/ext/cmd.cpp
+)
 
     cmake --build "$builddir/build"
 }
