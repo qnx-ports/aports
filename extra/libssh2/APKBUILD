@@ -8,23 +8,20 @@ url="https://libssh2.org/"
 arch="all"
 options="!check"
 license="BSD-3-Clause"
-depends="qnx-io-sock"
-makedepends_host="openssl-dev>3 zlib-dev qnx-io-sock"
+depends="qnx-io-sock zlib-ng libssl3 libcrypto3"
+makedepends_host="openssl-dev>3 zlib-ng-dev qnx-io-sock"
 checkdepends="bash"
 subpackages="$pkgname-dbg $pkgname-static $pkgname-dev $pkgname-doc"
-source="https://www.libssh2.org/download/libssh2-$pkgver.tar.gz
+source="https://www.libssh2.org/download/$pkgname-$pkgver.tar.gz
 	0001-Add-QNX-Support.patch
     CVE-2026-55199.patch
     CVE-2026-55200.patch
     CVE-2026-7598.patch
-    0001-tap-driver-qnx-avoid-cat-fd3.patch
+    0002-tap-driver-qnx-avoid-cat-fd3.patch
 	"
 
 build() {
-    CFLAGS="$CFLAGS -fPIC"\
     ./configure \
-        --build=$CBUILD \
-        --host=$CHOST \
         --prefix=/usr \
         --sysconfdir=/etc \
         --mandir=/usr/share/man \
@@ -54,5 +51,5 @@ sha512sums="
 3e3f932de2caa28ff5f6bc01a379a23d511f8411c9c5a0e880a83eb89da35ee78ffe5feac5bf8067fdd3ccb390deb31608e28be77854e3eec379183b25030260  CVE-2026-55199.patch
 2e3b5891f51ab4dc9874793289fa2136c6188bb0a6208116309227ff66fdbefd466c4bfb5e4e88db4b44eca2fcf81e82a22c5c36158bc859251baaff64278236  CVE-2026-55200.patch
 860d241663faebb4e25ba934bb063cae2b64994674f15adc136a802d81aa4d4089b8e5c8cb93dfd21098b81200e8cfdef579f8caa1346754aacfa6f690da4f5b  CVE-2026-7598.patch
-6c900ba60455d4d5c4eae17357f570f2af2c220d0c6140268f0f97585af94a5178552f0c610b70e066f26a3ac8d0773f8efcc9dd0c80a6c229e9696ce1c8c7e3  0001-tap-driver-qnx-avoid-cat-fd3.patch
+9b4bf39ce696becda54137ad19de9d718ea983085f383df937dc58406a8dd60787287f8237796a9709cbfceadd703fd09d6d3bb8ccdcb59c79a147cf938b02b0  0002-tap-driver-qnx-avoid-cat-fd3.patch
 "

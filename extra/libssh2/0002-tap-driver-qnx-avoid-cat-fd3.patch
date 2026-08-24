@@ -1,4 +1,4 @@
---- tap-driver.sh_org	2026-07-28 06:37:45.000000000 +0000
+--- tap-driver.sh	2026-07-28 06:37:45.000000000 +0000
 +++ tap-driver.sh	2026-07-28 06:42:27.000000000 +0000
 @@ -275,7 +275,8 @@
    print decorate_result(result) msg
