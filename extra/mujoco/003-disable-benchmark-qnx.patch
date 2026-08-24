@@ -1,5 +1,5 @@
---- mujoco-mujoco_ver_3.10.0_orig/test/CMakeLists.txt	2026-07-30 14:42:38.423452833 +0530
-+++ mujoco-mujoco_ver_3.10.0/test/CMakeLists.txt	2026-07-30 15:10:36.154504033 +0530
+--- a/test/CMakeLists.txt	2026-07-30 14:42:38.423452833 +0530
++++ b/test/CMakeLists.txt	2026-07-30 15:10:36.154504033 +0530
 @@ -117,8 +117,11 @@
  mujoco_test(mjspecmacro_test)
  
