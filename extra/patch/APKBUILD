@@ -1,0 +1,36 @@
+# Alpine-Contributor: Natanael Copa <ncopa@alpinelinux.org>
+# Alpine-Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+# Maintainer: Arthur Clark <mydevstuff@mail.com>
+pkgname=patch
+pkgver=2.7.6
+pkgrel=0
+pkgdesc="Utility to apply diffs to files"
+url="https://www.gnu.org/software/patch/patch.html"
+arch="all"
+license="GPL-3.0-or-later"
+# QNX base ships toybox patch at /system/bin/patch, which cannot relocate
+# offset-shifted hunks; this is the real GNU patch, installed at /usr/bin/patch.
+makedepends="clang"
+subpackages="$pkgname-doc"
+source="https://ftp.gnu.org/gnu/patch/patch-$pkgver.tar.xz"
+
+build() {
+	# native clang build, no cross flags (the proven QNX arms).
+	CC="clang" \
+	./configure \
+		--prefix=/usr \
+		--mandir=/usr/share/man
+	make
+}
+
+check() {
+	make check
+}
+
+package() {
+	make DESTDIR="$pkgdir" install
+}
+
+sha512sums="
+fcca87bdb67a88685a8a25597f9e015f5e60197b9a269fa350ae35a7991ed8da553939b4bbc7f7d3cfd863c67142af403b04165633acbce4339056a905e87fbd  patch-2.7.6.tar.xz
+"
