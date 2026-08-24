@@ -14,8 +14,10 @@ makedepends="
     tinyxml2-dev
     miniz-dev
 	libc++-dev
+	ca-certificates
 "
 options="!lto"
+options="net"
 subpackages="
     $pkgname-dev
     $pkgname-models:models
