@@ -41,7 +41,6 @@ _lib_udb_textformat_lib_depends="libupb_lex_lib libupb_mem_lib libupb_message_li
 libupb_reflection_lib libupb_wire_lib libutf8_range_lib"
 subpackages="
     $pkgname-dev
-    $pkgname-cli
     $pkgname-cpp
     $pkgname-plugins
     $pkgname-doc
