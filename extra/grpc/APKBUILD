@@ -28,17 +28,23 @@ _libgrpc_depends="libaddress_sorting libgpr libupb_base_lib libupb_hash_lib
 libupb_json_lib libupb_mem_lib libupb_message_lib libupb_reflection_lib
 libupb_textformat_lib libupb_wire_lib abseil-cpp c-ares libc++ libcrypto libssl3
 qnx-io-sock re2 zlib-ng"
-_lib_grpc_authorization_provider_depends="libaddress_sorting libgpr libupb_mem_lib
+_libgrpc_authorization_provider_depends="libaddress_sorting libgpr libupb_mem_lib
 libupb_message_lib libupb_reflection_lib libupb_textformat_lib libupb_wire_lib
 abseil-cpp c-ares libc++ qnx-io-sock re2 zlib-ng"
-_lib_grpc_unsecure_depends="libaddress_sorting libgpr libupb_mem_lib
+_libgrpc_unsecure_depends="libaddress_sorting libgpr libupb_mem_lib
 libupb_message_lib libupb_reflection_lib libupb_textformat_lib libupb_wire_lib
 abseil-cpp c-ares libc++ qnx-io-sock zlib-ng"
-_lib_udb_json_lib_depends="libupb_base_lib libupb_lex_lib libupb_mem_lib
+_libudb_json_lib_depends="libupb_base_lib libupb_lex_lib libupb_mem_lib
 libupb_message_lib libupb_reflection_lib libupb_wire_lib"
-_lib_udb_message_lib_depends="libupb_hash_lib libupb_mem_lib libupb_mini_table_lib"
-_lib_udb_textformat_lib_depends="libupb_lex_lib libupb_mem_lib libupb_message_lib
+_libudb_message_lib_depends="libupb_hash_lib libupb_mem_lib libupb_mini_table_lib"
+_libudb_mini_table_lib_depends="libupb_hash_lib libupb_mem_lib"
+_libudb_reflection_lib_depends="libupb_base_lib libupb_hash_lib libupb_mem_lib
+libupb_message_lib libupb_mini_descriptor_lib libupb_mini_table_lib
+libupb_wire_lib"
+_libudb_textformat_lib_depends="libupb_lex_lib libupb_mem_lib libupb_message_lib
 libupb_reflection_lib libupb_wire_lib libutf8_range_lib"
+_libudb_wire_lib_depends="libupb_hash_lib libupb_mem_lib libupb_message_lib
+libupb_mini_table_lib libutf8_range_lib"
 subpackages="
     $pkgname-dev
     $pkgname-cpp
@@ -55,6 +61,7 @@ subpackages="
     libupb_lex_lib:lib
     libupb_mem_lib:lib
     libupb_message_lib:lib
+    libupb_mini_descriptor_lib:lib
     libupb_mini_table_lib:lib
     libupb_reflection_lib:lib
     libupb_textformat_lib:lib
