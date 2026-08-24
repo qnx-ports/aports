@@ -7,16 +7,13 @@ pkgdesc="Tool for generating random C programs"
 url="https://embed.cs.utah.edu/csmith/"
 arch="all"
 license="BSD-2-Clause"
-makedepends="cmake m4"
-subpackages="$pkgname-dev"
-source="https://github.com/csmith-project/csmith/archive/refs/tags/csmith-$pkgver.tar.gz
+depends="qnx-gcc-libs libc++"
+makedepends="cmake libc++-dev m4 perl"
+subpackages="$pkgname-dev:_dev $pkgname-doc"
+source="https://github.com/csmith-project/$pkgname/archive/refs/tags/$pkgname-$pkgver.tar.gz
     add_qnx_support.patch
 	"
 builddir="$srcdir/$pkgname-$pkgname-$pkgver"
-
-prepare() {
-	default_prepare
-}
 
 build() {
     # bind2nd/ptr_fun removed in C++17; enum bitset non-constexpr with clang
@@ -29,8 +26,6 @@ build() {
         -Wno-deprecated-declarations"
 
     ./configure \
-        --build=$CBUILD \
-        --host=$CHOST \
         --prefix=/usr \
         --sysconfdir=/etc \
         --mandir=/usr/share/man \
@@ -59,7 +54,16 @@ package() {
 	rm "$pkgdir"/usr/bin/*.pl "$pkgdir"/usr/bin/*.in
 }
 
+_dev() {
+	pkgdesc="$pkgdesc (development files)"
+
+	amove \
+		usr/include/csmith-$pkgver \
+		usr/lib/libcsmith.a \
+		usr/lib/libcsmith.la
+}
+
 sha512sums="
 063dc6442a9e850fdd0557d1c7bdb199d5a762daad3418d6730dae6155101b2a11841d5eaf885f76dbea8eb212bdacedf31da7e171b4ac58f530acd435c969f9  csmith-2.3.0.tar.gz
-f1df644b4bb204bd550606ec064dc325b7aab7cdb38c3932d1a26cd16dc221a2ecc1d26b04e19db7da5b08fd9ac685b878a56f4161fa56767b0aed96168a99d0  add_qnx_support.patch
+b492756b7f7e462c0fc0c138faa31867960ec603c6388044e44b0a8b53260fd1cbb4166875fd8a0b5ac513b04fe5d64018fd2205a9bd7ff9039d7445d199ae14  add_qnx_support.patch
 "
