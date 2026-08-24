@@ -1,11 +1,11 @@
---- mujoco-mujoco_ver_3.10.0_orig/src/user/user_mesh.cc
-+++ mujoco-mujoco_ver_3.10.0/src/user/user_mesh.cc
+--- a/src/user/user_mesh.cc
++++ b/src/user/user_mesh.cc
 @@ -18,6 +18,14 @@
  #include <climits>
  #include <cmath>
  #include <csetjmp>
 +
-+#if defined(__QNX__)
++#if defined(__QNX__)&& !defined(setjmp)
 +// libc++'s <csetjmp> undefines the setjmp macro on QNX (it only
 +// re-exposes ::longjmp), but QNX libc exports _setjmp/sigsetjmp, not a
 +// plain setjmp symbol, so unqualified setjmp() calls below fail to link.
@@ -15,14 +15,14 @@
  #include <cstddef>
  #include <cstdio>
  #include <cstring>
---- mujoco-mujoco_ver_3.10.0_orig/src/user/user_model.cc
-+++ mujoco-mujoco_ver_3.10.0/src/user/user_model.cc
+--- a/src/user/user_model.cc
++++ b/src/user/user_model.cc
 @@ -19,6 +19,14 @@
  #include <chrono>
  #include <cmath>
  #include <csetjmp>
 +
-+#if defined(__QNX__)
++#if defined(__QNX__)&& !defined(setjmp)
 +// libc++'s <csetjmp> undefines the setjmp macro on QNX (it only
 +// re-exposes ::longjmp), but QNX libc exports _setjmp/sigsetjmp, not a
 +// plain setjmp symbol, so unqualified setjmp() calls below fail to link.
@@ -32,14 +32,14 @@
  #include <cstdint>
  #include <cstdio>
  #include <cstdlib>
---- mujoco-mujoco_ver_3.10.0_orig/test/engine/engine_util_errmem_test.cc
-+++ mujoco-mujoco_ver_3.10.0/test/engine/engine_util_errmem_test.cc
+--- a/test/engine/engine_util_errmem_test.cc
++++ b/test/engine/engine_util_errmem_test.cc
 @@ -15,6 +15,14 @@
  // Tests for engine/engine_util_errmem.c.
  
  #include <csetjmp>
 +
-+#if defined(__QNX__)
++#if defined(__QNX__)&& !defined(setjmp)
 +// libc++'s <csetjmp> undefines the setjmp macro on QNX (it only
 +// re-exposes ::longjmp), but QNX libc exports _setjmp/sigsetjmp, not a
 +// plain setjmp symbol, so unqualified setjmp() calls below fail to link.
