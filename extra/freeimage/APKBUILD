@@ -17,7 +17,7 @@ builddir="$srcdir/$_pkgname-qnx-v$pkgver"
 options="!check"
 
 prepare() {
-	find "$builddir" -type f -exec dos2unix -q -s {} \;
+	find "$builddir" -type f -exec dos2unix {} \;
 	default_prepare
 }
 
