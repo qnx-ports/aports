@@ -42,6 +42,10 @@ esac
 options="net"
 build() {
 
+echo "===== QNX BUILD SYSTEM INFO ====="
+    uname -a
+    echo "================================="
+    
     (
     cd "$builddir"
     patch -p2 < "$startdir/arrow-cmakelists-qnx.patch"
