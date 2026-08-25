@@ -1,6 +1,6 @@
 pkgname=vim
-pkgver=9.1.0707
-pkgrel=1
+pkgver=9.2.1001
+pkgrel=0
 _luaver=5.4
 pkgdesc="Improved vi-style text editor"
 url="https://www.vim.org/"
@@ -25,7 +25,7 @@ prepare() {
 }
 
 build() {
-    export CFLAGS="$CFLAGS -flto=auto -O2"
+    export CFLAGS="$CFLAGS -O2"
     export vim_cv_toupper_broken=yes
     export vim_cv_terminfo=yes
     export vim_cv_tgetent=zero
@@ -33,7 +33,7 @@ build() {
     export vim_cv_stat_ignores_slash=yes
     export vim_cv_memmove_handles_overlap=yes
     export vim_cv_uname_output="QNX"
-    export ac_cv_prog_STRIP=$CTARGET-strip
+    export ac_cv_c_compiler_gnu=no
 
     ./configure \
         --build=$CBUILD \
@@ -101,5 +101,5 @@ xxd() {
 }
 
 sha512sums="
-694d9b8d08cd9a980c4ea9c8d6510181f1978ee72125bcde02add255057f2f36d8b14f54180e5ad715d8a09911496f79993a612128bed9f2deff3578d4f98660  vim-9.1.0707.tar.gz
+afd3ff55f0786e10a16ab02a44455953553b87cbdd9acf7b46fea50afee9530582b58bd5257586e78e890cd0c517328c102069f1ccbb4795152ce7ff5ee88f6a  vim-9.2.1001.tar.gz
 "
