@@ -1,0 +1,57 @@
+diff --git a/Makefile b/Makefile
+index a503c82..5edb229 100644
+--- a/Makefile
++++ b/Makefile
+@@ -18,14 +18,14 @@
+ 
+ # Variables you may well want to override.
+ 
+-PREFIX        = /usr/local
++PREFIX        = /usr
+ BINDIR        = $(PREFIX)/sbin
+ MANDIR        = $(PREFIX)/share/man
+ LOCALEDIR     = $(PREFIX)/share/locale
+ BUILDDIR      = $(SRC)
+ DESTDIR       = 
+ CFLAGS        = -Wall -W -O2
+-LDFLAGS       = 
++LDFLAGS       = -lsocket
+ COPTS         = 
+ RPM_OPT_FLAGS = 
+ LIBS          = 
+diff --git a/src/config.h b/src/config.h
+index 0994f95..789bc6c 100644
+--- a/src/config.h
++++ b/src/config.h
+@@ -49,8 +49,8 @@
+ #define ETHERSFILE "/etc/ethers"
+ #define DEFLEASE 3600 /* default DHCPv4 lease time, one hour */
+ #define DEFLEASE6 (3600*24) /* default lease time for DHCPv6. One day. */
+-#define CHUSER "nobody"
+-#define CHGRP "dip"
++#define CHUSER "dnsmasq"
++#define CHGRP "dnsmasq"
+ #define TFTP_MAX_CONNECTIONS 50 /* max simultaneous connections */
+ #define TFTP_MAX_WINDOW 32 /* max window size to negotiate */
+ #define TFTP_TRANSFER_TIME 120 /* Abandon TFTP transfers after this long. Two mins. */
+@@ -238,7 +238,7 @@ RESOLVFILE
+ #   if defined(__ANDROID__)
+ #      define RUNFILE "/data/dnsmasq.pid"
+ #    else
+-#      define RUNFILE "/var/run/dnsmasq.pid"
++#      define RUNFILE "/run/dnsmasq.pid"
+ #    endif
+ #endif
+ 
+@@ -286,6 +286,11 @@ HAVE_SOCKADDR_SA_LEN
+ #endif
+ #define HAVE_SOCKADDR_SA_LEN
+ 
++#elif defined(__QNX__)
++#define HAVE_BSD_NETWORK
++#define bzero __builtin_bzero
++#define HAVE_GETOPT_LONG
++
+ #elif defined(__APPLE__)
+ #define HAVE_BSD_NETWORK
+ #define HAVE_GETOPT_LONG
