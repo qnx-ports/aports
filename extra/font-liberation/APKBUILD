@@ -13,7 +13,6 @@ depends="fontconfig"
 provides="font-times"
 provider_priority=10
 options="!check"
-subpackages="ttf-liberation:_ttf_liberation:noarch"
 # added fontconfig configuration from:
 # https://github.com/bohoomil/fontconfig-ultimate/tree/master/fontconfig_patches/fonts-settings
 source="https://github.com/liberationfonts/liberation-fonts/files/7261482/liberation-fonts-ttf-$pkgver.tar.gz
@@ -34,14 +33,6 @@ package() {
 		install -D -m644 "$i" -t "$pkgdir"/etc/fonts/conf.avail/
 		ln -s ../conf.avail/${i##*/} "$pkgdir"/etc/fonts/conf.d/${i##*/}
 	done
-}
-
-# For backward compatibility with Alpine <3.16.
-_ttf_liberation() {
-	pkgdesc="Deprecated name for font-liberation and font-liberation-sans-narrow"
-	depends="$pkgname=$pkgver-r$pkgrel font-liberation-sans-narrow"
-
-	mkdir -p "$subpkgdir"
 }
 
 
