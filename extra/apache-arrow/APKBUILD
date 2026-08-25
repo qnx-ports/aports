@@ -18,18 +18,24 @@ makedepends="
     ca-certificates
     qnx-io-sock-dev"
 subpackages="$pkgname-dev"
-
 case "$(uname -m)" in
     x86_64)
         ARROW_CPU_FLAG=x86
+        BOOST_CONTEXT_ARCH=x86_64
         CMAKE_PROCESSOR=x86_64
+        BOOST_CONTEXT_ABI=sysv
         ;;
-    aarch64)
+
+    aarch64|RaspberryPi5)
         ARROW_CPU_FLAG=aarch64
+        BOOST_CONTEXT_ARCH=arm64
         CMAKE_PROCESSOR=aarch64
+        BOOST_CONTEXT_ABI=aapcs
         ;;
+
     *)
         ARROW_CPU_FLAG=$(uname -m)
+        BOOST_CONTEXT_ARCH=$(uname -m)
         CMAKE_PROCESSOR=$(uname -m)
         ;;
 esac
@@ -46,6 +52,8 @@ build() {
         -G Ninja \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_SYSTEM_PROCESSOR=${CMAKE_PROCESSOR} \
+        -DBOOST_CONTEXT_ARCHITECTURE=${BOOST_CONTEXT_ARCH} \
+        -DBOOST_CONTEXT_ABI=${BOOST_CONTEXT_ABI} \
         -DCMAKE_INSTALL_PREFIX=/usr \
         -DCMAKE_CXX_STANDARD=20 \
         -DARROW_BUILD_SHARED=ON \
@@ -65,23 +73,12 @@ build() {
         -DARROW_PYTHON=OFF \
         -DARROW_SIMD_LEVEL=NONE \
         -DARROW_RUNTIME_SIMD_LEVEL=NONE \
-        
+
     (
     cd "$builddir/build"
-
     patch -p3 < "$startdir/apache-arrow-qnx.patch"
     patch -p3 < "$startdir/boost-process-qnx.patch"
-
-    echo "===== Boost.Process cmd.cpp after patch ====="
-    grep -A8 -B5 \
-        "cmd(boost::process::v2::pid_type" \
-        _deps/boost-src/libs/process/src/ext/cmd.cpp
-        (
-    
-    ninja -v _deps/boost-build/libs/process/CMakeFiles/boost_process.dir/src/ext/cmd.cpp.o
-)
-)
-
+    )
     cmake --build "$builddir/build"
 }
 check() {
