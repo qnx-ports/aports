@@ -16,11 +16,11 @@ depends_dev="
     $pkgname-cpp=$pkgver-r$pkgrel
     $pkgname-plugins=$pkgver-r$pkgrel
     abseil-cpp-dev libc++-dev protobuf-dev c-ares-dev openssl-dev>3 re2-dev
-    zlib-dev
+    zlib-ng-dev
     "
 makedepends="abseil-cpp-dev autoconf automake bash benchmark-dev c-ares-dev
     clang chrpath cmake libc++-dev clang libtool openssl-dev>3 protobuf-dev
-    re2-dev ninja yaml-dev xxhash-dev zlib-dev qnx-io-sock-dev
+    re2-dev ninja yaml-dev xxhash-dev zlib-ng-dev qnx-io-sock-dev
     "
 checkdepends="coreutils python3 python3-six"
 _libgpr_depends="abseil-cpp libc++"
