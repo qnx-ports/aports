@@ -1,7 +1,7 @@
 # Maintainer: Leo Shen <yishen@qnx.com>
 pkgname=filesystem
 pkgver=1
-pkgrel=3
+pkgrel=4
 pkgdesc="Base file system layout and files"
 arch="noarch"
 license="LicenseRef-QDL-Non-Commercial"
@@ -13,9 +13,10 @@ source="protocols-$_nbver::https://salsa.debian.org/md/netbase/-/raw/v$_nbver/et
 	nsswitch.conf
 	passwd
 	group
+	hosts
 "
 options="!fhs !check"
-builddir="$srcdir/build"
+builddir="$srcdir"
 
 build() {
     # generate shadow
@@ -42,13 +43,14 @@ package() {
     # Compatibility symlinks
     ln -sv usr/bin bin
     ln -sv usr/lib lib
-    ln -sv var/run run
+    ln -sv /run var/run
 	# Base files
 	install -vm 0644 "$srcdir"/protocols-$_nbver "$pkgdir"/etc/protocols
 	install -vm 0644 "$srcdir"/services-$_nbver "$pkgdir"/etc/services
 	install -vm 0644 "$srcdir"/nsswitch.conf "$pkgdir"/etc/
 	install -vm 0644 "$srcdir"/{passwd,group} "$pkgdir"/etc/
 	install -vm 0600 "$srcdir"/shadow "$pkgdir"/etc/
+	install -vm 0644 "$srcdir"/hosts "$pkgdir"/etc/
 }
 
 sha512sums="
@@ -57,4 +59,5 @@ sha512sums="
 4890f62f0043fc4753163c937fa557b0b1df71ba740930dcf15f52abb7ee6860958e83437430069cb941879deb042eacc8c25786965106205646984f72d7a518  nsswitch.conf
 2e6898c527f70443808c5f3e9db9ca0bfddff5c951e528aab8a0869145e46a465cb97fe2bb8e56c83ec11385e9b9675a73f5ad5b287b714135b9f61671f23e61  passwd
 502c402900a46cdf1899de9efa65a813c0f443571ea7068dfadfa01c005d31ce3d2ab9244ea40deceea2ea63f0c8332328d5b846e36e9f39945bd143bd1cad35  group
+67b20a3fbb014dbf2eacbea3d2c7a171baec66a10acb54b4425b7578f60232beb2c577178d6d8fdc34ac4f52f466021085bc50393ff958ef4545592df8bb540a  hosts
 "
