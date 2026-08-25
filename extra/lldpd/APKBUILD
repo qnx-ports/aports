@@ -2,7 +2,7 @@
 # Alpine-Maintainer: Francesco Colista <fcolista@alpinelinux.org>
 # Maintainer: Marcin Sochacki <msochacki@qnx.com>
 pkgname=lldpd
-pkgver=1.0.19
+pkgver=1.0.19_p0
 pkgrel=0
 pkgdesc="Implementation of IEEE 802.1ab"
 url="https://lldpd.github.io/"
@@ -10,7 +10,8 @@ arch="all"
 license="ISC"
 makedepends="autoconf automake libtool 
 	libevent-dev libxml2-dev jansson-dev
-	perl-dev readline-dev check check-dev"
+	perl-dev readline-dev"
+checkdepends="check check-dev"
 install="$pkgname.post-install"
 subpackages="
 	$pkgname-dev
@@ -20,9 +21,9 @@ subpackages="
 	"
 pkgusers="lldpd"
 pkggroups="lldpd"
-source="$pkgname-$pkgver.tar.gz::https://github.com/qnx-ports/lldpd/archive/refs/tags/qnx-$pkgver-1.tar.gz
+source="$pkgname-$pkgver.tar.gz::https://github.com/qnx-ports/lldpd/archive/refs/tags/qnx-$pkgver.tar.gz
 	lldpd.initd"
-builddir="$srcdir/$pkgname-qnx-$pkgver-1"
+builddir="$srcdir/$pkgname-qnx-$pkgver"
 
 prepare() {
 	# this should be shipped with the release tarball
@@ -64,7 +65,6 @@ package() {
 
 
 sha512sums="
-e71256fc023746e88bf808442767a1425758e424e9c5c88828afb0bcb750053aaf48f36940f048aef21860408d7f073aed45878bc17581807482b9d89c2da779  lldpd-1.0.19.tar.gz
+0fa516712e8c91641c60ecd93b6b9763c730d19ef20f4ffcbf133c4f358eeb08de1a11bbfb67ebf44df9f4a70508db3f285367acf460de0c3fa1ffb56a8560be  lldpd-1.0.19_p0.tar.gz
 1f78ebc4738a152dc7b7ef28cfc5809182dd52fc26d6e81d96006e870eda6da1fc44a94b2382dc3876589424ee8d50afbd047c2c61ba3869a8286ec52061cd35  lldpd.initd
 "
-
