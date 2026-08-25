@@ -1,0 +1,19 @@
+diff --git a/glamor/glamor_egl.h b/glamor/glamor_egl.h
+index 8f6ed7840..23e12fde6 100644
+--- a/glamor/glamor_egl.h
++++ b/glamor/glamor_egl.h
+@@ -70,8 +70,13 @@ glamor_egl_get_display(EGLint type, void *native)
+             return getPlatformDisplayEXT(type, native, NULL);
+     }
+ 
++#if !defined(__QNX__)
+     /* Welp, everything is awful. */
+     return eglGetDisplay(native);
++#else     // __QNX__
++    /* No fall-back on QNX.  eglGetDisplay can't discern different platforms. */
++    return EGL_NO_DISPLAY;
++#endif    // __QNX__
+ }
+ 
+ #endif
+
