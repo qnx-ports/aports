@@ -22,12 +22,15 @@ subpackages="$pkgname-dev"
 case "$(uname -m)" in
     x86_64)
         ARROW_CPU_FLAG=x86
+        CMAKE_PROCESSOR=x86_64
         ;;
     aarch64)
         ARROW_CPU_FLAG=aarch64
+        CMAKE_PROCESSOR=aarch64
         ;;
     *)
         ARROW_CPU_FLAG=$(uname -m)
+        CMAKE_PROCESSOR=$(uname -m)
         ;;
 esac
 options="net"
@@ -42,6 +45,7 @@ build() {
         -B "$builddir/build" \
         -G Ninja \
         -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_SYSTEM_PROCESSOR=${CMAKE_PROCESSOR} \
         -DCMAKE_INSTALL_PREFIX=/usr \
         -DCMAKE_CXX_STANDARD=20 \
         -DARROW_BUILD_SHARED=ON \
