@@ -19,14 +19,14 @@ makedepends="
     qnx-io-sock-dev"
 subpackages="$pkgname-dev"
 case "$(uname -m)" in
-    x86_64)
+    x86_64|x86pc)
         ARROW_CPU_FLAG=x86
         BOOST_CONTEXT_ARCH=x86_64
         CMAKE_PROCESSOR=x86_64
         BOOST_CONTEXT_ABI=sysv
         ;;
 
-    aarch64|RaspberryPi5)
+    aarch64|RaspberryPi5|QEMU_virt)
         ARROW_CPU_FLAG=aarch64
         BOOST_CONTEXT_ARCH=arm64
         CMAKE_PROCESSOR=aarch64
@@ -45,7 +45,7 @@ build() {
 echo "===== QNX BUILD SYSTEM INFO ====="
     uname -a
     echo "================================="
-    
+
     (
     cd "$builddir"
     patch -p2 < "$startdir/arrow-cmakelists-qnx.patch"
