@@ -1,6 +1,6 @@
-# Maintainer:Harshini Yarasi <hyarasi@qnx.com>
+# Maintainer: Harshini Yarasi <hyarasi@qnx.com>
 pkgname=gklib  
-pkgver=0_git20260409
+pkgver=0_git20230327
 _commit=8bd6bad750b2b0d90800c632cf18e8ee93ad72d7
 pkgrel=0  
 pkgdesc="A library of various helper routines and implementations of data structures"  
@@ -11,7 +11,6 @@ makedepends="build-base cmake"
 subpackages="$pkgname-dev"  
 source="
 $pkgname-$_commit.tar.gz::https://github.com/KarypisLab/GKlib/archive/$_commit.tar.gz
-
 "
 builddir="$srcdir/GKlib-$_commit"
 prepare() {
@@ -28,11 +27,13 @@ build() {
 		-DCMAKE_POLICY_VERSION_MINIMUM=3.5
 	cmake --build build
 }
-check(){
+check() {
 	 cd "$builddir"/build/test
-    ./gksort || return 1
-    ./strings || return 1
+    ./gksort
+    ./strings
+    ./gkuniq 10 2 
 }
+
 package() {  
     cd build
     make DESTDIR="$pkgdir" install  
