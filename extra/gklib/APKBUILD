@@ -35,8 +35,8 @@ check() {
 }
 
 package() {  
-    cd build
-    make DESTDIR="$pkgdir" install  
+    
+	DESTDIR="$pkgdir" cmake --install build
 } 
 
 sha512sums="
