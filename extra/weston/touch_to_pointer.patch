@@ -1,0 +1,177 @@
+diff --git a/qnx/build/backends/qnx-screen/qnx-screen.c b/qnx/build/backends/qnx-screen/qnx-screen.c
+index cde86ecd..a1ac2c2c 100644
+--- a/qnx/build/backends/qnx-screen/qnx-screen.c
++++ b/qnx/build/backends/qnx-screen/qnx-screen.c
+@@ -24,7 +24,7 @@
+  */
+ 
+ #include "config.h"
+-
++#include <time.h>
+ #include <assert.h>
+ #include <stddef.h>
+ #include <stdint.h>
+@@ -1147,35 +1147,153 @@ qnx_screen_backend_deliver_keyboard_event(struct qnx_screen_backend *b,
+ 		   STATE_UPDATE_NONE);
+ }
+ 
++static void sleep_ms(long milliseconds) {
++    struct timespec ts;
++    ts.tv_sec = milliseconds / 1000;
++    ts.tv_nsec = (milliseconds % 1000) * 1000000;
++    nanosleep(&ts, NULL);
++}
++
++static long long timespec_diff_ms(const struct timespec *a, const struct timespec *b) {
++    long long seconds_diff = (long long)a->tv_sec - b->tv_sec;
++    long long nseconds_diff = (long long)a->tv_nsec - b->tv_nsec;
++    return (seconds_diff * 1000LL) + (nseconds_diff / 1000000LL);
++}
++
+ static void
+ qnx_screen_backend_deliver_touch_event(struct qnx_screen_backend *b,
+ 				       screen_event_t event,
+ 				       int type)
+ {
+ 	struct qnx_screen_output *output;
+-	screen_window_t screen_window;
++	screen_window_t screen_window = NULL;
+ 	int screen_id = 0;
+ 	int screen_position[] = { 0, 0 };
+ 	int screen_modifiers = b->prev_modifiers;
+-	struct timespec time;
++	screen_context_t ctx;
+ 
++	screen_get_event_property_pv(event, SCREEN_PROPERTY_CONTEXT, (void **)(&ctx));
+ 	screen_get_event_property_pv(event, SCREEN_PROPERTY_WINDOW, (void **)(&screen_window));
+ 	screen_get_event_property_iv(event, SCREEN_PROPERTY_TOUCH_ID, &screen_id);
+ 	screen_get_event_property_iv(event, SCREEN_PROPERTY_SOURCE_POSITION, screen_position);
+ 	screen_get_event_property_iv(event, SCREEN_PROPERTY_MODIFIERS, &screen_modifiers);
+ 
+-	update_xkb_state_from_screen(b, screen_modifiers);
++	// Convert touch event to pointer event
+ 
+-	output = qnx_screen_backend_find_output(b, screen_window);
+-	if (!output)
+-		return;
++	screen_event_t new_event;
++	if (screen_create_event(&new_event)) {
++		fprintf(stderr, "Failed to create event\n\r");
++	}
+ 
+-	struct weston_coord_global pos;
+-	pos = weston_coord_global_from_output_point(screen_position[0], screen_position[1], &output->base);
++	int type_event = SCREEN_EVENT_POINTER;
++	if (screen_set_event_property_iv(new_event, SCREEN_PROPERTY_TYPE, &type_event)) {
++		fprintf(stderr, "Failed to set SCREEN_PROPERTY_TYPE for touch event\n\r");
++	}
++
++	if (screen_set_event_property_pv(new_event, SCREEN_PROPERTY_CONTEXT,(void**)(&ctx))) {
++		fprintf(stderr, "Failed to set SCREEN_PROPERTY_WINDOW for touch event\n\r");
++	}
++
++	if (screen_set_event_property_pv(new_event, SCREEN_PROPERTY_WINDOW,(void**)(&screen_window))) {
++		fprintf(stderr, "Failed to set SCREEN_PROPERTY_WINDOW for touch event\n\r");
++	}
++
++	if (screen_set_event_property_iv(new_event, SCREEN_PROPERTY_SOURCE_POSITION, screen_position)) {
++		fprintf(stderr, "Failed to set SCREEN_PROPERTY_WINDOW for touch event\n\r");
++	}
++
++	if (screen_set_event_property_iv(new_event, SCREEN_PROPERTY_MODIFIERS, &screen_modifiers)) {
++		fprintf(stderr, "Failed to set SCREEN_PROPERTY_MODIFIERS for touch event\n\r");
++	}
++
++	int scroll_delta = 0;
++	if (screen_set_event_property_iv(new_event, SCREEN_PROPERTY_MOUSE_WHEEL, &scroll_delta)) {
++		fprintf(stderr, "Failed to set SCREEN_PROPERTY_MOUSE_WHEEL for touch event\n\r");
++	}
++
++	static struct timespec previous_time;
++	static bool first_time = true;
++	static int initial_pos[2] = {INT_MAX, INT_MAX};
++	static bool apply_motion_event = false;
++	static bool right_click_sent = false;
++
++	if (first_time) {
++		weston_compositor_get_time(&previous_time);
++		first_time = false;
++	}
++
++	int button = 0;
++	struct timespec time;
++	
++	const int motion_distance_to_activate = 10;
++	const int timeout_to_send_right_click_ms = 1000;
+ 
+ 	weston_compositor_get_time(&time);
+-	notify_touch(b->touch_device, &time, screen_id, &pos, type);
+-	notify_touch_frame(b->touch_device);
++
++	if (type == WL_TOUCH_DOWN) {
++		button = SCREEN_LEFT_MOUSE_BUTTON;
++		apply_motion_event = false;
++		initial_pos[0] = screen_position[0];
++		initial_pos[1] = screen_position[1];
++		weston_compositor_get_time(&previous_time);
++	}
++
++	if (type == WL_TOUCH_MOTION) {
++		int diff_x = screen_position[0] - initial_pos[0];
++		int diff_y = screen_position[1] - initial_pos[1];
++
++		// Prevent logic for motion if there is only a small amount of movement, which is
++		// easy to accidentally trigger during a touch press
++		int distance = powf(pow(diff_x, 2) + pow(diff_y, 2), 0.5);
++
++		if (distance > motion_distance_to_activate) {
++			apply_motion_event = true;
++		}
++
++		int time_diff_ms = timespec_diff_ms(&time, &previous_time);
++
++		if (apply_motion_event) {
++			button = SCREEN_LEFT_MOUSE_BUTTON;
++		} 
++		else if (time_diff_ms > timeout_to_send_right_click_ms && !right_click_sent) {
++			button = SCREEN_RIGHT_MOUSE_BUTTON;
++
++			if (screen_set_event_property_iv(new_event, SCREEN_PROPERTY_BUTTONS, &button)) {
++				fprintf(stderr, "Failed to set SCREEN_PROPERTY_BUTTONS for touch event\n\r");
++			}
++
++			qnx_screen_backend_deliver_pointer_event(b, new_event);
++			right_click_sent = true;
++
++			// To simulate end of right click, send an empty button state (ie right click up).
++			// This prevents certain context menus from disappearing due to long right click.
++			// Sleep for a little bit as there is a small interval between click and release in reality
++			sleep_ms(50);
++			button = 0;
++		} else {
++			// Don't send a bunch of events to the window where there's no point. For certain apps, such as file manager,
++			// sending many events to the app (not the window bar to drag) seems to cause it to close / misbehave
++			return;
++		}
++	}
++
++	if (type == WL_TOUCH_UP) {
++		if (right_click_sent) {
++			right_click_sent = false;
++
++			// End of right click was sent if in this branch, don't send another click up event.
++			// There's no obvious harm if this is done, but it is more accurate when compared to an actual pointer event
++			return;
++		}
++
++		right_click_sent = false;
++	}
++
++	if (screen_set_event_property_iv(new_event, SCREEN_PROPERTY_BUTTONS, &button)) {
++		fprintf(stderr, "Failed to set SCREEN_PROPERTY_BUTTONS for touch event\n\r");
++	}
++
++	qnx_screen_backend_deliver_pointer_event(b, new_event);
+ }
+ 
+ static void
