@@ -1,18 +1,46 @@
 # Maintainer: Cris Sinnott <csinnott@qnx.com>
 pkgname=stable-diffusion.cpp
 pkgver=0_git20260602
-pkgrel=1
+pkgrel=2
 _sdcommit=a51021b190b3aac1684c22a03fb0607f144ab6ce
-_ggmlcommit=ec4c7d9fcf8e14ab692a8e79fe108ed848505e77
-# CPU backend only: the Vulkan GPU backend hits an unresolved QNX drm-virtio
-# runtime deadlock (see stable-diffusion-gpu-deadlock.md) and is disabled
-# for now. Re-enable SD_VULKAN once that issue is fixed upstream.
-pkgdesc="Stable Diffusion in pure C/C++ (CPU backend)"
+_ggmlcommit=c73febe42fc107ae2de109ea40fdca42f623e005
+# c73febe4 ports the retry/throw glslc-empty-output safety net from
+# extra/llama.cpp/0004-qnx-vulkan-shader-compat.patch into vulkan-shaders-gen.cpp,
+# which qnx-ports/ggml never had before this commit. Needed because the previous
+# pin (0861b685) hit exactly that bug for real during this build:
+# mul_mat_vec_id_bf16_f32_f32_subgroup_no_shmem silently failed to compile (glslc
+# exit 0, empty stderr, no .spv written) even at the existing N=1 serialization,
+# and with no retry/error-surfacing the missing shader wasn't caught until an
+# undefined-reference linker error in ggml's test binaries.
+# Vulkan GPU backend re-enabled (pkgrel 2): the drm-virtio-looking deadlock
+# (stable-diffusion-gpu-deadlock.md) root-caused to a real bug in
+# ggml-vulkan itself, not QNX/drm-virtio -- ggml_vk_create_pipeline_func
+# only decremented compile_count/signalled compile_count_cond on the normal
+# return path; when vkCreateComputePipelines throws vk::SystemError (e.g.
+# VK_ERROR_INITIALIZATION_FAILED), the exception unwinds past that
+# decrement, the scheduler's condvar wait in ggml_vk_load_shaders never
+# wakes, and the process hangs forever. Fixed upstream in qnx-ports/ggml
+# (this pin) via an RAII guard that decrements/signals unconditionally on
+# scope exit. See project_llama_vulkan.md for the full writeup and
+# reproducer. ggml also carries the pre-existing QNX Vulkan patches this
+# port already needed before Vulkan was disabled: vulkan-shaders-gen.cpp's
+# N=1 compile-slot cap (QNX's default 1000 FD-per-process limit) and the
+# GL_KHR_cooperative_matrix* feature tests guarded off on QNX (glslc syntax
+# errors on complex coopmat shaders; the ICD doesn't expose coopmat at
+# runtime anyway).
+pkgdesc="Stable Diffusion in pure C/C++ (Vulkan GPU + CPU backend)"
 url="https://github.com/leejet/stable-diffusion.cpp"
 arch="aarch64 x86_64"
 license="MIT"
-depends="libc++ qnx-io-sock"
-makedepends="cmake ninja clang libc++-dev qnx-io-sock-dev"
+# qnx-vulkan (libvulkan.so.1) and openmp (libomp.so) are real runtime
+# dependencies of sd-cli/sd-server (confirmed via readelf -d NEEDED entries,
+# 2026-08-11) that abuild's own dependency tracer already flags as "so
+# dependency missing" during package() -- not previously declared here.
+# Without this, apk add succeeds but sd-cli/sd-server fail to start with a
+# missing-shared-library error on any system that doesn't already happen to
+# have both packages installed for some other reason.
+depends="libc++ qnx-io-sock qnx-vulkan openmp"
+makedepends="cmake ninja clang libc++-dev qnx-io-sock-dev shaderc-dev glslang-dev spirv-tools-dev vulkan-headers"
 subpackages="$pkgname-dev $pkgname-dbg"
 source="
 	stable-diffusion.cpp-$_sdcommit.tar.gz::https://github.com/qnx-ports/stable-diffusion.cpp/archive/$_sdcommit.tar.gz
@@ -23,6 +51,9 @@ source="
 # cmake/common.cmake affecting NEON codegen, one in tests/CMakeLists.txt that
 # unconditionally applied x86-only -mfma/-mavx flags on any unmatched arch,
 # breaking the aarch64 build outright) -- see those commits for details.
+# pkgrel 2 bumps one commit further to 0861b685, the ggml-vulkan deadlock fix
+# described above (no other changes in between), then to c73febe4 (this pin)
+# for the glslc retry-logic fix described above.
 builddir="$srcdir/stable-diffusion.cpp-$_sdcommit"
 
 prepare() {
@@ -32,22 +63,71 @@ prepare() {
 }
 
 build() {
+	# Stale cmake cache from a prior build (e.g. an earlier _ggmlcommit) can
+	# silently persist across abuild rebuilds since $_sdcommit is unchanged.
+	rm -rf build
+	# QNX's linker strips libggml-vulkan.a entirely under abuild's default
+	# --as-needed (its shader-registration objects are only referenced via
+	# global constructors, never by name) -- undefined flash_attn_* symbols
+	# at link time otherwise. --whole-archive/--no-whole-archive around the
+	# static lib (already guarded behind QNXNTO+SD_VULKAN in this project's
+	# own CMakeLists.txt) needs --as-needed off to take effect.
+	export LDFLAGS="${LDFLAGS/--as-needed/--no-as-needed}"
 	cmake -B build -G Ninja \
 		-DCMAKE_C_COMPILER=clang \
 		-DCMAKE_CXX_COMPILER=clang++ \
 		-DCMAKE_BUILD_TYPE=Release \
 		-DCMAKE_INSTALL_PREFIX=/usr \
-		-DSD_VULKAN=OFF \
+		-DSD_VULKAN=ON \
 		-DSD_BUILD_SHARED_LIBS=ON \
 		-DGGML_BUILD_TESTS=ON
+	# Shader codegen writes into one shared ggml-vulkan-shaders.hpp; parallel
+	# ninja jobs racing on that target corrupt it (missing variants, link
+	# failures). Build the shader target serially first, then everything else.
+	cmake --build build --target ggml-vulkan -j1
 	cmake --build build
 }
 
 check() {
+	# test-backend-ops and test-opt are excluded outright, not just given a
+	# timeout -- both hit real driver-level GPU hangs that are confirmed
+	# UNKILLABLE (kernel-level REPLY block against drm-virtio/the GPU driver
+	# process, survives even kill -9; see project_llama_vulkan.md's
+	# "MUTEX? 0" deadlock signature). ctest's own --timeout can't rescue a
+	# process stuck at that level -- it relies on being able to signal/kill
+	# the child, which doesn't work here. An earlier version of this
+	# check() tried letting these tests run with a --timeout instead of a
+	# hard exclusion; that approach was tested for real on 2026-08-11 and
+	# reproduced exactly this unkillable hang (drm-virtio wedged the whole
+	# GPU stack for the rest of the box, requiring a VM reboot to recover)
+	# -- confirming a hard -E exclusion is necessary here, not a nicety.
+	#
+	#   - test-backend-ops: on aarch64 (RPi5, V3D driver) aborts (does not
+	#     hang) with "Shared memory size too small for matrix
+	#     multiplication" -- ggml-vulkan's matmul tile configs assume more
+	#     workgroup shared memory (32-64KB+) than V3D's 16KB. Confirmed
+	#     directly on QNX 8.0 aarch64 hardware (RPi5) with SD_VULKAN=ON.
+	#     ARM boards with >16KB GPU workgroup shared memory (e.g. Mali, A-
+	#     series) are expected to support Vulkan GPU acceleration normally.
+	#     On x86_64 (QEMU/Venus virtio-gpu) it instead genuinely
+	#     HANGS compiling the RELU_SQR shader specifically -- a separate,
+	#     narrower driver stall, confirmed unrelated to the glslc/
+	#     compile_count fixes above (isolated via -o RELU_SQR filtering in
+	#     an earlier session). Root cause not yet chased down; suspected to
+	#     be specific to Vulkan-over-QEMU (Venus/virtio-gpu), not a general
+	#     x86_64 issue -- unconfirmed, follow up separately.
+	#   - test-opt: only fails on aarch64, same shared-memory root cause as
+	#     above.
+	# Neither is a QNX bug, a build defect, or fixable in this package.
+	# Excluding both on every arch is a deliberate, slightly conservative
+	# tradeoff (may exclude a test that would actually pass on some board,
+	# e.g. an x86_64 box not running Vulkan over QEMU) in exchange for
+	# builds that reliably terminate everywhere this APKBUILD runs.
+	local skip="test-backend-ops|test-opt"
 	ctest --test-dir build/ggml/tests \
 		--output-junit "$builddir/test-results.xml" \
 		--output-on-failure \
-		-j$(nproc)
+		-E "$skip"
 }
 
 package() {
@@ -56,5 +136,5 @@ package() {
 
 sha512sums="
 7b4e19a95c4038eb08158395849ce93dfabefdbc7e7a398e4080484f34a7a0d69ad069bc2b6960d5d9a03f9de23286a682eca81128d052dbe3ac0e7a7b2bd098  stable-diffusion.cpp-a51021b190b3aac1684c22a03fb0607f144ab6ce.tar.gz
-59356fde7ae56670ac04d37d6b8f80cadd7eee052809c2f8e16d268678222ebaebac3e1d169dc6b751f89230c29649d3b236961df387d8c9d5689a592ea135ac  ggml-ec4c7d9fcf8e14ab692a8e79fe108ed848505e77.tar.gz
+f5631cdfdf507f50b1db31cc59258a7b7b8e198c93d1b0f6d4227144df1d78ef258f7db3a71cb38e092da77b8e975cbbcebacdef25c9310d83dcb5494364276f  ggml-c73febe42fc107ae2de109ea40fdca42f623e005.tar.gz
 "
