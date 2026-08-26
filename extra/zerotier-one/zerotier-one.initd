@@ -1,4 +1,4 @@
-#!/sbin/openrc-run
+#!/usr/bin/openrc-run
 
 depend() {
     provide net
@@ -6,6 +6,6 @@ depend() {
     before firewall netmount
 }
 
-command="/usr/sbin/zerotier-one"
+command="/usr/bin/zerotier-one"
 command_background="yes"
 pidfile="/run/$RC_SVCNAME.pid"
