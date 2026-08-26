@@ -1,0 +1,98 @@
+# Alpine-Contributor: Bradley J Chambers <brad.chambers@gmail.com>
+# Alpine-Maintainer: Daniel Tobon <danieltobonco@gmail.com>
+# Maintainer: Marcin Sochacki <msochacki@qnx.com>
+pkgname=pcl
+pkgver=1.15.1
+pkgrel=0
+pkgdesc="Point Cloud Library (PCL)"
+url="https://pointclouds.org"
+arch="all"
+license="BSD-3-Clause"
+depends="libc++"
+depends_dev="
+	boost-dev
+	eigen-dev
+	flann-dev
+	libc++-dev
+	libpng-dev
+	lz4-dev
+	qhull-dev
+	qhull-static
+	"
+makedepends="
+	$depends_dev
+	cmake
+	ninja
+	"
+checkdepends="gtest-dev gtest-src"
+subpackages="$pkgname-dev $pkgname-libs"
+source="$pkgname-$pkgver.tar.gz::https://github.com/PointCloudLibrary/pcl/releases/download/pcl-$pkgver/source.tar.gz
+	001-disable-asio-network-grabbers.patch
+	002-relax-eigen3-version.patch
+	"
+builddir="$srcdir/pcl"
+
+# outofcore needs Boost::system; QNX boost-dev ships no boost_system component
+build() {
+	CC=clang \
+	CXX=clang++ \
+	cmake -B build -G Ninja \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DCMAKE_SKIP_INSTALL_RPATH=ON \
+		-DCMAKE_CXX_STANDARD=17 \
+		-DCMAKE_CXX_FLAGS="-DEIGEN_MAX_STATIC_ALIGN_BYTES=16" \
+		-DWITH_CUDA=OFF \
+		-DWITH_DAVIDSDK=OFF \
+		-DWITH_DSSDK=OFF \
+		-DWITH_ENSENSO=OFF \
+		-DWITH_FZAPI=OFF \
+		-DWITH_LIBUSB=OFF \
+		-DWITH_OPENGL=OFF \
+		-DWITH_OPENNI2=OFF \
+		-DWITH_OPENNI=OFF \
+		-DWITH_PCAP=OFF \
+		-DWITH_PNG=ON \
+		-DWITH_QHULL=ON \
+		-DWITH_QT=OFF \
+		-DWITH_VTK=OFF \
+		-DBUILD_apps=OFF \
+		-DBUILD_examples=OFF \
+		-DBUILD_simulation=OFF \
+		-DBUILD_visualization=OFF \
+		-DBUILD_global_tests=ON \
+		-DBUILD_tools=OFF \
+		-DBUILD_outofcore=OFF \
+		-DPCL_ENABLE_MARCHNATIVE=OFF \
+		-DPCL_ENABLE_AVX=OFF \
+		-DPCL_ENABLE_SSE=ON \
+		-DPCL_IO_ENABLE_MAND_LOCKING=OFF \
+		-Wno-dev
+
+	cmake --build build
+}
+
+check() {
+	cd build/test
+	ctest --output-on-failure
+}
+
+dev() {
+	default_dev
+	amove usr/share
+}
+
+libs() {
+	default_libs
+	depends="libc++ boost-iostreams libpng lz4-libs openmp qhull"
+}
+
+package() {
+	DESTDIR="$pkgdir" cmake --install build
+}
+
+sha512sums="
+0864cae35bf07c2958678a96ae00744d065e40f84e841e0ac910436f04426369265111a14fae072133337b1a73ee8554420849c81154d8375b7493609da64c06  pcl-1.15.1.tar.gz
+818087ca4f328393b0cca5df0a91f7738a79f13049ace69051b3bfc59eaef06b9239a38569b3e859462126f238b7c9f07e6e6107fb29d3b8c9d67c387d373879  001-disable-asio-network-grabbers.patch
+5daab8406fa6aa0ac1aecb343888082e36e23280b9b8bc7d63f162a27a4ed715406a724a0c1011898aaa92f895bfcedccb5dc8a6eb2e0e7b989855acec095139  002-relax-eigen3-version.patch
+"
