@@ -1,0 +1,89 @@
+# Maintainer: Cris Sinnott <csinnott@qnx.com>
+pkgname=snappy
+pkgver=1.2.1
+pkgrel=0
+pkgdesc="A fast compressor/decompressor library from Google"
+url="https://github.com/google/snappy"
+arch="all"
+license="BSD-3-Clause"
+makedepends="cmake ninja zlib-dev lz4-dev"
+subpackages="$pkgname-dev"
+# Pinned to the exact commit tensorstore's third_party/com_google_snappy
+# workspace.bzl references (v1.2.1 + a couple commits), not the v1.2.1 tag
+# itself -- tensorstore depends on this commit specifically.
+_commit="32ded457c0b1fe78ceb8397632c416568d6714a0"
+# googletest pinned to the exact commit snappy's own
+# third_party/googletest submodule points at -- fetched as a plain tarball
+# (not a live submodule clone) since abuild has no network access, same
+# pattern extra/grpc uses for its own bundled googletest.
+_googletest_commit="b796f7d44681514f58a683a3a71ff17c94edb0c1"
+source="
+	$pkgname-$pkgver.tar.gz::https://github.com/google/snappy/archive/$_commit.tar.gz
+	googletest-$_googletest_commit.tar.gz::https://github.com/google/googletest/archive/$_googletest_commit.tar.gz
+	"
+builddir="$srcdir/$pkgname-$_commit"
+
+prepare() {
+	default_prepare
+	rmdir third_party/googletest 2>/dev/null || rm -rf third_party/googletest
+	mv "$srcdir"/googletest-$_googletest_commit third_party/googletest
+}
+
+build() {
+	cmake -B build \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DBUILD_SHARED_LIBS=ON \
+		-DSNAPPY_BUILD_TESTS=ON \
+		-DSNAPPY_BUILD_BENCHMARKS=OFF \
+		-DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+		`# snappy's own CMakeLists.txt promotes all warnings to -Werror for` \
+		`# clang unconditionally, including in the bundled test-support code` \
+		`# and vendored googletest subdirectory. Two of upstream's own` \
+		`# warnings only fire under this specific clang: bundled googletest's` \
+		`# gtest-printers.h (implicit char16_t->char32_t conversion), and` \
+		`# snappy-test.cc:469's UncompressChunkOrAll() dummy output-parameter` \
+		`# pattern (clang's newer -Wuninitialized-const-pointer flags an` \
+		`# intentionally-uninitialized pointer passed purely to be filled --` \
+		`# a known false-positive shape for that check). Neither is a QNX` \
+		`# bug or a real defect; silence just those two warning classes` \
+		`# rather than patching snappy's or googletest's source.` \
+		-DCMAKE_CXX_FLAGS="-Wno-error=character-conversion -Wno-error=uninitialized-const-pointer" \
+		-G Ninja
+	cmake --build build
+}
+
+check() {
+	# Real upstream gtest suite (snappy_unittest.cc). gtest's own
+	# --gtest_output=xml is genuine JUnit XML natively -- no wrapping
+	# needed. testdata/ is referenced by relative path from the suite's
+	# CorruptedTest case, hence the symlink.
+	ln -sf "$builddir"/testdata build/testdata
+	mkdir -p "$startdir"/output-junit
+	( cd build && ./snappy_unittest --gtest_output=xml:"$startdir"/output-junit/snappy.xml )
+}
+
+package() {
+	DESTDIR="$pkgdir" cmake --install build
+
+	# SNAPPY_BUILD_TESTS=ON pulls in the bundled third_party/googletest via
+	# add_subdirectory(), and despite snappy's own CMakeLists.txt setting
+	# install_gtest OFF, `cmake --install` on this CMake/generator
+	# combination still installed gtest/gmock's own libraries, headers,
+	# pkgconfig, and CMake package files alongside snappy's (confirmed by
+	# inspecting the actual install log -- libgtest.so, libgmock.so,
+	# usr/include/gtest, usr/include/gmock all present). None of that is
+	# part of what this package is meant to ship -- googletest is only a
+	# check()-time test dependency here, not a runtime one. Strip it
+	# explicitly rather than relying on install_gtest, which isn't taking
+	# effect for this build.
+	rm -rf "$pkgdir"/usr/lib/libgtest* "$pkgdir"/usr/lib/libgmock*
+	rm -rf "$pkgdir"/usr/include/gtest "$pkgdir"/usr/include/gmock
+	rm -rf "$pkgdir"/usr/lib/cmake/GTest
+	rm -f "$pkgdir"/usr/lib/pkgconfig/gtest*.pc "$pkgdir"/usr/lib/pkgconfig/gmock*.pc
+}
+
+sha512sums="
+d94e4cc4de61c3bb9d7f8cb0e9ffacd1323ba5824d0d95ca53e51f1de4c1297f6568618b94a9b9791f4547c6c92aff5430f2d171a1010d9ae9bd0d77cb006d81  snappy-1.2.1.tar.gz
+97df9326ac2f64cd5e0f809182c9b09beef85f91c661e83363f7cb013eb38d9a31f02ded269b314b403f29708c6ee2c6b9fff277eb8fefb20d5c1945b3acdd30  googletest-b796f7d44681514f58a683a3a71ff17c94edb0c1.tar.gz
+"
