@@ -1,0 +1,120 @@
+# Alpine-Contributor: Sören Tempel <soeren+alpine@soeren-tempel.net>
+# Alpine-Contributor: Carlo Landmeter <clandmeter@alpinelinux.org>
+# Alpine-Maintainer: Jakub Jirutka <jakub@jirutka.cz>
+# Maintainer: jscaffidi <jscaffidi@qnx.com>
+pkgname=unbound
+pkgver=1.26.0
+pkgrel=0
+pkgdesc="Unbound is a validating, recursive, and caching DNS resolver"
+url="https://nlnetlabs.nl/projects/unbound/about/"
+arch="all"
+license="BSD-3-Clause"
+depends="dnssec-root"
+depends_dev="expat-dev"
+makedepends="$depends_dev
+	hiredis-dev
+	libevent-dev
+	nghttp2-dev
+	openssl-dev>3
+	protobuf-c-dev
+    protobuf-c-compiler
+	python3-dev
+    protoc
+	swig
+    autoconf
+	"
+# checkdepends="
+# 	bind-tools
+# 	ldns-tools
+# 	"
+install="$pkgname.pre-install"
+pkgusers="unbound"
+pkggroups="unbound"
+subpackages="
+	$pkgname-dbg
+	$pkgname-dev
+	$pkgname-doc
+	$pkgname-libs
+	python3-unbound:py
+	"
+source="
+    https://unbound.net/downloads/unbound-$pkgver.tar.gz
+    00-qnx-build.patch
+"
+
+prepare() {
+    default_prepare
+    # We patched the configure.ac file, we need to regenerate the configure and header template
+    autoheader
+    autoconf
+}
+
+build() {
+    export CFLAGS="$CFLAGS"
+    export LDFLAGS="$LDFLAGS -Wl,-z,stack-size=4194304"
+
+    PYTHON_VERSION=3 \
+    ./configure \
+        --build="$CBUILD" \
+		--host="$CHOST" \
+		--prefix=/usr \
+		--sbindir=/usr/bin \
+		--sysconfdir=/etc \
+		--mandir=/usr/share/man \
+		--localstatedir=/var \
+		--enable-pie \
+		--enable-relro-now \
+		--with-username=unbound \
+		--with-run-dir="" \
+		--with-pidfile="" \
+		--with-rootkey-file=/usr/share/dnssec-root/trusted-key.key \
+		--with-libevent \
+		--with-pthreads \
+		--disable-static \
+		--disable-rpath \
+		--disable-dsa \
+		--disable-gost \
+		--enable-dnstap \
+		--enable-subnet \
+		--enable-cachedb \
+		--with-ssl \
+		--without-pythonmodule \
+		--with-pyunbound \
+		--with-libhiredis \
+		--with-libnghttp2
+
+
+	# do not link to libpython
+    sed -i -e '/^LIBS=/s/-lpython.*[[:space:]]/ /' Makefile
+
+	make
+}
+
+check() {
+	make test
+}
+
+package() {
+	make DESTDIR="$pkgdir" install
+	make DESTDIR="$pkgdir" unbound-event-install
+
+	install -Dm755 contrib/update-anchor.sh \
+		"$pkgdir"/usr/share/$pkgname/update-anchor.sh
+
+	install -D -m644 doc/CREDITS doc/Changelog doc/FEATURES \
+		doc/README doc/TODO -t "$pkgdir"/usr/share/doc/$pkgname/
+}
+
+py() {
+	pkgdesc="Python bindings to libunbound"
+	depends=""
+	provides="python3-unbound=$pkgver-r$pkgrel" # backward compatibility (Alpine <3.23)
+
+	amove usr/lib/python*
+}
+
+
+sha512sums="
+d061a4fd89b83e9e2c122b4479547f86548856710c801df01ce0aff8f0b4df9a61760cb7418b8ba7c79d504e6af49d7affc480f0730890bc818709007a931efd  unbound-1.26.0.tar.gz
+4f33a7be8380ef6af16e62e5db36720b3c923f85ad4f51e98e1da8ecb2d02fa2343e1c30e94a04ae7f4f7d2a16cc4ecf04d7530760ac3763d75c6484755470c4  00-qnx-build.patch
+"
