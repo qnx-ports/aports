@@ -28,7 +28,7 @@ echo "================================="
     export CXX=clang++
     export CFLAGS="$CFLAGS -D_QNX_SOURCE -g -O2 -fPIC"
     export CXXFLAGS="$CXXFLAGS -fPIC"
-    export LDFLAGS="$LDFLAGS -L/usr/local/lib"
+    export LDFLAGS="$LDFLAGS -L/usr/local/lib -L/usr/lib"
     export LIBS="$LIBS -lusbdi -lpci"
 
     ./configure \
