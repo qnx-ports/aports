@@ -21,7 +21,9 @@ prepare() {
 
 build() {
     cd "$builddir" 
-    
+    echo "===== Searching for libusbdi ====="
+find /usr /lib /usr/local/lib -name 'libusbdi*' 2>/dev/null
+echo "================================="
     export CC=clang
     export CXX=clang++
     export CFLAGS="$CFLAGS -D_QNX_SOURCE -g -O2 -fPIC"
