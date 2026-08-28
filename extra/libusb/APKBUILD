@@ -15,7 +15,7 @@ options="!tracedeps !check"
 
 prepare() {
 	default_prepare
-	cd "$srcdir/libusb-libusb-1.0.23" 
+	cd "$srcdir/libusb-libusb-1.0.23"     
 	./bootstrap.sh
 }
 
@@ -39,6 +39,11 @@ build() {
         CXXFLAGS="$CXXFLAGS" \
         LDFLAGS="$LDFLAGS" \
         LIBS="$LIBS"
+
+        echo "===== CONFIG.LOG ====="
+        cat config.log
+        echo "===== END CONFIG.LOG ====="
+        return 1
 
     make
 }
