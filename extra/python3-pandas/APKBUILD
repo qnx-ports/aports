@@ -9,12 +9,14 @@ url="https://pandas.pydata.org/"
 arch="all"
 license="BSD-3-Clause"
 depends="
+    libc++
     python3-dateutil
     python3-numpy
     python3-tzdata"
 makedepends="
     cython
     meson
+    libc++-dev
     python3-gpep517
     python3-meson-python
     python3-setuptools
