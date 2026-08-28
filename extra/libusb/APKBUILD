@@ -13,17 +13,25 @@ source="$pkgname-$pkgver.tar.gz::https://github.com/qnx-ports/libusb/archive/ref
 builddir="$srcdir/libusb-libusb-1.0.23"
 options="!tracedeps !check"
 
+
+case "$(uname -m)" in
+	x86_64)
+		export CHOST=x86_64-pc-nto
+		;;
+	aarch64)
+		export CHOST=aarch64-unknown-nto-qnx8.0.0
+		;;
+esac 
+
 prepare() {
 	default_prepare
-
 	cd "$srcdir/libusb-libusb-1.0.23" 
-
 	./bootstrap.sh
 }
 
 build() {
     cd "$builddir" 
-
+    
     export CC=clang
     export CXX=clang++
     export CFLAGS="$CFLAGS -D_QNX_SOURCE -g -O2 -fPIC"
