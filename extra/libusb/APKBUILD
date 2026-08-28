@@ -30,20 +30,22 @@ build() {
     export LIBS="$LIBS -lusbdi -lpci"
 
     ./configure \
-        --host=$CHOST \
-        --build=$CHOST \
-        --prefix=/usr \
-        --enable-shared \
-        --disable-static \
-        CFLAGS="$CFLAGS" \
-        CXXFLAGS="$CXXFLAGS" \
-        LDFLAGS="$LDFLAGS" \
-        LIBS="$LIBS"
-
-        echo "===== CONFIG.LOG ====="
-        cat config.log
-        echo "===== END CONFIG.LOG ====="
+    --host="$CHOST" \
+    --build="$CHOST" \
+    --prefix=/usr \
+    --enable-shared \
+    --disable-static \
+    CFLAGS="$CFLAGS" \
+    CXXFLAGS="$CXXFLAGS" \
+    LDFLAGS="$LDFLAGS" \
+    LIBS="$LIBS" || {
+        echo "========== CONFIGURE FAILED =========="
+        pwd
+        echo "========== config.log =========="
+        cat "$builddir/config.log"
+        echo "========== END config.log =========="
         return 1
+    }
 
     make
 }
