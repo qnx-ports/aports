@@ -1,0 +1,165 @@
+diff -Naur labwc-0.20.1.orig/include/labwc.h labwc-0.20.1/include/labwc.h
+--- labwc-0.20.1.orig/include/labwc.h	2026-06-15 18:43:52.000000000 +0000
++++ labwc-0.20.1/include/labwc.h	2026-08-20 01:24:56.000000000 +0000
+@@ -313,6 +313,9 @@
+ 	struct wlr_tablet_manager_v2 *tablet_manager;
+ 	struct wlr_security_context_manager_v1 *security_context_manager_v1;
+ 
++	/* qnx */
++	struct wlr_qnx_redir *qnx_redir;
++
+ 	/* Set when in cycle (alt-tab) mode */
+ 	struct cycle_state cycle;
+ 
+diff -Naur labwc-0.20.1.orig/src/config/meson.build labwc-0.20.1/src/config/meson.build
+--- labwc-0.20.1.orig/src/config/meson.build	2026-06-15 18:43:52.000000000 +0000
++++ labwc-0.20.1/src/config/meson.build	2026-08-20 01:21:32.000000000 +0000
+@@ -6,5 +6,4 @@
+   'touch.c',
+   'tablet.c',
+   'tablet-tool.c',
+-  'libinput.c',
+ )
+diff -Naur labwc-0.20.1.orig/src/config/rcxml.c labwc-0.20.1/src/config/rcxml.c
+--- labwc-0.20.1.orig/src/config/rcxml.c	2026-06-15 18:43:52.000000000 +0000
++++ labwc-0.20.1/src/config/rcxml.c	2026-08-20 01:21:32.000000000 +0000
+@@ -24,7 +24,9 @@
+ #include "common/xml.h"
+ #include "config/default-bindings.h"
+ #include "config/keybind.h"
++#if WLR_HAS_LIBINPUT_BACKEND
+ #include "config/libinput.h"
++#endif 
+ #include "config/mousebind.h"
+ #include "config/tablet.h"
+ #include "config/tablet-tool.h"
+@@ -701,7 +703,7 @@
+ 
+ 	tablet_button_mapping_add(map_from, map_to);
+ }
+-
++#if WLR_HAS_LIBINPUT_BACKEND
+ static int
+ get_accel_profile(const char *s)
+ {
+@@ -740,7 +742,7 @@
+ 	return -1;
+ }
+ 
+-static void
++	static void
+ fill_libinput_category(xmlNode *node)
+ {
+ 	/*
+@@ -937,6 +939,9 @@
+ 		}
+ 	}
+ }
++#else
++static void fill_libinput_category(xmlNode *node){}
++#endif
+ 
+ static void
+ set_font_attr(struct font *font, const char *nodename, const char *content)
+@@ -1848,6 +1853,7 @@
+ 	if (!rc.font_osd.name) {
+ 		rc.font_osd.name = xstrdup("sans");
+ 	}
++#if WLR_HAS_LIBINPUT_BACKEND
+ 	if (!libinput_category_get_default()) {
+ 		/* So we set default values of <tap> and <scrollFactor> */
+ 		struct libinput_category *l = libinput_category_create();
+@@ -1864,6 +1870,7 @@
+ 			l->scroll_factor = mouse_scroll_factor;
+ 		}
+ 	}
++#endif
+ 
+ 	int nr_workspaces = wl_list_length(&rc.workspace_config.workspaces);
+ 	if (nr_workspaces < rc.workspace_config.min_nr_workspaces) {
+@@ -2082,7 +2089,7 @@
+ 		action_list_free(&m->actions);
+ 		zfree(m);
+ 	}
+-
++#if WLR_HAS_LIBINPUT_BACKEND
+ 	struct touch_config_entry *touch_config, *touch_config_tmp;
+ 	wl_list_for_each_safe(touch_config, touch_config_tmp, &rc.touch_configs, link) {
+ 		wl_list_remove(&touch_config->link);
+@@ -2097,6 +2104,7 @@
+ 		zfree(l->name);
+ 		zfree(l);
+ 	}
++#endif
+ 
+ 	struct workspace_config *w, *w_tmp;
+ 	wl_list_for_each_safe(w, w_tmp, &rc.workspace_config.workspaces, link) {
+diff -Naur labwc-0.20.1.orig/src/seat.c labwc-0.20.1/src/seat.c
+--- labwc-0.20.1.orig/src/seat.c	2026-06-15 18:43:52.000000000 +0000
++++ labwc-0.20.1/src/seat.c	2026-08-20 01:21:32.000000000 +0000
+@@ -17,7 +17,9 @@
+ #include <wlr/util/log.h>
+ #include "common/macros.h"
+ #include "common/mem.h"
++#if WLR_HAS_LIBINPUT_BACKEND
+ #include "config/libinput.h"
++#endif
+ #include "config/rcxml.h"
+ #include "config/touch.h"
+ #include "input/ime.h"
+diff -Naur labwc-0.20.1.orig/src/server.c labwc-0.20.1/src/server.c
+--- labwc-0.20.1.orig/src/server.c	2026-06-15 18:43:52.000000000 +0000
++++ labwc-0.20.1/src/server.c	2026-08-20 01:33:30.000000000 +0000
+@@ -6,6 +6,7 @@
+ #include <string.h>
+ #include <sys/wait.h>
+ #include <wlr/backend/headless.h>
++#include <wlr/backend/qnx_screen.h>
+ #include <wlr/backend/multi.h>
+ #include <wlr/config.h>
+ #include <wlr/render/allocator.h>
+@@ -43,6 +44,10 @@
+ #include <wlr/types/wlr_xdg_foreign_v1.h>
+ #include <wlr/types/wlr_xdg_foreign_v2.h>
+ 
++/* qnx */
++
++#include <wlr/types/wlr_qnx_redir.h>
++
+ #if HAVE_XWAYLAND
+ 	#include <wlr/xwayland.h>
+ #endif
+@@ -369,6 +374,15 @@
+ }
+ 
+ static void
++get_qnx_screen_backend(struct wlr_backend *backend, void*data)
++{
++	if(wlr_backend_is_qnx_screen(backend)){
++		struct wlr_backend **qnx_screen = data;
++		*qnx_screen = backend;
++	}
++}
++
++static void
+ handle_renderer_lost(struct wl_listener *listener, void *data)
+ {
+ 	wlr_log(WLR_INFO, "Re-creating renderer after GPU reset");
+@@ -513,6 +527,17 @@
+ 	}
+ 	wlr_multi_backend_add(server.backend, server.headless.backend);
+ 
++	struct wlr_backend *qnx_backend = NULL;
++	wlr_multi_for_each_backend(server.backend,
++                get_qnx_screen_backend, &qnx_backend);
++
++	if (qnx_backend) {
++		server.qnx_redir = wlr_qnx_redir_create(server.wl_display, 1);
++		if(!server.qnx_redir) {
++			wlr_log(WLR_ERROR, "Unable to create wl_qnx_redir global");
++		}
++	}
++
+ 	/*
+ 	 * If we don't populate headless backend with a virtual output (that we
+ 	 * create and immediately destroy), then virtual outputs being added
