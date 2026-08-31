@@ -6,7 +6,7 @@ pkgdesc="C++ library for communicating with a RabbitMQ message broker"
 url="https://github.com/CopernicaMarketingSoftware/AMQP-CPP"
 arch="all"
 license="Apache-2.0"
-depends="libc++ qnx-gcc-libs qnx-io-sock"
+depends="libc++ qnx-io-sock"
 makedepends="cmake openssl-dev libc++-dev qnx-io-sock-dev"
 options="!check"
 source="
@@ -15,13 +15,8 @@ source="
 "
 builddir="$srcdir/AMQP-CPP-$pkgver"
 
-prepare() {
-    default_prepare
-}
-
 build() {
   export LDFLAGS="$LDFLAGS -lm -lsocket"
-  cd "$builddir"
   cmake -B build -S . \
     -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
     -DCMAKE_BUILD_TYPE=Release \
@@ -29,17 +24,15 @@ build() {
     -DCMAKE_INSTALL_LIBDIR=lib \
     -DBUILD_SHARED_LIBS=ON \
     -DAMQP-CPP_LINUX_TCP=ON \
-    -DAMQP-CPP_BUILD_SHARED=ON 
+    -DAMQP-CPP_BUILD_SHARED=ON
   cmake --build build
 }
 
 check() {
-    # Optional: run examples if Needed but not required for packaging
-    return 0
+	ctest --test-dir build --output-on-failure
 }
 
 package() {
-  cd "$builddir"
   DESTDIR="$pkgdir" cmake --install build
 }
 
