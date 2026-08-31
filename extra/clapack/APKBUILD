@@ -7,51 +7,45 @@ url="https://www.netlib.org/clapack/"
 arch="all"
 license="BSD-3-Clause"
 makedepends="build-base"
+options="!check"
 source="clapack-$pkgver.tgz::https://www.netlib.org/clapack/clapack.tgz
+		fix-make-inc-plat.patch
         fix-xberla.patch
+        fix-tstiee-stringh.patch
         "
 builddir="$srcdir/CLAPACK-$pkgver"
 
 prepare() {
 	default_prepare
-	cd "$builddir"
-	cp make.inc.example make.inc
-
-	# Disable warnings
-	sed -i 's/CFLAGS = -O3/CFLAGS = -O3 -w/' make.inc
-
-	# FIX: add missing include to tstiee.c
-	sed -i '/#include "blaswrap.h"/a #include <string.h>' INSTALL/tstiee.c
+	cp "$builddir/make.inc.example" "$builddir/make.inc"
 }
 
 build() {
 	cd "$builddir"
 	
 	# Force flags for sub-makes that ignore make.inc
-	export CFLAGS="-O3 -w -Wno-implicit-function-declaration"
+	export CFLAGS="$CFLAGS -w -Wno-implicit-function-declaration"
 	
 	make f2clib
 	make blaslib
 	make lapacklib
+	make tmglib
 }
-check()
-{
-build
-}
-
 package() {
-    cd "$builddir"
-
-	mkdir -p "$pkgdir/usr/lib"
-	mkdir -p "$pkgdir/usr/include"
-
-	cp blas_*.a "$pkgdir/usr/lib/"
-	cp lapack_*.a "$pkgdir/usr/lib/"
-	cp F2CLIBS/libf2c.a "$pkgdir/usr/lib/"
-
-	cp -r INCLUDE/*.h "$pkgdir/usr/include/"
+	install -Dm644 "$builddir/libblas.a" \
+		"$pkgdir/usr/lib/libblas.a"
+	install -Dm644 "$builddir/liblapack.a" \
+		"$pkgdir/usr/lib/liblapack.a"
+	install -Dm644 "$builddir/libtmglib.a" \
+		"$pkgdir/usr/lib/libtmglib.a"
+	install -Dm644 "$builddir/F2CLIBS/libf2c.a" \
+		"$pkgdir/usr/lib/libf2c.a"
+	install -Dm644 "$builddir/INCLUDE/"*.h \
+		-t "$pkgdir/usr/include/"
 }
 sha512sums="
 42254d84abccd75f113d44c30bfd7a9c46bc92d4aa7ad03e1b662fba2343e37522c6907ff8fb2ffbd08df08519ea216da1218eb5b773c80595e5eeb30d796bea  clapack-3.2.1.tgz
+2bdaab186a4b742674641f838abe1653f211ed097635471409d6c77db752ff5a6fc278583a4d0b332588dee185db38eb9135dd1fa038f0f33c0ac3162cb94b60  fix-make-inc-plat.patch
 c7e9eec8c8d03e96227019560ab3c4770490d21727b26976f81545c198829c4adcf0fb249c009ff39aaa86a2136405f210e7175f8a2dea44d1d8c71436e9cfec  fix-xberla.patch
+bcf8ac424b0bb66585d437b16c627ae1dc2784d47375fb4b09769223e10aea9b2b972b1ca3aec5fd029f4171382f329f61c79c1af56ce9da57534f8f74299649  fix-tstiee-stringh.patch
 "

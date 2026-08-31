@@ -1,0 +1,34 @@
+--- make.inc.example.orig	2026-08-31 10:38:45.000000000 +0000
++++ make.inc.example	2026-08-31 10:39:21.000000000 +0000
+@@ -11,7 +11,7 @@
+ #
+ #  The machine (platform) identifier to append to the library names
+ #
+-PLAT = _LINUX
++PLAT =
+ #  
+ #  Modify the FORTRAN and OPTS definitions to refer to the
+ #  compiler and desired compiler options for your machine.  NOOPT
+@@ -58,7 +58,7 @@
+ #  The target's machine-specific, optimized BLAS library should be
+ #  used whenever possible.
+ #
+-BLASLIB      = ../../blas$(PLAT).a
++BLASLIB      = ../../libblas$(PLAT).a
+ #
+ #  Location of the extended-precision BLAS (XBLAS) Fortran library
+ #  used for building and testing extended-precision routines.  The
+@@ -71,9 +71,9 @@
+ #
+ #  Names of generated libraries.
+ #
+-LAPACKLIB    = lapack$(PLAT).a
++LAPACKLIB    = liblapack$(PLAT).a
+ F2CLIB       = ../../F2CLIBS/libf2c.a
+-TMGLIB       = tmglib$(PLAT).a
+-EIGSRCLIB    = eigsrc$(PLAT).a
+-LINSRCLIB    = linsrc$(PLAT).a
++TMGLIB       = libtmglib$(PLAT).a
++EIGSRCLIB    = libeigsrc$(PLAT).a
++LINSRCLIB    = liblinsrc$(PLAT).a
+ F2CLIB		 = ../../F2CLIBS/libf2c.a
