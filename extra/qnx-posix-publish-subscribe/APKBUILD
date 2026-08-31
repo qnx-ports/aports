@@ -2,7 +2,6 @@
 pkgname="qnx-posix-publish-subscribe"
 pkgver=1.1.0
 pkgrel=0
-_branch="main"
 pkgdesc="QNX POSIX PubSub Service"
 _dbg_pkgdesc="debug symbols and binaries"
 _samples_pkgdesc="samples"
@@ -25,18 +24,15 @@ subpackages="
     $pkgname-samples:samples
 "
 source="
-    $pkgname-$_branch.tar.gz::https://github.com/qnx/qnx-posix-publish-subscribe/archive/refs/heads/$_branch.tar.gz
+    $pkgname-$pkgver.tar.gz::https://github.com/qnx/qnx-posix-publish-subscribe/archive/refs/tags/v$pkgver.tar.gz
 "
-builddir="$srcdir/$pkgname-$_branch"
 
 build() {
-    cd "$builddir"
     meson setup output --prefix=/usr
     meson compile -C output
 }
 
 package() {
-    cd "$builddir"
     DESTDIR="$pkgdir" meson install --no-rebuild -C output
 }
 
@@ -70,6 +66,4 @@ samples() {
     amove etc/signal_framework/echo-actuator.json
 }
 
-sha512sums="
-b2e96e71ce7f35b40e17e272544d74fc0689f3e8af70f3c6d9ebd43e0b1ffee0c25c31ebbc45bdf13eb8590631a30ae5b62245cef078a5a7ced042af18f78b73  qnx-posix-publish-subscribe-f7f9329002546f5be91001e74b0f3b77dc86a313.tar.gz
-"
+sha512sums="59caa963efeaf720aa95e4d8f9125eef956b7d7417b5e8a0fb56991f320206c22bbee04a8037951b183f6be087e07f1a557bb976a3af5c644ba37584595c24d7  qnx-posix-publish-subscribe-1.1.0.tar.gz"
