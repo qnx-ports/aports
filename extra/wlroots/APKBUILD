@@ -1,0 +1,76 @@
+# Alpine-Contributor: Henrik Riomar <henrik.riomar@gmail.com>
+# Alpine-Maintainer: Achill Gilgenast <achill@achill.org>
+# Maintainer: Aaron Bassett <abassett@qnx.com>
+pkgname=wlroots0.20
+pkgver=0.20.2
+_pkgver=${pkgver/_/-}
+pkgrel=1
+pkgdesc="Modular Wayland compositor library"
+url="https://gitlab.freedesktop.org/wlroots/wlroots"
+license="MIT"
+arch="all"
+depends="libxkbcommon lcms2 pixman wayland qnx-screen qnx-libdrm qnx-libgbm qnx-egl qnx-gles qnx-io-sock qnx-fd-notify"
+makedepends="
+	libxkbcommon-dev
+	lcms2-dev
+	meson
+	ninja
+	pixman-dev
+	wayland-dev
+	wayland-protocols
+	qnx-screen-dev
+	qnx-libdrm-dev
+	qnx-libgbm-dev
+	qnx-io-sock-dev
+	qnx-fd-notify-dev
+	egl-headers
+	gles-headers
+	"
+# wlroots >= 0.18.0 does no longer ship a libwlroots.so symlink in the -dev
+# subpackage. Hence, abuild's dependency tracing fails to identify that the
+# -dev subpackage depends on the origin package and we need to add that
+# manually. Otherwise, the wlroots shared object is not installed with -dev.
+depends_dev="$pkgname=$pkgver-r$pkgrel qnx-libdrm-dev qnx-libgbm-dev  qnx-screen-dev wayland-protocols wayland-dev pixman-dev lcms2-dev libxkbcommon-dev"
+subpackages="$pkgname-dbg $pkgname-static $pkgname-dev"
+source="https://gitlab.freedesktop.org/wlroots/wlroots/-/archive/$_pkgver/wlroots-$_pkgver.tar.gz
+	qnx-backend.patch	
+"
+builddir="$srcdir/wlroots-$_pkgver"
+options="!check" # no test suite
+
+# whether this is the default version (latest stable wlroots)
+_default="yes"
+
+if [ "$_default" = yes ]; then
+	provides="wlroots=$pkgver-r$pkgrel"
+	replaces="wlroots"
+
+	dev() {
+		default_dev
+		provides="wlroots-dev=$pkgver-r$pkgrel"
+		replaces="wlroots-dev"
+	}
+fi
+
+build() {
+	#-Db_lto=true \
+	abuild-meson \
+		-Dexamples=false \
+		-Ddefault_library=both \
+		-Drenderers=gles2 \
+		-Dallocators=gbm \
+		-Dc_args="-D__EXPORTED_HEADERS__" \
+		-Dc_link_args="-lsocket -leventfd" \
+		. build
+	meson compile -C build
+}
+
+package() {
+	DESTDIR="$pkgdir" meson install --no-rebuild -C build
+}
+
+
+sha512sums="
+e96523a2b215e7d1f36bbe5e7fa3e65d15cb87e2f0d9c304d3c2fdc81b0ac0c7202cd955635c01072b34e70f08c6c00fa2cde8c277bd73fcabdcb19f7b579a12  wlroots-0.20.2.tar.gz
+80ece8664bf17c93a643f478b4da59f0ef363c1c44dd9929f680ce44f37c0e7f7f0ce2e68e4152e5aee082a0347dea8f779cd1686c75977d948ac667eb90130c  qnx-backend.patch
+"

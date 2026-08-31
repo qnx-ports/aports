@@ -1,0 +1,3780 @@
+From 7c2d1335e71aeac2f3a2b05d23917512ce437c11 Mon Sep 17 00:00:00 2001
+From: Aaron Bassett <abassett@qnx.com>
+Date: Wed, 19 Aug 2026 16:45:38 +0000
+Subject: [PATCH 1/3] pixman working
+
+---
+ backend/backend.c                          |  38 +
+ backend/meson.build                        |   3 +
+ backend/qnx-screen/backend.c               | 259 ++++++
+ backend/qnx-screen/event_monitor.c         | 141 +++
+ backend/qnx-screen/input_device.c          | 427 +++++++++
+ backend/qnx-screen/meson.build             |  34 +
+ backend/qnx-screen/output.c                | 558 ++++++++++++
+ include/backend/qnx_screen.h               | 113 +++
+ include/backend/qnx_screen_event_monitor.h |  37 +
+ include/meson.build                        |   3 +
+ include/wlr/backend/qnx_screen.h           |  85 ++
+ include/wlr/config.h.in                    |   8 +
+ linux/input-event-codes.h                  | 954 +++++++++++++++++++++
+ meson.build                                |   1 +
+ meson.options                              |   2 +-
+ types/scene/surface.c                      |   2 +
+ types/wlr_compositor.c                     |   5 +
+ util/box.c                                 |   4 +
+ 18 files changed, 2673 insertions(+), 1 deletion(-)
+ create mode 100644 backend/qnx-screen/backend.c
+ create mode 100644 backend/qnx-screen/event_monitor.c
+ create mode 100644 backend/qnx-screen/input_device.c
+ create mode 100644 backend/qnx-screen/meson.build
+ create mode 100644 backend/qnx-screen/output.c
+ create mode 100644 include/backend/qnx_screen.h
+ create mode 100644 include/backend/qnx_screen_event_monitor.h
+ create mode 100644 include/wlr/backend/qnx_screen.h
+ create mode 100644 linux/input-event-codes.h
+
+diff --git a/backend/backend.c b/backend/backend.c
+index 3d84aa63..7f2998ba 100644
+--- a/backend/backend.c
++++ b/backend/backend.c
+@@ -32,6 +32,10 @@
+ #include <wlr/backend/x11.h>
+ #endif
+ 
++#if WLR_HAS_QNX_SCREEN_BACKEND
++#include <wlr/backend/qnx_screen.h>
++#endif
++
+ #define WAIT_SESSION_TIMEOUT 10000 // ms
+ 
+ void wlr_backend_init(struct wlr_backend *backend,
+@@ -287,6 +291,28 @@ static struct wlr_backend *attempt_libinput_backend(struct wlr_session *session)
+ #endif
+ }
+ 
++static struct wlr_backend *attempt_qnx_screen_backend(struct wl_event_loop *loop) {
++#if WLR_HAS_QNX_SCREEN_BACKEND
++   struct wlr_backend *backend = wlr_qnx_screen_backend_create(loop);
++   if (backend == NULL) {
++       return NULL;
++   }
++
++   size_t outputs = parse_outputs_env("WLR_QNX_SCREEN_OUTPUTS");
++   if (outputs == 0) {
++       outputs = 1;
++   }
++   for (size_t i = 0; i < outputs; ++i) {
++       wlr_qnx_screen_output_create(backend, 0, 0);
++   }
++
++   return backend;
++#else
++   wlr_log(WLR_ERROR, "Cannot create QNX Screen backend: disabled at compile-time");
++   return NULL;
++#endif
++}
++
+ static bool attempt_backend_by_name(struct wl_event_loop *loop,
+ 		struct wlr_backend *multi, char *name,
+ 		struct wlr_session **session_ptr) {
+@@ -297,6 +323,8 @@ static bool attempt_backend_by_name(struct wl_event_loop *loop,
+ 		backend = attempt_x11_backend(loop, NULL);
+ 	} else if (strcmp(name, "headless") == 0) {
+ 		backend = attempt_headless_backend(loop);
++	} else if (strcmp(name, "qnx-screen") == 0) {
++		backend = attempt_qnx_screen_backend(loop);
+ 	} else if (strcmp(name, "drm") == 0 || strcmp(name, "libinput") == 0) {
+ 		// DRM and libinput need a session
+ 		if (*session_ptr == NULL) {
+@@ -393,6 +421,16 @@ struct wlr_backend *wlr_backend_autocreate(struct wl_event_loop *loop,
+ 		goto success;
+ 	}
+ 
++#if WLR_HAS_QNX_SCREEN_BACKEND
++	struct wlr_backend *qnx_screen_backend = attempt_qnx_screen_backend(loop);
++	if (qnx_screen_backend) {
++		wlr_multi_backend_add(multi, qnx_screen_backend);
++		if (!auto_backend_monitor_create(multi, qnx_screen_backend)) {
++			goto error;
++		}
++		goto success;
++	}
++#endif
+ 	// Attempt DRM+libinput
+ 	session = session_create_and_wait(loop);
+ 	if (!session) {
+diff --git a/backend/meson.build b/backend/meson.build
+index ed977d3b..c290b1ba 100644
+--- a/backend/meson.build
++++ b/backend/meson.build
+@@ -1,6 +1,9 @@
+ wlr_files += files('backend.c')
+ 
+ all_backends = ['drm', 'libinput', 'x11']
++if host_machine.system() == 'qnx'
++  all_backends += ['qnx-screen']
++endif
+ backends = get_option('backends')
+ if 'auto' in backends and get_option('auto_features').enabled()
+ 	backends = all_backends
+diff --git a/backend/qnx-screen/backend.c b/backend/qnx-screen/backend.c
+new file mode 100644
+index 00000000..308c017d
+--- /dev/null
++++ b/backend/qnx-screen/backend.c
+@@ -0,0 +1,259 @@
++#include <assert.h>
++#include <stdlib.h>
++#include <unistd.h>
++
++#include <drm_fourcc.h>
++#include <screen/screen.h>
++#include <wayland-server-core.h>
++
++#include <wlr/backend/interface.h>
++#include <wlr/backend/qnx_screen.h>
++#include <wlr/interfaces/wlr_keyboard.h>
++#include <wlr/render/drm_format_set.h>
++#include <wlr/types/wlr_buffer.h>
++#include <wlr/util/log.h>
++
++#include "backend/qnx_screen.h"
++
++struct wlr_qnx_screen_backend *qnx_screen_backend_from_backend(
++		struct wlr_backend *wlr_backend) {
++	assert(wlr_backend_is_qnx_screen(wlr_backend));
++	struct wlr_qnx_screen_backend *backend =
++		wl_container_of(wlr_backend, backend, backend);
++	return backend;
++}
++
++struct wlr_qnx_screen_output *qnx_screen_output_from_window(
++		struct wlr_qnx_screen_backend *backend, screen_window_t window) {
++	struct wlr_qnx_screen_output *output;
++	wl_list_for_each(output, &backend->outputs, link) {
++		if (output->window == window) {
++			return output;
++		}
++	}
++	return NULL;
++}
++
++static screen_display_t get_default_display(struct wlr_qnx_screen_backend *b) {
++	int count = 0;
++	screen_get_context_property_iv(b->context,
++		SCREEN_PROPERTY_DISPLAY_COUNT, &count);
++	if (count <= 0) {
++		return NULL;
++	}
++
++	screen_display_t *displays = calloc(count, sizeof(*displays));
++	if (displays == NULL) {
++		return NULL;
++	}
++
++	screen_get_context_property_pv(b->context, SCREEN_PROPERTY_DISPLAYS,
++		(void **)displays);
++	screen_display_t result = displays[0];
++	free(displays);
++	return result;
++}
++
++static int handle_screen_events(int fd, uint32_t mask, void *data) {
++	struct wlr_qnx_screen_backend *b = data;
++
++	// Drain the wake-up byte(s) written by the monitor thread.
++	char ch;
++	while (read(fd, &ch, sizeof(ch)) == sizeof(ch)) {
++		// no-op
++	}
++	wlr_qnx_screen_event_monitor_arm(b->event_monitor);
++
++	screen_event_t event = NULL;
++	if (screen_create_event(&event) != 0 || event == NULL) {
++		wlr_log(WLR_ERROR, "screen_create_event failed");
++		return 0;
++	}
++
++	int count = 0;
++	while (screen_get_event(b->context, event, 0) == 0) {
++		int type = SCREEN_EVENT_NONE;
++		screen_get_event_property_iv(event, SCREEN_PROPERTY_TYPE, &type);
++		if (type == SCREEN_EVENT_NONE) {
++			break;
++		}
++
++		switch (type) {
++		case SCREEN_EVENT_POINTER:
++			qnx_screen_handle_pointer_event(b, event);
++			count++;
++			break;
++		case SCREEN_EVENT_KEYBOARD:
++			qnx_screen_handle_keyboard_event(b, event);
++			count++;
++			break;
++		case SCREEN_EVENT_MTOUCH_TOUCH:
++			qnx_screen_handle_touch_event(b, event, 0);
++			count++;
++			break;
++		case SCREEN_EVENT_MTOUCH_MOVE:
++			qnx_screen_handle_touch_event(b, event, 1);
++			count++;
++			break;
++		case SCREEN_EVENT_MTOUCH_RELEASE:
++			qnx_screen_handle_touch_event(b, event, 2);
++			count++;
++			break;
++		case SCREEN_EVENT_PROPERTY:
++			qnx_screen_handle_property_event(b, event);
++			count++;
++			break;
++		default:
++			break;
++		}
++	}
++
++	screen_destroy_event(event);
++	return count;
++}
++
++static bool backend_start(struct wlr_backend *wlr_backend) {
++	struct wlr_qnx_screen_backend *backend =
++		qnx_screen_backend_from_backend(wlr_backend);
++
++	wlr_log(WLR_INFO, "Starting QNX Screen backend");
++	backend->started = true;
++
++	wl_signal_emit_mutable(&backend->backend.events.new_input,
++		&backend->keyboard.base);
++
++	struct wlr_qnx_screen_output *output;
++	wl_list_for_each(output, &backend->outputs, link) {
++		wl_signal_emit_mutable(&backend->backend.events.new_output,
++			&output->wlr_output);
++		wl_signal_emit_mutable(&backend->backend.events.new_input,
++			&output->pointer.base);
++		wl_signal_emit_mutable(&backend->backend.events.new_input,
++			&output->touch.base);
++	}
++
++	return true;
++}
++
++static void backend_destroy(struct wlr_backend *wlr_backend) {
++	if (wlr_backend == NULL) {
++		return;
++	}
++
++	struct wlr_qnx_screen_backend *backend =
++		qnx_screen_backend_from_backend(wlr_backend);
++
++	struct wlr_qnx_screen_output *output, *tmp;
++	wl_list_for_each_safe(output, tmp, &backend->outputs, link) {
++		wlr_output_destroy(&output->wlr_output);
++	}
++
++	wlr_keyboard_finish(&backend->keyboard);
++
++	wlr_backend_finish(wlr_backend);
++
++	wl_list_remove(&backend->event_loop_destroy.link);
++
++	if (backend->screen_source) {
++		wl_event_source_remove(backend->screen_source);
++	}
++	if (backend->event_monitor) {
++		wlr_qnx_screen_event_monitor_destroy(backend->event_monitor);
++	}
++
++	wlr_drm_format_set_finish(&backend->shm_formats);
++
++	if (backend->context) {
++		screen_destroy_context(backend->context);
++	}
++
++	free(backend);
++}
++
++static int backend_get_drm_fd(struct wlr_backend *wlr_backend) {
++	// QNX has no DRM/GBM. Returning -1 makes wlr_renderer_autocreate() and
++	// wlr_allocator_autocreate() fall back to the pixman renderer and the
++	// generic shared-memory allocator, respectively.
++	return -1;
++}
++
++static const struct wlr_backend_impl backend_impl = {
++	.start = backend_start,
++	.destroy = backend_destroy,
++	.get_drm_fd = backend_get_drm_fd,
++};
++
++bool wlr_backend_is_qnx_screen(const struct wlr_backend *backend) {
++	return backend->impl == &backend_impl;
++}
++
++static void handle_event_loop_destroy(struct wl_listener *listener,
++		void *data) {
++	struct wlr_qnx_screen_backend *backend =
++		wl_container_of(listener, backend, event_loop_destroy);
++	backend_destroy(&backend->backend);
++}
++
++struct wlr_backend *wlr_qnx_screen_backend_create(struct wl_event_loop *loop) {
++	wlr_log(WLR_INFO, "Creating QNX Screen backend");
++
++	struct wlr_qnx_screen_backend *backend = calloc(1, sizeof(*backend));
++	if (backend == NULL) {
++		wlr_log_errno(WLR_ERROR, "Allocation failed");
++		return NULL;
++	}
++
++	wlr_backend_init(&backend->backend, &backend_impl);
++	backend->backend.buffer_caps = WLR_BUFFER_CAP_SHM;
++
++	backend->event_loop = loop;
++	wl_list_init(&backend->outputs);
++
++	if (screen_create_context(&backend->context, SCREEN_APPLICATION_CONTEXT) < 0) {
++		wlr_log_errno(WLR_ERROR, "screen_create_context failed");
++		goto error_backend;
++	}
++
++	backend->default_display = get_default_display(backend);
++
++	// Each QNX Screen window is created with a single, fixed native pixel
++	// format (SCREEN_PROPERTY_FORMAT), so we only advertise one DRM format
++	// here. SHM buffers don't have modifiers; INVALID means "implicit/host
++	// native layout", which is what we get from screen_create_window_buffers().
++	wlr_drm_format_set_add(&backend->shm_formats, DRM_FORMAT_XRGB8888,
++		DRM_FORMAT_MOD_INVALID);
++
++	wlr_keyboard_init(&backend->keyboard, &qnx_screen_keyboard_impl,
++		qnx_screen_keyboard_impl.name);
++
++	backend->event_monitor = wlr_qnx_screen_event_monitor_create(backend->context);
++	if (backend->event_monitor == NULL) {
++		wlr_log(WLR_ERROR, "Failed to create QNX Screen event monitor");
++		goto error_context;
++	}
++
++	backend->screen_source = wl_event_loop_add_fd(loop,
++		backend->event_monitor->pipe_fds[0], WL_EVENT_READABLE,
++		handle_screen_events, backend);
++	if (backend->screen_source == NULL) {
++		wlr_log(WLR_ERROR, "Failed to create QNX Screen event source");
++		goto error_monitor;
++	}
++	wl_event_source_check(backend->screen_source);
++
++	backend->event_loop_destroy.notify = handle_event_loop_destroy;
++	wl_event_loop_add_destroy_listener(loop, &backend->event_loop_destroy);
++
++	return &backend->backend;
++
++error_monitor:
++	wlr_qnx_screen_event_monitor_destroy(backend->event_monitor);
++error_context:
++	wlr_keyboard_finish(&backend->keyboard);
++	wlr_drm_format_set_finish(&backend->shm_formats);
++	screen_destroy_context(backend->context);
++error_backend:
++	wlr_backend_finish(&backend->backend);
++	free(backend);
++	return NULL;
++}
+diff --git a/backend/qnx-screen/event_monitor.c b/backend/qnx-screen/event_monitor.c
+new file mode 100644
+index 00000000..74a3f6ce
+--- /dev/null
++++ b/backend/qnx-screen/event_monitor.c
+@@ -0,0 +1,141 @@
++/*
++ * QNX Screen event-notification monitor thread.
++ *
++ * Adapted from qnx-ports/weston's qnx-screen-event-monitor.c (Copyright (C)
++ * 2023 Blackberry Limited, MIT licensed) for use as a wlroots backend
++ * component. The pulse/pipe plumbing is unchanged; only naming and the log
++ * calls have been adjusted to wlroots conventions.
++ */
++
++#include <fcntl.h>
++#include <stdlib.h>
++#include <string.h>
++#include <sys/neutrino.h>
++#include <unistd.h>
++
++#include <wlr/util/log.h>
++
++#include "backend/qnx_screen_event_monitor.h"
++
++static const int c_screen_code = _PULSE_CODE_MINAVAIL + 0;
++static const int c_arm_code = _PULSE_CODE_MINAVAIL + 1;
++static const int c_quit_code = _PULSE_CODE_MINAVAIL + 2;
++
++static void *event_monitor_main(void *argument) {
++	struct wlr_qnx_screen_event_monitor *m = argument;
++	int armed = 1;
++
++	while (1) {
++		struct _pulse msg;
++		memset(&msg, 0, sizeof(msg));
++
++		int rcvid = MsgReceive(m->chid, &msg, sizeof(msg), NULL);
++		if (rcvid != 0) {
++			continue;
++		}
++
++		if (msg.code == c_quit_code) {
++			break;
++		} else if (msg.code == c_arm_code) {
++			armed = 1;
++		} else if (msg.code == c_screen_code) {
++			if (armed) {
++				char ch = 0;
++				if (write(m->pipe_fds[1], &ch, sizeof(ch)) < 0) {
++					// Pipe is full, which just means the main thread
++					// hasn't drained the previous wake-up yet: fine.
++				}
++				armed = 0;
++			}
++		}
++	}
++
++	return NULL;
++}
++
++struct wlr_qnx_screen_event_monitor *wlr_qnx_screen_event_monitor_create(
++		screen_context_t context) {
++	struct wlr_qnx_screen_event_monitor *m = calloc(1, sizeof(*m));
++	if (m == NULL) {
++		wlr_log(WLR_ERROR, "Allocation failed");
++		return NULL;
++	}
++
++	m->context = context;
++
++	m->chid = ChannelCreate(_NTO_CHF_DISCONNECT | _NTO_CHF_UNBLOCK |
++		_NTO_CHF_PRIVATE);
++	if (m->chid < 0) {
++		wlr_log(WLR_ERROR, "Failed to create QNX channel");
++		goto err_free;
++	}
++
++	m->coid = ConnectAttach(0, 0, m->chid, _NTO_SIDE_CHANNEL, 0);
++	if (m->coid < 0) {
++		wlr_log(WLR_ERROR, "Failed to attach QNX connection");
++		goto err_channel;
++	}
++
++	if (pipe2(m->pipe_fds, O_CLOEXEC | O_NONBLOCK) < 0) {
++		wlr_log_errno(WLR_ERROR, "Failed to create pipe");
++		goto err_connection;
++	}
++
++	SIGEV_PULSE_INIT(&m->event, m->coid, SIGEV_PULSE_PRIO_INHERIT,
++		c_screen_code, 0);
++	if (screen_register_event(m->context, &m->event) < 0) {
++		wlr_log_errno(WLR_ERROR, "screen_register_event failed");
++		goto err_pipe;
++	}
++
++	if (screen_notify(m->context, SCREEN_NOTIFY_EVENT, NULL, &m->event) < 0) {
++		wlr_log_errno(WLR_ERROR, "screen_notify failed");
++		goto err_register;
++	}
++
++	if (pthread_create(&m->thread, NULL, event_monitor_main, m) != 0) {
++		wlr_log(WLR_ERROR, "Failed to spawn QNX Screen event monitor thread");
++		goto err_notify;
++	}
++
++	return m;
++
++err_notify:
++	screen_notify(m->context, SCREEN_NOTIFY_EVENT, NULL, NULL);
++err_register:
++	screen_unregister_event(&m->event);
++err_pipe:
++	close(m->pipe_fds[0]);
++	close(m->pipe_fds[1]);
++err_connection:
++	ConnectDetach(m->coid);
++err_channel:
++	ChannelDestroy(m->chid);
++err_free:
++	free(m);
++	return NULL;
++}
++
++void wlr_qnx_screen_event_monitor_destroy(
++		struct wlr_qnx_screen_event_monitor *m) {
++	if (m == NULL) {
++		return;
++	}
++
++	MsgSendPulse(m->coid, SIGEV_PULSE_PRIO_INHERIT, c_quit_code, 0);
++	pthread_join(m->thread, NULL);
++
++	screen_notify(m->context, SCREEN_NOTIFY_EVENT, NULL, NULL);
++	screen_unregister_event(&m->event);
++
++	close(m->pipe_fds[0]);
++	close(m->pipe_fds[1]);
++	ConnectDetach(m->coid);
++	ChannelDestroy(m->chid);
++	free(m);
++}
++
++void wlr_qnx_screen_event_monitor_arm(
++		struct wlr_qnx_screen_event_monitor *m) {
++	MsgSendPulse(m->coid, SIGEV_PULSE_PRIO_INHERIT, c_arm_code, 0);
++}
+diff --git a/backend/qnx-screen/input_device.c b/backend/qnx-screen/input_device.c
+new file mode 100644
+index 00000000..061d6194
+--- /dev/null
++++ b/backend/qnx-screen/input_device.c
+@@ -0,0 +1,427 @@
++#include <linux/input-event-codes.h>
++#include <stdlib.h>
++#include <string.h>
++#include <sys/keycodes.h>
++#include <time.h>
++
++#include <screen/screen.h>
++#include <wayland-server-protocol.h>
++
++#include <wlr/interfaces/wlr_keyboard.h>
++#include <wlr/interfaces/wlr_pointer.h>
++#include <wlr/interfaces/wlr_touch.h>
++#include <wlr/types/wlr_input_device.h>
++#include <wlr/util/log.h>
++
++#include "backend/qnx_screen.h"
++
++// Index into struct wlr_keyboard.mod_indexes[], matching the mod_names[]
++// order wlroots itself uses in wlr_keyboard_set_keymap() (types/wlr_keyboard.c).
++enum {
++	MOD_IDX_SHIFT = 0,
++	MOD_IDX_CAPS = 1,
++	MOD_IDX_CTRL = 2,
++	MOD_IDX_ALT = 3,
++	MOD_IDX_MOD2 = 4, // NumLock
++	MOD_IDX_MOD3 = 5,
++	MOD_IDX_LOGO = 6, // Super/Meta
++	MOD_IDX_MOD5 = 7,
++};
++
++static uint32_t get_time_msec(void) {
++	struct timespec ts;
++	clock_gettime(CLOCK_MONOTONIC, &ts);
++	return (uint32_t)(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
++}
++
++static void keyboard_led_update(struct wlr_keyboard *keyboard, uint32_t leds) {
++	// QNX Screen doesn't expose a keyboard-LED write API through libscreen;
++	// LED state is left to the platform's input driver.
++}
++
++const struct wlr_keyboard_impl qnx_screen_keyboard_impl = {
++	.name = "qnx-screen-keyboard",
++	.led_update = keyboard_led_update,
++};
++
++const struct wlr_pointer_impl qnx_screen_pointer_impl = {
++	.name = "qnx-screen-pointer",
++};
++
++const struct wlr_touch_impl qnx_screen_touch_impl = {
++	.name = "qnx-screen-touch",
++};
++
++static struct wlr_qnx_screen_output *output_from_event_window(
++		struct wlr_qnx_screen_backend *backend, screen_event_t event) {
++	screen_window_t window = NULL;
++	screen_get_event_property_pv(event, SCREEN_PROPERTY_WINDOW,
++		(void **)&window);
++	if (window == NULL) {
++		return NULL;
++	}
++	return qnx_screen_output_from_window(backend, window);
++}
++
++static uint32_t xkb_mask_for(struct wlr_keyboard *kb, size_t mod_index) {
++	xkb_mod_index_t idx = kb->mod_indexes[mod_index];
++	if (idx == XKB_MOD_INVALID) {
++		return 0;
++	}
++	return 1u << idx;
++}
++
++/*
++ * QNX Screen reports the *current, absolute* modifier state on every
++ * SCREEN_EVENT_KEYBOARD/POINTER/MTOUCH_* event via SCREEN_PROPERTY_MODIFIERS,
++ * separately from the individual scan-code press/release stream. On this
++ * platform the discrete key-up event for a modifier key (Ctrl/Alt in
++ * particular) isn't reliable enough to drive xkb_state's own per-keycode
++ * modifier tracking -- a missed release leaves the modifier stuck down.
++ *
++ * qnx-ports/weston's qnx-screen backend works around exactly this by making
++ * SCREEN_PROPERTY_MODIFIERS the sole source of truth for modifier state
++ * (weston: update_xkb_state_from_screen() + notify_key(..., STATE_UPDATE_NONE)).
++ * We do the wlroots equivalent here: qnx_screen_handle_keyboard_event() calls
++ * wlr_keyboard_notify_key() with update_state=false (so xkb's own per-key
++ * modifier bookkeeping never runs), and this function is the only thing that
++ * ever calls wlr_keyboard_notify_modifiers().
++ */
++void qnx_screen_sync_modifiers(struct wlr_qnx_screen_backend *backend,
++		int screen_modifiers) {
++	struct wlr_keyboard *kb = &backend->keyboard;
++	if (kb->keymap == NULL) {
++		// No keymap loaded yet (compositor hasn't called
++		// wlr_keyboard_set_keymap() in response to new_input yet); the
++		// mod_indexes table below isn't populated yet, nothing to do.
++		return;
++	}
++
++	// SCREEN_PROPERTY_MODIFIERS doesn't reliably reflect the Meta/Super
++	// ("GUI") key on this platform either; track its left/right scan codes
++	// separately in qnx_screen_handle_keyboard_event() and fold them in
++	// here, mirroring weston's b->left_gui_state/right_gui_state.
++	if (backend->left_gui_state || backend->right_gui_state) {
++		screen_modifiers |= KEYMOD_MOD8;
++	}
++
++	if (screen_modifiers == backend->prev_screen_modifiers) {
++		return;
++	}
++	backend->prev_screen_modifiers = screen_modifiers;
++
++	uint32_t depressed = 0;
++	if (screen_modifiers & KEYMOD_SHIFT) {
++		depressed |= xkb_mask_for(kb, MOD_IDX_SHIFT);
++	}
++	if (screen_modifiers & KEYMOD_CTRL) {
++		depressed |= xkb_mask_for(kb, MOD_IDX_CTRL);
++	}
++	if (screen_modifiers & KEYMOD_ALT) {
++		depressed |= xkb_mask_for(kb, MOD_IDX_ALT);
++	}
++	if (screen_modifiers & KEYMOD_MOD8) {
++		depressed |= xkb_mask_for(kb, MOD_IDX_LOGO);
++	}
++
++	// QNX's *_LOCK modifier bits are "sticky/latched" toggle state, not
++	// literal keyboard lock LEDs -- map them to xkb's latched group,
++	// matching weston's get_xkb_latched_mods().
++	uint32_t latched = 0;
++	if (screen_modifiers & KEYMOD_SHIFT_LOCK) {
++		latched |= xkb_mask_for(kb, MOD_IDX_SHIFT);
++	}
++	if (screen_modifiers & KEYMOD_CTRL_LOCK) {
++		latched |= xkb_mask_for(kb, MOD_IDX_CTRL);
++	}
++	if (screen_modifiers & KEYMOD_ALT_LOCK) {
++		latched |= xkb_mask_for(kb, MOD_IDX_ALT);
++	}
++	if (screen_modifiers & KEYMOD_MOD8_LOCK) {
++		latched |= xkb_mask_for(kb, MOD_IDX_LOGO);
++	}
++
++	uint32_t locked = 0;
++	if (screen_modifiers & KEYMOD_CAPS_LOCK) {
++		locked |= xkb_mask_for(kb, MOD_IDX_CAPS);
++	}
++	if (screen_modifiers & KEYMOD_NUM_LOCK) {
++		locked |= xkb_mask_for(kb, MOD_IDX_MOD2);
++	}
++	if (screen_modifiers & KEYMOD_SCROLL_LOCK) {
++		locked |= xkb_mask_for(kb, MOD_IDX_MOD3);
++	}
++
++	wlr_keyboard_notify_modifiers(kb, depressed, latched, locked, 0);
++}
++
++void qnx_screen_handle_pointer_event(struct wlr_qnx_screen_backend *backend,
++		screen_event_t event) {
++	int screen_modifiers = 0;
++	screen_get_event_property_iv(event, SCREEN_PROPERTY_MODIFIERS,
++		&screen_modifiers);
++	qnx_screen_sync_modifiers(backend, screen_modifiers);
++
++	struct wlr_qnx_screen_output *output =
++		output_from_event_window(backend, event);
++	if (output == NULL) {
++		return;
++	}
++
++	uint32_t time_msec = get_time_msec();
++
++	int position[2] = { 0, 0 };
++	screen_get_event_property_iv(event, SCREEN_PROPERTY_SOURCE_POSITION,
++		position);
++
++	int width = output->win_width > 0 ? output->win_width : 1;
++	int height = output->win_height > 0 ? output->win_height : 1;
++
++	double x = (double)position[0] / (double)width;
++	double y = (double)position[1] / (double)height;
++	if (x < 0.0) x = 0.0;
++	if (x > 1.0) x = 1.0;
++	if (y < 0.0) y = 0.0;
++	if (y > 1.0) y = 1.0;
++
++	struct wlr_pointer_motion_absolute_event motion_event = {
++		.pointer = &output->pointer,
++		.time_msec = time_msec,
++		.x = x,
++		.y = y,
++	};
++	wl_signal_emit_mutable(&output->pointer.events.motion_absolute,
++		&motion_event);
++
++	int buttons = 0;
++	screen_get_event_property_iv(event, SCREEN_PROPERTY_BUTTONS, &buttons);
++
++	static const struct {
++		int mask;
++		uint32_t code;
++	} button_map[] = {
++		// QNX Screen doesn't expose named constants for these in
++		// <screen/screen.h> on all versions; use the raw bitmasks
++		// (matches qnx-ports/weston's qnx-screen backend).
++		{ 0x1, BTN_LEFT },
++		{ 0x2, BTN_MIDDLE },
++		{ 0x4, BTN_RIGHT },
++	};
++
++	uint32_t changed = (uint32_t)buttons ^ output->prev_buttons;
++	for (size_t i = 0; i < sizeof(button_map) / sizeof(button_map[0]); i++) {
++		if (!(changed & button_map[i].mask)) {
++			continue;
++		}
++		bool pressed = (buttons & button_map[i].mask) != 0;
++		struct wlr_pointer_button_event button_event = {
++			.pointer = &output->pointer,
++			.time_msec = time_msec,
++			.button = button_map[i].code,
++			.state = pressed ? WL_POINTER_BUTTON_STATE_PRESSED :
++				WL_POINTER_BUTTON_STATE_RELEASED,
++		};
++		wlr_pointer_notify_button(&output->pointer, &button_event);
++	}
++	output->prev_buttons = (uint32_t)buttons;
++
++	int wheel = 0;
++	screen_get_event_property_iv(event, SCREEN_PROPERTY_MOUSE_WHEEL, &wheel);
++	if (wheel != 0) {
++		struct wlr_pointer_axis_event axis_event = {
++			.pointer = &output->pointer,
++			.time_msec = time_msec,
++			.source = WL_POINTER_AXIS_SOURCE_WHEEL,
++			.orientation = WL_POINTER_AXIS_VERTICAL_SCROLL,
++			.relative_direction = WL_POINTER_AXIS_RELATIVE_DIRECTION_IDENTICAL,
++			.delta = wheel * 15.0,
++			.delta_discrete = wheel * WLR_POINTER_AXIS_DISCRETE_STEP,
++		};
++		wl_signal_emit_mutable(&output->pointer.events.axis, &axis_event);
++		wl_signal_emit_mutable(&output->pointer.events.frame, &output->pointer);
++	} else {
++		wl_signal_emit_mutable(&output->pointer.events.frame, &output->pointer);
++	}
++}
++
++void qnx_screen_handle_keyboard_event(struct wlr_qnx_screen_backend *backend,
++		screen_event_t event) {
++	int flags = 0;
++	screen_get_event_property_iv(event, SCREEN_PROPERTY_FLAGS, &flags);
++
++	int scan = 0;
++	screen_get_event_property_iv(event, SCREEN_PROPERTY_SCAN, &scan);
++
++	int screen_modifiers = 0;
++	screen_get_event_property_iv(event, SCREEN_PROPERTY_MODIFIERS,
++		&screen_modifiers);
++
++	// NOTE: SCREEN_FLAG_KEY_DOWN (from <screen/screen.h>, the "pressed" bit
++	// in the flags word) is NOT the same symbol as the Linux evdev KEY_DOWN
++	// (the "Down arrow" keycode, pulled in above via
++	// <linux/input-event-codes.h>). Don't conflate the two.
++	bool pressed = (flags & SCREEN_FLAG_KEY_DOWN) != 0;
++
++	// SCREEN_PROPERTY_MODIFIERS doesn't reliably reflect Meta/Super on this
++	// platform (see qnx_screen_sync_modifiers()); track its scan codes here.
++	if (scan == KEY_LEFTMETA) {
++		backend->left_gui_state = pressed;
++	} else if (scan == KEY_RIGHTMETA) {
++		backend->right_gui_state = pressed;
++	}
++
++	qnx_screen_sync_modifiers(backend, screen_modifiers);
++
++	struct wlr_keyboard_key_event key_event = {
++		.time_msec = get_time_msec(),
++		// QNX Screen scan codes on this platform are Linux evdev keycodes;
++		// wlr_keyboard's xkb_state (once a keymap is loaded by the
++		// compositor) expects the same numbering libinput uses.
++		.keycode = (uint32_t)scan,
++		// Modifier state is driven exclusively by
++		// qnx_screen_sync_modifiers() from SCREEN_PROPERTY_MODIFIERS, not by
++		// xkb's own per-keycode tracking: on this platform, discrete
++		// key-release events for modifier keys (Ctrl/Alt in particular)
++		// aren't reliable enough to drive that tracking, and a missed
++		// release leaves the modifier stuck down in the compositor. Passing
++		// update_state=true here would let xkb_state_update_key() fight
++		// with the modifiers we set explicitly.
++		.update_state = false,
++		.state = pressed ? WL_KEYBOARD_KEY_STATE_PRESSED :
++			WL_KEYBOARD_KEY_STATE_RELEASED,
++	};
++	wlr_keyboard_notify_key(&backend->keyboard, &key_event);
++}
++
++static struct wlr_qnx_screen_touchpoint *touchpoint_get(
++		struct wlr_qnx_screen_output *output, int screen_id, bool create) {
++	struct wlr_qnx_screen_touchpoint *tp;
++	wl_list_for_each(tp, &output->touchpoints, link) {
++		if (tp->screen_id == screen_id) {
++			return tp;
++		}
++	}
++	if (!create) {
++		return NULL;
++	}
++
++	tp = calloc(1, sizeof(*tp));
++	if (tp == NULL) {
++		return NULL;
++	}
++	tp->screen_id = screen_id;
++
++	int next_id = 0;
++	struct wlr_qnx_screen_touchpoint *other;
++	wl_list_for_each(other, &output->touchpoints, link) {
++		if (other->wayland_id >= next_id) {
++			next_id = other->wayland_id + 1;
++		}
++	}
++	tp->wayland_id = next_id;
++
++	wl_list_insert(&output->touchpoints, &tp->link);
++	return tp;
++}
++
++void qnx_screen_handle_touch_event(struct wlr_qnx_screen_backend *backend,
++		screen_event_t event, int type) {
++	int screen_modifiers = 0;
++	screen_get_event_property_iv(event, SCREEN_PROPERTY_MODIFIERS,
++		&screen_modifiers);
++	qnx_screen_sync_modifiers(backend, screen_modifiers);
++
++	struct wlr_qnx_screen_output *output =
++		output_from_event_window(backend, event);
++	if (output == NULL) {
++		return;
++	}
++
++	int touch_id = 0;
++	screen_get_event_property_iv(event, SCREEN_PROPERTY_TOUCH_ID, &touch_id);
++
++	int position[2] = { 0, 0 };
++	screen_get_event_property_iv(event, SCREEN_PROPERTY_SOURCE_POSITION,
++		position);
++
++	int width = output->win_width > 0 ? output->win_width : 1;
++	int height = output->win_height > 0 ? output->win_height : 1;
++	double x = (double)position[0] / (double)width;
++	double y = (double)position[1] / (double)height;
++
++	uint32_t time_msec = get_time_msec();
++
++	// type: 0 = touch (down), 1 = move, 2 = release (up)
++	if (type == 0) {
++		struct wlr_qnx_screen_touchpoint *tp =
++			touchpoint_get(output, touch_id, true);
++		if (tp == NULL) {
++			return;
++		}
++		struct wlr_touch_down_event down_event = {
++			.touch = &output->touch,
++			.time_msec = time_msec,
++			.touch_id = tp->wayland_id,
++			.x = x,
++			.y = y,
++		};
++		wl_signal_emit_mutable(&output->touch.events.down, &down_event);
++	} else if (type == 1) {
++		struct wlr_qnx_screen_touchpoint *tp =
++			touchpoint_get(output, touch_id, false);
++		if (tp == NULL) {
++			return;
++		}
++		struct wlr_touch_motion_event motion_event = {
++			.touch = &output->touch,
++			.time_msec = time_msec,
++			.touch_id = tp->wayland_id,
++			.x = x,
++			.y = y,
++		};
++		wl_signal_emit_mutable(&output->touch.events.motion, &motion_event);
++	} else {
++		struct wlr_qnx_screen_touchpoint *tp =
++			touchpoint_get(output, touch_id, false);
++		if (tp == NULL) {
++			return;
++		}
++		struct wlr_touch_up_event up_event = {
++			.touch = &output->touch,
++			.time_msec = time_msec,
++			.touch_id = tp->wayland_id,
++		};
++		wl_signal_emit_mutable(&output->touch.events.up, &up_event);
++
++		wl_list_remove(&tp->link);
++		free(tp);
++	}
++
++	wl_signal_emit_mutable(&output->touch.events.frame, NULL);
++}
++
++void qnx_screen_handle_property_event(struct wlr_qnx_screen_backend *backend,
++		screen_event_t event) {
++	// Reserved for close-button / visibility / display-hotplug handling.
++	// Left as a hook: SCREEN_PROPERTY_WINDOW + SCREEN_PROPERTY_NAME on the
++	// event tell you which property of which window changed, e.g. you can
++	// detect SCREEN_PROPERTY_ID changes on a screen_display_t to notice
++	// display hotplug and call wl_signal_emit_mutable() on the backend's
++	// new_output/output destroy paths accordingly.
++}
++
++bool wlr_input_device_is_qnx_screen(struct wlr_input_device *wlr_device) {
++	switch (wlr_device->type) {
++	case WLR_INPUT_DEVICE_KEYBOARD:
++		return ((struct wlr_keyboard *)wlr_device)->impl ==
++			&qnx_screen_keyboard_impl;
++	case WLR_INPUT_DEVICE_POINTER:
++		return ((struct wlr_pointer *)wlr_device)->impl ==
++			&qnx_screen_pointer_impl;
++	case WLR_INPUT_DEVICE_TOUCH:
++		return ((struct wlr_touch *)wlr_device)->impl ==
++			&qnx_screen_touch_impl;
++	default:
++		return false;
++	}
++}
+diff --git a/backend/qnx-screen/meson.build b/backend/qnx-screen/meson.build
+new file mode 100644
+index 00000000..7613f405
+--- /dev/null
++++ b/backend/qnx-screen/meson.build
+@@ -0,0 +1,34 @@
++# Self-hosted QNX build: we're compiling natively with clang + lld via a
++# plain meson cross/native file that already points at a QNX sysroot
++# (screen/screen.h and libscreen.so under the usual /usr/include,
++# /usr/lib paths). No QNX_HOST/QNX_TARGET/qcc, no Momentics recipe build.
++qnx_screen_libs = []
++
++msg = ['Required for the QNX Screen backend.']
++if 'qnx-screen' in backends
++	msg += 'Install the QNX Screen (libscreen) development package, or disable the qnx-screen backend.'
++endif
++
++screen_dep = cc.find_library('screen',
++	required: 'qnx-screen' in backends,
++)
++if not screen_dep.found()
++	warning('\n'.join(msg))
++	subdir_done()
++endif
++
++if not cc.has_header('screen/screen.h', required: 'qnx-screen' in backends)
++	warning('\n'.join(msg))
++	subdir_done()
++endif
++
++qnx_screen_libs += screen_dep
++
++wlr_files += files(
++	'backend.c',
++	'event_monitor.c',
++	'input_device.c',
++	'output.c',
++)
++wlr_deps += qnx_screen_libs
++features += { 'qnx-screen-backend': true }
+diff --git a/backend/qnx-screen/output.c b/backend/qnx-screen/output.c
+new file mode 100644
+index 00000000..1a109caa
+--- /dev/null
++++ b/backend/qnx-screen/output.c
+@@ -0,0 +1,558 @@
++#include <assert.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++
++#include <drm_fourcc.h>
++#include <screen/screen.h>
++
++#include <wlr/interfaces/wlr_output.h>
++#include <wlr/interfaces/wlr_pointer.h>
++#include <wlr/interfaces/wlr_touch.h>
++#include <wlr/types/wlr_buffer.h>
++#include <wlr/util/log.h>
++
++#include "backend/qnx_screen.h"
++#include "types/wlr_buffer.h"
++#include "types/wlr_output.h"
++
++static const uint32_t SUPPORTED_OUTPUT_STATE =
++	WLR_OUTPUT_STATE_BACKEND_OPTIONAL |
++	WLR_OUTPUT_STATE_BUFFER |
++	WLR_OUTPUT_STATE_ENABLED |
++	WLR_OUTPUT_STATE_MODE;
++
++static size_t last_output_num = 0;
++
++static struct wlr_qnx_screen_output *output_from_wlr_output(
++		struct wlr_output *wlr_output) {
++	assert(wlr_output_is_qnx_screen(wlr_output));
++	struct wlr_qnx_screen_output *output =
++		wl_container_of(wlr_output, output, wlr_output);
++	return output;
++}
++
++/*
++ * Window / native buffer lifecycle
++ * ---------------------------------
++ * A QNX Screen window (screen_window_t) is a native compositor resource:
++ * once created, resizing it means re-requesting SCREEN_PROPERTY_SIZE /
++ * SCREEN_PROPERTY_BUFFER_SIZE and re-creating its render buffers. There's no
++ * standing EGL surface here; the pixman renderer draws into wlr_buffer
++ * objects handed to us by the compositor (via the generic SHM allocator),
++ * and output_commit() below is responsible for copying finished frames into
++ * one of the window's native buffers before calling screen_post_window().
++ */
++
++bool qnx_screen_output_recreate_buffers(struct wlr_qnx_screen_output *output) {
++	int size[] = { output->win_width, output->win_height };
++
++	if (screen_set_window_property_iv(output->window,
++			SCREEN_PROPERTY_SIZE, size) != 0) {
++		wlr_log(WLR_ERROR, "screen_set_window_property_iv(SIZE) failed");
++		return false;
++	}
++	if (screen_set_window_property_iv(output->window,
++			SCREEN_PROPERTY_BUFFER_SIZE, size) != 0) {
++		wlr_log(WLR_ERROR, "screen_set_window_property_iv(BUFFER_SIZE) failed");
++		return false;
++	}
++	if (output->session != NULL) {
++		screen_set_session_property_iv(output->session,
++			SCREEN_PROPERTY_SIZE, size);
++	}
++
++	if (screen_create_window_buffers(output->window,
++			QNX_SCREEN_NUM_BUFFERS) != 0) {
++		wlr_log(WLR_ERROR, "screen_create_window_buffers failed");
++		return false;
++	}
++
++	memset(output->buffers, 0, sizeof(output->buffers));
++	if (screen_get_window_property_pv(output->window,
++			SCREEN_PROPERTY_RENDER_BUFFERS, (void **)output->buffers) != 0) {
++		wlr_log(WLR_ERROR,
++			"screen_get_window_property_pv(RENDER_BUFFERS) failed");
++		return false;
++	}
++	output->n_buffers = QNX_SCREEN_NUM_BUFFERS;
++	output->buffer_index = 0;
++
++	return true;
++}
++
++bool qnx_screen_output_create_window(struct wlr_qnx_screen_output *output) {
++	struct wlr_qnx_screen_backend *b = output->backend;
++
++	if (screen_create_window(&output->window, b->context) != 0) {
++		wlr_log(WLR_ERROR, "screen_create_window failed");
++		return false;
++	}
++
++	screen_display_t display =
++		output->display != NULL ? output->display : b->default_display;
++	if (display != NULL) {
++		screen_set_window_property_pv(output->window,
++			SCREEN_PROPERTY_DISPLAY, (void **)&display);
++	}
++
++	int usage[] = { SCREEN_USAGE_NATIVE | SCREEN_USAGE_READ | SCREEN_USAGE_WRITE };
++	screen_set_window_property_iv(output->window, SCREEN_PROPERTY_USAGE, usage);
++
++	int format[] = { SCREEN_FORMAT_RGBX8888 };
++	screen_set_window_property_iv(output->window, SCREEN_PROPERTY_FORMAT, format);
++
++	if (output->fullscreen && display != NULL) {
++		int display_size[] = { output->win_width, output->win_height };
++		screen_get_display_property_iv(display, SCREEN_PROPERTY_SIZE,
++			display_size);
++		output->win_width = display_size[0];
++		output->win_height = display_size[1];
++		output->x = 0;
++		output->y = 0;
++	}
++
++	int position[] = { output->x, output->y };
++	screen_set_window_property_iv(output->window, SCREEN_PROPERTY_POSITION,
++		position);
++
++	if (!qnx_screen_output_recreate_buffers(output)) {
++		screen_destroy_window(output->window);
++		output->window = NULL;
++		return false;
++	}
++
++	if (screen_create_session_type(&output->session, b->context,
++			SCREEN_EVENT_POINTER) == 0) {
++		screen_set_session_property_pv(output->session, SCREEN_PROPERTY_WINDOW,
++			(void **)&output->window);
++		int size[] = { output->win_width, output->win_height };
++		screen_set_session_property_iv(output->session, SCREEN_PROPERTY_SIZE,
++			size);
++		int cursor[] = { SCREEN_CURSOR_SHAPE_NONE };
++		screen_set_session_property_iv(output->session, SCREEN_PROPERTY_CURSOR,
++			cursor);
++	} else {
++		wlr_log(WLR_ERROR,
++			"screen_create_session_type failed; input on this output "
++			"may not work");
++		output->session = NULL;
++	}
++
++	int window_id = 0;
++	screen_get_window_property_iv(output->window, SCREEN_PROPERTY_ID,
++		&window_id);
++	wlr_log(WLR_DEBUG, "QNX Screen output %dx%d, window id %d",
++		output->win_width, output->win_height, window_id);
++
++	return true;
++}
++
++void qnx_screen_output_destroy_window(struct wlr_qnx_screen_output *output) {
++	if (output->session != NULL) {
++		screen_destroy_session(output->session);
++		output->session = NULL;
++	}
++	if (output->window != NULL) {
++		screen_destroy_window(output->window);
++		output->window = NULL;
++	}
++	output->n_buffers = 0;
++}
++
++static bool output_test(struct wlr_output *wlr_output,
++		const struct wlr_output_state *state) {
++	uint32_t unsupported = state->committed & ~SUPPORTED_OUTPUT_STATE;
++	if (unsupported != 0) {
++		wlr_log(WLR_DEBUG, "Unsupported output state fields: 0x%"PRIx32,
++			unsupported);
++		return false;
++	}
++
++	if (state->committed & WLR_OUTPUT_STATE_BUFFER) {
++		int pending_width, pending_height;
++		output_pending_resolution(wlr_output, state,
++			&pending_width, &pending_height);
++		if (state->buffer->width != pending_width ||
++				state->buffer->height != pending_height) {
++			wlr_log(WLR_DEBUG, "Primary buffer size mismatch");
++			return false;
++		}
++
++		struct wlr_fbox src_box;
++		output_state_get_buffer_src_box(state, &src_box);
++		if (src_box.x != 0.0 || src_box.y != 0.0 ||
++				src_box.width != (double)state->buffer->width ||
++				src_box.height != (double)state->buffer->height) {
++			wlr_log(WLR_DEBUG, "Source crop not supported by QNX Screen output");
++			return false;
++		}
++
++		if (buffer_get_drm_format(state->buffer) != DRM_FORMAT_XRGB8888) {
++			wlr_log(WLR_DEBUG, "Unsupported buffer format");
++			return false;
++		}
++
++		struct wlr_shm_attributes shm;
++		if (!wlr_buffer_get_shm(state->buffer, &shm)) {
++			wlr_log(WLR_DEBUG,
++				"QNX Screen output only supports shared-memory buffers");
++			return false;
++		}
++	}
++
++	if (state->committed & WLR_OUTPUT_STATE_MODE) {
++		assert(state->mode_type == WLR_OUTPUT_STATE_MODE_CUSTOM);
++		if (state->custom_mode.width < QNX_SCREEN_WINDOW_MIN_SIZE ||
++				state->custom_mode.width > QNX_SCREEN_WINDOW_MAX_SIZE ||
++				state->custom_mode.height < QNX_SCREEN_WINDOW_MIN_SIZE ||
++				state->custom_mode.height > QNX_SCREEN_WINDOW_MAX_SIZE) {
++			wlr_log(WLR_DEBUG, "Unsupported mode size");
++			return false;
++		}
++	}
++
++	return true;
++}
++
++static int finish_frame_handler(void *data) {
++	struct wlr_qnx_screen_output *output = data;
++	wlr_output_send_frame(&output->wlr_output);
++	return 0;
++}
++
++static bool copy_buffer_to_window(struct wlr_qnx_screen_output *output,
++		struct wlr_buffer *buffer, const struct wlr_output_state *state) {
++	void *src;
++	uint32_t format;
++	size_t src_stride;
++	if (!wlr_buffer_begin_data_ptr_access(buffer,
++			WLR_BUFFER_DATA_PTR_ACCESS_READ, &src, &format, &src_stride)) {
++		wlr_log(WLR_ERROR, "wlr_buffer_begin_data_ptr_access failed");
++		return false;
++	}
++
++	screen_buffer_t native = output->buffers[output->buffer_index];
++
++	void *dst = NULL;
++	int dst_stride = 0;
++	screen_get_buffer_property_pv(native, SCREEN_PROPERTY_POINTER, &dst);
++	screen_get_buffer_property_iv(native, SCREEN_PROPERTY_STRIDE, &dst_stride);
++
++	if (dst == NULL || dst_stride <= 0) {
++		wlr_log(WLR_ERROR, "Failed to access QNX Screen native buffer");
++		wlr_buffer_end_data_ptr_access(buffer);
++		return false;
++	}
++
++	size_t row_bytes = (size_t)buffer->width * 4; // XRGB8888 is always 4 bpp
++	size_t copy_bytes = row_bytes < (size_t)dst_stride ? row_bytes : (size_t)dst_stride;
++	if (copy_bytes > src_stride) {
++		copy_bytes = src_stride;
++	}
++
++	for (int y = 0; y < buffer->height; y++) {
++		memcpy((uint8_t *)dst + (size_t)y * dst_stride,
++			(uint8_t *)src + (size_t)y * src_stride, copy_bytes);
++	}
++
++	wlr_buffer_end_data_ptr_access(buffer);
++
++	// Compute dirty rectangles from the damage region, in the same
++	// [x1, y1, x2, y2] layout screen_post_window() expects.
++	int nrects = 0;
++	int *rects = NULL;
++	int full_rect[4] = { 0, 0, buffer->width, buffer->height };
++
++	if (state->committed & WLR_OUTPUT_STATE_DAMAGE) {
++		int box_count = 0;
++		pixman_box32_t *boxes =
++			pixman_region32_rectangles((pixman_region32_t *)&state->damage,
++				&box_count);
++		if (box_count > 0) {
++			rects = calloc((size_t)box_count, 4 * sizeof(int));
++			if (rects != NULL) {
++				for (int i = 0; i < box_count; i++) {
++					rects[i * 4 + 0] = boxes[i].x1;
++					rects[i * 4 + 1] = boxes[i].y1;
++					rects[i * 4 + 2] = boxes[i].x2;
++					rects[i * 4 + 3] = boxes[i].y2;
++				}
++				nrects = box_count;
++			}
++		}
++	}
++
++	if (rects == NULL) {
++		rects = full_rect;
++		nrects = 1;
++	}
++
++	int ret = screen_post_window(output->window, native, nrects, rects, 0);
++
++	if (rects != full_rect) {
++		free(rects);
++	}
++
++	if (ret != 0) {
++		wlr_log(WLR_ERROR, "screen_post_window failed");
++		return false;
++	}
++
++	output->buffer_index = (output->buffer_index + 1) % output->n_buffers;
++	return true;
++}
++
++static bool output_commit(struct wlr_output *wlr_output,
++		const struct wlr_output_state *state) {
++	struct wlr_qnx_screen_output *output = output_from_wlr_output(wlr_output);
++
++	if (!output_test(wlr_output, state)) {
++		return false;
++	}
++
++	bool pending_enabled = output_pending_enabled(wlr_output, state);
++
++	if (state->committed & WLR_OUTPUT_STATE_MODE) {
++		int32_t width = state->custom_mode.width;
++		int32_t height = state->custom_mode.height;
++		if (width != output->win_width || height != output->win_height) {
++			output->win_width = width;
++			output->win_height = height;
++			if (output->window != NULL) {
++				if (!qnx_screen_output_recreate_buffers(output)) {
++					return false;
++				}
++			}
++			int32_t refresh = state->custom_mode.refresh;
++			output->frame_delay_ms =
++				refresh > 0 ? 1000000 / refresh : 1000 / 60;
++		}
++	}
++
++	if (wlr_output->enabled && !pending_enabled) {
++		qnx_screen_output_destroy_window(output);
++	} else if (pending_enabled && output->window == NULL) {
++		if (!qnx_screen_output_create_window(output)) {
++			return false;
++		}
++	}
++
++	if ((state->committed & WLR_OUTPUT_STATE_BUFFER) && output->window != NULL) {
++		if (!copy_buffer_to_window(output, state->buffer, state)) {
++			return false;
++		}
++	}
++
++	if (pending_enabled) {
++		struct wlr_output_event_present present_event = {
++			.commit_seq = wlr_output->commit_seq + 1,
++			.presented = true,
++		};
++		output_defer_present(wlr_output, present_event);
++
++		int32_t delay = output->frame_delay_ms > 0 ? output->frame_delay_ms : 16;
++		wl_event_source_timer_update(output->frame_timer, delay);
++	}
++
++	return true;
++}
++
++static bool output_set_cursor(struct wlr_output *wlr_output,
++		struct wlr_buffer *buffer, int hotspot_x, int hotspot_y) {
++	// No hardware cursor plane; the compositor is expected to fall back to
++	// rendering the cursor as regular scene content. SCREEN_CURSOR_SHAPE_NONE
++	// (set on the session at window-creation time) keeps QNX Screen's own
++	// pointer glyph out of the way.
++	return false;
++}
++
++static bool output_move_cursor(struct wlr_output *wlr_output, int x, int y) {
++	return false;
++}
++
++static const struct wlr_drm_format_set *output_get_primary_formats(
++		struct wlr_output *wlr_output, uint32_t buffer_caps) {
++	struct wlr_qnx_screen_output *output = output_from_wlr_output(wlr_output);
++	if (buffer_caps & WLR_BUFFER_CAP_SHM) {
++		return &output->backend->shm_formats;
++	}
++	return NULL;
++}
++
++static void output_destroy(struct wlr_output *wlr_output) {
++	struct wlr_qnx_screen_output *output = output_from_wlr_output(wlr_output);
++
++	wlr_output_finish(wlr_output);
++
++	wlr_pointer_finish(&output->pointer);
++	wlr_touch_finish(&output->touch);
++
++	struct wlr_qnx_screen_touchpoint *tp, *tp_tmp;
++	wl_list_for_each_safe(tp, tp_tmp, &output->touchpoints, link) {
++		wl_list_remove(&tp->link);
++		free(tp);
++	}
++
++	qnx_screen_output_destroy_window(output);
++
++	wl_list_remove(&output->link);
++
++	if (output->frame_timer != NULL) {
++		wl_event_source_remove(output->frame_timer);
++	}
++
++	free(output);
++}
++
++static const struct wlr_output_impl output_impl = {
++	.destroy = output_destroy,
++	.test = output_test,
++	.commit = output_commit,
++	.set_cursor = output_set_cursor,
++	.move_cursor = output_move_cursor,
++	.get_primary_formats = output_get_primary_formats,
++};
++
++bool wlr_output_is_qnx_screen(const struct wlr_output *wlr_output) {
++	return wlr_output->impl == &output_impl;
++}
++
++bool wlr_qnx_screen_output_set_fullscreen(struct wlr_output *wlr_output,
++		bool fullscreen) {
++	struct wlr_qnx_screen_output *output = output_from_wlr_output(wlr_output);
++	if (output->window != NULL) {
++		wlr_log(WLR_ERROR,
++			"wlr_qnx_screen_output_set_fullscreen must be called before "
++			"the output is enabled");
++		return false;
++	}
++	output->fullscreen = fullscreen;
++	return true;
++}
++
++bool wlr_qnx_screen_output_set_position(struct wlr_output *wlr_output,
++		int32_t x, int32_t y) {
++	struct wlr_qnx_screen_output *output = output_from_wlr_output(wlr_output);
++	output->x = x;
++	output->y = y;
++	if (output->window != NULL) {
++		int position[] = { x, y };
++		return screen_set_window_property_iv(output->window,
++			SCREEN_PROPERTY_POSITION, position) == 0;
++	}
++	return true;
++}
++
++bool wlr_qnx_screen_output_set_display(struct wlr_output *wlr_output,
++		int display_id) {
++	struct wlr_qnx_screen_output *output = output_from_wlr_output(wlr_output);
++	if (output->window != NULL) {
++		wlr_log(WLR_ERROR,
++			"wlr_qnx_screen_output_set_display must be called before "
++			"the output is enabled");
++		return false;
++	}
++
++	if (display_id == 0) {
++		output->display = NULL;
++		output->requested_display_id = 0;
++		return true;
++	}
++
++	struct wlr_qnx_screen_backend *b = output->backend;
++	int count = 0;
++	screen_get_context_property_iv(b->context, SCREEN_PROPERTY_DISPLAY_COUNT,
++		&count);
++	if (count <= 0) {
++		return false;
++	}
++
++	screen_display_t *displays = calloc((size_t)count, sizeof(*displays));
++	if (displays == NULL) {
++		return false;
++	}
++	screen_get_context_property_pv(b->context, SCREEN_PROPERTY_DISPLAYS,
++		(void **)displays);
++
++	bool found = false;
++	for (int i = 0; i < count; i++) {
++		int id = 0;
++		screen_get_display_property_iv(displays[i], SCREEN_PROPERTY_ID, &id);
++		if (id == display_id) {
++			output->display = displays[i];
++			output->requested_display_id = display_id;
++			found = true;
++			break;
++		}
++	}
++
++	free(displays);
++	return found;
++}
++
++struct wlr_output *wlr_qnx_screen_output_create(struct wlr_backend *wlr_backend,
++		unsigned int width, unsigned int height) {
++	struct wlr_qnx_screen_backend *backend =
++		qnx_screen_backend_from_backend(wlr_backend);
++
++	struct wlr_qnx_screen_output *output = calloc(1, sizeof(*output));
++	if (output == NULL) {
++		wlr_log(WLR_ERROR, "Failed to allocate wlr_qnx_screen_output");
++		return NULL;
++	}
++	output->backend = backend;
++	wl_list_init(&output->touchpoints);
++
++	if (width == 0) {
++		width = 1280;
++	}
++	if (height == 0) {
++		height = 720;
++	}
++	output->win_width = width;
++	output->win_height = height;
++	output->frame_delay_ms = 1000 / 60;
++
++	struct wlr_output *wlr_output = &output->wlr_output;
++
++	struct wlr_output_state state;
++	wlr_output_state_init(&state);
++	wlr_output_state_set_custom_mode(&state, (int32_t)width, (int32_t)height, 0);
++
++	wlr_output_init(wlr_output, &backend->backend, &output_impl,
++		backend->event_loop, &state);
++	wlr_output_state_finish(&state);
++
++	size_t output_num = ++last_output_num;
++
++	char name[64];
++	snprintf(name, sizeof(name), "QNX-SCREEN-%zu", output_num);
++	wlr_output_set_name(wlr_output, name);
++
++	char description[128];
++	snprintf(description, sizeof(description), "QNX Screen output %zu",
++		output_num);
++	wlr_output_set_description(wlr_output, description);
++
++	output->frame_timer = wl_event_loop_add_timer(backend->event_loop,
++		finish_frame_handler, output);
++
++	wlr_pointer_init(&output->pointer, &qnx_screen_pointer_impl, "qnx-screen-pointer");
++	output->pointer.output_name = strdup(wlr_output->name);
++
++	wlr_touch_init(&output->touch, &qnx_screen_touch_impl, "qnx-screen-touch");
++	output->touch.output_name = strdup(wlr_output->name);
++
++	wl_list_insert(&backend->outputs, &output->link);
++
++	if (backend->started) {
++		wl_signal_emit_mutable(&backend->backend.events.new_output, wlr_output);
++		wl_signal_emit_mutable(&backend->backend.events.new_input,
++			&output->pointer.base);
++		wl_signal_emit_mutable(&backend->backend.events.new_input,
++			&output->touch.base);
++	}
++
++	return wlr_output;
++}
+diff --git a/include/backend/qnx_screen.h b/include/backend/qnx_screen.h
+new file mode 100644
+index 00000000..b2d92f4e
+--- /dev/null
++++ b/include/backend/qnx_screen.h
+@@ -0,0 +1,113 @@
++#ifndef BACKEND_QNX_SCREEN_H
++#define BACKEND_QNX_SCREEN_H
++
++#include <stdbool.h>
++#include <stdint.h>
++
++#include <screen/screen.h>
++
++#include <wayland-server-core.h>
++
++#include <wlr/backend/qnx_screen.h>
++#include <wlr/interfaces/wlr_keyboard.h>
++#include <wlr/interfaces/wlr_output.h>
++#include <wlr/interfaces/wlr_pointer.h>
++#include <wlr/interfaces/wlr_touch.h>
++#include <wlr/render/drm_format_set.h>
++
++#include "backend/qnx_screen_event_monitor.h"
++
++#define QNX_SCREEN_WINDOW_MIN_SIZE 128
++#define QNX_SCREEN_WINDOW_MAX_SIZE 8192
++#define QNX_SCREEN_DEFAULT_REFRESH (60 * 1000) // 60 Hz, in mHz
++#define QNX_SCREEN_NUM_BUFFERS 2
++
++struct wlr_qnx_screen_backend {
++	struct wlr_backend backend;
++	struct wl_event_loop *event_loop;
++	bool started;
++
++	screen_context_t context;
++	screen_display_t default_display;
++
++	int drm_fd; // -1 if unavailable; see open_drm_render_node() in backend.c
++
++	struct wl_event_source *screen_source;
++	struct wlr_qnx_screen_event_monitor *event_monitor;
++
++	struct wl_list outputs; // wlr_qnx_screen_output.link
++
++	struct wlr_keyboard keyboard;
++	int left_gui_state;
++	int right_gui_state;
++	int prev_screen_modifiers;
++
++	struct wlr_drm_format_set shm_formats;
++	// Only meaningful (and only ever populated) when drm_fd >= 0: XRGB8888
++	// with an explicit LINEAR modifier, so dmabuf-backed output buffers stay
++	// CPU-mmap-able for the copy into the QNX Screen window's own buffer --
++	// see copy_buffer_to_window() in output.c.
++	struct wlr_drm_format_set dmabuf_formats;
++
++	struct wl_listener event_loop_destroy;
++};
++
++struct wlr_qnx_screen_output {
++	struct wlr_output wlr_output;
++	struct wlr_qnx_screen_backend *backend;
++	struct wl_list link; // wlr_qnx_screen_backend.outputs
++
++	screen_window_t window;
++	screen_session_t session;
++	screen_display_t display;
++
++	screen_buffer_t buffers[QNX_SCREEN_NUM_BUFFERS];
++	size_t n_buffers;
++	size_t buffer_index;
++
++	int32_t win_width, win_height;
++	int32_t x, y;
++	bool fullscreen;
++	int requested_display_id;
++
++	int32_t frame_delay_ms;
++	struct wl_event_source *frame_timer;
++
++	struct wlr_pointer pointer;
++	uint32_t prev_buttons;
++
++	struct wlr_touch touch;
++	struct wl_list touchpoints; // wlr_qnx_screen_touchpoint.link
++};
++
++struct wlr_qnx_screen_touchpoint {
++	int screen_id;
++	int wayland_id;
++	struct wl_list link; // wlr_qnx_screen_output.touchpoints
++};
++
++struct wlr_qnx_screen_backend *qnx_screen_backend_from_backend(
++	struct wlr_backend *wlr_backend);
++struct wlr_qnx_screen_output *qnx_screen_output_from_window(
++	struct wlr_qnx_screen_backend *backend, screen_window_t window);
++
++extern const struct wlr_keyboard_impl qnx_screen_keyboard_impl;
++extern const struct wlr_pointer_impl qnx_screen_pointer_impl;
++extern const struct wlr_touch_impl qnx_screen_touch_impl;
++
++bool qnx_screen_output_create_window(struct wlr_qnx_screen_output *output);
++void qnx_screen_output_destroy_window(struct wlr_qnx_screen_output *output);
++bool qnx_screen_output_recreate_buffers(struct wlr_qnx_screen_output *output);
++
++void qnx_screen_handle_pointer_event(struct wlr_qnx_screen_backend *backend,
++	screen_event_t event);
++void qnx_screen_handle_keyboard_event(struct wlr_qnx_screen_backend *backend,
++	screen_event_t event);
++void qnx_screen_handle_touch_event(struct wlr_qnx_screen_backend *backend,
++	screen_event_t event, int type);
++void qnx_screen_handle_property_event(struct wlr_qnx_screen_backend *backend,
++	screen_event_t event);
++void qnx_screen_sync_modifiers(struct wlr_qnx_screen_backend *backend,
++	int screen_modifiers);
++
++#endif
+diff --git a/include/backend/qnx_screen_event_monitor.h b/include/backend/qnx_screen_event_monitor.h
+new file mode 100644
+index 00000000..87d7f1bf
+--- /dev/null
++++ b/include/backend/qnx_screen_event_monitor.h
+@@ -0,0 +1,37 @@
++#ifndef BACKEND_QNX_SCREEN_EVENT_MONITOR_H
++#define BACKEND_QNX_SCREEN_EVENT_MONITOR_H
++
++#include <pthread.h>
++
++#include <screen/screen.h>
++
++/*
++ * screen_get_event() is a non-blocking, poll-style call: there is no fd we
++ * can hand to wl_event_loop_add_fd() directly. QNX Screen instead delivers a
++ * pulse (via screen_notify()/screen_register_event()) to a channel when a new
++ * event becomes available.
++ *
++ * This monitor runs a small helper thread that blocks in MsgReceive() on
++ * that channel and, on each pulse, writes a byte into a pipe. The write end
++ * of the pipe is what actually gets attached to the compositor's
++ * wl_event_loop, so screen_get_event()/screen_post_window() and friends are
++ * only ever called from the main (event loop) thread.
++ */
++struct wlr_qnx_screen_event_monitor {
++	screen_context_t context;
++	int chid;
++	int coid;
++	pthread_t thread;
++	int pipe_fds[2];
++	struct sigevent event;
++};
++
++struct wlr_qnx_screen_event_monitor *wlr_qnx_screen_event_monitor_create(
++	screen_context_t context);
++void wlr_qnx_screen_event_monitor_destroy(
++	struct wlr_qnx_screen_event_monitor *monitor);
++/* Re-arm notification after the main thread has drained pending events. */
++void wlr_qnx_screen_event_monitor_arm(
++	struct wlr_qnx_screen_event_monitor *monitor);
++
++#endif
+diff --git a/include/meson.build b/include/meson.build
+index 165166c3..2cbd4d50 100644
+--- a/include/meson.build
++++ b/include/meson.build
+@@ -11,6 +11,9 @@ endif
+ if not features.get('x11-backend')
+ 	exclude_files += 'backend/x11.h'
+ endif
++if not features.get('qnx-screen-backend')
++        exclude_files += 'backend/qnx_screen.h'
++endif
+ if not features.get('xwayland')
+ 	exclude_files += 'xwayland.h'
+ endif
+diff --git a/include/wlr/backend/qnx_screen.h b/include/wlr/backend/qnx_screen.h
+new file mode 100644
+index 00000000..43e39026
+--- /dev/null
++++ b/include/wlr/backend/qnx_screen.h
+@@ -0,0 +1,85 @@
++/*
++ * This an unstable interface of wlroots. No guarantees are made regarding the
++ * future consistency of this API.
++ */
++#ifndef WLR_USE_UNSTABLE
++#error "Add -DWLR_USE_UNSTABLE to enable unstable wlroots features"
++#endif
++
++#ifndef WLR_BACKEND_QNX_SCREEN_H
++#define WLR_BACKEND_QNX_SCREEN_H
++
++#include <stdbool.h>
++
++#include <wayland-server-core.h>
++
++#include <wlr/backend.h>
++#include <wlr/types/wlr_output.h>
++
++struct wlr_input_device;
++
++/**
++ * Creates a new QNX Screen backend.
++ *
++ * This backend is created with no outputs; use wlr_qnx_screen_output_create()
++ * to add one. Outputs correspond 1:1 to QNX Screen windows (screen_window_t)
++ * created by this backend via the QNX Screen Graphics Subsystem
++ * (libscreen / screen/screen.h).
++ *
++ * This backend has no notion of DRM/GBM: wlr_backend_get_drm_fd() always
++ * returns -1, and the backend only advertises WLR_BUFFER_CAP_SHM. Pair it
++ * with wlr_renderer_autocreate()/wlr_allocator_autocreate(), which will fall
++ * back to the pixman (CPU) renderer and the generic shared-memory allocator
++ * automatically.
++ */
++struct wlr_backend *wlr_qnx_screen_backend_create(struct wl_event_loop *loop);
++
++/**
++ * Adds a new output (QNX Screen window) to this backend.
++ *
++ * If called before the backend has been started, this returns NULL and the
++ * output is created once wlr_backend_start() runs, delivered via the
++ * backend's new_output event.
++ */
++struct wlr_output *wlr_qnx_screen_output_create(struct wlr_backend *backend,
++	unsigned int width, unsigned int height);
++
++/**
++ * Check whether this backend is a QNX Screen backend.
++ */
++bool wlr_backend_is_qnx_screen(const struct wlr_backend *backend);
++
++/**
++ * Check whether this output is a QNX Screen output.
++ */
++bool wlr_output_is_qnx_screen(const struct wlr_output *output);
++
++/**
++ * Check whether this input device was created by a QNX Screen backend.
++ */
++bool wlr_input_device_is_qnx_screen(struct wlr_input_device *device);
++
++/**
++ * Sets whether the backend's outputs run full-screen on their assigned
++ * QNX Screen display (as opposed to a movable, positionable window).
++ *
++ * Must be called before the output is enabled (i.e. before the first
++ * WLR_OUTPUT_STATE_ENABLED commit).
++ */
++bool wlr_qnx_screen_output_set_fullscreen(struct wlr_output *output,
++	bool fullscreen);
++
++/**
++ * Positions a (non-fullscreen) output's window on its QNX Screen display.
++ */
++bool wlr_qnx_screen_output_set_position(struct wlr_output *output,
++	int32_t x, int32_t y);
++
++/**
++ * Assigns a specific QNX Screen display (by SCREEN_PROPERTY_ID) to an
++ * output. Pass 0 to use the default/first display reported by the context.
++ */
++bool wlr_qnx_screen_output_set_display(struct wlr_output *output,
++	int display_id);
++
++#endif
+diff --git a/include/wlr/config.h.in b/include/wlr/config.h.in
+index ef186343..0c66e29a 100644
+--- a/include/wlr/config.h.in
++++ b/include/wlr/config.h.in
+@@ -23,6 +23,14 @@
+  */
+ #mesondefine WLR_HAS_X11_BACKEND
+ 
++/**
++ * Whether the QNX Screen backend is compile-time enabled. Equivalent to the
++ * pkg-config "have_qnx_screen_backend" variable.
++ *
++ * Required for <wlr/backend/qnx_screen.h>.
++ */
++#mesondefine WLR_HAS_QNX_SCREEN_BACKEND
++
+ /**
+  * Whether the GLES2 renderer is compile-time enabled. Equivalent to the
+  * pkg-config "have_gles2_renderer" variable.
+diff --git a/linux/input-event-codes.h b/linux/input-event-codes.h
+new file mode 100644
+index 00000000..0e6df3b5
+--- /dev/null
++++ b/linux/input-event-codes.h
+@@ -0,0 +1,954 @@
++/* SPDX-License-Identifier: GPL-2.0-only WITH Linux-syscall-note */
++/*
++ * Input event codes
++ *
++ *    *** IMPORTANT ***
++ * This file is not only included from C-code but also from devicetree source
++ * files. As such this file MUST only contain comments and defines.
++ *
++ * Copyright (c) 1999-2002 Vojtech Pavlik
++ * Copyright (c) 2015 Hans de Goede <hdegoede@redhat.com>
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms of the GNU General Public License version 2 as published by
++ * the Free Software Foundation.
++ */
++#ifndef _INPUT_EVENT_CODES_H
++#define _INPUT_EVENT_CODES_H
++
++/*
++ * Device properties and quirks
++ */
++
++#define INPUT_PROP_POINTER		0x00	/* needs a pointer */
++#define INPUT_PROP_DIRECT		0x01	/* direct input devices */
++#define INPUT_PROP_BUTTONPAD		0x02	/* has button(s) under pad */
++#define INPUT_PROP_SEMI_MT		0x03	/* touch rectangle only */
++#define INPUT_PROP_TOPBUTTONPAD		0x04	/* softbuttons at top of pad */
++#define INPUT_PROP_POINTING_STICK	0x05	/* is a pointing stick */
++#define INPUT_PROP_ACCELEROMETER	0x06	/* has accelerometer */
++
++#define INPUT_PROP_MAX			0x1f
++#define INPUT_PROP_CNT			(INPUT_PROP_MAX + 1)
++
++/*
++ * Event types
++ */
++
++#define EV_SYN			0x00
++#define EV_KEY			0x01
++#define EV_REL			0x02
++#define EV_ABS			0x03
++#define EV_MSC			0x04
++#define EV_SW			0x05
++#define EV_LED			0x11
++#define EV_SND			0x12
++#define EV_REP			0x14
++#define EV_FF			0x15
++#define EV_PWR			0x16
++#define EV_FF_STATUS		0x17
++#define EV_MAX			0x1f
++#define EV_CNT			(EV_MAX+1)
++
++/*
++ * Synchronization events.
++ */
++
++#define SYN_REPORT		0
++#define SYN_CONFIG		1
++#define SYN_MT_REPORT		2
++#define SYN_DROPPED		3
++#define SYN_MAX			0xf
++#define SYN_CNT			(SYN_MAX+1)
++
++/*
++ * Keys and buttons
++ *
++ * Most of the keys/buttons are modeled after USB HUT 1.12
++ * (see http://www.usb.org/developers/hidpage).
++ * Abbreviations in the comments:
++ * AC - Application Control
++ * AL - Application Launch Button
++ * SC - System Control
++ */
++
++#define KEY_RESERVED		0
++#define KEY_ESC			1
++#define KEY_1			2
++#define KEY_2			3
++#define KEY_3			4
++#define KEY_4			5
++#define KEY_5			6
++#define KEY_6			7
++#define KEY_7			8
++#define KEY_8			9
++#define KEY_9			10
++#define KEY_0			11
++#define KEY_MINUS		12
++#define KEY_EQUAL		13
++#define KEY_BACKSPACE		14
++#define KEY_TAB			15
++#define KEY_Q			16
++#define KEY_W			17
++#define KEY_E			18
++#define KEY_R			19
++#define KEY_T			20
++#define KEY_Y			21
++#define KEY_U			22
++#define KEY_I			23
++#define KEY_O			24
++#define KEY_P			25
++#define KEY_LEFTBRACE		26
++#define KEY_RIGHTBRACE		27
++#define KEY_ENTER		28
++#define KEY_LEFTCTRL		29
++#define KEY_A			30
++#define KEY_S			31
++#define KEY_D			32
++#define KEY_F			33
++#define KEY_G			34
++#define KEY_H			35
++#define KEY_J			36
++#define KEY_K			37
++#define KEY_L			38
++#define KEY_SEMICOLON		39
++#define KEY_APOSTROPHE		40
++#define KEY_GRAVE		41
++#define KEY_LEFTSHIFT		42
++#define KEY_BACKSLASH		43
++#define KEY_Z			44
++#define KEY_X			45
++#define KEY_C			46
++#define KEY_V			47
++#define KEY_B			48
++#define KEY_N			49
++#define KEY_M			50
++#define KEY_COMMA		51
++#define KEY_DOT			52
++#define KEY_SLASH		53
++#define KEY_RIGHTSHIFT		54
++#define KEY_KPASTERISK		55
++#define KEY_LEFTALT		56
++#define KEY_SPACE		57
++#define KEY_CAPSLOCK		58
++#define KEY_F1			59
++#define KEY_F2			60
++#define KEY_F3			61
++#define KEY_F4			62
++#define KEY_F5			63
++#define KEY_F6			64
++#define KEY_F7			65
++#define KEY_F8			66
++#define KEY_F9			67
++#define KEY_F10			68
++#define KEY_NUMLOCK		69
++#define KEY_SCROLLLOCK		70
++#define KEY_KP7			71
++#define KEY_KP8			72
++#define KEY_KP9			73
++#define KEY_KPMINUS		74
++#define KEY_KP4			75
++#define KEY_KP5			76
++#define KEY_KP6			77
++#define KEY_KPPLUS		78
++#define KEY_KP1			79
++#define KEY_KP2			80
++#define KEY_KP3			81
++#define KEY_KP0			82
++#define KEY_KPDOT		83
++
++#define KEY_ZENKAKUHANKAKU	85
++#define KEY_102ND		86
++#define KEY_F11			87
++#define KEY_F12			88
++#define KEY_RO			89
++#define KEY_KATAKANA		90
++#define KEY_HIRAGANA		91
++#define KEY_HENKAN		92
++#define KEY_KATAKANAHIRAGANA	93
++#define KEY_MUHENKAN		94
++#define KEY_KPJPCOMMA		95
++#define KEY_KPENTER		96
++#define KEY_RIGHTCTRL		97
++#define KEY_KPSLASH		98
++#define KEY_SYSRQ		99
++#define KEY_RIGHTALT		100
++#define KEY_LINEFEED		101
++#define KEY_HOME		102
++#define KEY_UP			103
++#define KEY_PAGEUP		104
++#define KEY_LEFT		105
++#define KEY_RIGHT		106
++#define KEY_END			107
++#define KEY_DOWN		108
++#define KEY_PAGEDOWN		109
++#define KEY_INSERT		110
++#define KEY_DELETE		111
++#define KEY_MACRO		112
++#define KEY_MUTE		113
++#define KEY_VOLUMEDOWN		114
++#define KEY_VOLUMEUP		115
++#define KEY_POWER		116	/* SC System Power Down */
++#define KEY_KPEQUAL		117
++#define KEY_KPPLUSMINUS		118
++#define KEY_PAUSE		119
++#define KEY_SCALE		120	/* AL Compiz Scale (Expose) */
++
++#define KEY_KPCOMMA		121
++#define KEY_HANGEUL		122
++#define KEY_HANGUEL		KEY_HANGEUL
++#define KEY_HANJA		123
++#define KEY_YEN			124
++#define KEY_LEFTMETA		125
++#define KEY_RIGHTMETA		126
++#define KEY_COMPOSE		127
++
++#define KEY_STOP		128	/* AC Stop */
++#define KEY_AGAIN		129
++#define KEY_PROPS		130	/* AC Properties */
++#define KEY_UNDO		131	/* AC Undo */
++#define KEY_FRONT		132
++#define KEY_COPY		133	/* AC Copy */
++#define KEY_OPEN		134	/* AC Open */
++#define KEY_PASTE		135	/* AC Paste */
++#define KEY_FIND		136	/* AC Search */
++#define KEY_CUT			137	/* AC Cut */
++#define KEY_HELP		138	/* AL Integrated Help Center */
++#define KEY_MENU		139	/* Menu (show menu) */
++#define KEY_CALC		140	/* AL Calculator */
++#define KEY_SETUP		141
++#define KEY_SLEEP		142	/* SC System Sleep */
++#define KEY_WAKEUP		143	/* System Wake Up */
++#define KEY_FILE		144	/* AL Local Machine Browser */
++#define KEY_SENDFILE		145
++#define KEY_DELETEFILE		146
++#define KEY_XFER		147
++#define KEY_PROG1		148
++#define KEY_PROG2		149
++#define KEY_WWW			150	/* AL Internet Browser */
++#define KEY_MSDOS		151
++#define KEY_COFFEE		152	/* AL Terminal Lock/Screensaver */
++#define KEY_SCREENLOCK		KEY_COFFEE
++#define KEY_ROTATE_DISPLAY	153	/* Display orientation for e.g. tablets */
++#define KEY_DIRECTION		KEY_ROTATE_DISPLAY
++#define KEY_CYCLEWINDOWS	154
++#define KEY_MAIL		155
++#define KEY_BOOKMARKS		156	/* AC Bookmarks */
++#define KEY_COMPUTER		157
++#define KEY_BACK		158	/* AC Back */
++#define KEY_FORWARD		159	/* AC Forward */
++#define KEY_CLOSECD		160
++#define KEY_EJECTCD		161
++#define KEY_EJECTCLOSECD	162
++#define KEY_NEXTSONG		163
++#define KEY_PLAYPAUSE		164
++#define KEY_PREVIOUSSONG	165
++#define KEY_STOPCD		166
++#define KEY_RECORD		167
++#define KEY_REWIND		168
++#define KEY_PHONE		169	/* Media Select Telephone */
++#define KEY_ISO			170
++#define KEY_CONFIG		171	/* AL Consumer Control Configuration */
++#define KEY_HOMEPAGE		172	/* AC Home */
++#define KEY_REFRESH		173	/* AC Refresh */
++#define KEY_EXIT		174	/* AC Exit */
++#define KEY_MOVE		175
++#define KEY_EDIT		176
++#define KEY_SCROLLUP		177
++#define KEY_SCROLLDOWN		178
++#define KEY_KPLEFTPAREN		179
++#define KEY_KPRIGHTPAREN	180
++#define KEY_NEW			181	/* AC New */
++#define KEY_REDO		182	/* AC Redo/Repeat */
++
++#define KEY_F13			183
++#define KEY_F14			184
++#define KEY_F15			185
++#define KEY_F16			186
++#define KEY_F17			187
++#define KEY_F18			188
++#define KEY_F19			189
++#define KEY_F20			190
++#define KEY_F21			191
++#define KEY_F22			192
++#define KEY_F23			193
++#define KEY_F24			194
++
++#define KEY_PLAYCD		200
++#define KEY_PAUSECD		201
++#define KEY_PROG3		202
++#define KEY_PROG4		203
++#define KEY_ALL_APPLICATIONS	204	/* AC Desktop Show All Applications */
++#define KEY_DASHBOARD		KEY_ALL_APPLICATIONS
++#define KEY_SUSPEND		205
++#define KEY_CLOSE		206	/* AC Close */
++#define KEY_PLAY		207
++#define KEY_FASTFORWARD		208
++#define KEY_BASSBOOST		209
++#define KEY_PRINT		210	/* AC Print */
++#define KEY_HP			211
++#define KEY_CAMERA		212
++#define KEY_SOUND		213
++#define KEY_QUESTION		214
++#define KEY_EMAIL		215
++#define KEY_CHAT		216
++#define KEY_SEARCH		217
++#define KEY_CONNECT		218
++#define KEY_FINANCE		219	/* AL Checkbook/Finance */
++#define KEY_SPORT		220
++#define KEY_SHOP		221
++#define KEY_ALTERASE		222
++#define KEY_CANCEL		223	/* AC Cancel */
++#define KEY_BRIGHTNESSDOWN	224
++#define KEY_BRIGHTNESSUP	225
++#define KEY_MEDIA		226
++
++#define KEY_SWITCHVIDEOMODE	227	/* Cycle between available video
++					   outputs (Monitor/LCD/TV-out/etc) */
++#define KEY_KBDILLUMTOGGLE	228
++#define KEY_KBDILLUMDOWN	229
++#define KEY_KBDILLUMUP		230
++
++#define KEY_SEND		231	/* AC Send */
++#define KEY_REPLY		232	/* AC Reply */
++#define KEY_FORWARDMAIL		233	/* AC Forward Msg */
++#define KEY_SAVE		234	/* AC Save */
++#define KEY_DOCUMENTS		235
++
++#define KEY_BATTERY		236
++
++#define KEY_BLUETOOTH		237
++#define KEY_WLAN		238
++#define KEY_UWB			239
++
++#define KEY_UNKNOWN		240
++
++#define KEY_VIDEO_NEXT		241	/* drive next video source */
++#define KEY_VIDEO_PREV		242	/* drive previous video source */
++#define KEY_BRIGHTNESS_CYCLE	243	/* brightness up, after max is min */
++#define KEY_BRIGHTNESS_AUTO	244	/* Set Auto Brightness: manual
++					  brightness control is off,
++					  rely on ambient */
++#define KEY_BRIGHTNESS_ZERO	KEY_BRIGHTNESS_AUTO
++#define KEY_DISPLAY_OFF		245	/* display device to off state */
++
++#define KEY_WWAN		246	/* Wireless WAN (LTE, UMTS, GSM, etc.) */
++#define KEY_WIMAX		KEY_WWAN
++#define KEY_RFKILL		247	/* Key that controls all radios */
++
++#define KEY_MICMUTE		248	/* Mute / unmute the microphone */
++
++/* Code 255 is reserved for special needs of AT keyboard driver */
++
++#define BTN_MISC		0x100
++#define BTN_0			0x100
++#define BTN_1			0x101
++#define BTN_2			0x102
++#define BTN_3			0x103
++#define BTN_4			0x104
++#define BTN_5			0x105
++#define BTN_6			0x106
++#define BTN_7			0x107
++#define BTN_8			0x108
++#define BTN_9			0x109
++
++#define BTN_MOUSE		0x110
++#define BTN_LEFT		0x110
++#define BTN_RIGHT		0x111
++#define BTN_MIDDLE		0x112
++#define BTN_SIDE		0x113
++#define BTN_EXTRA		0x114
++#define BTN_FORWARD		0x115
++#define BTN_BACK		0x116
++#define BTN_TASK		0x117
++
++#define BTN_JOYSTICK		0x120
++#define BTN_TRIGGER		0x120
++#define BTN_THUMB		0x121
++#define BTN_THUMB2		0x122
++#define BTN_TOP			0x123
++#define BTN_TOP2		0x124
++#define BTN_PINKIE		0x125
++#define BTN_BASE		0x126
++#define BTN_BASE2		0x127
++#define BTN_BASE3		0x128
++#define BTN_BASE4		0x129
++#define BTN_BASE5		0x12a
++#define BTN_BASE6		0x12b
++#define BTN_DEAD		0x12f
++
++#define BTN_GAMEPAD		0x130
++#define BTN_SOUTH		0x130
++#define BTN_A			BTN_SOUTH
++#define BTN_EAST		0x131
++#define BTN_B			BTN_EAST
++#define BTN_C			0x132
++#define BTN_NORTH		0x133
++#define BTN_X			BTN_NORTH
++#define BTN_WEST		0x134
++#define BTN_Y			BTN_WEST
++#define BTN_Z			0x135
++#define BTN_TL			0x136
++#define BTN_TR			0x137
++#define BTN_TL2			0x138
++#define BTN_TR2			0x139
++#define BTN_SELECT		0x13a
++#define BTN_START		0x13b
++#define BTN_MODE		0x13c
++#define BTN_THUMBL		0x13d
++#define BTN_THUMBR		0x13e
++
++#define BTN_DIGI		0x140
++#define BTN_TOOL_PEN		0x140
++#define BTN_TOOL_RUBBER		0x141
++#define BTN_TOOL_BRUSH		0x142
++#define BTN_TOOL_PENCIL		0x143
++#define BTN_TOOL_AIRBRUSH	0x144
++#define BTN_TOOL_FINGER		0x145
++#define BTN_TOOL_MOUSE		0x146
++#define BTN_TOOL_LENS		0x147
++#define BTN_TOOL_QUINTTAP	0x148	/* Five fingers on trackpad */
++#define BTN_STYLUS3		0x149
++#define BTN_TOUCH		0x14a
++#define BTN_STYLUS		0x14b
++#define BTN_STYLUS2		0x14c
++#define BTN_TOOL_DOUBLETAP	0x14d
++#define BTN_TOOL_TRIPLETAP	0x14e
++#define BTN_TOOL_QUADTAP	0x14f	/* Four fingers on trackpad */
++
++#define BTN_WHEEL		0x150
++#define BTN_GEAR_DOWN		0x150
++#define BTN_GEAR_UP		0x151
++
++#define KEY_OK			0x160
++#define KEY_SELECT		0x161
++#define KEY_GOTO		0x162
++#define KEY_CLEAR		0x163
++#define KEY_POWER2		0x164
++#define KEY_OPTION		0x165
++#define KEY_INFO		0x166	/* AL OEM Features/Tips/Tutorial */
++#define KEY_TIME		0x167
++#define KEY_VENDOR		0x168
++#define KEY_ARCHIVE		0x169
++#define KEY_PROGRAM		0x16a	/* Media Select Program Guide */
++#define KEY_CHANNEL		0x16b
++#define KEY_FAVORITES		0x16c
++#define KEY_EPG			0x16d
++#define KEY_PVR			0x16e	/* Media Select Home */
++#define KEY_MHP			0x16f
++#define KEY_LANGUAGE		0x170
++#define KEY_TITLE		0x171
++#define KEY_SUBTITLE		0x172
++#define KEY_ANGLE		0x173
++#define KEY_FULL_SCREEN		0x174	/* AC View Toggle */
++#define KEY_ZOOM		KEY_FULL_SCREEN
++#define KEY_MODE		0x175
++#define KEY_KEYBOARD		0x176
++#define KEY_ASPECT_RATIO	0x177	/* HUTRR37: Aspect */
++#define KEY_SCREEN		KEY_ASPECT_RATIO
++#define KEY_PC			0x178	/* Media Select Computer */
++#define KEY_TV			0x179	/* Media Select TV */
++#define KEY_TV2			0x17a	/* Media Select Cable */
++#define KEY_VCR			0x17b	/* Media Select VCR */
++#define KEY_VCR2		0x17c	/* VCR Plus */
++#define KEY_SAT			0x17d	/* Media Select Satellite */
++#define KEY_SAT2		0x17e
++#define KEY_CD			0x17f	/* Media Select CD */
++#define KEY_TAPE		0x180	/* Media Select Tape */
++#define KEY_RADIO		0x181
++#define KEY_TUNER		0x182	/* Media Select Tuner */
++#define KEY_PLAYER		0x183
++#define KEY_TEXT		0x184
++#define KEY_DVD			0x185	/* Media Select DVD */
++#define KEY_AUX			0x186
++#define KEY_MP3			0x187
++#define KEY_AUDIO		0x188	/* AL Audio Browser */
++#define KEY_VIDEO		0x189	/* AL Movie Browser */
++#define KEY_DIRECTORY		0x18a
++#define KEY_LIST		0x18b
++#define KEY_MEMO		0x18c	/* Media Select Messages */
++#define KEY_CALENDAR		0x18d
++#define KEY_RED			0x18e
++#define KEY_GREEN		0x18f
++#define KEY_YELLOW		0x190
++#define KEY_BLUE		0x191
++#define KEY_CHANNELUP		0x192	/* Channel Increment */
++#define KEY_CHANNELDOWN		0x193	/* Channel Decrement */
++#define KEY_FIRST		0x194
++#define KEY_LAST		0x195	/* Recall Last */
++#define KEY_AB			0x196
++#define KEY_NEXT		0x197
++#define KEY_RESTART		0x198
++#define KEY_SLOW		0x199
++#define KEY_SHUFFLE		0x19a
++#define KEY_BREAK		0x19b
++#define KEY_PREVIOUS		0x19c
++#define KEY_DIGITS		0x19d
++#define KEY_TEEN		0x19e
++#define KEY_TWEN		0x19f
++#define KEY_VIDEOPHONE		0x1a0	/* Media Select Video Phone */
++#define KEY_GAMES		0x1a1	/* Media Select Games */
++#define KEY_ZOOMIN		0x1a2	/* AC Zoom In */
++#define KEY_ZOOMOUT		0x1a3	/* AC Zoom Out */
++#define KEY_ZOOMRESET		0x1a4	/* AC Zoom */
++#define KEY_WORDPROCESSOR	0x1a5	/* AL Word Processor */
++#define KEY_EDITOR		0x1a6	/* AL Text Editor */
++#define KEY_SPREADSHEET		0x1a7	/* AL Spreadsheet */
++#define KEY_GRAPHICSEDITOR	0x1a8	/* AL Graphics Editor */
++#define KEY_PRESENTATION	0x1a9	/* AL Presentation App */
++#define KEY_DATABASE		0x1aa	/* AL Database App */
++#define KEY_NEWS		0x1ab	/* AL Newsreader */
++#define KEY_VOICEMAIL		0x1ac	/* AL Voicemail */
++#define KEY_ADDRESSBOOK		0x1ad	/* AL Contacts/Address Book */
++#define KEY_MESSENGER		0x1ae	/* AL Instant Messaging */
++#define KEY_DISPLAYTOGGLE	0x1af	/* Turn display (LCD) on and off */
++#define KEY_BRIGHTNESS_TOGGLE	KEY_DISPLAYTOGGLE
++#define KEY_SPELLCHECK		0x1b0   /* AL Spell Check */
++#define KEY_LOGOFF		0x1b1   /* AL Logoff */
++
++#define KEY_DOLLAR		0x1b2
++#define KEY_EURO		0x1b3
++
++#define KEY_FRAMEBACK		0x1b4	/* Consumer - transport controls */
++#define KEY_FRAMEFORWARD	0x1b5
++#define KEY_CONTEXT_MENU	0x1b6	/* GenDesc - system context menu */
++#define KEY_MEDIA_REPEAT	0x1b7	/* Consumer - transport control */
++#define KEY_10CHANNELSUP	0x1b8	/* 10 channels up (10+) */
++#define KEY_10CHANNELSDOWN	0x1b9	/* 10 channels down (10-) */
++#define KEY_IMAGES		0x1ba	/* AL Image Browser */
++#define KEY_NOTIFICATION_CENTER	0x1bc	/* Show/hide the notification center */
++#define KEY_PICKUP_PHONE	0x1bd	/* Answer incoming call */
++#define KEY_HANGUP_PHONE	0x1be	/* Decline incoming call */
++#define KEY_LINK_PHONE		0x1bf   /* AL Phone Syncing */
++
++#define KEY_DEL_EOL		0x1c0
++#define KEY_DEL_EOS		0x1c1
++#define KEY_INS_LINE		0x1c2
++#define KEY_DEL_LINE		0x1c3
++
++#define KEY_FN			0x1d0
++#define KEY_FN_ESC		0x1d1
++#define KEY_FN_F1		0x1d2
++#define KEY_FN_F2		0x1d3
++#define KEY_FN_F3		0x1d4
++#define KEY_FN_F4		0x1d5
++#define KEY_FN_F5		0x1d6
++#define KEY_FN_F6		0x1d7
++#define KEY_FN_F7		0x1d8
++#define KEY_FN_F8		0x1d9
++#define KEY_FN_F9		0x1da
++#define KEY_FN_F10		0x1db
++#define KEY_FN_F11		0x1dc
++#define KEY_FN_F12		0x1dd
++#define KEY_FN_1		0x1de
++#define KEY_FN_2		0x1df
++#define KEY_FN_D		0x1e0
++#define KEY_FN_E		0x1e1
++#define KEY_FN_F		0x1e2
++#define KEY_FN_S		0x1e3
++#define KEY_FN_B		0x1e4
++#define KEY_FN_RIGHT_SHIFT	0x1e5
++
++#define KEY_BRL_DOT1		0x1f1
++#define KEY_BRL_DOT2		0x1f2
++#define KEY_BRL_DOT3		0x1f3
++#define KEY_BRL_DOT4		0x1f4
++#define KEY_BRL_DOT5		0x1f5
++#define KEY_BRL_DOT6		0x1f6
++#define KEY_BRL_DOT7		0x1f7
++#define KEY_BRL_DOT8		0x1f8
++#define KEY_BRL_DOT9		0x1f9
++#define KEY_BRL_DOT10		0x1fa
++
++#define KEY_NUMERIC_0		0x200	/* used by phones, remote controls, */
++#define KEY_NUMERIC_1		0x201	/* and other keypads */
++#define KEY_NUMERIC_2		0x202
++#define KEY_NUMERIC_3		0x203
++#define KEY_NUMERIC_4		0x204
++#define KEY_NUMERIC_5		0x205
++#define KEY_NUMERIC_6		0x206
++#define KEY_NUMERIC_7		0x207
++#define KEY_NUMERIC_8		0x208
++#define KEY_NUMERIC_9		0x209
++#define KEY_NUMERIC_STAR	0x20a
++#define KEY_NUMERIC_POUND	0x20b
++#define KEY_NUMERIC_A		0x20c	/* Phone key A - HUT Telephony 0xb9 */
++#define KEY_NUMERIC_B		0x20d
++#define KEY_NUMERIC_C		0x20e
++#define KEY_NUMERIC_D		0x20f
++
++#define KEY_CAMERA_FOCUS	0x210
++#define KEY_WPS_BUTTON		0x211	/* WiFi Protected Setup key */
++
++#define KEY_TOUCHPAD_TOGGLE	0x212	/* Request switch touchpad on or off */
++#define KEY_TOUCHPAD_ON		0x213
++#define KEY_TOUCHPAD_OFF	0x214
++
++#define KEY_CAMERA_ZOOMIN	0x215
++#define KEY_CAMERA_ZOOMOUT	0x216
++#define KEY_CAMERA_UP		0x217
++#define KEY_CAMERA_DOWN		0x218
++#define KEY_CAMERA_LEFT		0x219
++#define KEY_CAMERA_RIGHT	0x21a
++
++#define KEY_ATTENDANT_ON	0x21b
++#define KEY_ATTENDANT_OFF	0x21c
++#define KEY_ATTENDANT_TOGGLE	0x21d	/* Attendant call on or off */
++#define KEY_LIGHTS_TOGGLE	0x21e	/* Reading light on or off */
++
++#define BTN_DPAD_UP		0x220
++#define BTN_DPAD_DOWN		0x221
++#define BTN_DPAD_LEFT		0x222
++#define BTN_DPAD_RIGHT		0x223
++
++#define KEY_ALS_TOGGLE		0x230	/* Ambient light sensor */
++#define KEY_ROTATE_LOCK_TOGGLE	0x231	/* Display rotation lock */
++#define KEY_REFRESH_RATE_TOGGLE	0x232	/* Display refresh rate toggle */
++
++#define KEY_BUTTONCONFIG		0x240	/* AL Button Configuration */
++#define KEY_TASKMANAGER		0x241	/* AL Task/Project Manager */
++#define KEY_JOURNAL		0x242	/* AL Log/Journal/Timecard */
++#define KEY_CONTROLPANEL		0x243	/* AL Control Panel */
++#define KEY_APPSELECT		0x244	/* AL Select Task/Application */
++#define KEY_SCREENSAVER		0x245	/* AL Screen Saver */
++#define KEY_VOICECOMMAND		0x246	/* Listening Voice Command */
++#define KEY_ASSISTANT		0x247	/* AL Context-aware desktop assistant */
++#define KEY_KBD_LAYOUT_NEXT	0x248	/* AC Next Keyboard Layout Select */
++#define KEY_EMOJI_PICKER	0x249	/* Show/hide emoji picker (HUTRR101) */
++#define KEY_DICTATE		0x24a	/* Start or Stop Voice Dictation Session (HUTRR99) */
++
++#define KEY_BRIGHTNESS_MIN		0x250	/* Set Brightness to Minimum */
++#define KEY_BRIGHTNESS_MAX		0x251	/* Set Brightness to Maximum */
++
++#define KEY_KBDINPUTASSIST_PREV		0x260
++#define KEY_KBDINPUTASSIST_NEXT		0x261
++#define KEY_KBDINPUTASSIST_PREVGROUP		0x262
++#define KEY_KBDINPUTASSIST_NEXTGROUP		0x263
++#define KEY_KBDINPUTASSIST_ACCEPT		0x264
++#define KEY_KBDINPUTASSIST_CANCEL		0x265
++
++/* Diagonal movement keys */
++#define KEY_RIGHT_UP			0x266
++#define KEY_RIGHT_DOWN			0x267
++#define KEY_LEFT_UP			0x268
++#define KEY_LEFT_DOWN			0x269
++
++#define KEY_ROOT_MENU			0x26a /* Show Device's Root Menu */
++/* Show Top Menu of the Media (e.g. DVD) */
++#define KEY_MEDIA_TOP_MENU		0x26b
++#define KEY_NUMERIC_11			0x26c
++#define KEY_NUMERIC_12			0x26d
++/*
++ * Toggle Audio Description: refers to an audio service that helps blind and
++ * visually impaired consumers understand the action in a program. Note: in
++ * some countries this is referred to as "Video Description".
++ */
++#define KEY_AUDIO_DESC			0x26e
++#define KEY_3D_MODE			0x26f
++#define KEY_NEXT_FAVORITE		0x270
++#define KEY_STOP_RECORD			0x271
++#define KEY_PAUSE_RECORD		0x272
++#define KEY_VOD				0x273 /* Video on Demand */
++#define KEY_UNMUTE			0x274
++#define KEY_FASTREVERSE			0x275
++#define KEY_SLOWREVERSE			0x276
++/*
++ * Control a data application associated with the currently viewed channel,
++ * e.g. teletext or data broadcast application (MHEG, MHP, HbbTV, etc.)
++ */
++#define KEY_DATA			0x277
++#define KEY_ONSCREEN_KEYBOARD		0x278
++/* Electronic privacy screen control */
++#define KEY_PRIVACY_SCREEN_TOGGLE	0x279
++
++/* Select an area of screen to be copied */
++#define KEY_SELECTIVE_SCREENSHOT	0x27a
++
++/*
++ * Some keyboards have keys which do not have a defined meaning, these keys
++ * are intended to be programmed / bound to macros by the user. For most
++ * keyboards with these macro-keys the key-sequence to inject, or action to
++ * take, is all handled by software on the host side. So from the kernel's
++ * point of view these are just normal keys.
++ *
++ * The KEY_MACRO# codes below are intended for such keys, which may be labeled
++ * e.g. G1-G18, or S1 - S30. The KEY_MACRO# codes MUST NOT be used for keys
++ * where the marking on the key does indicate a defined meaning / purpose.
++ *
++ * The KEY_MACRO# codes MUST also NOT be used as fallback for when no existing
++ * KEY_FOO define matches the marking / purpose. In this case a new KEY_FOO
++ * define MUST be added.
++ */
++#define KEY_MACRO1			0x290
++#define KEY_MACRO2			0x291
++#define KEY_MACRO3			0x292
++#define KEY_MACRO4			0x293
++#define KEY_MACRO5			0x294
++#define KEY_MACRO6			0x295
++#define KEY_MACRO7			0x296
++#define KEY_MACRO8			0x297
++#define KEY_MACRO9			0x298
++#define KEY_MACRO10			0x299
++#define KEY_MACRO11			0x29a
++#define KEY_MACRO12			0x29b
++#define KEY_MACRO13			0x29c
++#define KEY_MACRO14			0x29d
++#define KEY_MACRO15			0x29e
++#define KEY_MACRO16			0x29f
++#define KEY_MACRO17			0x2a0
++#define KEY_MACRO18			0x2a1
++#define KEY_MACRO19			0x2a2
++#define KEY_MACRO20			0x2a3
++#define KEY_MACRO21			0x2a4
++#define KEY_MACRO22			0x2a5
++#define KEY_MACRO23			0x2a6
++#define KEY_MACRO24			0x2a7
++#define KEY_MACRO25			0x2a8
++#define KEY_MACRO26			0x2a9
++#define KEY_MACRO27			0x2aa
++#define KEY_MACRO28			0x2ab
++#define KEY_MACRO29			0x2ac
++#define KEY_MACRO30			0x2ad
++
++/*
++ * Some keyboards with the macro-keys described above have some extra keys
++ * for controlling the host-side software responsible for the macro handling:
++ * -A macro recording start/stop key. Note that not all keyboards which emit
++ *  KEY_MACRO_RECORD_START will also emit KEY_MACRO_RECORD_STOP if
++ *  KEY_MACRO_RECORD_STOP is not advertised, then KEY_MACRO_RECORD_START
++ *  should be interpreted as a recording start/stop toggle;
++ * -Keys for switching between different macro (pre)sets, either a key for
++ *  cycling through the configured presets or keys to directly select a preset.
++ */
++#define KEY_MACRO_RECORD_START		0x2b0
++#define KEY_MACRO_RECORD_STOP		0x2b1
++#define KEY_MACRO_PRESET_CYCLE		0x2b2
++#define KEY_MACRO_PRESET1		0x2b3
++#define KEY_MACRO_PRESET2		0x2b4
++#define KEY_MACRO_PRESET3		0x2b5
++
++/*
++ * Some keyboards have a buildin LCD panel where the contents are controlled
++ * by the host. Often these have a number of keys directly below the LCD
++ * intended for controlling a menu shown on the LCD. These keys often don't
++ * have any labeling so we just name them KEY_KBD_LCD_MENU#
++ */
++#define KEY_KBD_LCD_MENU1		0x2b8
++#define KEY_KBD_LCD_MENU2		0x2b9
++#define KEY_KBD_LCD_MENU3		0x2ba
++#define KEY_KBD_LCD_MENU4		0x2bb
++#define KEY_KBD_LCD_MENU5		0x2bc
++
++#define BTN_TRIGGER_HAPPY		0x2c0
++#define BTN_TRIGGER_HAPPY1		0x2c0
++#define BTN_TRIGGER_HAPPY2		0x2c1
++#define BTN_TRIGGER_HAPPY3		0x2c2
++#define BTN_TRIGGER_HAPPY4		0x2c3
++#define BTN_TRIGGER_HAPPY5		0x2c4
++#define BTN_TRIGGER_HAPPY6		0x2c5
++#define BTN_TRIGGER_HAPPY7		0x2c6
++#define BTN_TRIGGER_HAPPY8		0x2c7
++#define BTN_TRIGGER_HAPPY9		0x2c8
++#define BTN_TRIGGER_HAPPY10		0x2c9
++#define BTN_TRIGGER_HAPPY11		0x2ca
++#define BTN_TRIGGER_HAPPY12		0x2cb
++#define BTN_TRIGGER_HAPPY13		0x2cc
++#define BTN_TRIGGER_HAPPY14		0x2cd
++#define BTN_TRIGGER_HAPPY15		0x2ce
++#define BTN_TRIGGER_HAPPY16		0x2cf
++#define BTN_TRIGGER_HAPPY17		0x2d0
++#define BTN_TRIGGER_HAPPY18		0x2d1
++#define BTN_TRIGGER_HAPPY19		0x2d2
++#define BTN_TRIGGER_HAPPY20		0x2d3
++#define BTN_TRIGGER_HAPPY21		0x2d4
++#define BTN_TRIGGER_HAPPY22		0x2d5
++#define BTN_TRIGGER_HAPPY23		0x2d6
++#define BTN_TRIGGER_HAPPY24		0x2d7
++#define BTN_TRIGGER_HAPPY25		0x2d8
++#define BTN_TRIGGER_HAPPY26		0x2d9
++#define BTN_TRIGGER_HAPPY27		0x2da
++#define BTN_TRIGGER_HAPPY28		0x2db
++#define BTN_TRIGGER_HAPPY29		0x2dc
++#define BTN_TRIGGER_HAPPY30		0x2dd
++#define BTN_TRIGGER_HAPPY31		0x2de
++#define BTN_TRIGGER_HAPPY32		0x2df
++#define BTN_TRIGGER_HAPPY33		0x2e0
++#define BTN_TRIGGER_HAPPY34		0x2e1
++#define BTN_TRIGGER_HAPPY35		0x2e2
++#define BTN_TRIGGER_HAPPY36		0x2e3
++#define BTN_TRIGGER_HAPPY37		0x2e4
++#define BTN_TRIGGER_HAPPY38		0x2e5
++#define BTN_TRIGGER_HAPPY39		0x2e6
++#define BTN_TRIGGER_HAPPY40		0x2e7
++
++/* We avoid low common keys in module aliases so they don't get huge. */
++#define KEY_MIN_INTERESTING	KEY_MUTE
++#define KEY_MAX			0x2ff
++#define KEY_CNT			(KEY_MAX+1)
++
++/*
++ * Relative axes
++ */
++
++#define REL_X			0x00
++#define REL_Y			0x01
++#define REL_Z			0x02
++#define REL_RX			0x03
++#define REL_RY			0x04
++#define REL_RZ			0x05
++#define REL_HWHEEL		0x06
++#define REL_DIAL		0x07
++#define REL_WHEEL		0x08
++#define REL_MISC		0x09
++/*
++ * 0x0a is reserved and should not be used in input drivers.
++ * It was used by HID as REL_MISC+1 and userspace needs to detect if
++ * the next REL_* event is correct or is just REL_MISC + n.
++ * We define here REL_RESERVED so userspace can rely on it and detect
++ * the situation described above.
++ */
++#define REL_RESERVED		0x0a
++#define REL_WHEEL_HI_RES	0x0b
++#define REL_HWHEEL_HI_RES	0x0c
++#define REL_MAX			0x0f
++#define REL_CNT			(REL_MAX+1)
++
++/*
++ * Absolute axes
++ */
++
++#define ABS_X			0x00
++#define ABS_Y			0x01
++#define ABS_Z			0x02
++#define ABS_RX			0x03
++#define ABS_RY			0x04
++#define ABS_RZ			0x05
++#define ABS_THROTTLE		0x06
++#define ABS_RUDDER		0x07
++#define ABS_WHEEL		0x08
++#define ABS_GAS			0x09
++#define ABS_BRAKE		0x0a
++#define ABS_HAT0X		0x10
++#define ABS_HAT0Y		0x11
++#define ABS_HAT1X		0x12
++#define ABS_HAT1Y		0x13
++#define ABS_HAT2X		0x14
++#define ABS_HAT2Y		0x15
++#define ABS_HAT3X		0x16
++#define ABS_HAT3Y		0x17
++#define ABS_PRESSURE		0x18
++#define ABS_DISTANCE		0x19
++#define ABS_TILT_X		0x1a
++#define ABS_TILT_Y		0x1b
++#define ABS_TOOL_WIDTH		0x1c
++
++#define ABS_VOLUME		0x20
++
++#define ABS_MISC		0x28
++
++/*
++ * 0x2e is reserved and should not be used in input drivers.
++ * It was used by HID as ABS_MISC+6 and userspace needs to detect if
++ * the next ABS_* event is correct or is just ABS_MISC + n.
++ * We define here ABS_RESERVED so userspace can rely on it and detect
++ * the situation described above.
++ */
++#define ABS_RESERVED		0x2e
++
++#define ABS_MT_SLOT		0x2f	/* MT slot being modified */
++#define ABS_MT_TOUCH_MAJOR	0x30	/* Major axis of touching ellipse */
++#define ABS_MT_TOUCH_MINOR	0x31	/* Minor axis (omit if circular) */
++#define ABS_MT_WIDTH_MAJOR	0x32	/* Major axis of approaching ellipse */
++#define ABS_MT_WIDTH_MINOR	0x33	/* Minor axis (omit if circular) */
++#define ABS_MT_ORIENTATION	0x34	/* Ellipse orientation */
++#define ABS_MT_POSITION_X	0x35	/* Center X touch position */
++#define ABS_MT_POSITION_Y	0x36	/* Center Y touch position */
++#define ABS_MT_TOOL_TYPE	0x37	/* Type of touching device */
++#define ABS_MT_BLOB_ID		0x38	/* Group a set of packets as a blob */
++#define ABS_MT_TRACKING_ID	0x39	/* Unique ID of initiated contact */
++#define ABS_MT_PRESSURE		0x3a	/* Pressure on contact area */
++#define ABS_MT_DISTANCE		0x3b	/* Contact hover distance */
++#define ABS_MT_TOOL_X		0x3c	/* Center X tool position */
++#define ABS_MT_TOOL_Y		0x3d	/* Center Y tool position */
++
++
++#define ABS_MAX			0x3f
++#define ABS_CNT			(ABS_MAX+1)
++
++/*
++ * Switch events
++ */
++
++#define SW_LID			0x00  /* set = lid shut */
++#define SW_TABLET_MODE		0x01  /* set = tablet mode */
++#define SW_HEADPHONE_INSERT	0x02  /* set = inserted */
++#define SW_RFKILL_ALL		0x03  /* rfkill master switch, type "any"
++					 set = radio enabled */
++#define SW_RADIO		SW_RFKILL_ALL	/* deprecated */
++#define SW_MICROPHONE_INSERT	0x04  /* set = inserted */
++#define SW_DOCK			0x05  /* set = plugged into dock */
++#define SW_LINEOUT_INSERT	0x06  /* set = inserted */
++#define SW_JACK_PHYSICAL_INSERT 0x07  /* set = mechanical switch set */
++#define SW_VIDEOOUT_INSERT	0x08  /* set = inserted */
++#define SW_CAMERA_LENS_COVER	0x09  /* set = lens covered */
++#define SW_KEYPAD_SLIDE		0x0a  /* set = keypad slide out */
++#define SW_FRONT_PROXIMITY	0x0b  /* set = front proximity sensor active */
++#define SW_ROTATE_LOCK		0x0c  /* set = rotate locked/disabled */
++#define SW_LINEIN_INSERT	0x0d  /* set = inserted */
++#define SW_MUTE_DEVICE		0x0e  /* set = device disabled */
++#define SW_PEN_INSERTED		0x0f  /* set = pen inserted */
++#define SW_MACHINE_COVER	0x10  /* set = cover closed */
++#define SW_MAX			0x10
++#define SW_CNT			(SW_MAX+1)
++
++/*
++ * Misc events
++ */
++
++#define MSC_SERIAL		0x00
++#define MSC_PULSELED		0x01
++#define MSC_GESTURE		0x02
++#define MSC_RAW			0x03
++#define MSC_SCAN		0x04
++#define MSC_TIMESTAMP		0x05
++#define MSC_MAX			0x07
++#define MSC_CNT			(MSC_MAX+1)
++
++/*
++ * LEDs
++ */
++
++#define LED_NUML		0x00
++#define LED_CAPSL		0x01
++#define LED_SCROLLL		0x02
++#define LED_COMPOSE		0x03
++#define LED_KANA		0x04
++#define LED_SLEEP		0x05
++#define LED_SUSPEND		0x06
++#define LED_MUTE		0x07
++#define LED_MISC		0x08
++#define LED_MAIL		0x09
++#define LED_CHARGING		0x0a
++#define LED_MAX			0x0f
++#define LED_CNT			(LED_MAX+1)
++
++/*
++ * Autorepeat values
++ */
++
++#define REP_DELAY		0x00
++#define REP_PERIOD		0x01
++#define REP_MAX			0x01
++#define REP_CNT			(REP_MAX+1)
++
++/*
++ * Sounds
++ */
++
++#define SND_CLICK		0x00
++#define SND_BELL		0x01
++#define SND_TONE		0x02
++#define SND_MAX			0x07
++#define SND_CNT			(SND_MAX+1)
++
++#endif
+diff --git a/meson.build b/meson.build
+index 41ce1ea2..7c717d73 100644
+--- a/meson.build
++++ b/meson.build
+@@ -70,6 +70,7 @@ features = {
+ 	'drm-backend': false,
+ 	'x11-backend': false,
+ 	'libinput-backend': false,
++        'qnx-screen-backend': false,
+ 	'xwayland': false,
+ 	'gles2-renderer': false,
+ 	'vulkan-renderer': false,
+diff --git a/meson.options b/meson.options
+index 5863764a..7956b3af 100644
+--- a/meson.options
++++ b/meson.options
+@@ -3,7 +3,7 @@ option('xwayland', type: 'feature', value: 'auto', yield: true, description: 'En
+ option('examples', type: 'boolean', value: true, description: 'Build example applications')
+ option('icon_directory', description: 'Location used to look for cursors (default: ${datadir}/icons)', type: 'string', value: '')
+ option('renderers', type: 'array', choices: ['auto', 'gles2', 'vulkan'], value: ['auto'], description: 'Select built-in renderers')
+-option('backends', type: 'array', choices: ['auto', 'drm', 'libinput', 'x11'], value: ['auto'], description: 'Select built-in backends')
++option('backends', type: 'array', choices: ['auto', 'drm', 'libinput', 'x11', 'qnx-screen'], value: ['auto'], description: 'Select built-in backends')
+ option('allocators', type: 'array', choices: ['auto', 'gbm', 'udmabuf'], value: ['auto'],
+ 	description: 'Select built-in allocators')
+ option('session', type: 'feature', value: 'auto', description: 'Enable session support')
+diff --git a/types/scene/surface.c b/types/scene/surface.c
+index 89c54a9e..909bf6ff 100644
+--- a/types/scene/surface.c
++++ b/types/scene/surface.c
+@@ -231,9 +231,11 @@ static void scene_buffer_unmark_client_buffer(struct wlr_scene_buffer *scene_buf
+ 	}
+ }
+ 
++#ifndef min
+ static int min(int a, int b) {
+ 	return a < b ? a : b;
+ }
++#endif
+ 
+ static void surface_reconfigure(struct wlr_scene_surface *scene_surface) {
+ 	struct wlr_scene_buffer *scene_buffer = scene_surface->buffer;
+diff --git a/types/wlr_compositor.c b/types/wlr_compositor.c
+index 75faed19..1db44d29 100644
+--- a/types/wlr_compositor.c
++++ b/types/wlr_compositor.c
+@@ -19,6 +19,8 @@
+ #define COMPOSITOR_VERSION 6
+ #define CALLBACK_VERSION 1
+ 
++
++#ifndef min
+ static int min(int fst, int snd) {
+ 	if (fst < snd) {
+ 		return fst;
+@@ -26,7 +28,9 @@ static int min(int fst, int snd) {
+ 		return snd;
+ 	}
+ }
++#endif
+ 
++#ifndef max
+ static int max(int fst, int snd) {
+ 	if (fst > snd) {
+ 		return fst;
+@@ -34,6 +38,7 @@ static int max(int fst, int snd) {
+ 		return snd;
+ 	}
+ }
++#endif
+ 
+ static void set_pending_buffer_resource(struct wlr_surface *surface,
+ 		struct wl_resource *resource) {
+diff --git a/util/box.c b/util/box.c
+index 489c5ad2..e56dc2c5 100644
+--- a/util/box.c
++++ b/util/box.c
+@@ -4,13 +4,17 @@
+ #include <wlr/util/box.h>
+ #include <wlr/util/log.h>
+ 
++#ifndef max
+ static int max(int a, int b) {
+ 	return a > b ? a : b;
+ }
++#endif
+ 
++#ifndef min
+ static int min(int a, int b) {
+ 	return a < b ? a : b;
+ }
++#endif
+ 
+ void wlr_box_closest_point(const struct wlr_box *box, double x, double y,
+ 		double *dest_x, double *dest_y) {
+-- 
+2.51.0
+
+
+From 75495a019086bb6662249f255eaaf1afe15cac1e Mon Sep 17 00:00:00 2001
+From: Aaron Bassett <abassett@qnx.com>
+Date: Wed, 19 Aug 2026 17:37:05 +0000
+Subject: [PATCH 2/3] basic egl
+
+---
+ backend/qnx-screen/backend.c     | 183 ++++++++++++++++++++++++++++++-
+ backend/qnx-screen/output.c      | 149 +++++++++++++++++++++++--
+ include/backend/qnx_screen.h     |  12 ++
+ include/render/egl.h             |   1 +
+ include/wlr/backend/qnx_screen.h |   1 +
+ render/egl.c                     |  23 +++-
+ 6 files changed, 353 insertions(+), 16 deletions(-)
+
+diff --git a/backend/qnx-screen/backend.c b/backend/qnx-screen/backend.c
+index 308c017d..84cfa058 100644
+--- a/backend/qnx-screen/backend.c
++++ b/backend/qnx-screen/backend.c
+@@ -1,5 +1,8 @@
+ #include <assert.h>
++#include <dirent.h>
++#include <fcntl.h>
+ #include <stdlib.h>
++#include <string.h>
+ #include <unistd.h>
+ 
+ #include <drm_fourcc.h>
+@@ -15,6 +18,70 @@
+ 
+ #include "backend/qnx_screen.h"
+ 
++/*
++ * QNX Screen windows have no native concept of dmabuf/GBM -- but if this
++ * system has a working DRM render node behind /dev/dri (a real one, not a
++ * QNX Screen abstraction), wlroots' own wlr_renderer_autocreate()/
++ * wlr_allocator_autocreate() will use it to select the GLES2 renderer and a
++ * GBM allocator entirely on their own, the moment wlr_backend_get_drm_fd()
++ * returns something >= 0. That in turn is what makes labwc advertise
++ * zwp_linux_dmabuf_v1 to clients (see wlr_linux_dmabuf_v1_create_with_renderer()
++ * in wlroots' types/wlr_linux_dmabuf_v1.c) -- we don't implement that
++ * protocol ourselves, we just need to stop returning -1 here.
++ *
++ * Our own output_commit() still has to get pixels onto an actual QNX Screen
++ * window buffer, which stays CPU-side (see copy_buffer_to_window() in
++ * output.c) -- but everything upstream of that (client rendering, the
++ * renderer's internal scene compositing) is now real GLES2/dmabuf.
++ *
++ * Override with $WLR_QNX_SCREEN_DRM_DEVICE if the render node isn't at one
++ * of the usual /dev/dri/renderD1xx paths.
++ */
++static int open_drm_render_node(void) {
++	const char *override = getenv("WLR_QNX_SCREEN_DRM_DEVICE");
++	if (override != NULL && override[0] != '\0') {
++		int fd = open(override, O_RDWR | O_CLOEXEC);
++		if (fd < 0) {
++			wlr_log_errno(WLR_ERROR,
++				"Failed to open WLR_QNX_SCREEN_DRM_DEVICE=%s", override);
++		}
++		return fd;
++	}
++
++	DIR *dir = opendir("/dev/dri");
++	if (dir == NULL) {
++		wlr_log(WLR_INFO,
++			"/dev/dri not present; qnx-screen backend will use SHM/pixman only");
++		return -1;
++	}
++
++	int fd = -1;
++	struct dirent *ent;
++	while ((ent = readdir(dir)) != NULL) {
++		if (strncmp(ent->d_name, "renderD", 7) != 0) {
++			continue;
++		}
++
++		char path[256];
++		snprintf(path, sizeof(path), "/dev/dri/%s", ent->d_name);
++
++		fd = open(path, O_RDWR | O_CLOEXEC);
++		if (fd >= 0) {
++			wlr_log(WLR_INFO, "Using DRM render node %s", path);
++			break;
++		}
++		wlr_log_errno(WLR_DEBUG, "Failed to open %s", path);
++	}
++	closedir(dir);
++
++	if (fd < 0) {
++		wlr_log(WLR_INFO,
++			"No usable /dev/dri/renderD* node found; qnx-screen backend "
++			"will use SHM/pixman only");
++	}
++	return fd;
++}
++
+ struct wlr_qnx_screen_backend *qnx_screen_backend_from_backend(
+ 		struct wlr_backend *wlr_backend) {
+ 	assert(wlr_backend_is_qnx_screen(wlr_backend));
+@@ -162,6 +229,17 @@ static void backend_destroy(struct wlr_backend *wlr_backend) {
+ 	}
+ 
+ 	wlr_drm_format_set_finish(&backend->shm_formats);
++	wlr_drm_format_set_finish(&backend->dmabuf_formats);
++
++	if (backend->gbm_device != NULL) {
++		gbm_device_destroy(backend->gbm_device);
++	}
++	if (backend->gbm_fd >= 0) {
++		close(backend->gbm_fd);
++	}
++	if (backend->drm_fd >= 0) {
++		close(backend->drm_fd);
++	}
+ 
+ 	if (backend->context) {
+ 		screen_destroy_context(backend->context);
+@@ -170,11 +248,81 @@ static void backend_destroy(struct wlr_backend *wlr_backend) {
+ 	free(backend);
+ }
+ 
++struct gbm_device *qnx_screen_backend_ensure_gbm_device(
++		struct wlr_qnx_screen_backend *backend) {
++	if (backend->gbm_device_init_attempted) {
++		return backend->gbm_device; // NULL if the first attempt failed
++	}
++	backend->gbm_device_init_attempted = true;
++
++	if (backend->drm_fd < 0) {
++		return NULL;
++	}
++
++	// output.c's copy_buffer_to_window() uses this (via
++	// gbm_bo_import()/gbm_bo_map()) to read GPU-rendered dmabuf output
++	// buffers back to the CPU. This matters more than it might look: a
++	// bare mmap() on the dmabuf fd is NOT sufficient on every driver --
++	// e.g. virtio-gpu (virgl) resources live host-side and need the
++	// driver's own transfer path, which only gbm_bo_map() is guaranteed
++	// to trigger. Without a working gbm_device here, dmabuf output reads
++	// back as black/garbage regardless of dma-buf fencing.
++	//
++	// Deliberately dup()'d: wlr_allocator_autocreate() creates its OWN
++	// independent gbm_device against backend->drm_fd. Two struct
++	// gbm_device instances sharing one fd is a real conflict on some
++	// drivers -- observed in practice as wlroots' own "Failed to create
++	// allocator" once this backend also held a gbm_device open on the
++	// same fd number. Each gbm_device gets its own fd instead.
++	//
++	// Deliberately lazy (called from output.c on first dmabuf commit, not
++	// from wlr_qnx_screen_backend_create()): creating a gbm_device before
++	// EGL has ever initialized against this device has been observed to
++	// fail outright on this Mesa/virtio-gpu build ("Can't open 'dri'
++	// library!" from Mesa's own DRI loader). By the time we get here, a
++	// dmabuf-backed wlr_buffer already exists, which means the GLES2
++	// renderer (and therefore EGL) already initialized successfully.
++	int gbm_fd = fcntl(backend->drm_fd, F_DUPFD_CLOEXEC, 0);
++	if (gbm_fd < 0) {
++		wlr_log_errno(WLR_ERROR, "Failed to dup DRM fd for our own gbm_device");
++		return NULL;
++	}
++
++	backend->gbm_device = gbm_create_device(gbm_fd);
++	if (backend->gbm_device == NULL) {
++		wlr_log(WLR_ERROR,
++			"gbm_create_device failed on the DRM render node; dmabuf "
++			"output buffers won't be readable");
++		close(gbm_fd);
++		return NULL;
++	}
++
++	backend->gbm_fd = gbm_fd;
++	return backend->gbm_device;
++}
++
+ static int backend_get_drm_fd(struct wlr_backend *wlr_backend) {
+-	// QNX has no DRM/GBM. Returning -1 makes wlr_renderer_autocreate() and
+-	// wlr_allocator_autocreate() fall back to the pixman renderer and the
+-	// generic shared-memory allocator, respectively.
+-	return -1;
++	struct wlr_qnx_screen_backend *backend =
++		qnx_screen_backend_from_backend(wlr_backend);
++	// -1 if no usable /dev/dri/renderD* node was found at creation time; see
++	// open_drm_render_node() above. That's a perfectly normal, supported
++	// configuration -- wlr_renderer_autocreate()/wlr_allocator_autocreate()
++	// fall back to pixman + the generic SHM allocator automatically in that
++	// case.
++	//
++	// Deliberately NOT gated on backend->gbm_device here (that would be
++	// tempting, since output.c's copy_buffer_to_window() needs a working
++	// gbm_device to actually read GPU-rendered buffers back). But this
++	// backend's own gbm_device is created lazily, on first use, in
++	// output.c -- specifically because creating one eagerly here, before
++	// EGL has ever touched the device, has been observed to fail outright
++	// on this Mesa/virtio-gpu build (Mesa's GBM "dri" backend needs EGL to
++	// have already initialized against the device first). Reporting -1
++	// here before that's had a chance to happen would prevent
++	// wlr_allocator_autocreate() from ever trying GBM at all, even though
++	// its own (separate, later) gbm_device -- created only after the GLES2
++	// renderer already exists -- works fine.
++	return backend->drm_fd;
+ }
+ 
+ static const struct wlr_backend_impl backend_impl = {
+@@ -204,7 +352,16 @@ struct wlr_backend *wlr_qnx_screen_backend_create(struct wl_event_loop *loop) {
+ 	}
+ 
+ 	wlr_backend_init(&backend->backend, &backend_impl);
+-	backend->backend.buffer_caps = WLR_BUFFER_CAP_SHM;
++	// Advertise both: wlr_allocator_autocreate() picks GBM (dmabuf) only if
++	// backend_get_drm_fd() actually returns a valid fd below; otherwise it
++	// falls back to SHM automatically. Safe to advertise unconditionally.
++	backend->backend.buffer_caps = WLR_BUFFER_CAP_SHM | WLR_BUFFER_CAP_DMABUF;
++	backend->gbm_fd = -1;
++	backend->drm_fd = open_drm_render_node();
++	// backend->gbm_device is NOT created here -- see qnx_screen_get_gbm_device()
++	// in output.c, which creates it lazily on first use instead. Doing it
++	// this early (before EGL has ever touched the device) has been observed
++	// to fail outright on some Mesa/virtio-gpu builds.
+ 
+ 	backend->event_loop = loop;
+ 	wl_list_init(&backend->outputs);
+@@ -223,6 +380,12 @@ struct wlr_backend *wlr_qnx_screen_backend_create(struct wl_event_loop *loop) {
+ 	wlr_drm_format_set_add(&backend->shm_formats, DRM_FORMAT_XRGB8888,
+ 		DRM_FORMAT_MOD_INVALID);
+ 
++	// Explicit LINEAR (not INVALID/"driver's choice") so the GBM allocator
++	// can't hand us a tiled/compressed layout we can't safely mmap+memcpy
++	// from in copy_buffer_to_window().
++	wlr_drm_format_set_add(&backend->dmabuf_formats, DRM_FORMAT_XRGB8888,
++		DRM_FORMAT_MOD_LINEAR);
++
+ 	wlr_keyboard_init(&backend->keyboard, &qnx_screen_keyboard_impl,
+ 		qnx_screen_keyboard_impl.name);
+ 
+@@ -251,8 +414,18 @@ error_monitor:
+ error_context:
+ 	wlr_keyboard_finish(&backend->keyboard);
+ 	wlr_drm_format_set_finish(&backend->shm_formats);
++	wlr_drm_format_set_finish(&backend->dmabuf_formats);
+ 	screen_destroy_context(backend->context);
+ error_backend:
++	if (backend->gbm_device != NULL) {
++		gbm_device_destroy(backend->gbm_device);
++	}
++	if (backend->gbm_fd >= 0) {
++		close(backend->gbm_fd);
++	}
++	if (backend->drm_fd >= 0) {
++		close(backend->drm_fd);
++	}
+ 	wlr_backend_finish(&backend->backend);
+ 	free(backend);
+ 	return NULL;
+diff --git a/backend/qnx-screen/output.c b/backend/qnx-screen/output.c
+index 1a109caa..a17d061d 100644
+--- a/backend/qnx-screen/output.c
++++ b/backend/qnx-screen/output.c
+@@ -2,6 +2,7 @@
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
++#include <unistd.h>
+ 
+ #include <drm_fourcc.h>
+ #include <screen/screen.h>
+@@ -9,6 +10,7 @@
+ #include <wlr/interfaces/wlr_output.h>
+ #include <wlr/interfaces/wlr_pointer.h>
+ #include <wlr/interfaces/wlr_touch.h>
++#include <wlr/render/dmabuf.h>
+ #include <wlr/types/wlr_buffer.h>
+ #include <wlr/util/log.h>
+ 
+@@ -194,9 +196,25 @@ static bool output_test(struct wlr_output *wlr_output,
+ 		}
+ 
+ 		struct wlr_shm_attributes shm;
+-		if (!wlr_buffer_get_shm(state->buffer, &shm)) {
++		struct wlr_dmabuf_attributes dmabuf;
++		if (wlr_buffer_get_shm(state->buffer, &shm)) {
++			// OK: CPU-copied straight into the QNX Screen window buffer.
++		} else if (wlr_buffer_get_dmabuf(state->buffer, &dmabuf)) {
++			// OK, as long as it's something we can mmap() and walk row by
++			// row: single-plane, linear (matches the LINEAR-only modifier
++			// we advertise in output_get_primary_formats(), so a
++			// conforming allocator shouldn't hand us anything else, but
++			// don't trust that blindly).
++			if (dmabuf.n_planes != 1 || dmabuf.modifier != DRM_FORMAT_MOD_LINEAR) {
++				wlr_log(WLR_DEBUG,
++					"Unsupported dmabuf layout (n_planes=%d modifier=0x%"PRIx64")",
++					dmabuf.n_planes, (uint64_t)dmabuf.modifier);
++				return false;
++			}
++		} else {
+ 			wlr_log(WLR_DEBUG,
+-				"QNX Screen output only supports shared-memory buffers");
++				"QNX Screen output only supports shared-memory or "
++				"single-plane linear dmabuf buffers");
+ 			return false;
+ 		}
+ 	}
+@@ -221,14 +239,113 @@ static int finish_frame_handler(void *data) {
+ 	return 0;
+ }
+ 
++struct qnx_screen_buffer_access {
++	bool is_shm;
++	struct gbm_bo *gbm_bo;
++	void *gbm_map_data;
++};
++
++// Gets a CPU-readable pointer + row stride to a wlr_buffer's pixel data,
++// regardless of whether it's SHM-backed (the common case today) or
++// dmabuf-backed (once wlr_allocator_autocreate() picks GBM, see backend.c).
++// QNX Screen buffers are always window-bound, so there's no way to make the
++// renderer draw directly into one -- we always end up doing this copy.
++static bool begin_buffer_access(struct wlr_qnx_screen_backend *backend,
++		struct wlr_buffer *buffer, void **src_out, size_t *stride_out,
++		struct qnx_screen_buffer_access *access) {
++	memset(access, 0, sizeof(*access));
++
++	void *src;
++	uint32_t format;
++	size_t stride;
++	if (wlr_buffer_begin_data_ptr_access(buffer,
++			WLR_BUFFER_DATA_PTR_ACCESS_READ, &src, &format, &stride)) {
++		access->is_shm = true;
++		*src_out = src;
++		*stride_out = stride;
++		return true;
++	}
++
++	struct wlr_dmabuf_attributes dmabuf;
++	if (!wlr_buffer_get_dmabuf(buffer, &dmabuf) || dmabuf.n_planes != 1) {
++		return false;
++	}
++
++	struct gbm_device *gbm_device = qnx_screen_backend_ensure_gbm_device(backend);
++	if (gbm_device == NULL) {
++		wlr_log(WLR_ERROR,
++			"Got a dmabuf-backed output buffer but have no usable gbm_device "
++			"to read it back with");
++		return false;
++	}
++
++	// A bare mmap() on dmabuf.fd[0] is deliberately NOT used here. On some
++	// drivers (virtio-gpu/virgl in particular -- the buffer may live
++	// host-side in a VM) a raw mmap() bypasses whatever transfer the driver
++	// needs to actually get rendered content into a CPU-visible mapping,
++	// and reads back as stale/zeroed (black) regardless of dma-buf fencing.
++	// gbm_bo_map() is the portable, driver-correct way to read a GBM
++	// buffer's contents back to the CPU -- it's what handles that transfer
++	// (or does nothing extra, on drivers where a plain mmap would've been
++	// fine) internally, the same way wlroots' own renderer never does a raw
++	// mmap() either (it goes through glReadPixels/wlr_texture_read_pixels).
++	struct gbm_import_fd_modifier_data import_data = {
++		.width = (uint32_t)buffer->width,
++		.height = (uint32_t)buffer->height,
++		.format = dmabuf.format,
++		.num_fds = 1,
++		.modifier = dmabuf.modifier,
++	};
++	import_data.fds[0] = dmabuf.fd[0];
++	import_data.strides[0] = dmabuf.stride[0];
++	import_data.offsets[0] = dmabuf.offset[0];
++
++	struct gbm_bo *bo = gbm_bo_import(gbm_device,
++		GBM_BO_IMPORT_FD_MODIFIER, &import_data, GBM_BO_USE_RENDERING);
++	if (bo == NULL) {
++		wlr_log(WLR_ERROR, "gbm_bo_import failed");
++		return false;
++	}
++
++	uint32_t map_stride = 0;
++	void *map_data = NULL;
++	void *ptr = gbm_bo_map(bo, 0, 0, (uint32_t)buffer->width,
++		(uint32_t)buffer->height, GBM_BO_TRANSFER_READ, &map_stride,
++		&map_data);
++	if (ptr == NULL) {
++		wlr_log(WLR_ERROR, "gbm_bo_map failed");
++		gbm_bo_destroy(bo);
++		return false;
++	}
++
++	access->gbm_bo = bo;
++	access->gbm_map_data = map_data;
++
++	*src_out = ptr;
++	*stride_out = map_stride;
++	return true;
++}
++
++static void end_buffer_access(struct wlr_buffer *buffer,
++		struct qnx_screen_buffer_access *access) {
++	if (access->is_shm) {
++		wlr_buffer_end_data_ptr_access(buffer);
++		return;
++	}
++	if (access->gbm_bo != NULL) {
++		gbm_bo_unmap(access->gbm_bo, access->gbm_map_data);
++		gbm_bo_destroy(access->gbm_bo);
++	}
++}
++
+ static bool copy_buffer_to_window(struct wlr_qnx_screen_output *output,
+ 		struct wlr_buffer *buffer, const struct wlr_output_state *state) {
+ 	void *src;
+-	uint32_t format;
+ 	size_t src_stride;
+-	if (!wlr_buffer_begin_data_ptr_access(buffer,
+-			WLR_BUFFER_DATA_PTR_ACCESS_READ, &src, &format, &src_stride)) {
+-		wlr_log(WLR_ERROR, "wlr_buffer_begin_data_ptr_access failed");
++	struct qnx_screen_buffer_access access;
++	if (!begin_buffer_access(output->backend, buffer, &src, &src_stride,
++			&access)) {
++		wlr_log(WLR_ERROR, "Failed to access buffer contents for copy");
+ 		return false;
+ 	}
+ 
+@@ -241,7 +358,7 @@ static bool copy_buffer_to_window(struct wlr_qnx_screen_output *output,
+ 
+ 	if (dst == NULL || dst_stride <= 0) {
+ 		wlr_log(WLR_ERROR, "Failed to access QNX Screen native buffer");
+-		wlr_buffer_end_data_ptr_access(buffer);
++		end_buffer_access(buffer, &access);
+ 		return false;
+ 	}
+ 
+@@ -256,7 +373,7 @@ static bool copy_buffer_to_window(struct wlr_qnx_screen_output *output,
+ 			(uint8_t *)src + (size_t)y * src_stride, copy_bytes);
+ 	}
+ 
+-	wlr_buffer_end_data_ptr_access(buffer);
++	end_buffer_access(buffer, &access);
+ 
+ 	// Compute dirty rectangles from the damage region, in the same
+ 	// [x1, y1, x2, y2] layout screen_post_window() expects.
+@@ -374,8 +491,22 @@ static bool output_move_cursor(struct wlr_output *wlr_output, int x, int y) {
+ static const struct wlr_drm_format_set *output_get_primary_formats(
+ 		struct wlr_output *wlr_output, uint32_t buffer_caps) {
+ 	struct wlr_qnx_screen_output *output = output_from_wlr_output(wlr_output);
++	struct wlr_qnx_screen_backend *backend = output->backend;
++
++	// Advertise dmabuf/GBM formats based on drm_fd availability, not on
++	// whether backend->gbm_device has been created yet -- it's created
++	// lazily on first actual buffer readback (see
++	// qnx_screen_backend_ensure_gbm_device() in backend.c), which hasn't
++	// happened yet the first time this gets called: wlr_allocator_autocreate()
++	// queries formats BEFORE any buffer exists, to decide whether to try
++	// GBM at all. If our lazy gbm_device creation later fails anyway,
++	// copy_buffer_to_window() fails that specific commit loudly rather
++	// than silently -- better than never trying GBM in the first place.
++	if ((buffer_caps & WLR_BUFFER_CAP_DMABUF) && backend->drm_fd >= 0) {
++		return &backend->dmabuf_formats;
++	}
+ 	if (buffer_caps & WLR_BUFFER_CAP_SHM) {
+-		return &output->backend->shm_formats;
++		return &backend->shm_formats;
+ 	}
+ 	return NULL;
+ }
+diff --git a/include/backend/qnx_screen.h b/include/backend/qnx_screen.h
+index b2d92f4e..e2ff8dc4 100644
+--- a/include/backend/qnx_screen.h
++++ b/include/backend/qnx_screen.h
+@@ -6,6 +6,8 @@
+ 
+ #include <screen/screen.h>
+ 
++#include <gbm.h>
++
+ #include <wayland-server-core.h>
+ 
+ #include <wlr/backend/qnx_screen.h>
+@@ -31,6 +33,9 @@ struct wlr_qnx_screen_backend {
+ 	screen_display_t default_display;
+ 
+ 	int drm_fd; // -1 if unavailable; see open_drm_render_node() in backend.c
++	int gbm_fd; // dup() of drm_fd, owned by gbm_device below
++	struct gbm_device *gbm_device; // NULL until first successful use, or forever if unavailable
++	bool gbm_device_init_attempted; // set on first qnx_screen_backend_ensure_gbm_device() call, success or not
+ 
+ 	struct wl_event_source *screen_source;
+ 	struct wlr_qnx_screen_event_monitor *event_monitor;
+@@ -95,6 +100,13 @@ extern const struct wlr_keyboard_impl qnx_screen_keyboard_impl;
+ extern const struct wlr_pointer_impl qnx_screen_pointer_impl;
+ extern const struct wlr_touch_impl qnx_screen_touch_impl;
+ 
++// Lazily creates (on first call) and returns backend->gbm_device, or NULL if
++// unavailable/failed. Deliberately NOT created eagerly at backend creation
++// time -- see the comment on backend_get_drm_fd() in backend.c for why.
++// Safe to call repeatedly; only actually attempts creation once.
++struct gbm_device *qnx_screen_backend_ensure_gbm_device(
++	struct wlr_qnx_screen_backend *backend);
++
+ bool qnx_screen_output_create_window(struct wlr_qnx_screen_output *output);
+ void qnx_screen_output_destroy_window(struct wlr_qnx_screen_output *output);
+ bool qnx_screen_output_recreate_buffers(struct wlr_qnx_screen_output *output);
+diff --git a/include/render/egl.h b/include/render/egl.h
+index 103ab57d..d09577fd 100644
+--- a/include/render/egl.h
++++ b/include/render/egl.h
+@@ -25,6 +25,7 @@ struct wlr_egl {
+ 		bool EXT_device_query;
+ 		bool KHR_platform_gbm;
+ 		bool EXT_platform_device;
++		bool QNX_platform_screen;
+ 		bool KHR_display_reference;
+ 	} exts;
+ 
+diff --git a/include/wlr/backend/qnx_screen.h b/include/wlr/backend/qnx_screen.h
+index 43e39026..8593b659 100644
+--- a/include/wlr/backend/qnx_screen.h
++++ b/include/wlr/backend/qnx_screen.h
+@@ -83,3 +83,4 @@ bool wlr_qnx_screen_output_set_display(struct wlr_output *output,
+ 	int display_id);
+ 
+ #endif
++
+diff --git a/render/egl.c b/render/egl.c
+index 8673acab..73683638 100644
+--- a/render/egl.c
++++ b/render/egl.c
+@@ -224,6 +224,8 @@ static struct wlr_egl *egl_create(void) {
+ 			"EGL_EXT_platform_device");
+ 	egl->exts.KHR_display_reference = check_egl_ext(client_exts_str,
+ 			"EGL_KHR_display_reference");
++	egl->exts.QNX_platform_screen = check_egl_ext(client_exts_str,
++                        "EGL_QNX_platform_screen");
+ 
+ 	if (check_egl_ext(client_exts_str, "EGL_EXT_device_base") || check_egl_ext(client_exts_str, "EGL_EXT_device_enumeration")) {
+ 		load_egl_proc(&egl->procs.eglQueryDevicesEXT, "eglQueryDevicesEXT");
+@@ -394,9 +396,17 @@ static bool egl_init(struct wlr_egl *egl, EGLenum platform,
+ 	display_attribs[display_attribs_len++] = EGL_NONE;
+ 	assert(display_attribs_len <= sizeof(display_attribs) / sizeof(display_attribs[0]));
+ 
+-	EGLDisplay display = egl->procs.eglGetPlatformDisplayEXT(platform,
+-		remote_display, display_attribs);
++	EGLDisplay display;
++	if (platform == EGL_PLATFORM_SCREEN_QNX) {
++		printf("HERE");
++		display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
++	} else {
++		display = egl->procs.eglGetPlatformDisplayEXT(platform,
++			remote_display, display_attribs);
++	}
+ 	if (display == EGL_NO_DISPLAY) {
++		EGLint error = eglGetError();
++		printf("EGL Error encountered: 0x%04X\n", error);
+ 		wlr_log(WLR_ERROR, "Failed to create EGL display");
+ 		return false;
+ 	}
+@@ -607,6 +617,15 @@ struct wlr_egl *wlr_egl_create_with_drm_fd(int drm_fd) {
+ 		wlr_log(WLR_DEBUG, "KHR_platform_gbm not supported");
+ 	}
+ 
++	//if (egl->exts.QNX_platform_screen) {
++		 if (egl_init(egl, EGL_PLATFORM_SCREEN_QNX, NULL, allow_software)) {
++                        wlr_log(WLR_DEBUG, "Using EGL_PLATFORM_SCREEN_QX");
++                        return egl;
++                }
++	//} else {
++	//	 wlr_log(WLR_DEBUG, "QNX_platform_screen not supported");
++	//}
++
+ error:
+ 	wlr_log(WLR_ERROR, "Failed to initialize EGL context");
+ 	free(egl);
+-- 
+2.51.0
+
+
+From 082606a428d88259b3b99b31eed4b35e45955ee3 Mon Sep 17 00:00:00 2001
+From: Aaron Bassett <abassett@qnx.com>
+Date: Thu, 20 Aug 2026 01:13:51 +0000
+Subject: [PATCH 3/3] full gles support
+
+---
+ include/render/egl.h              |  1 +
+ include/wlr/types/wlr_qnx_redir.h | 39 +++++++++++++++++++
+ protocol/meson.build              |  3 ++
+ protocol/qnx-redir.xml            | 18 +++++++++
+ render/egl.c                      | 41 +++++++++++++++-----
+ tinywl/tinywl.c                   |  8 ++++
+ types/meson.build                 |  1 +
+ types/wlr_qnx_redir.c             | 63 +++++++++++++++++++++++++++++++
+ 8 files changed, 165 insertions(+), 9 deletions(-)
+ create mode 100644 include/wlr/types/wlr_qnx_redir.h
+ create mode 100644 protocol/qnx-redir.xml
+ create mode 100644 types/wlr_qnx_redir.c
+
+diff --git a/include/render/egl.h b/include/render/egl.h
+index d09577fd..aca10eb2 100644
+--- a/include/render/egl.h
++++ b/include/render/egl.h
+@@ -8,6 +8,7 @@ struct wlr_egl {
+ 	EGLContext context;
+ 	EGLDeviceEXT device; // may be EGL_NO_DEVICE_EXT
+ 	struct gbm_device *gbm_device;
++	int fallback_drm_fd;
+ 
+ 	struct {
+ 		// Display extensions
+diff --git a/include/wlr/types/wlr_qnx_redir.h b/include/wlr/types/wlr_qnx_redir.h
+new file mode 100644
+index 00000000..8eada5f7
+--- /dev/null
++++ b/include/wlr/types/wlr_qnx_redir.h
+@@ -0,0 +1,39 @@
++#ifndef WLR_TYPES_WLR_QNX_REDIR_H
++#define WLR_TYPES_WLR_QNX_REDIR_H
++
++#include <wayland-server-core.h>
++
++/*
++ * wl_qnx_redir is a trivial global: as soon as a client binds it, the
++ * compositor sends a single display_id event and the object is otherwise
++ * inert. There is no request in the protocol, so no client -> server
++ * traffic ever needs handling.
++ */
++struct wlr_qnx_redir {
++	struct wl_global *global;
++
++	// The value sent in the display_id event to every client that binds.
++	// Set once at creation time by the caller (see wlr_qnx_redir_create),
++	// which is expected to have gotten it from a backend that actually
++	// knows the native QNX display id (e.g. wlr_qnx_backend_get_display_id).
++	int display_id;
++
++	struct wl_listener display_destroy;
++
++	struct {
++		struct wl_signal destroy;
++	} events;
++
++	void *data;
++};
++
++// Creates the wl_qnx_redir global and advertises it on the display.
++// display_id is the value sent to clients in the display_id event; this
++// type has no way to determine it itself, so the caller must supply it
++// (typically read from a QNX-aware backend at startup).
++// Returns NULL on allocation failure.
++struct wlr_qnx_redir *wlr_qnx_redir_create(struct wl_display *display,
++	int display_id);
++
++#endif
++
+diff --git a/protocol/meson.build b/protocol/meson.build
+index 30aeb68c..1432ab62 100644
+--- a/protocol/meson.build
++++ b/protocol/meson.build
+@@ -77,6 +77,9 @@ protocols = {
+ 	'wlr-output-power-management-unstable-v1': 'wlr-output-power-management-unstable-v1.xml',
+ 	'wlr-screencopy-unstable-v1': 'wlr-screencopy-unstable-v1.xml',
+ 	'wlr-virtual-pointer-unstable-v1': 'wlr-virtual-pointer-unstable-v1.xml',
++
++        # QNX Special
++        'wl-qnx-redir': 'qnx-redir.xml'
+ }
+ 
+ protocols_code = {}
+diff --git a/protocol/qnx-redir.xml b/protocol/qnx-redir.xml
+new file mode 100644
+index 00000000..e40f2db7
+--- /dev/null
++++ b/protocol/qnx-redir.xml
+@@ -0,0 +1,18 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<protocol name="qnx_redir">
++
++  <!-- QNX support. This object is created by the server and published
++       using the display's global event. -->
++  <interface name="wl_qnx_redir" version="1">
++
++    <!-- Notification of the native display_id used by the server.
++         The client should use this display_id to determine which
++         vendor libraries to load. -->
++    <event name="display_id">
++      <arg name="display_id" type="int"/>
++    </event>
++
++  </interface>
++
++</protocol>
++
+diff --git a/render/egl.c b/render/egl.c
+index 73683638..0a4fa263 100644
+--- a/render/egl.c
++++ b/render/egl.c
+@@ -215,6 +215,8 @@ static struct wlr_egl *egl_create(void) {
+ 		return NULL;
+ 	}
+ 
++	egl->fallback_drm_fd = -1;
++
+ 	load_egl_proc(&egl->procs.eglGetPlatformDisplayEXT,
+ 		"eglGetPlatformDisplayEXT");
+ 
+@@ -619,7 +621,14 @@ struct wlr_egl *wlr_egl_create_with_drm_fd(int drm_fd) {
+ 
+ 	//if (egl->exts.QNX_platform_screen) {
+ 		 if (egl_init(egl, EGL_PLATFORM_SCREEN_QNX, NULL, allow_software)) {
+-                        wlr_log(WLR_DEBUG, "Using EGL_PLATFORM_SCREEN_QX");
++                        wlr_log(WLR_DEBUG, "Using EGL_PLATFORM_SCREEN_QXn");
++			if (drm_fd >= 0) {
++				egl->fallback_drm_fd = fcntl(drm_fd, F_DUPFD_CLOEXEC, 0);
++				if (egl->fallback_drm_fd < 0) {
++					wlr_log_errno(WLR_ERROR,
++						"Failed to dup drm_fd for wlr_egl_dup_drm_fd() fallback");	
++				}
++			}
+                         return egl;
+                 }
+ 	//} else {
+@@ -687,6 +696,10 @@ void wlr_egl_destroy(struct wlr_egl *egl) {
+ 		close(gbm_fd);
+ 	}
+ 
++	if (egl->fallback_drm_fd >= 0) {
++		close(egl->fallback_drm_fd);
++	}
++
+ 	free(egl);
+ }
+ 
+@@ -1063,14 +1076,24 @@ int wlr_egl_dup_drm_fd(struct wlr_egl *egl) {
+ 	}
+ 
+ 	// Fallback to GBM's FD if we can't use EGLDevice
+-	if (egl->gbm_device == NULL) {
+-		return -1;
+-	}
+-
+-	fd = fcntl(gbm_device_get_fd(egl->gbm_device), F_DUPFD_CLOEXEC, 0);
+-	if (fd < 0) {
+-		wlr_log_errno(WLR_ERROR, "Failed to dup GBM FD");
+-	}
++	if (egl->gbm_device != NULL) {
++		fd = fcntl(gbm_device_get_fd(egl->gbm_device), F_DUPFD_CLOEXEC, 0);
++		if (fd < 0) {
++			wlr_log_errno(WLR_ERROR, "Failed to dup GBM FD");
++		}
++		return fd;
++ 	}
++	// Last resort: whatever fd was handed to wlr_egl_create_with_drm_fd(),
++	// for platforms (e.g. EGL_PLATFORM_SCREEN_QNX) whose EGLDisplay doesn't
++	// support EGLDeviceEXT queries and was never bound to a gbm_device in
++	// the first place. See wlr_egl_create_with_drm_fd() above.
++	if (egl->fallback_drm_fd >= 0) {
++		fd = fcntl(egl->fallback_drm_fd, F_DUPFD_CLOEXEC, 0);
++		if (fd < 0) {
++			wlr_log_errno(WLR_ERROR, "Failed to dup fallback DRM fd");
++		}
++		return fd;
++ 	}
+ 	return fd;
+ }
+ 
+diff --git a/tinywl/tinywl.c b/tinywl/tinywl.c
+index fe242e1a..139f2991 100644
+--- a/tinywl/tinywl.c
++++ b/tinywl/tinywl.c
+@@ -22,6 +22,7 @@
+ #include <wlr/types/wlr_subcompositor.h>
+ #include <wlr/types/wlr_xcursor_manager.h>
+ #include <wlr/types/wlr_xdg_shell.h>
++#include <wlr/types/wlr_qnx_redir.h>
+ #include <wlr/util/log.h>
+ #include <xkbcommon/xkbcommon.h>
+ 
+@@ -982,6 +983,13 @@ int main(int argc, char *argv[]) {
+ 	server.new_xdg_popup.notify = server_new_xdg_popup;
+ 	wl_signal_add(&server.xdg_shell->events.new_popup, &server.new_xdg_popup);
+ 
++	struct wlr_qnx_redir *qnx_redir =
++		wlr_qnx_redir_create(server.wl_display, 1);
++	if (qnx_redir == NULL) {
++		wlr_log(WLR_ERROR, "Failed to create wl_qnx_redir global");
++		return 1;
++	}
++
+ 	/*
+ 	 * Creates a cursor, which is a wlroots utility for tracking the cursor
+ 	 * image shown on screen.
+diff --git a/types/meson.build b/types/meson.build
+index 26958f04..d4994bb4 100644
+--- a/types/meson.build
++++ b/types/meson.build
+@@ -107,6 +107,7 @@ wlr_files += files(
+ 	'wlr_xdg_system_bell_v1.c',
+ 	'wlr_xdg_toplevel_icon_v1.c',
+ 	'wlr_xdg_toplevel_tag_v1.c',
++        'wlr_qnx_redir.c',
+ )
+ 
+ if features.get('drm-backend')
+diff --git a/types/wlr_qnx_redir.c b/types/wlr_qnx_redir.c
+new file mode 100644
+index 00000000..05fe6109
+--- /dev/null
++++ b/types/wlr_qnx_redir.c
+@@ -0,0 +1,63 @@
++#include <assert.h>
++#include <stdlib.h>
++#include <wlr/types/wlr_qnx_redir.h>
++#include <wlr/util/log.h>
++#include "qnx-redir-protocol.h"
++
++#define QNX_REDIR_VERSION 1
++
++static void qnx_redir_bind(struct wl_client *client, void *data,
++		uint32_t version, uint32_t id) {
++	struct wlr_qnx_redir *qnx_redir = data;
++
++	struct wl_resource *resource = wl_resource_create(client,
++		&wl_qnx_redir_interface, version, id);
++	if (resource == NULL) {
++		wl_client_post_no_memory(client);
++		return;
++	}
++
++	// No requests in this interface, so no implementation/destructor needed
++	// beyond the default.
++	wl_resource_set_implementation(resource, NULL, NULL, NULL);
++
++	// The whole point of this global: tell the client which display_id to
++	// use, right away, since there's nothing else for this object to do.
++	wl_qnx_redir_send_display_id(resource, qnx_redir->display_id);
++}
++
++static void handle_display_destroy(struct wl_listener *listener, void *data) {
++	struct wlr_qnx_redir *qnx_redir =
++		wl_container_of(listener, qnx_redir, display_destroy);
++
++	wl_signal_emit_mutable(&qnx_redir->events.destroy, qnx_redir);
++
++	wl_list_remove(&qnx_redir->display_destroy.link);
++	wl_global_destroy(qnx_redir->global);
++	free(qnx_redir);
++}
++
++struct wlr_qnx_redir *wlr_qnx_redir_create(struct wl_display *display,
++		int display_id) {
++	struct wlr_qnx_redir *qnx_redir = calloc(1, sizeof(*qnx_redir));
++	if (qnx_redir == NULL) {
++		return NULL;
++	}
++
++	qnx_redir->global = wl_global_create(display, &wl_qnx_redir_interface,
++		QNX_REDIR_VERSION, qnx_redir, qnx_redir_bind);
++	if (qnx_redir->global == NULL) {
++		free(qnx_redir);
++		return NULL;
++	}
++
++	qnx_redir->display_id = display_id;
++
++	wl_signal_init(&qnx_redir->events.destroy);
++
++	qnx_redir->display_destroy.notify = handle_display_destroy;
++	wl_display_add_destroy_listener(display, &qnx_redir->display_destroy);
++
++	return qnx_redir;
++}
++
+-- 
+2.51.0
+
