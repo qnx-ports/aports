@@ -1,5 +1,5 @@
---- make.inc.example.orig	2026-08-31 10:38:45.000000000 +0000
-+++ make.inc.example	2026-08-31 10:39:21.000000000 +0000
+--- a/make.inc.example	2026-08-31 10:38:45.000000000 +0000
++++ b/make.inc.example	2026-08-31 10:39:21.000000000 +0000
 @@ -11,7 +11,7 @@
  #
  #  The machine (platform) identifier to append to the library names
