@@ -8,27 +8,19 @@ url="https://github.com/google/snappy"
 arch="all"
 license="BSD-3-Clause"
 depends="libc++"
-makedepends="cmake libc++-dev build-base"
-subpackages="$pkgname-dev"
-source="$pkgname-$pkgver.tar.gz::https://github.com/google/snappy/archive/refs/tags/$pkgver.tar.gz 
-https://github.com/google/googletest/archive/refs/tags/v1.17.0.tar.gz "
-
+makedepends="cmake libc++-dev gtest-dev gmock"
+subpackages="$pkgname-dbg $pkgname-dev $pkgname-doc"
+source="$pkgname-$pkgver.tar.gz::https://github.com/google/snappy/archive/refs/tags/$pkgver.tar.gz snappy-1.2.2-cmake.patch"
 builddir="$srcdir/$pkgname-$pkgver"
-prepare() {
-    default_prepare
-    rm -rf third_party/googletest
-    cp -r "$srcdir"/googletest-* third_party/googletest
-}
-
 build() {
    cmake -B build  \
 		-DCMAKE_BUILD_TYPE=None \
 		-DCMAKE_INSTALL_PREFIX=/usr \
 		-DCMAKE_INSTALL_LIBDIR=/usr/lib \
 		-DBUILD_SHARED_LIBS=ON \
-		-DBUILD_STATIC_LIBS=ON \
 		-DSNAPPY_BUILD_BENCHMARKS=OFF \
-		-DSNAPPY_BUILD_TESTS=ON 
+		-DSNAPPY_BUILD_TESTS=ON  \
+        -DCMAKE_CXX_STANDARD=17
 
     cmake --build build
 }
@@ -39,7 +31,12 @@ check() {
 }
 
 package() {
-        DESTDIR="$pkgdir" cmake --install build
+	DESTDIR="$pkgdir" cmake --install build
+
+	local file; for file in AUTHORS CONTRIBUTING.md COPYING NEWS README.md \
+		format_description.txt framing_format.txt; do
+		install -m644 -D $file "$pkgdir"/usr/share/doc/$pkgname/$file
+	done
 }
 
 sha512sums="
