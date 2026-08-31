@@ -1,0 +1,32 @@
+# Maintainer: Deep Chordia <dchordia@blackberry.com>
+pkgname=open-amp
+pkgver=2025.10.0
+pkgrel=0
+pkgdesc="The main OpenAMP library implementing RPMSG, Virtio, and Remoteproc for RTOS etc"
+url="https://github.com/OpenAMP/open-amp"
+arch="all"
+license="BSD-3-Clause"
+depends_dev="libmetal-dev"
+makedepends="
+    $depends_dev
+    cmake
+    ninja"
+subpackages="$pkgname-dev"
+source="$pkgname-$pkgver.tar.gz::https://github.com/OpenAMP/open-amp/archive/refs/tags/v$pkgver.tar.gz"
+
+build() {
+  cmake -B build -G Ninja \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=/usr \
+    -DWITH_STATIC_LIB=OFF \
+    -DWITH_SHARED_LIB=ON
+  cmake --build build
+}
+
+package() {
+  DESTDIR="$pkgdir" cmake --install build
+}
+
+sha512sums="
+1a17841141ce2b3b364b81e2357b3fe33cd6b0bd63e809b43dd747e5c0b87f82d814d0f2093ecbc5159183d7098c583887e7696bffc0ef2ea45a31df71b21ff8  open-amp-2025.10.0.tar.gz
+"
