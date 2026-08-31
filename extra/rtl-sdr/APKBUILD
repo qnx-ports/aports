@@ -1,0 +1,34 @@
+# Maintainer: Ramya santoshi <rtimmaraju@qnx.com>
+pkgname=rtl-sdr
+pkgver=2.0.2
+pkgrel=0
+pkgdesc="Software defined radio receiver for Realtek RTL2832U"
+url="https://github.com/qnx-ports/rtl-sdr"
+arch="all"
+license="GPL-2.0-or-later"
+
+makedepends=" libusb-dev libc++-dev qnx-io-sock-dev "
+depends="libc++ libusb qnx-io-sock"
+subpackages="$pkgname-dev"
+source="$pkgname-$pkgver.tar.gz::https://github.com/qnx-ports/rtl-sdr/archive/refs/heads/qnx_$pkgver.tar.gz"
+
+builddir="$srcdir/rtl-sdr-qnx_$pkgver"
+options="!tracedeps"
+build() {
+    cd "$builddir"
+    cmake -B build -S . \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DCMAKE_EXE_LINKER_FLAGS="-lsocket"
+
+    cmake --build build
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install build
+}
+#Tests cannot be executed as the qnxuser, and the build must not be run as root. Therefore, 
+# test execution is being disabled and verified the functional tests on root user .
+sha512sums="
+fdc958611fb1e21d974a2c08b29db20e3f7be72af39df1c5318b891d3d5949b5d0f4084ec3b4d688a606d48f627ee5c92e33d6d8314799d8201d3f69bb35182d  rtl-sdr-2.0.2.tar.gz
+"
