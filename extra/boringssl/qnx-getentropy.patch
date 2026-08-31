@@ -1,14 +1,16 @@
 --- a/crypto/rand/getentropy.cc
 +++ b/crypto/rand/getentropy.cc
-@@ -26,6 +26,7 @@
+@@ -26,6 +26,9 @@
  #include <stdio.h>
  #include <stdlib.h>
  #include <unistd.h>
++#if defined(__QNX__)
 +#include <fcntl.h>
++#endif
  
  #if defined(OPENSSL_MACOS) || defined(OPENSSL_FUCHSIA)
  #include <sys/random.h>
-@@ -35,6 +36,8 @@
+@@ -35,6 +38,8 @@
  
  void bssl::CRYPTO_init_sysrand() {}
  
@@ -17,12 +19,11 @@
  // CRYPTO_sysrand puts |requested| random bytes into |out|.
  void bssl::CRYPTO_sysrand(uint8_t *out, size_t requested) {
    while (requested > 0) {
-@@ -50,4 +53,27 @@
+@@ -50,4 +55,26 @@
    }
  }
  
 +#else
-+
 +
 +void bssl::CRYPTO_sysrand(uint8_t *out, size_t requested) {
 +  int fd = open("/dev/urandom", O_RDONLY);
