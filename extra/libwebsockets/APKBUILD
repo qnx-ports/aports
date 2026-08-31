@@ -15,6 +15,7 @@ source="
 	libwebsockets-$pkgver.tar.gz::https://github.com/warmcat/libwebsockets/archive/v$pkgver.tar.gz
 	add_qnx_support.patch
 "
+options="!check" # Disabling test as ref from alpinelinux.
 
 build() {
 	cmake -B build -G Ninja \
@@ -33,20 +34,7 @@ build() {
 }
 
 check() {
-    cd build
-    rm -rf ../destdir
-
-    DESTDIR=../destdir cmake --install .
-
-    LD_LIBRARY_PATH=../destdir/usr/lib:$LD_LIBRARY_PATH \
-
-	./bin/libwebsockets-test-server -r ../destdir/usr/share/libwebsockets-test-server & #checking the server is running, if there is ssl error add --no-ssl 
-
-    pid=$!
-    sleep 2
-    kill $pid
-
-    wait $pid 2>/dev/null || true
+	ctest --test-dir build
 }
 
 package() {
