@@ -10,7 +10,6 @@ license="GPL-3.0-or-later"
 depends="openssl
 	libc++
     qnx-io-sock
-	qnx-gcc-libs
 	"
 makedepends="openssl-dev
 	libc++-dev
