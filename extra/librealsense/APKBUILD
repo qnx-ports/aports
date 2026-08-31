@@ -1,0 +1,84 @@
+pkgname=librealsense
+pkgver=2.58.1
+pkgrel=0
+pkgdesc="Intel RealSense SDK 2.0"
+url="https://github.com/IntelRealSense/librealsense"
+arch="all"
+license="Apache-2.0"
+
+makedepends="
+	cmake
+	libusb-dev
+	qnx-fs-core-dev
+    libc++-dev
+    python3-dev
+    qnx-fs-gpt-dev
+    catch2
+    nlohmann-json
+    fast-cdr-dev
+"
+depends="qnx-fs-core libc++ libusb qnx-fs-gpt fast-cdr"
+subpackages="$pkgname-dev"
+source="
+	$pkgname-$pkgver.tar.gz::https://github.com/IntelRealSense/librealsense/archive/refs/tags/v$pkgver.tar.gz
+	librealsense.patch
+    qnx.patch 
+    dependencies.patch
+    librealsense_qnx1.patch
+"
+
+builddir="$srcdir/librealsense-$pkgver"
+
+prepare() {
+	cd "$builddir"
+	patch -p1 < ../librealsense.patch
+    patch -p1 < ../qnx.patch
+    patch -p1 < ../dependencies.patch
+    patch -p1 < ../librealsense_qnx1.patch
+}
+
+build() {
+
+	cd "$builddir"
+
+	CFLAGS=$(echo "$CFLAGS" | sed 's/-fstack-clash-protection//g')
+	CXXFLAGS=$(echo "$CXXFLAGS" | sed 's/-fstack-clash-protection//g')
+
+	cmake -B build -S . \
+		-DFORCE_RSUSB_BACKEND=ON \
+                -DBUILD_PYTHON_BINDINGS=ON \
+		-DBUILD_SHARED_LIBS=ON \
+		-DBUILD_UNIT_TESTS=true \
+		-DBUILD_EXAMPLES=OFF \
+		-DBUILD_GRAPHICAL_EXAMPLES=OFF \
+		-DBUILD_TOOLS=OFF \
+		-DCMAKE_C_FLAGS="$CFLAGS -DPLATFORM_POSIX" \
+                -DCMAKE_INSTALL_PREFIX=/usr \
+		-DCMAKE_CXX_FLAGS="$CXXFLAGS -DPLATFORM_POSIX"
+
+	cmake --build build
+}
+
+check() {
+    cd "$builddir/build/Release" || return 1
+
+    for t in test-rsutils-*; do
+        [ -x "$t" ] || continue
+
+        echo "Running $t"
+        ./"$t" || echo "FAILED: $t"
+    done
+}
+
+package() {
+	cd "$builddir"
+	DESTDIR="$pkgdir" cmake --install build
+}
+
+sha512sums="
+bd9a14a96b0b826b18dc3850cfaa82ea10e3e0c23f211fb04d1ab116d37a10789ef624737573b633fd8a881ad3f9daa66accf2bd370df82ab5eafee66b71bd66  librealsense-2.58.1.tar.gz
+c565539dc67164790897c0dc3ac1142e9606a2b4d018def2889c86266f8696d1605c3546f3d99292db3eaa2aab9042a26f179f1733d77e06465304310ad05f57  librealsense.patch
+dca85556cf35505afdabd27b80b1ec34e874ce09a2348056296bd220b01ed2e532f75c48d4566485c0a28aba2f7ddc0c6166cc778a88559d2530c70aab33c081  qnx.patch
+b7cdd596906bf5c56f4b4eb48695003f892956c7da25989f1b766688b9f8e55c2f675318928093545155d28995c11f2be7d6bb997507b803319c242004d9cb5a  dependencies.patch
+e91fef14a6f2fc6df54c115ea826d4694ce6c8f5f24625310362b223f4fddef6c22bbf4fb09becdfec822241322f4c51b676145aa26c29533e88426a654806c2  librealsense_qnx1.patch
+"
