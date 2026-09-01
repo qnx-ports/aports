@@ -9,9 +9,13 @@ arch="all"
 license="BSD-3-Clause"
 depends="libc++"
 makedepends="cmake libc++-dev gtest-dev gmock"
-subpackages="$pkgname-dbg $pkgname-dev $pkgname-doc"
-source="$pkgname-$pkgver.tar.gz::https://github.com/google/snappy/archive/refs/tags/$pkgver.tar.gz snappy-1.2.2-cmake.patch"
-builddir="$srcdir/$pkgname-$pkgver"
+subpackages="$pkgname-dbg $pkgname-static $pkgname-dev $pkgname-doc"
+source="$pkgname-$pkgver.tar.gz::https://github.com/google/snappy/archive/$pkgver.tar.gz
+	cmakelists.patch
+	no-include-gtest.patch
+	rtti.patch
+	snappy-1.2.2-qnx.patch
+	"
 build() {
    cmake -B build  \
 		-DCMAKE_BUILD_TYPE=None \
@@ -41,5 +45,8 @@ package() {
 
 sha512sums="
 0c1e1019e1bec9281f9877996d896e59e1533456130143224acb9cbfc35c1b0dd9de0a76e4a36494844d9ec58c295eed8c50bdf6dbabe47cf679652eb24b1281  snappy-1.2.2.tar.gz
-a29d3f98452bf6ed66c7d5dd3919accda0c8cbd033cb85f51bb59caaa54c348e80cb0a074aabd93707df71f25bef10e215c827f9ac4b591046de4ac43801a12e  snappy-1.2.2-cmake.patch
+9de467922ecfea32dd5200c5959c19192abf4d823eab2ea8dd718a11555dbcf33c0d2186f7750fcc0b00040e1ad0916c63fc95f3e7618105e9879ba24f9da5db  cmakelists.patch
+b9aeec944e8f7ef89035ff827772c28bb7404529f82fc70d8ed54b1db98deaa25fb1e5cbbda8f13c9d684c8a376c5654071aea11f89e69960e5b338cdbd2d8a2  no-include-gtest.patch
+0f39012a1830037ff1b1d7a7a39212aa8040caae1bec088c2a158bcb06a44ec0870dc384e89c2d74fde694b20522702f987afa29de863a64160b0053dc57f4c0  rtti.patch
+6d252d2bec6d471ba6f59b5e1e7c28eeec1db8c88357f74c0bac7a8c39ee996fb164fdfef9f80fe82378d95d804f11c63cbbf37018385252c99d97aa65f19d2a  snappy-1.2.2-qnx.patch
 "
