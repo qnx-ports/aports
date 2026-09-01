@@ -15,6 +15,14 @@ source="https://github.com/csmith-project/$pkgname/archive/refs/tags/$pkgname-$p
 	"
 builddir="$srcdir/$pkgname-$pkgname-$pkgver"
 
+prepare() {
+    default_prepare
+
+    # CSmith ships outdated Autotools config scripts that do not recognize the QNX target.
+    cp /usr/share/automake*/config.sub autoconf/config.sub
+    cp /usr/share/automake*/config.guess autoconf/config.guess
+}
+
 build() {
     # bind2nd/ptr_fun removed in C++17; enum bitset non-constexpr with clang
     # Suppress unused QNX-specific flags not supported on Alpine/musl
