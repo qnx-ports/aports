@@ -1,16 +1,20 @@
-diff -ruN '--exclude=.git' CANdb/.gitignore CANdb_modified/.gitignore
---- CANdb/.gitignore	2026-03-30 17:24:27.629084095 +0530
-+++ CANdb_modified/.gitignore	2026-03-30 17:23:00.360081432 +0530
-@@ -6,3 +6,6 @@
- 
- # VIM swap files
- *.swp
+--- a/src/cantypes.hpp	2026-09-01 13:37:47.479384811 +0530
++++ b/src/cantypes.hpp	2026-09-01 13:35:37.108380833 +0530
+@@ -83,6 +83,12 @@
+     std::string ecu;
+     std::uint32_t updateCycle{ 0 };
+     std::string initValue{ "" };
 +
-+# VSCode settings folder
-+.vscode
-diff -ruN '--exclude=.git' CANdb/src/dbc_grammar.peg CANdb_modified/src/dbc_grammar.peg
---- CANdb/src/dbc_grammar.peg	2026-03-30 17:24:27.629084095 +0530
-+++ CANdb_modified/src/dbc_grammar.peg	2026-03-30 17:23:00.361081432 +0530
++    bool operator<(const CANmessage& rhs) const
++    {
++        return id < rhs.id;
++    }
++
+ };
+ 
+ namespace std {
+--- a/src/dbc_grammar.peg	2026-09-01 13:37:47.479384811 +0530
++++ b/src/dbc_grammar.peg	2026-09-01 13:35:37.113380833 +0530
 @@ -1,5 +1,5 @@
  # DBC Grammar
 -grammar                 <- spacing _ version _ comment* ns_comment bs? _ (bu / bu_sl)? _ val_table? _ message* _ bo_tx_bu* _ cm* cm_bu* _ (cm_bo _ / cm_sg _)* _ ev* _ (ba_def_str / ba_def_num / ba_def_enum / ba_def_rel)* _ (ba_def_def / ba_def_def_rel)* _ ba* _ ba_bu* _ ba_bo* _ ba_sg* _ ba_rel* vals* sig_val* _ EndOfFile
@@ -45,9 +49,8 @@ diff -ruN '--exclude=.git' CANdb/src/dbc_grammar.peg CANdb_modified/src/dbc_gram
  symbol_name             <- < s* TOKEN > NewLine
  mux                     <- 'M'
  mux_ndx                 <- 'm'< [0-9]+ >
-diff -ruN '--exclude=.git' CANdb/tests/CMakeLists.txt CANdb_modified/tests/CMakeLists.txt
---- CANdb/tests/CMakeLists.txt	2026-03-30 17:24:27.629084095 +0530
-+++ CANdb_modified/tests/CMakeLists.txt	2026-03-30 17:23:00.362081432 +0530
+--- a/tests/CMakeLists.txt	2026-09-01 13:37:47.479384811 +0530
++++ b/tests/CMakeLists.txt	2026-09-01 13:35:37.265380837 +0530
 @@ -1,6 +1,19 @@
  include(GoogleTest)
 +include(GNUInstallDirs)
@@ -122,9 +125,8 @@ diff -ruN '--exclude=.git' CANdb/tests/CMakeLists.txt CANdb_modified/tests/CMake
  if(CANDB__WITH_CONAN)
      add_executable(dbc_parser_benchmark benchmark.cpp)
      target_compile_features(dbc_parser_benchmark PUBLIC cxx_std_17)
-diff -ruN '--exclude=.git' CANdb/tests/opendbc_tests.cpp CANdb_modified/tests/opendbc_tests.cpp
---- CANdb/tests/opendbc_tests.cpp	2026-03-30 17:24:27.629084095 +0530
-+++ CANdb_modified/tests/opendbc_tests.cpp	2026-03-30 17:23:00.363081432 +0530
+--- a/tests/opendbc_tests.cpp	2026-09-01 13:37:47.480384811 +0530
++++ b/tests/opendbc_tests.cpp	2026-09-01 13:35:37.114380833 +0530
 @@ -56,4 +56,62 @@
          "ford_cgea1_2_bodycan_2011.dbc", "toyota_adas.dbc", "luxgen_s5_2015.dbc", "mazda_2017.dbc",
          "toyota_2017_ref_pt.dbc", "vw_golf_mk4.dbc", "nissan_x_trail_2017.dbc", "volvo_v60_2015_pt.dbc",
@@ -189,9 +191,8 @@ diff -ruN '--exclude=.git' CANdb/tests/opendbc_tests.cpp CANdb_modified/tests/op
 +//        "toyota_rav4_hybrid_2017_pt_generated.dbc",
 +//        "toyota_sienna_xle_2018_pt_generated.dbc",
 +        "vw_mqb_2010.dbc"));
-diff -ruN '--exclude=.git' CANdb/tests/opendbc_tests_expected_data.hpp CANdb_modified/tests/opendbc_tests_expected_data.hpp
---- CANdb/tests/opendbc_tests_expected_data.hpp	2026-03-30 17:24:27.629084095 +0530
-+++ CANdb_modified/tests/opendbc_tests_expected_data.hpp	2026-03-30 17:23:00.363081432 +0530
+--- a/tests/opendbc_tests_expected_data.hpp	2026-09-01 13:37:47.480384811 +0530
++++ b/tests/opendbc_tests_expected_data.hpp	2026-09-01 13:35:37.261380837 +0530
 @@ -21,7 +21,7 @@
                "BO_TX_BU_", "BA_DEF_REL_", "BA_REL_", "BA_DEF_DEF_REL_",
                "BU_SG_REL_", "BU_EV_REL_", "BU_BO_REL_", "SG_MUL_VAL_" };
