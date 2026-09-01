@@ -8,7 +8,7 @@ url="https://embed.cs.utah.edu/csmith/"
 arch="all"
 license="BSD-2-Clause"
 depends="qnx-gcc-libs libc++"
-makedepends="cmake libc++-dev m4 perl"
+makedepends="automake autoconf libtool cmake libc++-dev m4 perl "
 subpackages="$pkgname-dev:_dev $pkgname-doc"
 source="https://github.com/csmith-project/$pkgname/archive/refs/tags/$pkgname-$pkgver.tar.gz
     add_qnx_support.patch
@@ -16,11 +16,14 @@ source="https://github.com/csmith-project/$pkgname/archive/refs/tags/$pkgname-$p
 builddir="$srcdir/$pkgname-$pkgname-$pkgver"
 
 prepare() {
-    default_prepare
-
+	default_prepare
     # CSmith ships outdated Autotools config scripts that do not recognize the QNX target.
-    cp /usr/share/automake*/config.sub autoconf/config.sub
-    cp /usr/share/automake*/config.guess autoconf/config.guess
+	libtoolize --force --copy
+	aclocal
+	autoheader
+	automake --add-missing --include-deps --copy
+	autoconf
+	update_config_sub
 }
 
 build() {
@@ -69,6 +72,13 @@ _dev() {
 		usr/include/csmith-$pkgver \
 		usr/lib/libcsmith.a \
 		usr/lib/libcsmith.la
+}
+
+doc() {
+    pkgdesc="$pkgdesc (documentation)"
+
+    amove \
+        usr/share/doc/csmith
 }
 
 sha512sums="
