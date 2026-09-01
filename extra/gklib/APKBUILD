@@ -16,10 +16,19 @@ fix-xopen-source.patch
 builddir="$srcdir/GKlib-$_commit"
 
 build() {
+	local cmake_opts=
+
+	case "$CARCH" in
+		aarch64)
+			cmake_opts="-DNO_X86=ON"
+			;;
+	esac
+	
 	cmake -B build \
 		-DCMAKE_INSTALL_PREFIX=/usr \
 		-DCMAKE_BUILD_TYPE=Release \
 		-DBUILD_SHARED_LIBS=ON \
+		$cmake_opts \
 		-DCMAKE_POLICY_VERSION_MINIMUM=3.5
 	cmake --build build
 }
