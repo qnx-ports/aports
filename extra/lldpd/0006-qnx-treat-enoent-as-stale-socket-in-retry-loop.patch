@@ -1,0 +1,25 @@
+--- a/src/daemon/lldpd.c
++++ b/src/daemon/lldpd.c
+@@ -1821,7 +1821,21 @@
+ 				log_warnx("main",
+ 				    "another instance is running, please stop it");
+ 				fatalx("main", "giving up");
+-			} else if (errno == ECONNREFUSED) {
++			} else if (errno == ECONNREFUSED
++#ifdef __QNX__
++			    /* On QNX, connect() to an orphaned AF_UNIX socket
++			     * path (listener died without unlink()ing it, e.g.
++			     * a non-graceful kill -9) reports ENOENT instead of
++			     * ECONNREFUSED, unlike Linux/BSD - confirmed with a
++			     * minimal unprivileged bind()+listen()+kill -9+
++			     * connect() reproducer independent of privsep/chroot.
++			     * Treat it the same as ECONNREFUSED: ctl_cleanup()'s
++			     * unlink() already tolerates ENOENT if the path is
++			     * gone by the time we get here, so this is safe even
++			     * in that race. */
++			    || errno == ENOENT
++#endif
++			    ) {
+ 				/* Nobody is listening */
+ 				log_info("main",
+ 				    "old control socket is present, clean it");

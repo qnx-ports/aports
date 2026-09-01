@@ -1,0 +1,26 @@
+--- a/src/daemon/priv-bsd.c
++++ b/src/daemon/priv-bsd.c
+@@ -102,7 +102,7 @@
+ 	struct bpf_program fprog = { .bf_insns = filter,
+ 		.bf_len = sizeof(filter) / sizeof(struct bpf_insn) };
+ 
+-#ifndef HOST_OS_SOLARIS
++#if !defined HOST_OS_SOLARIS && !defined HOST_OS_QNX
+ 	int n = 0;
+ 	char dev[20];
+ 	do {
+@@ -110,6 +110,14 @@
+ 		*fd = open(dev, O_RDWR);
+ 	} while (*fd < 0 && errno == EBUSY);
+ #else
++	/* Solaris and QNX both provide a single, non-numbered /dev/bpf
++	 * cloning device rather than FreeBSD's numbered /dev/bpf0, /dev/bpf1,
++	 * ... scheme - confirmed on QNX 8.0 by inspection (only /dev/bpf
++	 * exists as a device node; there is no /dev/bpf0). Without this, the
++	 * numbered-device loop above fails immediately on the very first
++	 * attempt with ENOENT (not EBUSY, so the retry loop never even
++	 * iterates), logged as "unable to find a free BPF: No such file or
++	 * directory". */
+ 	*fd = open("/dev/bpf", O_RDWR);
+ #endif
+ 	if (*fd < 0) {
