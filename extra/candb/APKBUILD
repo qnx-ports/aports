@@ -8,10 +8,10 @@ arch="all"
 license="MPL-2.0"
 depends="libc++"
 makedepends="cmake libc++-dev"
-_pkgver=150c42a8cdfc0748915f09d2cd0c5a68591263a7
+_commit=150c42a8cdfc0748915f09d2cd0c5a68591263a7
 subpackages="$pkgname-dev"
 source="
-https://github.com/CANdb/archive/${_pkgver}.tar.gz
+https://github.com/GENIVI/CANdb/archive/${_commit}.tar.gz
 candb.patch
 https://github.com/USCiLab/cereal/archive/51cbda5f30e56c801c07fe3d3aba5d7fb9e6cca4.tar.gz
 https://github.com/yhirose/cpp-peglib/archive/501836a025c944ef1c83797707b545c4e4dc9411.tar.gz
@@ -20,7 +20,7 @@ https://github.com/google/googletest/archive/e2239ee6043f73722e7aa812a459f54a285
 https://github.com/gabime/spdlog/archive/100f30043f33277122e0991c83845a2617172ffd.tar.gz
 https://github.com/commaai/opendbc/archive/acddb03c357340e4229a453043645ed5f65d1e40.tar.gz
 "
-builddir="$srcdir/CANdb-$_pkgver"
+builddir="$srcdir/CANdb-$_commit"
 
 prepare() {
     default_prepare
