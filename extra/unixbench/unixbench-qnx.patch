@@ -1,0 +1,28 @@
+--- a/UnixBench/src/syscall.c
++++ b/UnixBench/src/syscall.c
+@@ -28,7 +28,6 @@
+ #include <sys/stat.h>
+ #include <sys/types.h>
+ #include <sys/wait.h>
+-#include <sys/syscall.h>
+ #include <unistd.h>
+ #include "timeit.c"
+ 
+@@ -79,7 +78,7 @@
+ 	   fd = create_fd();
+ 	   while (1) {
+ 		close(dup(fd));
+-		syscall(SYS_getpid);
++		getpid();
+ 		getuid();
+ 		umask(022);
+ 		iter++;
+@@ -94,7 +93,7 @@
+            /* NOTREACHED */
+         case 'g':
+            while (1) {
+-                syscall(SYS_getpid);
++                getpid();
+                 iter++;
+            }
+            /* NOTREACHED */
