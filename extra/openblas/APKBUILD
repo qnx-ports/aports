@@ -3,13 +3,14 @@
 # Maintainer: Deep Chordia <dchordia@blackberry.com>
 pkgname=openblas
 pkgver=0.3.31
-pkgrel=0
+pkgrel=1
 pkgdesc="OpenBLAS is an optimized BLAS library based on GotoBLAS2 1.13 BSD version."
 url="http://www.openmathlib.org/OpenBLAS/"
 arch="all"
 license="BSD-3-Clause"
+depends="openmp"
 depends_dev="
-    flang-dev
+    flang22
     openmp-dev
     "
 makedepends="
@@ -17,8 +18,6 @@ makedepends="
     cmake
     ninja
     clang
-    flang
-    openmp
     libc++-dev
 "
 subpackages="$pkgname-dev"
@@ -36,7 +35,7 @@ build() {
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX=/usr \
     -DCMAKE_INSTALL_DATADIR=/usr/lib \
-    -DCMAKE_Fortran_COMPILER=flang \
+    -DCMAKE_Fortran_COMPILER=/usr/lib/llvm22/bin/flang-22 \
     -DOpenMP_Fortran_LIB_NAMES=omp \
     -DBUILD_SHARED_LIBS=ON \
     -DBUILD_TESTING=ON \
