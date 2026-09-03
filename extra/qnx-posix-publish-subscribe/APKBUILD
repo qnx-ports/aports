@@ -8,8 +8,8 @@ _samples_pkgdesc="samples"
 _utils_pkgdesc="utilities"
 url="https://qnx.com"
 arch="all"
-license="LicenseRef-QDL-Non-Commercial"
-depends="qnx-libjson"
+license="Apache-2.0"
+depends="qnx-libslog2 qnx-libjson"
 makedepends="
     qnx-io-sock-dev
     qnx-libslog2-dev
@@ -48,6 +48,7 @@ dbg() {
 
 utils() {
     pkgdesc="$pkgname $_utils_pkgdesc"
+    depends="qnx-libslog2 qnx-libjson qnx-io-sock"
     amove usr/bin/echo-actuator
     amove usr/bin/playback-connector
     amove usr/bin/playback-recorder
