@@ -1,0 +1,219 @@
+# Maintainer: Deep Chordia <dchordia@qnx.com>
+pkgname=python3-pytorch
+_pkgname=pytorch
+pkgver=2.12.1
+pkgrel=0
+pkgdesc="Tensors and Dynamic neural networks in Python with strong GPU acceleration"
+url="https://pytorch.org/"
+arch="all"
+license="BSD-3-Clause"
+_FP16_commit="4dfe081cf6bcd15db339cf2680b9281b8451eeb3"
+_FXdiv_commit="b408327ac2a15ec3e43352421954f5b1967701d1"
+_NVTX_commit="3ebbc93ded7285963bff932c678fa367eb393ba6"
+_XNNPACK_commit="b7cf8581d69a45d989c9ee4f179f8e00b8a316e3"
+_cutlass_commit="da5e086dab31d63815acafdac9a9c5893b1c69e2"
+_fbgemm_commit="c246916f9e3804eacc3c95058e51cce02ae00fff"
+_fmt_commit="407c905e45ad75fc29bf0f9bb7c5c2fd3475976f"
+_googletest_commit="52eb8108c5bdec04579160ae17225d66034bd723"
+_kineto_commit="f4ca35a7d8e48290572186ae990e7515bacfb5d3"
+_nlohmann_commit="55f93686c01528224f448c19128836e7df245f72"
+_pocketfft_commit="0fa0ef591e38c2758e3184c6c23e497b9f732ffa"
+_psimd_commit="072586a71b55b7f8c584153d223e95687148a900"
+_sleef_commit="5a1d179df9cf652951b59010a2d2075372d67f68"
+_asmjit_commit="a3199e8857792cd10b7589ff5d58343d2c9008ea"
+_cutlass_jwfromm_commit="a54461186bc30c39bf89bc433f89198892ad9e5f"
+_nlohmann_json_commit="9cca280a4d0ccf0c08f47a99aa71d1b0e52f8d03"
+_dynolog_commit="d2ffe0a4e3acace628db49974246b66fc3e85fb1"
+_fmt_kineto_commit="40626af88bd7df9a5fb80be7b25ac85b122d6c21"
+_mimalloc_commit="048d969a1c5ee2fb89c226298f41ea38445546ef"
+_kleidiai_commit="d7770c89632329a9914ef1a90289917597639cbe"
+_flatbuffers_version="24.12.23"
+_python3_depends="
+    python3
+    python3-numpy
+    python3-pybind11
+    python3-protobuf
+    python3-filelock
+    python3-jinja2
+    python3-typing-extensions
+"
+depends="
+    libc++
+    cpuinfo
+    pthreadpool
+    protobuf
+    gflags
+    openblas
+    onnx
+    $_python3_depends
+    "
+depends_dev="
+    libc++-dev
+    cpuinfo-dev
+    pthreadpool-dev
+    protobuf-dev
+    gflags-dev
+    openblas-dev
+    onnx-dev
+    python3-dev
+    python3-numpy-dev
+    python3-pybind11-dev
+    "
+makedepends="
+    $depends_dev
+    cmake
+    ninja
+    python3-yaml
+    python3-six
+    python3-gpep517
+    python3-setuptools
+    benchmark-dev
+    "
+subpackages="
+    $pkgname-dev
+    "
+options="!check"
+source="
+    $pkgname-$pkgver.tar.gz::https://github.com/qnx-ports/pytorch/archive/refs/heads/qnx-v2.12.1.tar.gz
+    FP16-$_FP16_commit.tar.gz::https://github.com/Maratyszcza/FP16/archive/$_FP16_commit.tar.gz
+    FXdiv-$_FXdiv_commit.tar.gz::https://github.com/Maratyszcza/FXdiv/archive/$_FXdiv_commit.tar.gz
+    NVTX-$_NVTX_commit.tar.gz::https://github.com/NVIDIA/NVTX/archive/$_NVTX_commit.tar.gz
+    XNNPACK-$_XNNPACK_commit.tar.gz::https://github.com/qnx-ports/XNNPACK/archive/$_XNNPACK_commit.tar.gz
+    cutlass-$_cutlass_commit.tar.gz::https://github.com/NVIDIA/cutlass/archive/$_cutlass_commit.tar.gz
+    fbgemm-$_fbgemm_commit.tar.gz::https://github.com/pytorch/fbgemm/archive/$_fbgemm_commit.tar.gz
+    fmt-$_fmt_commit.tar.gz::https://github.com/fmtlib/fmt/archive/$_fmt_commit.tar.gz
+    googletest-$_googletest_commit.tar.gz::https://github.com/google/googletest/archive/$_googletest_commit.tar.gz
+    kineto-$_kineto_commit.tar.gz::https://github.com/qnx-ports/kineto/archive/$_kineto_commit.tar.gz
+    nlohmann-$_nlohmann_commit.tar.gz::https://github.com/nlohmann/json/archive/$_nlohmann_commit.tar.gz
+    pocketfft-$_pocketfft_commit.tar.gz::https://github.com/mreineck/pocketfft/archive/$_pocketfft_commit.tar.gz
+    psimd-$_psimd_commit.tar.gz::https://github.com/Maratyszcza/psimd/archive/$_psimd_commit.tar.gz
+    sleef-$_sleef_commit.tar.gz::https://github.com/shibatch/sleef/archive/$_sleef_commit.tar.gz
+    asmjit-$_asmjit_commit.tar.gz::https://github.com/asmjit/asmjit/archive/$_asmjit_commit.tar.gz
+    cutlass-jwfromm-$_cutlass_jwfromm_commit.tar.gz::https://github.com/jwfromm/cutlass/archive/$_cutlass_jwfromm_commit.tar.gz
+    nlohmann-$_nlohmann_json_commit.tar.gz::https://github.com/nlohmann/json/archive/$_nlohmann_json_commit.tar.gz
+    dynolog-$_dynolog_commit.tar.gz::https://github.com/facebookincubator/dynolog/archive/$_dynolog_commit.tar.gz
+    fmt-$_fmt_kineto_commit.tar.gz::https://github.com/fmtlib/fmt/archive/$_fmt_kineto_commit.tar.gz
+    mimalloc-$_mimalloc_commit.tar.gz::https://github.com/microsoft/mimalloc/archive/$_mimalloc_commit.tar.gz
+    kleidiai-$_kleidiai_commit.tar.gz::https://github.com/ARM-software/kleidiai/archive/$_kleidiai_commit.tar.gz
+    flatbuffers-$_flatbuffers_version.tar.gz::https://github.com/google/flatbuffers/archive/v$_flatbuffers_version.tar.gz
+"
+builddir="$srcdir/$_pkgname-qnx-v$pkgver"
+
+prepare() {
+    default_prepare
+
+    rm -rf third_party/FP16 && mv "$srcdir"/FP16-$_FP16_commit third_party/FP16
+    rm -rf third_party/FXdiv && mv "$srcdir"/FXdiv-$_FXdiv_commit third_party/FXdiv
+    rm -rf third_party/NVTX && mv "$srcdir"/NVTX-$_NVTX_commit third_party/NVTX
+    rm -rf third_party/XNNPACK && mv "$srcdir"/XNNPACK-$_XNNPACK_commit third_party/XNNPACK
+    rm -rf third_party/cutlass && mv "$srcdir"/cutlass-$_cutlass_commit third_party/cutlass
+    rm -rf third_party/fbgemm && mv "$srcdir"/FBGEMM-$_fbgemm_commit third_party/fbgemm
+    rm -rf third_party/fmt && mv "$srcdir"/fmt-$_fmt_commit third_party/fmt
+    rm -rf third_party/googletest && mv "$srcdir"/googletest-$_googletest_commit third_party/googletest
+    rm -rf third_party/kineto && mv "$srcdir"/kineto-$_kineto_commit third_party/kineto
+    rm -rf third_party/nlohmann && mv "$srcdir"/json-$_nlohmann_commit third_party/nlohmann
+    rm -rf third_party/pocketfft && mv "$srcdir"/pocketfft-$_pocketfft_commit third_party/pocketfft
+    rm -rf third_party/psimd && mv "$srcdir"/psimd-$_psimd_commit third_party/psimd
+    rm -rf third_party/sleef && mv "$srcdir"/sleef-$_sleef_commit third_party/sleef
+    rm -rf third_party/mimalloc && mv "$srcdir"/mimalloc-$_mimalloc_commit third_party/mimalloc
+    rm -rf third_party/kleidiai && mv "$srcdir"/kleidiai-$_kleidiai_commit third_party/kleidiai
+    rm -rf third_party/flatbuffers && mv "$srcdir"/flatbuffers-$_flatbuffers_version third_party/flatbuffers
+
+    rm -rf third_party/fbgemm/external/asmjit && mv "$srcdir"/asmjit-$_asmjit_commit third_party/fbgemm/external/asmjit
+    rm -rf third_party/fbgemm/external/cutlass && mv "$srcdir"/cutlass-$_cutlass_jwfromm_commit third_party/fbgemm/external/cutlass
+    rm -rf third_party/fbgemm/external/json && mv "$srcdir"/json-$_nlohmann_json_commit third_party/fbgemm/external/json
+    rm -rf third_party/fbgemm/external/googletest && cp -r third_party/googletest third_party/fbgemm/external/googletest
+
+    rm -rf third_party/kineto/libkineto/third_party/dynolog && mv "$srcdir"/dynolog-$_dynolog_commit third_party/kineto/libkineto/third_party/dynolog
+    rm -rf third_party/kineto/libkineto/third_party/fmt && mv "$srcdir"/fmt-$_fmt_kineto_commit third_party/kineto/libkineto/third_party/fmt
+    rm -rf third_party/kineto/libkineto/third_party/googletest && cp -r third_party/googletest third_party/kineto/libkineto/third_party/googletest
+}
+
+build() {
+    export CXXFLAGS="$CXXFLAGS \
+        -Wno-error=unused-command-line-argument -Wno-unused-command-line-argument \
+        -Wno-error=nontrivial-memcall -Wno-nontrivial-memcall \
+        -Wno-error=vla-cxx-extension -Wno-vla-cxx-extension \
+        -Wno-error=character-conversion -Wno-character-conversion\
+        -Wno-error=missing-field-initializers -Wno-missing-field-initializers\
+        -Wno-error=thread-safety-analysis -Wno-thread-safety-analysis\
+        -Wno-error=unknown-warning-option -Wno-unknown-warning-option \
+        -Wno-error=c2y-extensions -Wno-c2y-extensions \
+        -DEIGEN_DONT_VECTORIZE"
+
+    export CMAKE_BUILD_TYPE=Release
+    export CMAKE_POLICY_VERSION_MINIMUM=3.5
+    export CMAKE_SYSTEM_NAME=QNX
+    export USE_ROCM=OFF
+    export USE_CUDA=OFF
+    export USE_MAGMA=OFF
+    export USE_XPU=OFF
+    export USE_ITT=OFF
+    export USE_NNPACK=OFF
+    export BUILD_CUSTOM_PROTOBUF=OFF
+    export USE_DISTRIBUTED=OFF
+    export USE_MKLDNN=OFF
+    export USE_NNPACK=OFF
+    export USE_QNNPACK=OFF
+    export USE_SYSTEM_XNNPACK=OFF
+    export USE_SYSTEM_ONNX=ON
+    export USE_SYSTEM_PYBIND11=ON
+    export USE_GFLAGS=ON
+    export USE_BLAS=ON
+    export USE_SYSTEM_CPUINFO=ON
+    export USE_SYSTEM_PTHREADPOOL=ON
+    export USE_SYSTEM_BENCHMARK=ON
+    export BUILD_MOBILE_TEST=OFF
+    export BUILD_BINARY=OFF
+    export TRACING_BASED=OFF
+    export BUILD_PYTHON=ON
+    export BUILD_TEST=ON
+    export CMAKE_LINK_LIBRARY_USING_WHOLE_ARCHIVE_SUPPORTED=TRUE
+
+    gpep517 build-wheel \
+        --wheel-dir .dist \
+        --output-fd 3 3>&1 >&2
+}
+
+check() {
+    # Core math engine (pure C++) tests
+    _test_exclude="vec_test_all_types_DEFAULT|vec_test_all_types_AVX512|vec_test_all_types_AVX2|StorageUtils_test|inline_container_test"
+    ctest --test-dir build -E $_test_exclude -j1
+
+    # Python bindings communication and usage with C++ internals tests
+    python3 -m venv --clear --system-site-packages .testenv
+    .testenv/bin/python3 -m installer .dist/*.whl
+    .testenv/bin/python3 -m pip install "hypothesis<6.80.0"
+    .testenv/bin/python3 -m pip install expecttest pytest-rerunfailures pytest-flakefinder pytest-xdist sympy fsspec
+    PYTORCH_NUM_PYTEST_RERUNS=0 .testenv/bin/python3 test/run_test.py --keep-going
+}
+
+package() {
+    python3 -m installer -d "$pkgdir" \
+        .dist/*.whl
+}
+
+sha512sums="
+09a64de110267d24b2e77e32b028dc4caa61de0b4b73ac7eb0d317bc6c9b0d2aff029b7af0e04c1c386cf8badcd1e1863d1129d66200b433854bb5eafad04748  python3-pytorch-2.12.1.tar.gz
+e79a1f6f8d4aeca85982158d5b070923d31d4f2062ed84cfa6f26c47a34f2e8ac49e0f330b7d49f5732d5e1eec6e7afccdac43645070060fb7827e2ce261dd3e  FP16-4dfe081cf6bcd15db339cf2680b9281b8451eeb3.tar.gz
+d46d7c1437eccf8dc5ab5e51b0641d190839451ab059c8a24a220a9cf05a84a66b5d08c3ff730622efe491152a8378a2c726fd9abad19a3df98db40d6a13e4b9  FXdiv-b408327ac2a15ec3e43352421954f5b1967701d1.tar.gz
+17018c13c46382c65c44bb15a997817b88ae0d8f8dd32e6cf9f42c98fa074fb59509b4076c9f238883599a788ca24dc5c00f76ba59c2af7f99c3413aeb714279  NVTX-3ebbc93ded7285963bff932c678fa367eb393ba6.tar.gz
+b1f0fe700e4d26677bc749f90ea3d30cea9b3a7146b486e165c02faa64ca97c755bd2822d1b5e1bddc0180a0cf5197c41e5beae0fae3f88a66510d01f3536054  XNNPACK-b7cf8581d69a45d989c9ee4f179f8e00b8a316e3.tar.gz
+69abecda77b42d66278ce34d841936a31ff58d1dc3d825cd0efabc58bb87bf3001133171f66ba075dd960fd359817a906b482a3c8a80af39b43e42c3abcbd81e  cutlass-da5e086dab31d63815acafdac9a9c5893b1c69e2.tar.gz
+32eeed2c104ca382fffb769a68b30623ecff7a657586034ad89dbb858d1ae6d8773cbd7aa2a451558520cd1eaa4c9bacaffe1d1aabe80a25dee7b2243707c121  fbgemm-c246916f9e3804eacc3c95058e51cce02ae00fff.tar.gz
+90d92dc436be1b79263722a4677458c077e78f862bb41070dc4df65019b6ac03df52b1354213b4a11d5edf24a1bbf0f96ef28b52ca6abf23535bbf5b9f7f5af9  fmt-407c905e45ad75fc29bf0f9bb7c5c2fd3475976f.tar.gz
+7382ec9f583939f482d9d684ebccee9e564a2f1b7f1af0fbe654bdd498ba3b3f70d96e94983e7fc1890f936c18a6803599ba629ed3518345730dabc2cd73f9a8  googletest-52eb8108c5bdec04579160ae17225d66034bd723.tar.gz
+7e332568007cd723bd8aadd7b49876cfa399e9f02ad33947480f34c9fd41ee986927976cf414466f8fd1aa88762d648bedc2b6200230d9e35770981ddcfd4291  kineto-f4ca35a7d8e48290572186ae990e7515bacfb5d3.tar.gz
+9d4a665eb8c2e1e15b9964b9d70b166ae701f633897e0e9f06ab2e5762d64c7366cac4b32e63a6febb64717985d048c8dce118413405dec0fb5845041b9174e5  nlohmann-55f93686c01528224f448c19128836e7df245f72.tar.gz
+b606512d452ba87aa0024a464c34df52be2e808f8cca5abbcd63a37830a1a4e4f45ca971f5da2ee5456694ab7c6d840c0b0af82be0db6af3df0c6aa4c00336bf  pocketfft-0fa0ef591e38c2758e3184c6c23e497b9f732ffa.tar.gz
+a18faea093423dd9fe19ece8b228e011dccce0a2a22222f777ea19b023a13173966d4a8aea01147e8fc58de5d39cffcedeb2221a1572ae52bd5aba1295f86a94  psimd-072586a71b55b7f8c584153d223e95687148a900.tar.gz
+49fc46516390611da51931c7e64f2871828c2709e8580431a2a545876138ac8a35e5c8128678b97d88470da0324ea9c66a6391f4756b614662fba3dcb628926f  sleef-5a1d179df9cf652951b59010a2d2075372d67f68.tar.gz
+09c5285eac5e613f8289985bbf9134c25e138b1609aee4127fac978cba3af55dd73596fb12727e2a43f041feee8cacc01efc1995a719bfc5e78662fe3b0b0b97  asmjit-a3199e8857792cd10b7589ff5d58343d2c9008ea.tar.gz
+df9732d99c5190a234edb76afb1b8d61f8c38ebd5806e88e881b639e9547450435cd4516d9e15155286dfa2c678bda12c614d5404871df7066dbbef31ed500d2  cutlass-jwfromm-a54461186bc30c39bf89bc433f89198892ad9e5f.tar.gz
+d50841e84645ae4e3d43e78496e433719d26d2cd5e192d36c7e08d2825167771743b5b5ae059b41f3e585892db9d66425d1f50fa93cf9e694773a080f66b6774  nlohmann-9cca280a4d0ccf0c08f47a99aa71d1b0e52f8d03.tar.gz
+c8327a67929eded217041b55506a58f5bf30e2f9ea3685c533112b9868ce15ee7615775ffd5b97daac873cf3abc97eb285de1f062b0e9f5007536d38317480fe  dynolog-d2ffe0a4e3acace628db49974246b66fc3e85fb1.tar.gz
+ddcca9f6d79f79821d6b60f9d3d5fdaadb651a611c853789e42185e32e5c9898cce3c632e4d441de9411e5cd6a0e48d9bde67cc8f3806642dee45b9964da318a  fmt-40626af88bd7df9a5fb80be7b25ac85b122d6c21.tar.gz
+e5c9525f40dea4cfc01e2904ee3dc26be891c47b62f99545d76f3dd779054c72e8a1fc8a8e57b19ba81aa99d9765b3b98c6b19348487d98edb708f7963766ccd  mimalloc-048d969a1c5ee2fb89c226298f41ea38445546ef.tar.gz
+4fa747c413724522d13c208710f75853e095b7e1c3fb9727f4c00dc9385a2b791a078c6434dd8c37c81beeed394f30765a936222f30a8b64131d0f9c13d47e9f  kleidiai-d7770c89632329a9914ef1a90289917597639cbe.tar.gz
+f97762ba41b9cfef648e93932fd789324c6bb6ebc5b7aeca8185c9ef602294b67d73aea7ae371035579a1419cbfbeba7c3e88b31b5a5848db98f5e8a03b982b1  flatbuffers-24.12.23.tar.gz
+"
