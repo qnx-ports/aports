@@ -1,0 +1,53 @@
+# Alpine-Maintainer: Kyle Parisi <kyleparisi@gmail.com>
+# Maintainer: Narayana Murthy <nnarayanamurthy@qnx.com>
+pkgname=zerotier-one
+pkgver=1.16.1
+pkgrel=0
+pkgdesc="ZeroTier One allows systems to join and participate in ZeroTier virtual networks."
+url="https://www.zerotier.com/"
+arch="all !s390x !riscv64" # rust
+license="GPL-3.0-or-later"
+depends="openssl
+	libc++
+    qnx-io-sock
+	"
+makedepends="openssl-dev
+	libc++-dev
+	qnx-io-sock-dev
+	"
+source="$pkgname-$pkgver.tar.gz::https://github.com/zerotier/ZeroTierOne/archive/refs/tags/$pkgver.tar.gz
+	$pkgname.initd
+    0001-Add-QNX-Support.patch
+    0002-Add-QNX-OS-Support.patch
+	"
+builddir="$srcdir"/ZeroTierOne-$pkgver
+
+build() {
+	make
+}
+
+check() {
+	make selftest
+}
+
+package() {
+	install -d "/usr/bin"
+	install -Dm755 \
+		"$builddir/zerotier-one" \
+		"$pkgdir/usr/bin/zerotier-one"
+
+	install -Dm755 \
+		"$builddir/zerotier-cli" \
+		"$pkgdir/usr/bin/zerotier-cli"
+
+	install -Dm755 \
+		"$builddir/zerotier-idtool" \
+		"$pkgdir/usr/bin/zerotier-idtool"
+}
+
+sha512sums="
+76a654179e6ad753384ed31f9a5fa9b3cc515cf18a419948f089ef880a4ea2a9fed96973f23e246ca083a0f4110572f06148487c18191a0f728f8dc63c884209  zerotier-one-1.16.1.tar.gz
+b959b38b1e48cc8e22084b3fa30ccc06b8c820fad3dc181dee13bb891dbea18ea97af80aba9752e22fee90cc9fd4364aef7f3d4dc2b3f43c9e5f6ca857a1f9f7  zerotier-one.initd
+863a44a3435592cd2407e70be7d5c453ff17af800ae7753c16c795b995397b17007ed94cd46eec1acf79570b24213254a78e62e9935bac49d3398d348efbd85b  0001-Add-QNX-Support.patch
+41dbb1081d9f950458e115ef0d2b3035196614e93c2524c6a05f701f972fee1434fe366ed7a22b38e233c56df99f1d39f693942c51a056ab75f97831dbcea34e  0002-Add-QNX-OS-Support.patch
+"
