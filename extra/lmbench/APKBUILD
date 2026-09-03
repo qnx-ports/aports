@@ -1,0 +1,69 @@
+# Maintianer: Deep Chordia <dchordia@qnx.com>
+pkgname=lmbench
+pkgver="1.0.0_git20260603"
+_pkgver="git20260603"
+pkgrel=0
+pkgdesc="Micro benchmark suite measuring system latency and bandwidth."
+url="https://github.com/intel/lmbench"
+arch="all"
+license="LicenseRef-lmbench"
+depends="$pkgname-tests qnx-io-sock qnx-fs-core"
+depends_dev="qnx-io-sock-dev qnx-fs-core-dev"
+makedepends="
+    $depends_dev
+"
+subpackages="$pkgname-dev $pkgname-doc $pkgname-tests:tests"
+source="$pkgname-$pkgver.tar.gz::https://github.com/qnx-ports/lmbench/archive/refs/heads/qnx-$_pkgver.tar.gz"
+builddir="$srcdir/$pkgname-qnx-$_pkgver"
+options="!check" # check takes long time and requires custom setups for few tests
+
+build() {
+    export CFLAGS="${CFLAGS} ${FLAGS} -O2 -DRUSAGE -DSYS5 -DNO_RPC -Wno-format"
+    export LDFLAGS="${LDFLAGS} -Wl,--build-id=md5"
+
+    make -C src \
+        CFLAGS="${CFLAGS}" \
+        LDFLAGS="${LDFLAGS}" \
+        LDLIBS="-lm -lsocket"
+}
+
+
+check() {
+    cd scripts
+    export OS=$(./os)
+    printf '\n1\n\n\n\n\n\n\n\n\n\nno\n' | ./config-run
+    ./results
+}
+
+package() {
+    cd scripts && export OS=$(./os)
+    cd ..
+
+    local _dest="$pkgdir/usr/lmbench"
+
+    mkdir -p "$_dest/bin/$OS"
+    mkdir -p "$_dest/scripts"
+    mkdir -p "$pkgdir/usr/include"
+    mkdir -p "$pkgdir/usr/lib"
+    mkdir -p "$pkgdir/usr/share/man/man3"
+    mkdir -p "$pkgdir/usr/share/man/man8"
+    find bin/$OS -type f -not -name "*.*" -not -name "Makefile" -exec cp -a {} "$_dest/bin/$OS/" \;
+
+    cp -a scripts/* "$_dest/scripts/"
+    cp -a scripts/lmbench "$_dest/bin/$OS/"
+    cp -a src/*.h "$pkgdir/usr/include/"
+    cp -a bin/$OS/lmbench.a "$pkgdir/usr/lib/libmbench.a"
+    cp -a doc/*.3 "$pkgdir/usr/share/man/man3/"
+    cp -a doc/*.8 "$pkgdir/usr/share/man/man8/"
+}
+
+tests() {
+    pkgdesc="lmbench automated test suite binaries and scripts"
+
+    mkdir -p "$subpkgdir"/usr
+    mv "$pkgdir"/usr/lmbench "$subpkgdir"/usr/
+}
+
+sha512sums="
+8202240e06cc206b09167589d74d49409df3ab71273329b1b7a99441b7135613062a697fda85036df33f4a5a83daff1e6e0b3bc3b8a7e1165f2537da1d49c6c3  lmbench-1.0.0_git20260603.tar.gz
+"
