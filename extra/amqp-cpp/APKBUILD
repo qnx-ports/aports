@@ -1,0 +1,42 @@
+# Maintainer: Narayana Murthy <nnarayanamurthy@qnx.com>
+pkgname=amqp-cpp
+pkgver=4.3.27
+pkgrel=0
+pkgdesc="C++ library for communicating with a RabbitMQ message broker"
+url="https://github.com/CopernicaMarketingSoftware/AMQP-CPP"
+arch="all"
+license="Apache-2.0"
+depends="libc++ qnx-io-sock"
+makedepends="cmake openssl-dev libc++-dev qnx-io-sock-dev"
+options="!check"
+source="
+    $pkgname-$pkgver.tar.gz::https://github.com/CopernicaMarketingSoftware/AMQP-CPP/archive/refs/tags/v$pkgver.tar.gz
+    add_qnx_support.patch
+"
+builddir="$srcdir/AMQP-CPP-$pkgver"
+
+build() {
+  export LDFLAGS="$LDFLAGS -lm -lsocket"
+  cmake -B build -S . \
+    -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=/usr \
+    -DCMAKE_INSTALL_LIBDIR=lib \
+    -DBUILD_SHARED_LIBS=ON \
+    -DAMQP-CPP_LINUX_TCP=ON \
+    -DAMQP-CPP_BUILD_SHARED=ON
+  cmake --build build
+}
+
+check() {
+	ctest --test-dir build --output-on-failure
+}
+
+package() {
+  DESTDIR="$pkgdir" cmake --install build
+}
+
+sha512sums="
+310e0d1bc1780d54bd1f9a99d114003aee7bdfe8930be198b3006f2ca174c32718844f88d72fd75259d6ce20d35a9dc77a61aea4c364e4af17ba8c87cae43259  amqp-cpp-4.3.27.tar.gz
+adb37e609a794b2c06e15fcb0edb4c4fa4eb89e39bd2c81bb45010cfdaf46711035dc8ab3fd274231c6132eb91cd8b4247a3637ef0a2ce5f1e73452f6b38b6f8  add_qnx_support.patch
+"
