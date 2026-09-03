@@ -1,0 +1,11 @@
+--- a/test/speed/HybridConvSpeedTest.cpp	2026-08-26 15:11:28.550509416 +0530
++++ b/test/speed/HybridConvSpeedTest.cpp	2026-08-26 15:10:25.180507482 +0530
+@@ -460,7 +460,7 @@
+         INTS strides = {1, 1}, dilate = {1, 1}, pad = {0, 0}; // {w, h}
+         int batch[] = {1, 100};
+         std::vector<int> blocks = {0, 32, 128};
+-        std::vector<std::vector<int>> channels = {{1536, 1536}, {1536, 256}, {1536, 8960}, {8960, 1536}, {1536, 151936}, {896, 896}, {896, 128}, {4864, 896}, {896, 151936}, {200, 138}, {92, 92}, {126, 126}, {120, 1300}};
++        std::vector<std::vector<int>> channels = {{1536, 1536}, {1536, 256}, {1536, 8960}, {8960, 1536}, {896, 896}, {896, 128}, {4864, 896},{200, 138}, {92, 92}, {126, 126}, {120, 1300}};
+         for (int i = 0; i < 32; ++i) { // To test that every storage branch of 'Hp=128' is correct.
+             std::vector<int> channel = {256, 4 * (i + 1)};
+             channels.emplace_back(channel);

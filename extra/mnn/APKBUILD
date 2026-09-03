@@ -1,0 +1,50 @@
+# Maintainer: Ramya santoshi <rtimmaraju@qnx.com>
+pkgname=mnn
+pkgver=3.6.0
+pkgrel=0
+pkgdesc="Lightweight neural network inference engine"
+url="https://github.com/qnx-ports/MNN"
+arch="all"
+license="Apache-2.0"
+depends="libc++"
+makedepends="
+cmake
+ninja
+libc++-dev
+"
+source="$pkgname-$pkgver.tar.gz::https://github.com/alibaba/MNN/archive/refs/tags/$pkgver.tar.gz
+001-fix-qnx-mixed-kernel-test.patch"
+builddir="$srcdir/MNN-$pkgver"
+subpackages="$pkgname-dev"
+
+build() {
+    cmake -B build \
+        -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DMNN_BUILD_SHARED_LIBS=ON \
+        -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DMNN_BUILD_TOOLS=OFF \
+        -DMNN_BUILD_CONVERTER=OFF \
+        -DMNN_BUILD_TEST=ON \
+        -DMNN_BUILD_DEMO=OFF \
+        -DMNN_OPENCL=OFF \
+        -DMNN_VULKAN=OFF \
+        -DMNN_CUDA=OFF
+        
+    cmake --build build
+}
+
+check() {
+    cd "$builddir/build"
+    ./run_test.out
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install build
+}
+
+sha512sums="
+ef0c62a7cadc33a12b2fc4fe4e83abc92c04500c41fb9806649b00b80c661c05724eb77da93e8db5e93115955cbcc1b29183c5b3a98297ceab7fc9ecdf3eb5fe  mnn-3.6.0.tar.gz
+be6e558a2e8157d121569d80a19e9a8cacac6fc7b1b7b16ead25b9b636d21db90a12df2156386dc12763ee526e72ff47de46735336d2a7d41fa45540169d4dd7  001-fix-qnx-mixed-kernel-test.patch
+"
