@@ -1,0 +1,19 @@
+--- arrow-apache_arrow_test/cpp/build/_deps/boost-src/libs/process/src/ext/cmd.cpp
++++ arrow-apache_arrow_test_changes/cpp/build/_deps/boost-src/libs/process/src/ext/cmd.cpp
+@@ -403,12 +403,13 @@
+ }
+ 
+ #else
+-filesystem::path cmd(boost::process::v2::pid_type, error_code & ec)
++shell cmd(boost::process::v2::pid_type, error_code & ec)
+ {
+-  BOOST_PROCESS_V2_ASSIGN_EC(ec, ENOTSUP, system_category());
+-  return "";
++    BOOST_PROCESS_V2_ASSIGN_EC(ec, ENOTSUP, system_category());
++    return {};
+ }
+ #endif
++
+ 
+ shell cmd(boost::process::v2::pid_type pid)
+ {
