@@ -1,0 +1,91 @@
+# Maintainer: Ramya santoshi <rtimmaraju@qnx.com>
+pkgname=candb
+pkgver=1.0.0_git20210625
+pkgrel=0
+pkgdesc="GENIVI CAN database parser library"
+url="https://github.com/GENIVI/CANdb"
+arch="all"
+license="MPL-2.0"
+depends="libc++"
+makedepends="cmake libc++-dev"
+_commit=150c42a8cdfc0748915f09d2cd0c5a68591263a7
+subpackages="$pkgname-dev"
+source="
+https://github.com/GENIVI/CANdb/archive/${_commit}.tar.gz
+candb.patch
+https://github.com/USCiLab/cereal/archive/51cbda5f30e56c801c07fe3d3aba5d7fb9e6cca4.tar.gz
+https://github.com/yhirose/cpp-peglib/archive/501836a025c944ef1c83797707b545c4e4dc9411.tar.gz
+https://github.com/jarro2783/cxxopts/archive/302302b30839505703d37fb82f536c53cf9172fa.tar.gz
+https://github.com/google/googletest/archive/e2239ee6043f73722e7aa812a459f54a28552929.tar.gz
+https://github.com/gabime/spdlog/archive/100f30043f33277122e0991c83845a2617172ffd.tar.gz
+https://github.com/commaai/opendbc/archive/acddb03c357340e4229a453043645ed5f65d1e40.tar.gz
+"
+builddir="$srcdir/CANdb-$_commit"
+
+prepare() {
+    default_prepare
+    cd "$builddir"
+    mkdir -p 3rdParty/{cereal,cpp-peglib,cxxopts,gtest,spdlog}
+    mkdir -p tests/dbc/opendbc
+    ln -s "$srcdir"/cereal-*/* 3rdParty/cereal/
+    ln -s "$srcdir"/cpp-peglib-*/* 3rdParty/cpp-peglib/
+    ln -s "$srcdir"/cxxopts-*/* 3rdParty/cxxopts/
+    ln -s "$srcdir"/googletest-*/* 3rdParty/gtest/
+    ln -s "$srcdir"/spdlog-*/* 3rdParty/spdlog/
+    ln -s "$srcdir"/opendbc-*/* tests/dbc/opendbc/
+}
+
+build() {
+    cd "$builddir"
+  
+    export CXXFLAGS="$CXXFLAGS \
+        -Wno-error=unused-command-line-argument \
+        -Wno-error=character-conversion \
+        -Wno-error=missing-field-initializers \
+        -Wno-error=deprecated-literal-operator"
+
+    export CFLAGS="$CFLAGS \
+        -Wno-error=unused-command-line-argument \
+        -Wno-error=missing-field-initializers \
+        -Wno-error=deprecated-literal-operator"
+
+    cmake -B build -S . \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DBUILD_TESTING=ON \
+        -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+        -DCANDB_BUILD_TESTS=ON \
+        -DBUILD_SHARED_LIBS=ON
+
+    cmake --build build
+}
+
+check() {
+    cd "$builddir/build"
+    ctest --output-on-failure -j1 --timeout 120
+}
+
+package() {
+    cd "$builddir"
+
+    DESTDIR="$pkgdir" cmake --install build
+
+    install -Dm755 build/src/libCANdb.so \
+        "$pkgdir/usr/lib/libCANdb.so"
+
+    install -d "$pkgdir/usr/include/CANdb"
+
+    install -m644 src/*.h src/*.hpp \
+        "$pkgdir/usr/include/CANdb/"
+}
+
+sha512sums="
+251c6ccb55750194b2e0ecb7cd6b50ca007fd1795e57e6090668b83dc2b5110db401f757d5dfd0c46d432e14f56558f332efd7e95927f44c5ccb9c3f451e3675  150c42a8cdfc0748915f09d2cd0c5a68591263a7.tar.gz
+dde426a0e796d593ae496c741fc88322cff2af2815d014fa02a44e2e078219dc0f5433aa45cf6e14a34d4ea10b96876a5fee9b4a7364fc535d5fcdb396e1ea25  candb.patch
+3ae01250799f72264ef4c9646b733e6db62bf1f07ea2de52712439679308d94301c39f1f1bcb83d1199fb46af5450d6ce6804b70c1acff3790aed94391f65671  51cbda5f30e56c801c07fe3d3aba5d7fb9e6cca4.tar.gz
+f55a733732b36c55b019795b330c4f80365011167f693948dec765a6310bbed57e3a00e430c0e6afdcd7893a3fbaab153d1ac3bbd825e82f3bd12c9023f07d6d  501836a025c944ef1c83797707b545c4e4dc9411.tar.gz
+ba4fe586772979929e090310557b1cba66c7350593ae170e3c7bd6577cf147b20dbe3ba834f2ed6e1044a1b38d5166bfd0491ab573df68e678ff2dc792a3c442  302302b30839505703d37fb82f536c53cf9172fa.tar.gz
+cf9e7f3fd3e31ce6677eac355fb8bfe19c5b56a8ec3af8b9417d0904cdf5da92f99f7411a08131cc9fa4fc7d38e6a71fcfac993648e47b269a74a27de7607f7a  e2239ee6043f73722e7aa812a459f54a28552929.tar.gz
+4ac4a2e32f940d1e9610eeca8644c936ba2cc94d24319b8f580485e6a7ea4091b5f79cb61336b49f25c679ae04ddc787f15733efdfc530ee336ca5258711d336  100f30043f33277122e0991c83845a2617172ffd.tar.gz
+0c7cd2f8ba16635a6e9d912a98af62ed5d642e61716073abf1c67090d84b9e4e8b955333b06b2869998828fbdac265e25ec1bf62778bac499a17c76f8949aef1  acddb03c357340e4229a453043645ed5f65d1e40.tar.gz
+"
