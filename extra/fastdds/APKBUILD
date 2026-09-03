@@ -1,0 +1,106 @@
+# Maintainer: Ramya santoshi <rtimmaraju@qnx.com>
+pkgname=fastdds
+pkgver=2.14.4
+pkgrel=0
+pkgdesc="eProsima Fast DDS with bundled foonathan"
+url="https://github.com/eProsima/Fast-DDS"
+arch="all"
+license="Apache-2.0"
+
+subpackages="$pkgname-dev  $pkgname-tests $pkgname-tools"
+
+makedepends="
+    build-base
+    cmake
+    ninja
+    fast-cdr-dev
+    foonathan_memory
+    foonathan_memory-dev
+    foonathan_memory_vendor
+    openssl-dev
+    qnx-fs-notify-dev
+    tinyxml2-dev
+    qnx-fs-core-dev
+    gtest-dev
+    qnx-io-sock-dev
+    libc++-dev
+    qnx-fs-gpt-dev
+"   
+depends="libc++ fast-cdr foonathan_memory openssl foonathan_memory_vendor qnx-fs-notify  qnx-fs-gpt"
+
+source="
+    fastdds-$pkgver.tar.gz::https://github.com/eProsima/Fast-DDS/archive/refs/tags/v$pkgver.tar.gz
+    qnx.patch
+    fast-dds-asiofix.diff
+    fastdds-disable-shm-tests.patch
+    https://github.com/chriskohlhoff/asio/archive/asio-1-29-0.tar.gz
+    asio_fix.diff
+"
+
+builddir="$srcdir/Fast-DDS-$pkgver"
+
+prepare() {
+    default_prepare
+    cd "$builddir"
+    patch -p1 < "$srcdir/fast-dds-asiofix.diff"
+    cd "$srcdir/asio-asio-1-29-0"
+    patch -p1 < "$srcdir/asio_fix.diff"
+    mkdir -p "$builddir/thirdparty/asio/include"
+    cp -r asio/include/* "$builddir/thirdparty/asio/include"
+}
+
+build() {
+    cmake -B build \
+        -S "$builddir" \
+        -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DBUILD_SHARED_LIBS=ON \
+        -DBUILD_TESTING=ON \
+        -DQNX=TRUE \
+        -DFASTDDS_USE_FILE_WATCH=OFF \
+        -DFASTDDS_PERSISTENCE=OFF \
+        -DEPROSIMA_BUILD_TESTS=ON \
+        -DSECURITY=OFF \
+        -DCMAKE_CXX_FLAGS="-I$builddir/thirdparty/asio -I/usr/include" \
+        -DCMAKE_EXE_LINKER_FLAGS="-L/usr/lib -lsocket -lfsnotify -lgtest" 
+    cmake --build build
+}
+
+
+check() {
+    cd "$builddir/build"
+    export LD_LIBRARY_PATH=/usr/lib:$LD_LIBRARY_PATH
+    #ctest --output-on-failure -j1 --timeout 30 || true
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install build
+}
+
+
+dev() {
+    amove usr/include
+    amove usr/lib/libfastrtps.so
+    amove usr/share/fastrtps/cmake
+}
+
+tests() {
+    amove usr/bin/Fast-DDS_test
+}
+
+tools() {
+    amove usr/bin/fastdds
+    amove usr/bin/fast-discovery-server*
+    amove usr/bin/ros-discovery
+    amove usr/tools
+}
+
+sha512sums="
+f5cdbb9ebb18208f6ef68799934e1f2a7f7cdd547983769eacf30f29198ad5d4a31df5dfe011aab17886c4ef3108c36a5a9e493c568ce8fe6379df806d90877f  fastdds-2.14.4.tar.gz
+2f5887ff0f54a5cfa778e1f2a5fc637c5dd7c11bb186282528e0e99aa738d452f558a42b5e62b2b9508a0ce2d5014fff4284a4deb4f32d06c72732eddb675565  qnx.patch
+02053c312dc4038bc885017b12f8e659e1ff46173e34bfbe770c8d9ab88a73d89e078b097faae0dbcbc7ebfae88d2889efbf8585317b978b98ec526ec9e812ae  fast-dds-asiofix.diff
+e11cb72da84778e0375884876c9d191bbb5c4f97c6b2c6f15dc17c3dae742b872561f2b8673d9b2e850149030424134f40f7be4e0ea362261883110ba99e32af  fastdds-disable-shm-tests.patch
+f8df39c5a5e89dcfe4bd37c7e757e44e3e94d9b79d7ab08d1804ad8980993a607070f7e12238ffe3286840cd08c0b3c8e3639d3a1177e5ff795994cbc42a8292  asio-1-29-0.tar.gz
+c91ae21919089c4a37244deda5905ff59f7f4acf5c0317d65c3e68eeffdbd05e0ef0a4789a828204166ffc3e97e19aad69b86f29cf37990ae78fbcefe26f043b  asio_fix.diff
+"
