@@ -1,0 +1,31 @@
+# Maintainer : Natanael Copa <ncopa@alpinelinux.org>
+# contributor: Ramya santoshi <rtimmaraju@qnx.com>
+pkgname=linenoise
+pkgver=1.0
+pkgrel=5
+pkgdesc="Minimal replacement for readline"
+url="https://github.com/antirez/linenoise"
+arch="all"
+options="!check"  # No test suite.
+license="BSD-2-Clause"
+subpackages="$pkgname-dev"
+source="linenoise-$pkgver.tar.gz::https://github.com/antirez/linenoise/archive/$pkgver.tar.gz
+	build-shared-lib.patch
+	"
+depends="libc++ qnx-io-sock-dev"
+makedepends="
+libc++-dev
+qnx-io-sock-dev
+"
+build() {
+	make
+}
+
+package() {
+	make DESTDIR="$pkgdir" install
+}
+
+sha512sums="
+9e68fade8d64d7ba8d5d681e74d0ca6c4ebd9576249bb0e885b1aa708a9af77a43ea6264307ae46fb74e52219387a2c831b570f9601e331837f35294af9883e3  linenoise-1.0.tar.gz
+21e17022055b2558610220dc5421dce3eefe11b2e5f4fe59bae1a7165c892bcc9df6a3cc2be461c05645872de3f08a05de2d57a7ab8508810f6defd4c0291ea9  build-shared-lib.patch
+"
