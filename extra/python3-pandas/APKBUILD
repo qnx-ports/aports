@@ -1,0 +1,50 @@
+# Alpine-Contributor: Carlos Giraldo <cgiraldo@gradiant.org>
+# Alpine-Maintainer: Achill Gilgenast <achill@achill.org>
+# Maintainer: Deep Chordia <dchordia@blackberry.com>
+pkgname=python3-pandas
+pkgver=3.0.1
+pkgrel=0
+pkgdesc="Powerful data structures for data analysis, time series, and statistics"
+url="https://pandas.pydata.org/"
+arch="all"
+license="BSD-3-Clause"
+depends="
+    libc++
+    python3-dateutil
+    python3-numpy
+    python3-tzdata"
+makedepends="
+    cython
+    meson
+    libc++-dev
+    python3-gpep517
+    python3-meson-python
+    python3-setuptools
+    python3-versioneer
+    python3-wheel
+    python3-numpy-dev
+    python3-dev
+    "
+subpackages="$pkgname-tests::noarch"
+source="https://github.com/pandas-dev/pandas/releases/download/v$pkgver/pandas-$pkgver.tar.gz"
+builddir="$srcdir/pandas-$pkgver"
+options="!check" # insufficient and large number of dependencies (hypothesis requires rust); cross-compile testing surfaced many failures
+
+build() {
+  gpep517 build-wheel \
+      --wheel-dir .dist \
+      --output-fd 3 3>&1 >&2
+}
+
+package() {
+  python3 -m installer -d "$pkgdir" \
+      .dist/pandas-$pkgver-*.whl
+}
+
+tests() {
+    amove usr/lib/python*/site-packages/pandas/tests
+}
+
+sha512sums="
+f7fc9aaa3df08e13dd647a47ec6445056c9a436bb50242f3707b9fb7c36b512885e6a657a40f45ddf7655848e01fa68c72239d8e6d4e069600033fe9531d98c8  pandas-3.0.1.tar.gz
+"
