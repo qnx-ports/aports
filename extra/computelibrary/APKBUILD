@@ -1,0 +1,50 @@
+# Maintainer: Deep Chordia <dchordia@qnx.com>
+pkgname=computelibrary
+_pkgname=ComputeLibrary
+pkgver=52.8.0
+pkgrel=0
+pkgdesc="Computer vision and machine learning functions optimised for Arm CPUs and GPUs using SIMD."
+url="https://www.arm.com/products/development-tools/embedded-and-software/compute-library"
+arch="aarch64"
+license="MIT AND Apache-2.0 AND BSD-3-Clause"
+depends="libc++"
+depends_dev="libc++-dev"
+makedepends="
+    $depends_dev
+    cmake
+    ninja
+"
+subpackages="$pkgname-dev"
+source="
+    $_pkgname-$pkgver.tar.gz::https://github.com/arm-software/$_pkgname/archive/refs/tags/v$pkgver.tar.gz
+"
+builddir="$srcdir/$_pkgname-$pkgver"
+
+build() {
+    export LDFLAGS="$LDFLAGS -lregex"
+    cmake -B build -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DCMAKE_INSTALL_LIBDIR=lib \
+        -DCMAKE_INSTALL_BINDIR=bin \
+        -DCMAKE_INSTALL_INCLUDEDIR=include \
+        -DCMAKE_EXE_LINKER_FLAGS="$LDFLAGS" \
+        -DCMAKE_SHARED_LINKER_FLAGS="$LDFLAGS" \
+        -DARM_COMPUTE_ENABLE_OPENMP=OFF \
+        -DARM_COMPUTE_BUILD_TESTING=ON \
+        -DARM_COMPUTE_BUILD_EXAMPLES=OFF
+    cmake --build build
+}
+
+check() {
+    build/arm_compute_benchmark
+    build/arm_compute_validation --filter='^((?!F16|BFLOAT16|UNIT/Version).)*$'
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install build
+}
+
+sha512sums="
+3ffa150b1d3a4aa79706e3ded9a5583c7cac4f3de952726b61e84c1976a821498ffdab26f5b4e4ec89a716fb94922aceb85cdbe1fbdc9750d23a1ff907de913d  ComputeLibrary-52.8.0.tar.gz
+"
