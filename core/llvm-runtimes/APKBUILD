@@ -4,7 +4,7 @@ _llvm_ver=22.1.8
 _llvm_major=${_llvm_ver%%.*}
 _patch_ver=0
 pkgver=${_llvm_ver}_p${_patch_ver}
-pkgrel=0
+pkgrel=1
 _patch_rev=0
 pkgdesc="Low Level Virtual Machine compiler system."
 arch="all"
@@ -15,8 +15,17 @@ license="Apache-2.0"
 makedepends="python3 sed cmake ninja perl qnx-io-sock-dev liblocale-shim-dev libc++-dev-bootstrap"
 source="https://github.com/qnx-ports/llvm-project/archive/refs/tags/qnx-$pkgver.tar.gz"
 options="!check" # takes too long
-subpackages="compiler-rt:rt libc++:libcxx libc++-dev:libcxx_dev libc++-static:libcxx_static
-    libunwind:libunwind libunwind-dev:libunwind_dev libunwind-static:libunwind_static"
+subpackages="
+    libc++-dbg:libcxx_dbg
+    libunwind-dbg:libunwind_dbg
+    compiler-rt:rt
+    libc++:libcxx
+    libc++-dev:libcxx_dev
+    libc++-static:libcxx_static
+    libunwind:libunwind
+    libunwind-dev:libunwind_dev
+    libunwind-static:libunwind_static
+"
 builddir="$srcdir/llvm-project-qnx-$pkgver"
 
 build() {
@@ -102,6 +111,22 @@ libunwind_dev() {
 libunwind_static() {
     pkgdesc="LLVM libunwind library (development files)"
     amove usr/lib/libunwind.a
+}
+
+libcxx_dbg() {
+    pkgdesc="LLVM libc++ library (debug symbols)"
+    depends="libc++=$pkgver-r$pkgrel"
+
+    default_dbg
+}
+
+libunwind_dbg() {
+    pkgdesc="LLVM libunwind library (debug symbols)"
+    depends="libunwind=$pkgver-r$pkgrel"
+
+    mkdir -p "$subpkgdir/usr/lib/debug/usr/lib"
+    mv "$pkgbasedir"/libc++-dbg/usr/lib/debug/usr/lib/libunwind.so.*.debug \
+        "$subpkgdir/usr/lib/debug/usr/lib/"
 }
 
 sha512sums="
