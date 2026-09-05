@@ -1,0 +1,1191 @@
+>>> tflite-runtime: Validating /var/home/qnx/aports/extra/tflite-runtime/APKBUILD...
+>>> WARNING: tflite-runtime: log.txt is not in $source/$install/$triggers
+>>> tflite-runtime: Cleaning up srcdir
+>>> tflite-runtime: Cleaning up pkgdir
+>>> tflite-runtime: Cleaning up tmpdir
+>>> tflite-runtime: Fetching tflite-runtime-2.21.0.tar.gz::https://github.com/tensorflow/tensorflow/archive/refs/tags/v2.21.0.tar.gz
+/var/cache/distfiles/tflite-runtime-2.21.0.tar.gz: OK
+>>> tflite-runtime: Fetching https://github.com/qnx-ports/cpuinfo/archive/refs/tags/qnx-tflite-r1.tar.gz
+/var/cache/distfiles/qnx-tflite-r1.tar.gz: OK
+>>> tflite-runtime: Fetching https://gitlab.com/libeigen/eigen/-/archive/5.0.1/eigen-5.0.1.tar.gz
+/var/cache/distfiles/eigen-5.0.1.tar.gz: OK
+>>> tflite-runtime: Fetching https://github.com/google/pthreadpool/archive/0e6ca13779b57d397a5ba6bfdcaa8a275bc8ea2e.zip
+/var/cache/distfiles/0e6ca13779b57d397a5ba6bfdcaa8a275bc8ea2e.zip: OK
+>>> tflite-runtime: Fetching https://github.com/qnx-ports/ruy/archive/refs/tags/qnx-master-r0.tar.gz
+/var/cache/distfiles/qnx-master-r0.tar.gz: OK
+>>> tflite-runtime: Fetching https://github.com/google/XNNPACK/archive/25b42dfddb0ee22170d73ff0d4b333ea1e6edfeb.zip
+/var/cache/distfiles/25b42dfddb0ee22170d73ff0d4b333ea1e6edfeb.zip: OK
+>>> tflite-runtime: Fetching https://github.com/ARM-software/kleidiai/archive/63205aa90afa6803d8f58bc3081b69288e9f1906.zip
+/var/cache/distfiles/63205aa90afa6803d8f58bc3081b69288e9f1906.zip: OK
+>>> tflite-runtime: Fetching https://github.com/Maratyszcza/FXdiv/archive/b408327ac2a15ec3e43352421954f5b1967701d1.zip
+/var/cache/distfiles/b408327ac2a15ec3e43352421954f5b1967701d1.zip: OK
+/var/home/qnx/aports/extra/tflite-runtime/export-targets.patch: OK
+/var/home/qnx/aports/extra/tflite-runtime/fix-test-paths.patch: OK
+/var/home/qnx/aports/extra/tflite-runtime/qnx-python-packaging.patch: OK
+/var/home/qnx/aports/extra/tflite-runtime/qnx-dirent.patch: OK
+/var/home/qnx/aports/extra/tflite-runtime/pthreadpool_patch: OK
+/var/home/qnx/aports/extra/tflite-runtime/XNNPACK_patch: OK
+>>> tflite-runtime: Preparing build chroot...
+(1/3) Installing filesystem (1-r5)
+  Installing file to etc/group.apk-new
+  Installing file to etc/passwd.apk-new
+(2/3) Installing qnx-gcc-libs (8.0.5-r0)
+(3/3) Installing qnx-microkernel (8.0.5-r1)
+OK: 120.3 MiB in 3 packages
+(  1/109) Installing qnx-secpol (8.0.5-r0)
+(  2/109) Installing qnx-libslog2 (8.0.5-r0)
+(  3/109) Installing qnx-zlib (8.0.5-r0)
+(  4/109) Installing qnx-io-sock (8.0.5-r0)
+(  5/109) Installing qnx-utils (8.0.5-r1)
+(  6/109) Installing nproc (0-r0)
+(  7/109) Installing zstd-libs (1.5.6-r4)
+(  8/109) Installing zlib-ng (2.2.5-r0)
+(  9/109) Installing qnx-crypto-openssl3 (8.0.5-r1)
+( 10/109) Installing qnx-crypto (8.0.5-r1)
+( 11/109) Installing libcrypto3 (3.6.3-r0)
+( 12/109) Installing libssl3 (3.6.3-r0)
+( 13/109) Installing apk-tools (3.0.6-r0)
+( 14/109) Installing fakeroot (1.38.1-r1)
+( 15/109) Installing busybox (1.36.1_p0-r1)
+  Executing busybox-1.36.1_p0-r1.post-install
+( 16/109) Installing openssl (3.6.3-r0)
+( 17/109) Installing pkgconf (2.3.0-r0)
+( 18/109) Installing pax-utils (1.3.8-r1)
+( 19/109) Installing gmp (6.3.0-r5)
+( 20/109) Installing mpfr (4.2.2-r1)
+( 21/109) Installing gawk (5.3.2-r0)
+( 22/109) Installing nghttp2 (1.65.0-r1)
+( 23/109) Installing zstd (1.5.6-r4)
+( 24/109) Installing brotli (1.1.0-r1)
+( 25/109) Installing libunistring (1.3-r0)
+( 26/109) Installing libiconv (1.18-r0)
+( 27/109) Installing libidn2 (2.3.8-r0)
+( 28/109) Installing libpsl (0.21.5-r1)
+( 29/109) Installing libcurl (8.15.0-r2)
+( 30/109) Installing curl (8.15.0-r2)
+( 31/109) Installing bc (1.08.2-r0)
+( 32/109) Installing tar (1.35-r1)
+( 33/109) Installing grep (3.11-r0)
+( 34/109) Installing libunwind (22.1.8_p0-r0)
+( 35/109) Installing libc++ (22.1.8_p0-r0)
+( 36/109) Installing ncurses (6.6-r1)
+( 37/109) Installing less (691-r0)
+( 38/109) Installing gzip (1.14-r1)
+( 39/109) Installing bzip2 (1.0.8-r8)
+( 40/109) Installing xz-libs (5.8.1-r2)
+( 41/109) Installing xz (5.8.1-r2)
+( 42/109) Installing lzip (1.26-r0)
+( 43/109) Installing patch (2.8-r2)
+( 44/109) Installing abuild (3.16.0_p2-r0)
+( 45/109) Installing readline (8.3.001-r0)
+( 46/109) Installing libintl (0.26-r1)
+( 47/109) Installing bash (5.3.3-r5)
+( 48/109) Installing qnx-microkernel-dev (8.0.5-r1)
+( 49/109) Installing libffi (3.4.7-r0)
+( 50/109) Installing libxml2 (2.15.3-r0)
+( 51/109) Installing qnx-gcc (8.0.5-r0)
+( 52/109) Installing jansson (2.14.1-r0)
+( 53/109) Installing binutils (2.43-r0)
+( 54/109) Installing llvm22-libs (22.1.8_p1-r0)
+( 55/109) Installing clang22 (22.1.8_p1-r0)
+( 56/109) Installing clang (22-r0)
+( 57/109) Installing make (4.4.1-r3)
+( 58/109) Installing build-base (0.1-r1)
+( 59/109) Installing libtasn1 (4.20.0-r0)
+( 60/109) Installing p11-kit (0.25.5-r1)
+( 61/109) Installing ca-certificates-mozilla (3.117-r6)
+( 62/109) Installing ca-certificates (1-r6)
+( 63/109) Installing libbz2 (1.0.8-r8)
+( 64/109) Installing libexpat (2.7.3-r0)
+( 65/109) Installing lz4-libs (1.10.0-r0)
+( 66/109) Installing libarchive (3.8.9-r0)
+( 67/109) Installing libuv (1.51.0-r0)
+( 68/109) Installing cmake (4.4.2-r0)
+( 69/109) Installing ninja (1.13.1-r2)
+( 70/109) Installing abuild-cmake (4.4.2-r0)
+( 71/109) Installing diffutils (3.12-r0)
+( 72/109) Installing expat (2.7.3-r0)
+( 73/109) Installing pcre2 (10.44-r1)
+( 74/109) Installing gettext-libs (0.26-r1)
+( 75/109) Installing git (2.51.0-r1)
+( 76/109) Installing liblocale-shim-dev (0.1.0-r2)
+( 77/109) Installing libunwind-dev (22.1.8_p0-r0)
+( 78/109) Installing libc++-dev (22.1.8_p0-r0)
+( 79/109) Installing sqlite (3.51.0-r1)
+( 80/109) Installing sqlite-libs (3.51.0-r1)
+( 81/109) Installing lz4 (1.10.0-r0)
+( 82/109) Installing qnx-fd-notify (8.0.5-r0)
+( 83/109) Installing python3 (3.14.0-r5)
+( 84/109) Installing sqlite-dev (3.51.0-r1)
+( 85/109) Installing zlib-ng-dev (2.2.5-r0)
+( 86/109) Installing xz-dev (5.8.1-r2)
+( 87/109) Installing readline-dev (8.3.001-r0)
+( 88/109) Installing libffi-dev (3.4.7-r0)
+( 89/109) Installing expat-dev (2.7.3-r0)
+( 90/109) Installing bzip2-dev (1.0.8-r8)
+( 91/109) Installing lz4-dev (1.10.0-r0)
+( 92/109) Installing openssl-dev (3.6.3-r0)
+( 93/109) Installing ncurses-dev (6.6-r1)
+( 94/109) Installing qnx-crypto-dev (8.0.5-r1)
+( 95/109) Installing qnx-io-sock-dev (8.0.5-r0)
+( 96/109) Installing qnx-fd-notify-dev (8.0.5-r0)
+( 97/109) Installing python3-dev (3.14.0-r5)
+( 98/109) Installing python3-installer (0.7.0-r1)
+( 99/109) Installing python3-gpep517 (19-r2)
+(100/109) Installing python3-numpy (2.4.1-r0)
+(101/109) Installing python3-numpy-tests (2.4.1-r0)
+(102/109) Installing python3-numpy-dev (2.4.1-r0)
+(103/109) Installing python3-pybind11 (3.0.1-r0)
+(104/109) Installing python3-pybind11-dev (3.0.1-r0)
+(105/109) Installing python3-packaging (25.0-r1)
+(106/109) Installing python3-setuptools (80.8.0-r2)
+(107/109) Installing python3-wheel (0.46.1-r1)
+(108/109) Installing qnx-packaging (0.1-r0)
+(109/109) Installing sed (4.9-r0)
+Executing busybox-1.36.1_p0-r1.trigger
+Executing ca-certificates-1-r6.trigger
+* rm: can't remove '/etc/ca-certificates/extracted': No such file or directory
+OK: 747.0 MiB in 112 packages
+chrooting: "/var/tmp/.abuild.NezIwuItcW"
+Executing default secpol transition
+Changed directories to: "/var/home/qnx/aports/extra/tflite-runtime"
+>>> tflite-runtime: Fetching tflite-runtime-2.21.0.tar.gz::https://github.com/tensorflow/tensorflow/archive/refs/tags/v2.21.0.tar.gz
+/var/cache/distfiles/tflite-runtime-2.21.0.tar.gz: OK
+>>> tflite-runtime: Fetching https://github.com/qnx-ports/cpuinfo/archive/refs/tags/qnx-tflite-r1.tar.gz
+/var/cache/distfiles/qnx-tflite-r1.tar.gz: OK
+>>> tflite-runtime: Fetching https://gitlab.com/libeigen/eigen/-/archive/5.0.1/eigen-5.0.1.tar.gz
+/var/cache/distfiles/eigen-5.0.1.tar.gz: OK
+>>> tflite-runtime: Fetching https://github.com/google/pthreadpool/archive/0e6ca13779b57d397a5ba6bfdcaa8a275bc8ea2e.zip
+/var/cache/distfiles/0e6ca13779b57d397a5ba6bfdcaa8a275bc8ea2e.zip: OK
+>>> tflite-runtime: Fetching https://github.com/qnx-ports/ruy/archive/refs/tags/qnx-master-r0.tar.gz
+/var/cache/distfiles/qnx-master-r0.tar.gz: OK
+>>> tflite-runtime: Fetching https://github.com/google/XNNPACK/archive/25b42dfddb0ee22170d73ff0d4b333ea1e6edfeb.zip
+/var/cache/distfiles/25b42dfddb0ee22170d73ff0d4b333ea1e6edfeb.zip: OK
+>>> tflite-runtime: Fetching https://github.com/ARM-software/kleidiai/archive/63205aa90afa6803d8f58bc3081b69288e9f1906.zip
+/var/cache/distfiles/63205aa90afa6803d8f58bc3081b69288e9f1906.zip: OK
+>>> tflite-runtime: Fetching https://github.com/Maratyszcza/FXdiv/archive/b408327ac2a15ec3e43352421954f5b1967701d1.zip
+/var/cache/distfiles/b408327ac2a15ec3e43352421954f5b1967701d1.zip: OK
+/var/home/qnx/aports/extra/tflite-runtime/export-targets.patch: OK
+/var/home/qnx/aports/extra/tflite-runtime/fix-test-paths.patch: OK
+/var/home/qnx/aports/extra/tflite-runtime/qnx-python-packaging.patch: OK
+/var/home/qnx/aports/extra/tflite-runtime/qnx-dirent.patch: OK
+/var/home/qnx/aports/extra/tflite-runtime/pthreadpool_patch: OK
+/var/home/qnx/aports/extra/tflite-runtime/XNNPACK_patch: OK
+>>> tflite-runtime: Unpacking /var/cache/distfiles/tflite-runtime-2.21.0.tar.gz...
+>>> tflite-runtime: Unpacking /var/cache/distfiles/qnx-tflite-r1.tar.gz...
+>>> tflite-runtime: Unpacking /var/cache/distfiles/eigen-5.0.1.tar.gz...
+>>> tflite-runtime: Unpacking /var/cache/distfiles/0e6ca13779b57d397a5ba6bfdcaa8a275bc8ea2e.zip...
+>>> tflite-runtime: Unpacking /var/cache/distfiles/qnx-master-r0.tar.gz...
+>>> tflite-runtime: Unpacking /var/cache/distfiles/25b42dfddb0ee22170d73ff0d4b333ea1e6edfeb.zip...
+>>> tflite-runtime: Unpacking /var/cache/distfiles/63205aa90afa6803d8f58bc3081b69288e9f1906.zip...
+>>> tflite-runtime: Unpacking /var/cache/distfiles/b408327ac2a15ec3e43352421954f5b1967701d1.zip...
+>>> tflite-runtime: Unpacking /var/cache/distfiles/0e6ca13779b57d397a5ba6bfdcaa8a275bc8ea2e.zip...
+>>> tflite-runtime: Unpacking /var/cache/distfiles/25b42dfddb0ee22170d73ff0d4b333ea1e6edfeb.zip...
+>>> tflite-runtime: Unpacking /var/cache/distfiles/63205aa90afa6803d8f58bc3081b69288e9f1906.zip...
+>>> tflite-runtime: Unpacking /var/cache/distfiles/b408327ac2a15ec3e43352421954f5b1967701d1.zip...
+>>> tflite-runtime: export-targets.patch
+patching file tensorflow/lite/CMakeLists.txt
+>>> tflite-runtime: fix-test-paths.patch
+patching file tensorflow/lite/kernels/CMakeLists.txt
+>>> tflite-runtime: qnx-python-packaging.patch
+patching file tensorflow/lite/tools/pip_package/build_pip_package_with_cmake.sh
+>>> tflite-runtime: qnx-dirent.patch
+patching file tensorflow/lite/tools/evaluation/utils.cc
+patching file CMakeLists.txt
+patching file CMakeLists.txt
+Error: Could not run showmem:
+No such file or directory
+-- The C compiler identification is Clang 22.1.8
+-- The CXX compiler identification is Clang 22.1.8
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/clang - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/clang++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+CMake Warning (author) at /usr/share/cmake/Modules/FetchContent.cmake:1968 (message):
+  Calling FetchContent_Populate(abseil-cpp) is deprecated, call
+  FetchContent_MakeAvailable(abseil-cpp) instead.  Policy CMP0169 can be set
+  to OLD to allow FetchContent_Populate(abseil-cpp) to be called directly for
+  now, but the ability to call it with declared details will be removed
+  completely in a future version.
+Call Stack (most recent call first):
+  tools/cmake/modules/OverridableFetchContent.cmake:537 (FetchContent_Populate)
+  tools/cmake/modules/abseil-cpp.cmake:35 (OverridableFetchContent_Populate)
+  tools/cmake/modules/Findabsl.cmake:18 (include)
+  CMakeLists.txt:181 (find_package)
+This warning is for project developers.  Use -Wno-author to suppress it.
+
+Error: Could not run showmem:
+No such file or directory
+-- Performing Test ABSL_INTERNAL_AT_LEAST_CXX17
+-- Performing Test ABSL_INTERNAL_AT_LEAST_CXX17 - Success
+-- Performing Test ABSL_INTERNAL_AT_LEAST_CXX20
+-- Performing Test ABSL_INTERNAL_AT_LEAST_CXX20 - Success
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+-- Found Threads: TRUE
+CMake Warning (author) at /usr/share/cmake/Modules/FetchContent.cmake:1968 (message):
+  Calling FetchContent_Populate(eigen) is deprecated, call
+  FetchContent_MakeAvailable(eigen) instead.  Policy CMP0169 can be set to
+  OLD to allow FetchContent_Populate(eigen) to be called directly for now,
+  but the ability to call it with declared details will be removed completely
+  in a future version.
+Call Stack (most recent call first):
+  tools/cmake/modules/OverridableFetchContent.cmake:537 (FetchContent_Populate)
+  tools/cmake/modules/eigen.cmake:39 (OverridableFetchContent_Populate)
+  tools/cmake/modules/FindEigen3.cmake:18 (include)
+  CMakeLists.txt:182 (find_package)
+This warning is for project developers.  Use -Wno-author to suppress it.
+
+CMake Warning (deprecated) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/eigen/CMakeLists.txt:29 (cmake_policy):
+  The OLD behavior for policy CMP0146 will be removed from a future version
+  of CMake.
+
+  The cmake-policies(7) manual explains that the OLD behaviors of all
+  policies are deprecated and that a policy should be set to OLD only under
+  specific short-term circumstances.  Projects should be ported to the NEW
+  behavior and not rely on setting a policy to OLD.
+This warning is for project developers.  Use -Wno-author or -Wno-deprecated
+to suppress it.
+
+-- 
+-- Configured Eigen 5.0.1-dev
+-- 
+CMake Warning (author) at /usr/share/cmake/Modules/FetchContent.cmake:1968 (message):
+  Calling FetchContent_Populate(farmhash) is deprecated, call
+  FetchContent_MakeAvailable(farmhash) instead.  Policy CMP0169 can be set to
+  OLD to allow FetchContent_Populate(farmhash) to be called directly for now,
+  but the ability to call it with declared details will be removed completely
+  in a future version.
+Call Stack (most recent call first):
+  tools/cmake/modules/OverridableFetchContent.cmake:537 (FetchContent_Populate)
+  tools/cmake/modules/farmhash.cmake:37 (OverridableFetchContent_Populate)
+  tools/cmake/modules/Findfarmhash.cmake:34 (include)
+  CMakeLists.txt:183 (find_package)
+This warning is for project developers.  Use -Wno-author to suppress it.
+
+-- Performing Test FARMHASH_HAS_BUILTIN_EXPECT
+-- Performing Test FARMHASH_HAS_BUILTIN_EXPECT - Success
+CMake Warning (author) at /usr/share/cmake/Modules/FetchContent.cmake:1386 (message):
+  The DOWNLOAD_EXTRACT_TIMESTAMP option was not given and policy CMP0135 is
+  not set.  The policy's OLD behavior will be used.  When using a URL
+  download, the timestamps of extracted files should preferably be that of
+  the time of extraction, otherwise code that depends on the extracted
+  contents might not be rebuilt if the URL changes.  The OLD behavior
+  preserves the timestamps from the archive instead, but this is usually not
+  what you want.  Update your project to the NEW behavior or specify the
+  DOWNLOAD_EXTRACT_TIMESTAMP option with a value of true to avoid this
+  robustness issue.
+Call Stack (most recent call first):
+  tools/cmake/modules/OverridableFetchContent.cmake:398 (FetchContent_Declare)
+  tools/cmake/modules/fft2d.cmake:22 (OverridableFetchContent_Declare)
+  tools/cmake/modules/Findfft2d.cmake:18 (include)
+  CMakeLists.txt:184 (find_package)
+This warning is for project developers.  Use -Wno-author to suppress it.
+
+CMake Warning (author) at /usr/share/cmake/Modules/FetchContent.cmake:1968 (message):
+  Calling FetchContent_Populate(fft2d) is deprecated, call
+  FetchContent_MakeAvailable(fft2d) instead.  Policy CMP0169 can be set to
+  OLD to allow FetchContent_Populate(fft2d) to be called directly for now,
+  but the ability to call it with declared details will be removed completely
+  in a future version.
+Call Stack (most recent call first):
+  tools/cmake/modules/OverridableFetchContent.cmake:537 (FetchContent_Populate)
+  tools/cmake/modules/fft2d.cmake:33 (OverridableFetchContent_Populate)
+  tools/cmake/modules/Findfft2d.cmake:18 (include)
+  CMakeLists.txt:184 (find_package)
+This warning is for project developers.  Use -Wno-author to suppress it.
+
+CMake Warning (author) at /usr/share/cmake/Modules/FetchContent.cmake:1968 (message):
+  Calling FetchContent_Populate(flatbuffers) is deprecated, call
+  FetchContent_MakeAvailable(flatbuffers) instead.  Policy CMP0169 can be set
+  to OLD to allow FetchContent_Populate(flatbuffers) to be called directly
+  for now, but the ability to call it with declared details will be removed
+  completely in a future version.
+Call Stack (most recent call first):
+  tools/cmake/modules/OverridableFetchContent.cmake:537 (FetchContent_Populate)
+  tools/cmake/modules/flatbuffers.cmake:37 (OverridableFetchContent_Populate)
+  tools/cmake/modules/FindFlatBuffers.cmake:18 (include)
+  CMakeLists.txt:185 (find_package)
+This warning is for project developers.  Use -Wno-author to suppress it.
+
+-- Proceeding with version: 25.9.23.0
+-- Looking for strtof_l
+-- Looking for strtof_l - not found
+-- Looking for strtoull_l
+-- Looking for strtoull_l - not found
+-- Looking for realpath
+-- Looking for realpath - found
+-- CMAKE_CXX_FLAGS: -Os -fstack-clash-protection -Wformat -Werror=format-security -Qunused-arguments -D_GLIBCXX_ASSERTIONS=1 -D_LIBCPP_ENABLE_THREAD_SAFETY_ANNOTATIONS=1 -D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_FAST -g1 -DFARMHASH_LITTLE_ENDIAN=1 -I/usr/include/python3.14 -I/usr/lib/python3.14/site-packages/numpy/_core/include -I/usr/lib/python3.14/site-packages/pybind11/include
+CMake Warning (author) at /usr/share/cmake/Modules/FetchContent.cmake:1968 (message):
+  Calling FetchContent_Populate(gemmlowp) is deprecated, call
+  FetchContent_MakeAvailable(gemmlowp) instead.  Policy CMP0169 can be set to
+  OLD to allow FetchContent_Populate(gemmlowp) to be called directly for now,
+  but the ability to call it with declared details will be removed completely
+  in a future version.
+Call Stack (most recent call first):
+  tools/cmake/modules/OverridableFetchContent.cmake:537 (FetchContent_Populate)
+  tools/cmake/modules/gemmlowp.cmake:38 (OverridableFetchContent_Populate)
+  tools/cmake/modules/Findgemmlowp.cmake:18 (include)
+  CMakeLists.txt:186 (find_package)
+This warning is for project developers.  Use -Wno-author to suppress it.
+
+CMake Warning (deprecated) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/gemmlowp/contrib/CMakeLists.txt:5 (cmake_minimum_required):
+  Compatibility with CMake < 3.10 will be removed from a future version of
+  CMake.
+
+  Update the VERSION argument <min> value.  Or, use the <min>...<max> syntax
+  to tell CMake that the project requires at least <min> but has been updated
+  to work with policies introduced by <max> or earlier.
+This warning is for project developers.  Use -Wno-author or -Wno-deprecated
+to suppress it.
+
+CMake Warning (author) at /usr/share/cmake/Modules/FetchContent.cmake:1386 (message):
+  The DOWNLOAD_EXTRACT_TIMESTAMP option was not given and policy CMP0135 is
+  not set.  The policy's OLD behavior will be used.  When using a URL
+  download, the timestamps of extracted files should preferably be that of
+  the time of extraction, otherwise code that depends on the extracted
+  contents might not be rebuilt if the URL changes.  The OLD behavior
+  preserves the timestamps from the archive instead, but this is usually not
+  what you want.  Update your project to the NEW behavior or specify the
+  DOWNLOAD_EXTRACT_TIMESTAMP option with a value of true to avoid this
+  robustness issue.
+Call Stack (most recent call first):
+  tools/cmake/modules/OverridableFetchContent.cmake:398 (FetchContent_Declare)
+  tools/cmake/modules/neon2sse.cmake:25 (OverridableFetchContent_Declare)
+  tools/cmake/modules/FindNEON_2_SSE.cmake:18 (include)
+  CMakeLists.txt:188 (find_package)
+This warning is for project developers.  Use -Wno-author to suppress it.
+
+CMake Warning (author) at /usr/share/cmake/Modules/FetchContent.cmake:1968 (message):
+  Calling FetchContent_Populate(neon2sse) is deprecated, call
+  FetchContent_MakeAvailable(neon2sse) instead.  Policy CMP0169 can be set to
+  OLD to allow FetchContent_Populate(neon2sse) to be called directly for now,
+  but the ability to call it with declared details will be removed completely
+  in a future version.
+Call Stack (most recent call first):
+  tools/cmake/modules/OverridableFetchContent.cmake:537 (FetchContent_Populate)
+  tools/cmake/modules/neon2sse.cmake:37 (OverridableFetchContent_Populate)
+  tools/cmake/modules/FindNEON_2_SSE.cmake:18 (include)
+  CMakeLists.txt:188 (find_package)
+This warning is for project developers.  Use -Wno-author to suppress it.
+
+CMake Warning (deprecated) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/neon2sse/CMakeLists.txt:4 (cmake_minimum_required):
+  Compatibility with CMake < 3.10 will be removed from a future version of
+  CMake.
+
+  Update the VERSION argument <min> value.  Or, use the <min>...<max> syntax
+  to tell CMake that the project requires at least <min> but has been updated
+  to work with policies introduced by <max> or earlier.
+This warning is for project developers.  Use -Wno-author or -Wno-deprecated
+to suppress it.
+
+CMake Warning (author) at /usr/share/cmake/Modules/FetchContent.cmake:1968 (message):
+  Calling FetchContent_Populate(cpuinfo) is deprecated, call
+  FetchContent_MakeAvailable(cpuinfo) instead.  Policy CMP0169 can be set to
+  OLD to allow FetchContent_Populate(cpuinfo) to be called directly for now,
+  but the ability to call it with declared details will be removed completely
+  in a future version.
+Call Stack (most recent call first):
+  tools/cmake/modules/OverridableFetchContent.cmake:537 (FetchContent_Populate)
+  tools/cmake/modules/cpuinfo.cmake:32 (OverridableFetchContent_Populate)
+  tools/cmake/modules/Findcpuinfo.cmake:16 (include)
+  CMakeLists.txt:191 (find_package)
+This warning is for project developers.  Use -Wno-author to suppress it.
+
+CMake Warning (deprecated) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/cpuinfo/CMakeLists.txt:1 (CMAKE_MINIMUM_REQUIRED):
+  Compatibility with CMake < 3.10 will be removed from a future version of
+  CMake.
+
+  Update the VERSION argument <min> value.  Or, use the <min>...<max> syntax
+  to tell CMake that the project requires at least <min> but has been updated
+  to work with policies introduced by <max> or earlier.
+This warning is for project developers.  Use -Wno-author or -Wno-deprecated
+to suppress it.
+
+CMake Warning (author) at /usr/share/cmake/Modules/FetchContent.cmake:1968 (message):
+  Calling FetchContent_Populate(ml_dtypes) is deprecated, call
+  FetchContent_MakeAvailable(ml_dtypes) instead.  Policy CMP0169 can be set
+  to OLD to allow FetchContent_Populate(ml_dtypes) to be called directly for
+  now, but the ability to call it with declared details will be removed
+  completely in a future version.
+Call Stack (most recent call first):
+  tools/cmake/modules/OverridableFetchContent.cmake:537 (FetchContent_Populate)
+  tools/cmake/modules/ml_dtypes.cmake:39 (OverridableFetchContent_Populate)
+  tools/cmake/modules/Findml_dtypes.cmake:19 (include)
+  CMakeLists.txt:192 (find_package)
+This warning is for project developers.  Use -Wno-author to suppress it.
+
+CMake Warning (author) at /usr/share/cmake/Modules/FetchContent.cmake:1968 (message):
+  Calling FetchContent_Populate(ruy) is deprecated, call
+  FetchContent_MakeAvailable(ruy) instead.  Policy CMP0169 can be set to OLD
+  to allow FetchContent_Populate(ruy) to be called directly for now, but the
+  ability to call it with declared details will be removed completely in a
+  future version.
+Call Stack (most recent call first):
+  tools/cmake/modules/OverridableFetchContent.cmake:537 (FetchContent_Populate)
+  tools/cmake/modules/ruy.cmake:32 (OverridableFetchContent_Populate)
+  tools/cmake/modules/Findruy.cmake:16 (include)
+  CMakeLists.txt:193 (find_package)
+This warning is for project developers.  Use -Wno-author to suppress it.
+
+CMake Warning (policy) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/cmake/ruy_cc_library.cmake:89 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+Call Stack (most recent call first):
+  /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/ruy/CMakeLists.txt:23 (ruy_cc_library)
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/cmake/ruy_cc_library.cmake:89 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+Call Stack (most recent call first):
+  /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/ruy/CMakeLists.txt:40 (ruy_cc_library)
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/cmake/ruy_cc_library.cmake:89 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+Call Stack (most recent call first):
+  /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/ruy/CMakeLists.txt:61 (ruy_cc_library)
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/cmake/ruy_cc_library.cmake:89 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+Call Stack (most recent call first):
+  /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/ruy/CMakeLists.txt:86 (ruy_cc_library)
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/cmake/ruy_cc_library.cmake:89 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+Call Stack (most recent call first):
+  /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/ruy/CMakeLists.txt:97 (ruy_cc_library)
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/cmake/ruy_cc_library.cmake:89 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+Call Stack (most recent call first):
+  /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/ruy/CMakeLists.txt:114 (ruy_cc_library)
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/cmake/ruy_cc_library.cmake:89 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+Call Stack (most recent call first):
+  /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/ruy/CMakeLists.txt:148 (ruy_cc_library)
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/cmake/ruy_cc_library.cmake:89 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+Call Stack (most recent call first):
+  /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/ruy/CMakeLists.txt:175 (ruy_cc_library)
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/cmake/ruy_cc_library.cmake:89 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+Call Stack (most recent call first):
+  /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/ruy/CMakeLists.txt:194 (ruy_cc_library)
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/cmake/ruy_cc_library.cmake:89 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+Call Stack (most recent call first):
+  /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/ruy/CMakeLists.txt:207 (ruy_cc_library)
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/cmake/ruy_cc_library.cmake:89 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+Call Stack (most recent call first):
+  /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/ruy/CMakeLists.txt:260 (ruy_cc_library)
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/cmake/ruy_cc_library.cmake:89 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+Call Stack (most recent call first):
+  /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/ruy/CMakeLists.txt:291 (ruy_cc_library)
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/cmake/ruy_cc_library.cmake:89 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+Call Stack (most recent call first):
+  /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/ruy/CMakeLists.txt:304 (ruy_cc_library)
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/cmake/ruy_cc_library.cmake:89 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+Call Stack (most recent call first):
+  /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/ruy/CMakeLists.txt:343 (ruy_cc_library)
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/cmake/ruy_cc_library.cmake:89 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+Call Stack (most recent call first):
+  /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/ruy/CMakeLists.txt:362 (ruy_cc_library)
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/cmake/ruy_cc_library.cmake:89 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+Call Stack (most recent call first):
+  /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/ruy/CMakeLists.txt:385 (ruy_cc_library)
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/cmake/ruy_cc_library.cmake:89 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+Call Stack (most recent call first):
+  /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/ruy/CMakeLists.txt:422 (ruy_cc_library)
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/cmake/ruy_cc_library.cmake:89 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+Call Stack (most recent call first):
+  /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/ruy/CMakeLists.txt:442 (ruy_cc_library)
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/cmake/ruy_cc_library.cmake:89 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+Call Stack (most recent call first):
+  /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/ruy/CMakeLists.txt:457 (ruy_cc_library)
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/cmake/ruy_cc_library.cmake:89 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+Call Stack (most recent call first):
+  /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/ruy/CMakeLists.txt:471 (ruy_cc_library)
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/cmake/ruy_cc_library.cmake:89 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+Call Stack (most recent call first):
+  /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/ruy/CMakeLists.txt:483 (ruy_cc_library)
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/cmake/ruy_cc_library.cmake:89 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+Call Stack (most recent call first):
+  /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/ruy/CMakeLists.txt:511 (ruy_cc_library)
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/cmake/ruy_cc_library.cmake:89 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+Call Stack (most recent call first):
+  /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/ruy/CMakeLists.txt:540 (ruy_cc_library)
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/cmake/ruy_cc_library.cmake:89 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+Call Stack (most recent call first):
+  /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/ruy/CMakeLists.txt:555 (ruy_cc_library)
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/cmake/ruy_cc_library.cmake:89 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+Call Stack (most recent call first):
+  /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/ruy/CMakeLists.txt:568 (ruy_cc_library)
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/cmake/ruy_cc_library.cmake:89 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+Call Stack (most recent call first):
+  /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/ruy/CMakeLists.txt:599 (ruy_cc_library)
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/cmake/ruy_cc_library.cmake:89 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+Call Stack (most recent call first):
+  /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/ruy/CMakeLists.txt:623 (ruy_cc_library)
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/cmake/ruy_cc_library.cmake:89 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+Call Stack (most recent call first):
+  /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/ruy/CMakeLists.txt:643 (ruy_cc_library)
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/cmake/ruy_cc_library.cmake:89 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+Call Stack (most recent call first):
+  /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/ruy/CMakeLists.txt:670 (ruy_cc_library)
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/cmake/ruy_cc_library.cmake:89 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+Call Stack (most recent call first):
+  /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/ruy/CMakeLists.txt:701 (ruy_cc_library)
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/cmake/ruy_cc_library.cmake:89 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+Call Stack (most recent call first):
+  /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/ruy/CMakeLists.txt:725 (ruy_cc_library)
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/cmake/ruy_cc_library.cmake:89 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+Call Stack (most recent call first):
+  /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/ruy/CMakeLists.txt:748 (ruy_cc_library)
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/cmake/ruy_cc_library.cmake:89 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+Call Stack (most recent call first):
+  /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/ruy/CMakeLists.txt:773 (ruy_cc_library)
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/cmake/ruy_cc_library.cmake:89 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+Call Stack (most recent call first):
+  /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/ruy/CMakeLists.txt:797 (ruy_cc_library)
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/cmake/ruy_cc_library.cmake:89 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+Call Stack (most recent call first):
+  /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/ruy/CMakeLists.txt:820 (ruy_cc_library)
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/cmake/ruy_cc_library.cmake:89 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+Call Stack (most recent call first):
+  /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/ruy/CMakeLists.txt:845 (ruy_cc_library)
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/cmake/ruy_cc_library.cmake:89 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+Call Stack (most recent call first):
+  /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/ruy/CMakeLists.txt:869 (ruy_cc_library)
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/cmake/ruy_cc_library.cmake:89 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+Call Stack (most recent call first):
+  /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/ruy/CMakeLists.txt:892 (ruy_cc_library)
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/cmake/ruy_cc_library.cmake:89 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+Call Stack (most recent call first):
+  /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/ruy/CMakeLists.txt:909 (ruy_cc_library)
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/cmake/ruy_cc_library.cmake:89 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+Call Stack (most recent call first):
+  /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/ruy/CMakeLists.txt:939 (ruy_cc_library)
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/cmake/ruy_cc_library.cmake:89 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+Call Stack (most recent call first):
+  /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/ruy/CMakeLists.txt:965 (ruy_cc_library)
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/cmake/ruy_cc_library.cmake:89 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+Call Stack (most recent call first):
+  /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/ruy/CMakeLists.txt:977 (ruy_cc_library)
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/cmake/ruy_cc_library.cmake:89 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+Call Stack (most recent call first):
+  /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/ruy/CMakeLists.txt:1027 (ruy_cc_library)
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/cmake/ruy_cc_library.cmake:89 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+Call Stack (most recent call first):
+  /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/ruy/CMakeLists.txt:1053 (ruy_cc_library)
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/cmake/ruy_cc_library.cmake:89 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+Call Stack (most recent call first):
+  /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/ruy/CMakeLists.txt:1085 (ruy_cc_library)
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/cmake/ruy_cc_library.cmake:89 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+Call Stack (most recent call first):
+  /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/ruy/CMakeLists.txt:1102 (ruy_cc_library)
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/cmake/ruy_cc_library.cmake:89 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+Call Stack (most recent call first):
+  /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/ruy/CMakeLists.txt:1134 (ruy_cc_library)
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/cmake/ruy_cc_library.cmake:89 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+Call Stack (most recent call first):
+  /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/ruy/CMakeLists.txt:1155 (ruy_cc_library)
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/cmake/ruy_cc_library.cmake:89 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+Call Stack (most recent call first):
+  /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/ruy/CMakeLists.txt:1180 (ruy_cc_library)
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/cmake/ruy_cc_library.cmake:89 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+Call Stack (most recent call first):
+  /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/ruy/CMakeLists.txt:1196 (ruy_cc_library)
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/cmake/ruy_cc_library.cmake:89 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+Call Stack (most recent call first):
+  /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/ruy/CMakeLists.txt:1221 (ruy_cc_library)
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/cmake/ruy_cc_library.cmake:89 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+Call Stack (most recent call first):
+  /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/ruy/CMakeLists.txt:1284 (ruy_cc_library)
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/cmake/ruy_cc_library.cmake:89 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+Call Stack (most recent call first):
+  /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/ruy/profiler/CMakeLists.txt:17 (ruy_cc_library)
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/cmake/ruy_cc_library.cmake:89 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+Call Stack (most recent call first):
+  /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/ruy/ruy/profiler/CMakeLists.txt:31 (ruy_cc_library)
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (deprecated) at /var/home/qnx/aports/extra/tflite-runtime/src/pthreadpool-0e6ca13779b57d397a5ba6bfdcaa8a275bc8ea2e/CMakeLists.txt:10 (CMAKE_MINIMUM_REQUIRED):
+  Compatibility with CMake < 3.10 will be removed from a future version of
+  CMake.
+
+  Update the VERSION argument <min> value.  Or, use the <min>...<max> syntax
+  to tell CMake that the project requires at least <min> but has been updated
+  to work with policies introduced by <max> or earlier.
+This warning is for project developers.  Use -Wno-author or -Wno-deprecated
+to suppress it.
+
+CMake Warning (deprecated) at /var/home/qnx/aports/extra/tflite-runtime/src/FXdiv-b408327ac2a15ec3e43352421954f5b1967701d1/CMakeLists.txt:1 (CMAKE_MINIMUM_REQUIRED):
+  Compatibility with CMake < 3.10 will be removed from a future version of
+  CMake.
+
+  Update the VERSION argument <min> value.  Or, use the <min>...<max> syntax
+  to tell CMake that the project requires at least <min> but has been updated
+  to work with policies introduced by <max> or earlier.
+This warning is for project developers.  Use -Wno-author or -Wno-deprecated
+to suppress it.
+
+-- Downloading FP16 to /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/FP16-source (define FP16_SOURCE_DIR to avoid it)
+Error: Could not run showmem:
+No such file or directory
+CMake Warning (deprecated) at CMakeLists.txt:16 (CMAKE_MINIMUM_REQUIRED):
+  Compatibility with CMake < 3.10 will be removed from a future version of
+  CMake.
+
+  Update the VERSION argument <min> value.  Or, use the <min>...<max> syntax
+  to tell CMake that the project requires at least <min> but has been updated
+  to work with policies introduced by <max> or earlier.
+This warning is for project developers.  Use -Wno-author or -Wno-deprecated
+to suppress it.
+
+-- Configuring done (0.1s)
+-- Generating done (0.0s)
+-- Build files have been written to: /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/FP16-download
+[1/9] Creating directories for 'fp16'
+[2/9] Performing download step (download, verify and extract) for 'fp16'
+-- Downloading...
+   dst='/var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/FP16-download/fp16-prefix/src/0a92994d729ff76a58f692d3028ca1b64b145d91.zip'
+   timeout='none'
+   inactivity timeout='none'
+-- Using src='https://github.com/Maratyszcza/FP16/archive/0a92994d729ff76a58f692d3028ca1b64b145d91.zip'
+-- [download 11% complete]
+-- [download 30% complete]
+-- [download 40% complete]
+-- [download 58% complete]
+-- [download 77% complete]
+-- [download 95% complete]
+-- [download 97% complete]
+-- [download 100% complete]
+-- verifying file...
+       file='/var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/FP16-download/fp16-prefix/src/0a92994d729ff76a58f692d3028ca1b64b145d91.zip'
+-- Downloading... done
+-- extracting...
+     src='/var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/FP16-download/fp16-prefix/src/0a92994d729ff76a58f692d3028ca1b64b145d91.zip'
+     dst='/var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/FP16-source'
+-- extracting... [tar xf]
+-- extracting... [analysis]
+-- extracting... [rename]
+-- extracting... [clean up]
+-- extracting... done
+[3/9] No update step for 'fp16'
+[4/9] No patch step for 'fp16'
+[5/9] No configure step for 'fp16'
+[6/9] No build step for 'fp16'
+[7/9] No install step for 'fp16'
+[8/9] No test step for 'fp16'
+[9/9] Completed 'fp16'
+CMake Warning (policy) at CMakeLists.txt:314 (populate_tflite_source_vars):
+  Policy CMP0219 is not set: Macro invocations preserve backslashes in
+  arguments.  Run "cmake --help-policy CMP0219" for policy details.  Use the
+  cmake_policy command to set the policy and suppress this warning.
+
+  Command "populate_tflite_source_vars" called with arguments containing
+  backslashes.
+
+  Since the policy is not set, backslashes in the arguments:
+
+   "(_test)\.(cc|h)$"
+
+  will be interpreted as escape sequences for compatibility.
+
+  Set the policy to NEW to instead pass
+
+   "(_test)\\.(cc|h)$"
+
+  so that argument parsing will preserve the original values.
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (author) at /usr/share/cmake/Modules/FetchContent.cmake:1968 (message):
+  Calling FetchContent_Populate(xnnpack) is deprecated, call
+  FetchContent_MakeAvailable(xnnpack) instead.  Policy CMP0169 can be set to
+  OLD to allow FetchContent_Populate(xnnpack) to be called directly for now,
+  but the ability to call it with declared details will be removed completely
+  in a future version.
+Call Stack (most recent call first):
+  tools/cmake/modules/OverridableFetchContent.cmake:537 (FetchContent_Populate)
+  tools/cmake/modules/xnnpack.cmake:33 (OverridableFetchContent_Populate)
+  tools/cmake/modules/FindXNNPACK.cmake:16 (include)
+  CMakeLists.txt:535 (find_package)
+This warning is for project developers.  Use -Wno-author to suppress it.
+
+-- The ASM compiler identification is Clang with GNU-like command-line
+-- Found assembler: /usr/bin/clang
+-- Building for XNNPACK_TARGET_PROCESSOR: x86_64
+-- Found Python: /usr/bin/python3.14 (found version "3.14.0") found components: Interpreter
+-- Generating microkernels.cmake
+/var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/xnnpack/tools/update-microkernels.py:120: DeprecationWarning: codecs.open() is deprecated. Use open() instead.
+  with codecs.open(filepath, 'w', encoding='utf-8') as output_file:
+CMake Warning (policy) at CMakeLists.txt:814 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at CMakeLists.txt:814 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at CMakeLists.txt:814 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at CMakeLists.txt:814 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at CMakeLists.txt:814 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at CMakeLists.txt:814 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at CMakeLists.txt:814 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at CMakeLists.txt:814 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at CMakeLists.txt:814 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at CMakeLists.txt:814 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (policy) at CMakeLists.txt:814 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+CMake Warning (author) at /usr/share/cmake/Modules/FetchContent.cmake:1968 (message):
+  Calling FetchContent_Populate(googletest) is deprecated, call
+  FetchContent_MakeAvailable(googletest) instead.  Policy CMP0169 can be set
+  to OLD to allow FetchContent_Populate(googletest) to be called directly for
+  now, but the ability to call it with declared details will be removed
+  completely in a future version.
+Call Stack (most recent call first):
+  tools/cmake/modules/OverridableFetchContent.cmake:537 (FetchContent_Populate)
+  tools/cmake/modules/Findgoogletest.cmake:32 (OverridableFetchContent_Populate)
+  kernels/CMakeLists.txt:16 (find_package)
+This warning is for project developers.  Use -Wno-author to suppress it.
+
+CMake Warning (deprecated) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/googletest/CMakeLists.txt:4 (cmake_minimum_required):
+  Compatibility with CMake < 3.10 will be removed from a future version of
+  CMake.
+
+  Update the VERSION argument <min> value.  Or, use the <min>...<max> syntax
+  to tell CMake that the project requires at least <min> but has been updated
+  to work with policies introduced by <max> or earlier.
+This warning is for project developers.  Use -Wno-author or -Wno-deprecated
+to suppress it.
+
+CMake Warning (deprecated) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/googletest/googlemock/CMakeLists.txt:39 (cmake_minimum_required):
+  Compatibility with CMake < 3.10 will be removed from a future version of
+  CMake.
+
+  Update the VERSION argument <min> value.  Or, use the <min>...<max> syntax
+  to tell CMake that the project requires at least <min> but has been updated
+  to work with policies introduced by <max> or earlier.
+This warning is for project developers.  Use -Wno-author or -Wno-deprecated
+to suppress it.
+
+CMake Warning (deprecated) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/googletest/googletest/CMakeLists.txt:49 (cmake_minimum_required):
+  Compatibility with CMake < 3.10 will be removed from a future version of
+  CMake.
+
+  Update the VERSION argument <min> value.  Or, use the <min>...<max> syntax
+  to tell CMake that the project requires at least <min> but has been updated
+  to work with policies introduced by <max> or earlier.
+This warning is for project developers.  Use -Wno-author or -Wno-deprecated
+to suppress it.
+
+CMake Warning (author) at /usr/share/cmake/Modules/FetchContent.cmake:1968 (message):
+  Calling FetchContent_Populate(google_benchmark) is deprecated, call
+  FetchContent_MakeAvailable(google_benchmark) instead.  Policy CMP0169 can
+  be set to OLD to allow FetchContent_Populate(google_benchmark) to be called
+  directly for now, but the ability to call it with declared details will be
+  removed completely in a future version.
+Call Stack (most recent call first):
+  tools/cmake/modules/OverridableFetchContent.cmake:537 (FetchContent_Populate)
+  tools/cmake/modules/Findgoogle_benchmark.cmake:32 (OverridableFetchContent_Populate)
+  kernels/CMakeLists.txt:17 (find_package)
+This warning is for project developers.  Use -Wno-author to suppress it.
+
+-- Failed to find LLVM FileCheck
+-- Found Git: /usr/bin/git (found version "2.51.0")
+-- git version: v0.0.0 normalized to 0.0.0
+-- Google Benchmark version: 1.8.3
+CMake Warning (author) at /var/home/qnx/aports/extra/tflite-runtime/src/tensorflow-2.21.0/build/google_benchmark/CMakeLists.txt:119 (elseif):
+  ELSEIF called with no arguments, it will be skipped.
+This warning is for project developers.  Use -Wno-author to suppress it.
+
+-- Looking for shm_open in rt
+-- Looking for shm_open in rt - found
+-- Performing Test HAVE_CXX_FLAG_WALL
+-- Performing Test HAVE_CXX_FLAG_WALL - Success
+-- Performing Test HAVE_CXX_FLAG_WEXTRA
+-- Performing Test HAVE_CXX_FLAG_WEXTRA - Success
+-- Performing Test HAVE_CXX_FLAG_WSHADOW
+-- Performing Test HAVE_CXX_FLAG_WSHADOW - Success
+-- Performing Test HAVE_CXX_FLAG_WFLOAT_EQUAL
+-- Performing Test HAVE_CXX_FLAG_WFLOAT_EQUAL - Success
+-- Performing Test HAVE_CXX_FLAG_WOLD_STYLE_CAST
+-- Performing Test HAVE_CXX_FLAG_WOLD_STYLE_CAST - Success
+-- Performing Test HAVE_CXX_FLAG_WERROR
+-- Performing Test HAVE_CXX_FLAG_WERROR - Success
+-- Performing Test HAVE_CXX_FLAG_PEDANTIC
+-- Performing Test HAVE_CXX_FLAG_PEDANTIC - Success
+-- Performing Test HAVE_CXX_FLAG_PEDANTIC_ERRORS
+-- Performing Test HAVE_CXX_FLAG_PEDANTIC_ERRORS - Success
+-- Performing Test HAVE_CXX_FLAG_WSHORTEN_64_TO_32

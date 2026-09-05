@@ -3,7 +3,7 @@ pkgname=tflite-runtime
 _pkgname=tensorflow
 pkgver=2.21.0
 _pkgver=${pkgver/_/-}
-pkgrel=1
+pkgrel=2
 _pthreadpool_ver=0e6ca13779b57d397a5ba6bfdcaa8a275bc8ea2e
 _ruy_ver=master
 _xnnpack_ver=25b42dfddb0ee22170d73ff0d4b333ea1e6edfeb
@@ -14,18 +14,10 @@ pkgdesc="TensorFlow Lite - High-performance ML & GenAI deployment on edge platfo
 url="https://ai.google.dev/edge/litert"
 arch="all"
 license="Apache-2.0"
-depends="
-    abseil-cpp>=20250814.1
-    xnnpack
-    cpuinfo
-    pthreadpool
-    "
-depends_dev="
-    abseil-cpp-dev>=20250814.1
-    xnnpack-dev
-    cpuinfo-dev
-    ruy-dev
-    "
+# if net is removed, please remove ca-certificates from makedepends
+options="net"
+depends="$pkgname-dev=$pkgver-r$pkgrel"
+# ca-certificates is only because cmake pulls in some sutff at buildtime and there is no easy way to get rid of that
 makedepends="
     clang
     cmake
@@ -38,6 +30,7 @@ makedepends="
     python3-setuptools
     python3-wheel
     python3-pybind11-dev
+    ca-certificates
     "
 subpackages="
     $pkgname-dev
@@ -53,16 +46,12 @@ source="${pkgname}-${pkgver}.tar.gz::https://github.com/tensorflow/tensorflow/ar
     https://github.com/google/XNNPACK/archive/$_xnnpack_ver.zip
     https://github.com/ARM-software/kleidiai/archive/$_kleidiai_ver.zip
     https://github.com/Maratyszcza/FXdiv/archive/$_fxdiv_ver.zip
+    export-targets.patch
     fix-test-paths.patch
-    no-export.patch
+    qnx-python-packaging.patch
     qnx-dirent.patch
-    cpuinfo_patch
-    eigen_patch
     pthreadpool_patch
-    ruy_patch
     XNNPACK_patch
-    kleidiai_patch
-    FXdiv_patch
     "
 builddir="$srcdir/$_pkgname-$_pkgver"
 _cpuinfo_builddir="${srcdir}/cpuinfo-qnx-tflite-r${_cpuinfo_git_rev}"
@@ -98,17 +87,12 @@ unpack() {
 prepare() {
     default_prepare
 
-    (cd $_cpuinfo_builddir && patch ${patch_args:--p1} -i "$srcdir/cpuinfo_patch")
-    (cd $_eigen_builddir && patch ${patch_args:--p1} -i "$srcdir/eigen_patch")
     (cd $_pthreadpool_builddir && patch ${patch_args:--p1} -i "$srcdir/pthreadpool_patch")
-    (cd $_ruy_builddir && patch ${patch_args:--p1} -i "$srcdir/ruy_patch")
     (cd $_xnnpack_builddir && patch ${patch_args:--p1} -i "$srcdir/XNNPACK_patch")
-    (cd $_kleidiai_builddir && patch ${patch_args:--p1} -i "$srcdir/kleidiai_patch")
-    (cd $_fxdiv_builddir && patch ${patch_args:--p1} -i "$srcdir/FXdiv_patch")
 }
 
 build() {
-    _python_include_dir="/usr/include/python3.14"
+    _python_include_dir=$(python3 -c "import sysconfig; print(sysconfig.get_path('include'))")
     _numpy_include_dir=$(python3 -c "import numpy; print(numpy.get_include())")
     _pybind11_include_dir=$(python3 -c "import pybind11; print (pybind11.get_include())")
 
@@ -118,18 +102,18 @@ build() {
     CC=clang CXX=clang++ \
     cmake3.5 -B build -G Ninja \
         -DCMAKE_BUILD_TYPE=Release \
-        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DCMAKE_INSTALL_PREFIX=/usr/lib/tensorflow-lite \
         -DQNX=ON \
         -DTFLITE_ENABLE_INSTALL=ON \
-        -DABSL_ENABLE_INSTALL=OFF \
-        -DRUY_ENABLE_INSTALL=OFF \
+        -DABSL_ENABLE_INSTALL=ON \
+        -DRUY_ENABLE_INSTALL=ON \
         -DRUY_MINIMAL_BUILD=ON \
-        -DCPUINFO_BUILD_PKG_CONFIG=OFF \
-        -DEIGEN_BUILD_CMAKE_PACKAGE=OFF \
-        -DFLATBUFFERS_INSTALL=OFF \
+        -DCPUINFO_BUILD_PKG_CONFIG=ON \
+        -DEIGEN_BUILD_CMAKE_PACKAGE=ON \
+        -DFLATBUFFERS_INSTALL=ON \
         -DTFLITE_ENABLE_XNNPACK=ON \
         -DXNNPACK_ENABLE_ASSEMBLY=ON \
-        -DBUILD_SHARED_LIBS=ON \
+        -DBUILD_SHARED_LIBS=OFF \
         -DCMAKE_VERBOSE_MAKEFILE=ON \
         -DTFLITE_KERNEL_TEST="$(want_check && echo ON || echo OFF)" \
         -DQNX_PATCH_DIR="$_patch_dir" \
@@ -167,14 +151,22 @@ check() {
 
 package() {
     python3 -m installer -d "$pkgdir" \
-        $builddir/build/python_loader/dist/*.whl
+        "$builddir"/build/python_loader/dist/*.whl
     DESTDIR="$pkgdir" cmake3.5 --install build
     python3 -m compileall -fq "$pkgdir"/usr/lib/python*
+
+    # ruy installs headers to /usr/lib/build for some reason.
+    mv "$pkgdir"/usr/lib/build/ruy "$pkgdir"/usr/lib/tensorflow-lite/include
+    rm -rf "$pkgdir"/usr/lib/build # empty
+}
+
+dev() {
+    amove usr/lib/tensorflow-lite
 }
 
 _py3() {
     pkgdesc="$pkgdesc (python modules)"
-    depends="$pkgname python3-numpy"
+    depends="python3-numpy"
 
     amove usr/lib/python3.*
 }
@@ -188,14 +180,10 @@ db93e3fb726a2fe7a50e3f019e432c317958c9ccc0ef4a5cfdccd412e6ea6433b73cae3c0a511007
 ad7bad6bcae85e9772ebbc1b6d0ba0bf56064419ffca026ac3af736ab3a2d2191d455cb90f974931cec3ed6e189168a0af79454a340df8bc00a15d92c235a3dd  25b42dfddb0ee22170d73ff0d4b333ea1e6edfeb.zip
 e7405c32051aa7ebe0366216e2d85018a19f6781412177479203a316348aabc9bfdc189af30bb7cc94ce6d7fbf8efc6e9900c8365190919028b67fb145c75ff4  63205aa90afa6803d8f58bc3081b69288e9f1906.zip
 8a2ef9b5c3353bbb53be3584bccf5bf0ebda99ff903b55d34a966768e3acfead08d1d981e7428697166e028067c90f31cbcf793a39d07d76c31b2fb51787f74e  b408327ac2a15ec3e43352421954f5b1967701d1.zip
+677d06dba352d737133d070a1737d3d79245f9f7848c1528a741bac50453e795ebb9dc076824469c51fe346e991d7aed462511545ad8f9f7a48d829fcbf64c17  export-targets.patch
 3cab47aa7c84923ed263cfc285e7041ef0af6f3e6fd8e778afb4320cd9025453f8c68e0f16e37d36b3a96287a4940cfb8446d2aa7456ebed95c6a325fe72fbc8  fix-test-paths.patch
-ff685a04c1e9724caa4722e27f626af8d08a7552054651cfa12432b52668d029943f8774a31f73451fc6f002853f245a209e2a2b693cb6a9663750351d6f11c3  no-export.patch
+ce519cb8a1b71be6b8741da1e0d52f6280e935f2ad562f5fddcfd631445f03f42a60a60827b5ac667c7c88e4248df864ca3f47e7d270a0b9d8551b5e5a8cdf6c  qnx-python-packaging.patch
 2b8401c045cadc1cabc83c07a02d3d070248b60be54cb53c56810d97ce463b225b3d64e57d7985086dc69f5ca8d4b5e6c5e59f757ae59531b183b4d874122f38  qnx-dirent.patch
-8bf1a384d89dbdd1de5aa672c57395044e0391015267146d5cb9dede4601ae4550baba4c66f509ee632dcfd717401993a4fbd2b9c40f40d5e46e51b8e10276ae  cpuinfo_patch
-df31ed689ffb5dad1920ce5841b178f616920b631dde60e3b7d727290c828187da191b18d1ca8999fb5a07f39cdb5589e4910aa8dbed3e323eec29e5c8ac5e5f  eigen_patch
-9e9d146e3c5787cdd97cdaed1246b13ccae7b1479794ba21e6a24c05d8227ecaa0ff9d228a33afe009e48ab96af88996f9b56ea147807aeae65bbc3b5715ec96  pthreadpool_patch
-c304a15f6c765e488382d76e5949cb4fc096a5397f9417d4e68afa5bc636f90bd82f78a4909bd9100488744dbeaba684251701272331a3283454d41861a5aa6c  ruy_patch
-1366ce4acad98adeaaaff998fce5e0913ae2abb44c96e4973e2fad97f17609c7f6209a266966a3f5c36fbcacb4447e7a6ae23ca202bd9d9b9c83a4a4bcf89ba7  XNNPACK_patch
-0dd0cdc2736c557f1c5b3e575bbceedf5b5b8e0ab59e54ed249b7769725c152a1d3d31ba5d4ab54aa105066a2ccc362644f21f03e3e1f5ec833c98d0743d7d4c  kleidiai_patch
-c1fdb43cd730bcf241a5c7e3ebb8601220c2aff930cb7540a023e9ab90879b54a131123b351d836c60ab08fd1d3f4fd8db04b40ba7dfa9ad750c9131721c372e  FXdiv_patch
+af80a6291681047ae44844f9398aadc655f5a1cd0d91fd06691cdebe0216d90bd36b3b4e80de808cb9f1e1d6fc0d2773e419e6ed0c61d8ac5832b193e4a386d9  pthreadpool_patch
+289de1b899028d63d9509f4399bfc82e0fb0feb14399c3f537647da506dfc4095bc9a7d20873297ba4ccae8e7116e6680ac0c3cac118903f65a684ccf48cf86b  XNNPACK_patch
 "
