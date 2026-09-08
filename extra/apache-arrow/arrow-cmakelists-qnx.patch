@@ -1,5 +1,5 @@
---- arrow-apache_arrow_test_orig/cpp/src/arrow/CMakeLists.txt
-+++ arrow-apache_arrow_test/cpp/src/arrow/CMakeLists.txt
+--- a/cpp/src/arrow/CMakeLists.txt
++++ b/cpp/src/arrow/CMakeLists.txt
 @@ -713,7 +713,10 @@
    list(APPEND ARROW_TESTING_STATIC_LINK_LIBS "ws2_32")
    list(APPEND ARROW_TESTING_STATIC_INSTALL_INTERFACE_LIBS "ws2_32")

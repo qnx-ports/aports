@@ -1,6 +1,6 @@
---- arrow-apache_arrow_test/cpp/build/_deps/boost-src/libs/process/src/ext/cmd.cpp
-+++ arrow-apache_arrow_test_changes/cpp/build/_deps/boost-src/libs/process/src/ext/cmd.cpp
-@@ -403,12 +403,13 @@
+--- a/cpp/build/_deps/boost-src/libs/process/src/ext/cmd.cpp	2026-09-08 11:21:26.421078474 +0530
++++ b/cpp/build/_deps/boost-src/libs/process/src/ext/cmd.cpp	2026-09-08 11:29:46.000000000 +0530
+@@ -403,10 +403,10 @@
  }
  
  #else
@@ -13,7 +13,4 @@
 +    return {};
  }
  #endif
-+
  
- shell cmd(boost::process::v2::pid_type pid)
- {
