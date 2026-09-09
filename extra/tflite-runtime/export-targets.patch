@@ -1,0 +1,19 @@
+diff --git a/tensorflow/lite/CMakeLists.txt b/tensorflow/lite/CMakeLists.txt
+index 7e877cd92f1..d7e379e2b30 100644
+--- a/tensorflow/lite/CMakeLists.txt
++++ b/tensorflow/lite/CMakeLists.txt
+@@ -799,6 +799,14 @@ if(TFLITE_ENABLE_INSTALL)
+     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+   )
++  if(TFLITE_ENABLE_XNNPACK)
++    install(
++      TARGETS xnnpack-delegate
++      EXPORT ${PROJECT_NAME}Targets
++      LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
++      ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
++    )
++  endif()
+ 
+   foreach(hdr ${_ALL_TFLITE_HDRS})
+     get_filename_component(dir ${hdr} DIRECTORY)
