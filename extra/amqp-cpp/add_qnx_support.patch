@@ -1,0 +1,17 @@
+diff --git a/src/linux_tcp/addressinfo.h b/src/linux_tcp/addressinfo.h
+index d9bb5cb..679d7f9 100644
+--- a/src/linux_tcp/addressinfo.h
++++ b/src/linux_tcp/addressinfo.h
+@@ -12,7 +12,9 @@
+  */
+ #include <random>
+ #include "connectionorder.h"
+-
++#ifdef __QNX__
++#include <netinet/in.h>
++#endif /* __QNX__ */
+ /**
+  *  Include guard
+  */
+-- 
+2.53.0
