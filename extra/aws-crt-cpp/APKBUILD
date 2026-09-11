@@ -1,0 +1,92 @@
+# Alpine-Contributor: Holger Jaekel <holger.jaekel@gmx.de>
+# Alpine-Maintainer: Achill Gilgenast <achill@achill.org>
+# Maintainer: Deep Chordia <dchordia@blackberry.com>
+pkgname=aws-crt-cpp
+pkgver=0.37.3
+pkgrel=0
+pkgdesc="C++ wrapper around the aws-c-* libraries. Provides Cross-Platform Transport Protocols and SSL/TLS implementations for C++"
+url="https://github.com/awslabs/aws-crt-cpp"
+arch="all"
+license="Apache-2.0"
+depends_dev="aws-c-common-dev
+             aws-c-cal-dev
+             aws-c-io-dev
+             s2n-tls-dev
+             "
+makedepends="$depends_dev
+             cmake
+             ninja
+             "
+subpackages="$pkgname-dev"
+_aws_c_auth_commit="c6155516c4ed5267563fac4bbf208e6a7a9ee4c4"
+_aws_c_compression_commit="d8264e64f698341eb03039b96b4f44702a9b3f83"
+_aws_c_event_stream_commit="f43a3d24a7c1f8b50f709ccb4fdf4c7fd2827fff"
+_aws_c_http_commit="acf31399077300c522315612dd2be09cfe48b5b8"
+_aws_c_mqtt_commit="1d512d92709f60b74e2cafa018e69a2e647f28e9"
+_aws_c_s3_commit="e9d1bde139f88b08aaa3bf0507f443f31ccede93"
+_aws_c_sdkutils_commit="f678bda9e21f7217e4bbf35e0d1ea59540687933"
+_aws_checksums_commit="c412c636091501c2cd544d23664c8d14999e9dcc"
+source="$pkgname-$pkgver.tar.gz::https://github.com/awslabs/aws-crt-cpp/archive/refs/tags/v$pkgver.tar.gz
+        $pkgname-$pkgver-aws_c_auth.tar.gz::https://github.com/awslabs/aws-c-auth/archive/$_aws_c_auth_commit.tar.gz
+        $pkgname-$pkgver-aws_c_compression.tar.gz::https://github.com/awslabs/aws-c-compression/archive/$_aws_c_compression_commit.tar.gz
+        $pkgname-$pkgver-aws_c_event_stream.tar.gz::https://github.com/awslabs/aws-c-event-stream/archive/$_aws_c_event_stream_commit.tar.gz
+        $pkgname-$pkgver-aws_c_http.tar.gz::https://github.com/awslabs/aws-c-http/archive/$_aws_c_http_commit.tar.gz
+        $pkgname-$pkgver-aws_c_mqtt.tar.gz::https://github.com/awslabs/aws-c-mqtt/archive/$_aws_c_mqtt_commit.tar.gz
+        $pkgname-$pkgver-aws_c_s3.tar.gz::https://github.com/awslabs/aws-c-s3/archive/$_aws_c_s3_commit.tar.gz
+        $pkgname-$pkgver-aws_c_sdkutils.tar.gz::https://github.com/awslabs/aws-c-sdkutils/archive/$_aws_c_sdkutils_commit.tar.gz
+        $pkgname-$pkgver-aws_checksums.tar.gz::https://github.com/awslabs/aws-checksums/archive/$_aws_checksums_commit.tar.gz
+        0001-add-qnx-build.patch
+        "
+builddir="$srcdir/$pkgname-$pkgver"
+
+prepare() {
+  mv "$srcdir"/aws-c-auth-$_aws_c_auth_commit/* "$builddir"/crt/aws-c-auth
+  mv "$srcdir"/aws-c-compression-$_aws_c_compression_commit/* "$builddir"/crt/aws-c-compression
+  mv "$srcdir"/aws-c-event-stream-$_aws_c_event_stream_commit/* "$builddir"/crt/aws-c-event-stream
+  mv "$srcdir"/aws-c-http-$_aws_c_http_commit/* "$builddir"/crt/aws-c-http
+  mv "$srcdir"/aws-c-mqtt-$_aws_c_mqtt_commit/* "$builddir"/crt/aws-c-mqtt
+  mv "$srcdir"/aws-c-s3-$_aws_c_s3_commit/* "$builddir"/crt/aws-c-s3
+  mv "$srcdir"/aws-c-sdkutils-$_aws_c_sdkutils_commit/* "$builddir"/crt/aws-c-sdkutils
+  mv "$srcdir"/aws-checksums-$_aws_checksums_commit/* "$builddir"/crt/aws-checksums
+
+  default_prepare
+}
+
+build() {
+  cmake -B build -G Ninja \
+    -DCMAKE_C_FLAGS="$CFLAGS -Wno-deprecated-declarations" \
+    -DCMAKE_CXX_FLAGS="$CXXFLAGS -Wno-deprecated-declarations" \
+    -DCMAKE_C_STANDARD_LIBRARIES="-lsocket -lepoll" \
+    -DCMAKE_CXX_STANDARD_LIBRARIES="-lsocket -lepoll" \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=/usr \
+    -DCMAKE_INSTALL_DATADIR=/usr/lib \
+    -DCMAKE_MODULE_PATH=/usr/lib/cmake/aws-c-common/modules \
+    -DBUILD_SHARED_LIBS=ON \
+    -DBUILD_TESTING=ON \
+    -DBYO_CRYPTO=OFF \
+    -DUSE_OPENSSL=ON \
+    -DQNX=1
+  cmake --build build
+}
+
+check() {
+  ctest --test-dir build
+}
+
+package() {
+  DESTDIR="$pkgdir" cmake --install build
+}
+
+sha512sums="
+2db9951d5bf5fc334052bcdc76ac4675efd58686c399f7d6a95773174a322526f07289773fd5d783aec85312a37228a56e99fe8cd11ce23f04c6d4bde3fbc076  aws-crt-cpp-0.37.3.tar.gz
+66905576f4f1d8da2cf85b61da2ceab0e57aeca98f427e40d85f79cb9dc474e6b7c6add477a80e4e22c899419b440a48bd3eea1b8cb42353d0950e50c1d5b8c8  aws-crt-cpp-0.37.3-aws_c_auth.tar.gz
+6b76d557728910740baf0efc545e1901e0c2a19ab30ab6e7b5721211ed68f26b0b2785e35ce32cd6cc0188efecfa09be957a5feafb8ad53c2a5fb318b2ee302b  aws-crt-cpp-0.37.3-aws_c_compression.tar.gz
+e7e9519c80901ce6aaec69b8a57be99053efa0f3678d62401e1aac4712849e30301b1d4897bd8afd3935858cbb41b89bd0bbab9224e58eeb0d0e1c946ac64fd5  aws-crt-cpp-0.37.3-aws_c_event_stream.tar.gz
+c138987e24ef858ae9d0cc3e7629c8cc49b72307a9212d8d7063ae24999217f57cf29cdc3abbf1ce57c8b3a6a2e24ca1c9555b51a62257f0e9c6327206f26ba8  aws-crt-cpp-0.37.3-aws_c_http.tar.gz
+199fd5317996c0205eeaff926be736af6a5467feb25694c6ea16c143f9d8a8027c635ce4fc27420a087984e2df7a390a0a359141d5ed8ed306e1b14a6520defe  aws-crt-cpp-0.37.3-aws_c_mqtt.tar.gz
+514a7920fe188932c68310dd1e663fd2ad9aac4cffa4298e87eaada4d39c4124978d37132c4a68b4b4e11db381057ccfe1acd875b6d43d9a7c89dea6995a816a  aws-crt-cpp-0.37.3-aws_c_s3.tar.gz
+029e437866c6304800f183bdbdf56344d6d5d9b7d47626cda39deafc8681c5ce24d6ce0bee7535b5f088a208b24ab39dfc3c8111bd2d68f61b9393de57d4d6a1  aws-crt-cpp-0.37.3-aws_c_sdkutils.tar.gz
+b02a2012c729941db332dd4e85008e11087bf6b6b9400b3f549f2143605f5fae0377e42422b71c2c1e3d92eca79fb3695eaeffb331df4c57fb768b3ffe2638b4  aws-crt-cpp-0.37.3-aws_checksums.tar.gz
+6ad29980748f2319ed4e99de7c6fd8ebe3fb4f62079a94c7664f9af531f49fdbdc7f8b38ce8414e6c6a5735ff5a7df13235e4fcc7a9021051105ebdc5e7b3210  0001-add-qnx-build.patch
+"
