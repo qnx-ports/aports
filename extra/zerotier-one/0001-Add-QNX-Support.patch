@@ -1,0 +1,295 @@
+diff --git a/Makefile b/Makefile
+index 51a9914bb..cda74eb6c 100644
+--- a/Makefile
++++ b/Makefile
+@@ -27,6 +27,13 @@ ifeq ($(OSTYPE),NetBSD)
+ 	include make-netbsd.mk
+ endif
+ 
++ifeq ($(OSTYPE),QNX)
++	CC=clang
++	CXX=clang++
++	ZT_BUILD_PLATFORM=11
++	include make-qnx.mk
++endif
++
+ drone:
+ 	@echo "rendering .drone.yaml from .drone.jsonnet"
+ 	drone jsonnet --format --stream
+diff --git a/ext/libnatpmp/getgateway.c b/ext/libnatpmp/getgateway.c
+index 0f06e1dc2..d9d4cd275 100644
+--- a/ext/libnatpmp/getgateway.c
++++ b/ext/libnatpmp/getgateway.c
+@@ -49,7 +49,7 @@ POSSIBILITY OF SUCH DAMAGE.
+ #undef USE_SYSCTL_NET_ROUTE
+ #endif
+ 
+-#if defined(BSD) || defined(__FreeBSD_kernel__)
++#if defined(BSD) || defined(__FreeBSD_kernel__) || defined(__QNXNTO__)
+ #undef USE_PROC_NET_ROUTE
+ #define USE_SOCKET_ROUTE
+ #undef USE_SYSCTL_NET_ROUTE
+diff --git a/node/Constants.hpp b/node/Constants.hpp
+index 6baf8c7fe..1c4251161 100644
+--- a/node/Constants.hpp
++++ b/node/Constants.hpp
+@@ -172,6 +172,27 @@
+ #define ZT_EOL_S			"\n"
+ #endif
+ 
++#if defined(__QNXNTO__)
++#ifndef __UNIX_LIKE__
++#define __UNIX_LIKE__
++#endif
++// Bridge GCC/Clang compiler builtins (__BYTE_ORDER__, __ORDER_BIG_ENDIAN__) to the
++// BSD-style macros (__BYTE_ORDER, __BIG_ENDIAN, __LITTLE_ENDIAN) used throughout this
++// codebase. QNX does not ship <endian.h>; byte-order is available via compiler builtins only.
++#ifndef __BYTE_ORDER
++#define	__BIG_ENDIAN	4321
++#define	__LITTLE_ENDIAN	1234
++#if defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
++#define __BYTE_ORDER __BIG_ENDIAN
++#elif defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
++#define __BYTE_ORDER __LITTLE_ENDIAN
++#else
++// Fallback: assume little-endian (safe for all known QNX targets)
++#define __BYTE_ORDER __LITTLE_ENDIAN
++#endif
++#endif
++#endif
++
+ #ifndef __BYTE_ORDER
+ #include <endian.h>
+ #endif
+diff --git a/node/Utils.cpp b/node/Utils.cpp
+index 705b6bd46..38e195780 100644
+--- a/node/Utils.cpp
++++ b/node/Utils.cpp
+@@ -93,7 +93,7 @@ const char Utils::HEXCHARS[16] = { '0', '1', '2', '3', '4', '5', '6', '7', '8',
+ #ifdef ZT_ARCH_ARM_HAS_NEON
+ Utils::ARMCapabilities::ARMCapabilities() noexcept
+ {
+-#ifdef __APPLE__
++#if defined(__APPLE__) || defined(__QNXNTO__)
+ 
+ 	this->aes = true;
+ 	this->crc32 = true;
+@@ -274,19 +274,28 @@ void Utils::getSecureRandom(void* buf, unsigned int bytes)
+ 
+ 	for (unsigned int i = 0; i < bytes; ++i) {
+ 		if (randomPtr >= sizeof(randomBuf)) {
++			// Read with short-read retry loop: some platforms (e.g. QNX) return fewer
++			// bytes than requested from /dev/urandom even though more are available.
+ 			for (;;) {
+-				if ((int)::read(devURandomFd, randomBuf, sizeof(randomBuf)) != (int)sizeof(randomBuf)) {
+-					::close(devURandomFd);
+-					devURandomFd = ::open("/dev/urandom", O_RDONLY);
+-					if (devURandomFd < 0) {
+-						fprintf(stderr, "FATAL ERROR: Utils::getSecureRandom() unable to open /dev/urandom\n");
+-						exit(1);
+-						return;
++				size_t got = 0;
++				while (got < sizeof(randomBuf)) {
++					int n = (int)::read(devURandomFd, randomBuf + got, sizeof(randomBuf) - got);
++					if (n > 0) {
++						got += (size_t)n;
++					}
++					else {
++						// read error — close and reopen, then restart accumulation
++						::close(devURandomFd);
++						devURandomFd = ::open("/dev/urandom", O_RDONLY);
++						if (devURandomFd < 0) {
++							fprintf(stderr, "FATAL ERROR: Utils::getSecureRandom() unable to open /dev/urandom\n");
++							exit(1);
++							return;
++						}
++						got = 0;
+ 					}
+ 				}
+-				else {
+-					break;
+-				}
++				break;
+ 			}
+ 			randomPtr = 0;
+ 			s20.crypt12(randomBuf, randomBuf, sizeof(randomBuf));
+diff --git a/osdep/EthernetTap.cpp b/osdep/EthernetTap.cpp
+index 1d35e01dc..93dc642dc 100644
+--- a/osdep/EthernetTap.cpp
++++ b/osdep/EthernetTap.cpp
+@@ -49,6 +49,10 @@
+ #include "BSDEthernetTap.hpp"
+ #endif	 // __OpenBSD__
+ 
++#ifdef __QNXNTO__
++#include "QNXEthernetTap.hpp"
++#endif	 // __QNXNTO__
++
+ #endif
+ 
+ namespace ZeroTier {
+@@ -135,6 +139,11 @@ std::shared_ptr<EthernetTap> EthernetTap::newInstance(
+ 	return std::shared_ptr<EthernetTap>(new BSDEthernetTap(homePath, concurrency, pinning, mac, mtu, metric, nwid, friendlyName, handler, arg));
+ #endif	 // __OpenBSD__
+ 
++#ifdef __QNXNTO__
++	return std::shared_ptr<EthernetTap>(new QNXEthernetTap(
++		homePath, concurrency, pinning, mac, mtu, metric, nwid, friendlyName, handler, arg));
++#endif	 // __QNXNTO__
++
+ #endif	 // ZT_SDK?
+ 
+ 	return std::shared_ptr<EthernetTap>();
+diff --git a/osdep/ManagedRoute.cpp b/osdep/ManagedRoute.cpp
+index 6a605b856..7702a3ac1 100644
+--- a/osdep/ManagedRoute.cpp
++++ b/osdep/ManagedRoute.cpp
+@@ -33,7 +33,7 @@
+ #include <net/route.h>
+ #endif
+ #include <net/if.h>
+-#ifdef __BSD__
++#if defined(__BSD__) || defined(__QNXNTO__)
+ #include <net/if_dl.h>
+ #include <sys/sysctl.h>
+ #endif
+@@ -50,7 +50,11 @@
+ #include "LinuxNetLink.hpp"
+ #endif
+ 
++#ifdef __QNXNTO__
++#define ZT_BSD_ROUTE_CMD "/usr/bin/route"
++#else
+ #define ZT_BSD_ROUTE_CMD "/sbin/route"
++#endif
+ 
+ namespace ZeroTier {
+ 
+@@ -96,7 +100,7 @@ struct _RTE {
+ 	bool isDefault;
+ };
+ 
+-#ifdef __BSD__	 // ------------------------------------------------------------
++#if defined(__BSD__) || defined(__QNXNTO__) // ------------------------------------------------------------
+ #define ZT_ROUTING_SUPPORT_FOUND 1
+ 
+ #ifndef ZT_SDK
+@@ -466,7 +470,7 @@ bool ManagedRoute::sync()
+ 	else
+ 		leftt = _target;
+ 
+-#ifdef __BSD__	 // ------------------------------------------------------------
++#if defined(__BSD__)	|| defined(__QNXNTO__) // ------------------------------------------------------------
+ 
+ 	if (_device[0]) {
+ 		bool haveDevice = false;
+@@ -562,7 +566,7 @@ bool ManagedRoute::sync()
+ 		}
+ 	}
+ 
+-#endif	 // __BSD__ ------------------------------------------------------------
++#endif	 // __BSD__ || defined(__QNXNTO__)------------------------------------------------------------
+ 
+ #ifdef __LINUX__   // ----------------------------------------------------------
+ 
+@@ -609,11 +613,11 @@ void ManagedRoute::remove()
+ 		return;
+ #endif
+ 
+-#ifdef __BSD__
+-#endif	 // __BSD__ ------------------------------------------------------------
++#if defined(__BSD__) || defined(__QNXNTO__)
++#endif	 // __BSD__ || defined(__QNXNTO__)------------------------------------------------------------
+ 
+ 	for (std::map<InetAddress, bool>::iterator r(_applied.begin()); r != _applied.end(); ++r) {
+-#ifdef __BSD__	 // ------------------------------------------------------------
++#if defined(__BSD__) || defined(__QNXNTO__)	 // ------------------------------------------------------------
+ 		if (_target && _target.netmaskBits() == 0) {
+ 			_routeCmd("delete", _target, _via, (const char*)0, (const char*)0);
+ 			if (_systemVia && _systemDevice[0]) {
+@@ -626,7 +630,7 @@ void ManagedRoute::remove()
+ 			_routeCmd("delete", _target, _via, (const char*)0, _via ? (const char*)0 : _device);
+ 		}
+ 		break;
+-#endif	 // __BSD__ ------------------------------------------------------------
++#endif	 // __BSD__ || defined(__QNXNTO__) ------------------------------------------------------------
+ 
+ #ifdef __LINUX__   // ----------------------------------------------------------
+ 				   //_routeCmd("del",r->first,_via,(_via) ? (const char *)0 : _device);
+diff --git a/osdep/OSUtils.cpp b/osdep/OSUtils.cpp
+index 2fee8f194..b8af62ad5 100644
+--- a/osdep/OSUtils.cpp
++++ b/osdep/OSUtils.cpp
+@@ -125,8 +125,20 @@ std::vector<std::string> OSUtils::listDirectory(const char* path, bool includeDi
+ 		if (readdir_r(d, &de, &dptr))
+ 			break;
+ 		if (dptr) {
+-			if ((strcmp(dptr->d_name, ".")) && (strcmp(dptr->d_name, "..")) && ((dptr->d_type != DT_DIR) || (includeDirectories)))
+-				r.push_back(std::string(dptr->d_name));
++			if ((strcmp(dptr->d_name, ".")) && (strcmp(dptr->d_name, ".."))) {
++				bool isDir = false;
++#if defined(_DIRENT_HAVE_D_TYPE) || defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__)
++				isDir = (dptr->d_type == DT_DIR);
++#else
++				struct stat st;
++				char tmp[4096];
++				ztsnprintf(tmp, sizeof(tmp), "%s/%s", path, dptr->d_name);
++				if (stat(tmp, &st) == 0)
++					isDir = S_ISDIR(st.st_mode);
++#endif
++				if ((!isDir) || (includeDirectories))
++					r.push_back(std::string(dptr->d_name));
++			}
+ 		}
+ 		else
+ 			break;
+@@ -177,13 +189,25 @@ long OSUtils::cleanDirectory(const char* path, const int64_t olderThan)
+ 		if (readdir_r(d, &de, &dptr))
+ 			break;
+ 		if (dptr) {
+-			if ((strcmp(dptr->d_name, ".")) && (strcmp(dptr->d_name, "..")) && (dptr->d_type == DT_REG)) {
+-				ztsnprintf(tmp, sizeof(tmp), "%s/%s", path, dptr->d_name);
+-				if (stat(tmp, &st) == 0) {
+-					int64_t mt = (int64_t)(st.st_mtime);
+-					if ((mt > 0) && ((mt * 1000) < olderThan)) {
+-						if (unlink(tmp) == 0)
+-							++cleaned;
++			if ((strcmp(dptr->d_name, ".")) && (strcmp(dptr->d_name, ".."))) {
++				bool isReg = false;
++#if defined(_DIRENT_HAVE_D_TYPE) || defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__)
++				isReg = (dptr->d_type == DT_REG);
++#else
++				struct stat st2;
++				char tmp2[4096];
++				ztsnprintf(tmp2, sizeof(tmp2), "%s/%s", path, dptr->d_name);
++				if (stat(tmp2, &st2) == 0)
++					isReg = S_ISREG(st2.st_mode);
++#endif
++				if (isReg) {
++					ztsnprintf(tmp, sizeof(tmp), "%s/%s", path, dptr->d_name);
++					if (stat(tmp, &st) == 0) {
++						int64_t mt = (int64_t)(st.st_mtime);
++						if ((mt > 0) && ((mt * 1000) < olderThan)) {
++							if (unlink(tmp) == 0)
++								++cleaned;
++						}
+ 					}
+ 				}
+ 			}
+diff --git a/osdep/Phy.hpp b/osdep/Phy.hpp
+index 11cbe4c05..eb65ae627 100644
+--- a/osdep/Phy.hpp
++++ b/osdep/Phy.hpp
+@@ -52,6 +52,12 @@
+ #endif
+ #endif
+ 
++#if defined(__QNXNTO__)
++#ifndef IPV6_DONTFRAG
++#define IPV6_DONTFRAG 62
++#endif
++#endif
++
+ #define ZT_PHY_SOCKFD_TYPE			 int
+ #define ZT_PHY_SOCKFD_NULL			 (-1)
+ #define ZT_PHY_SOCKFD_VALID(s)		 ((s) > -1)
