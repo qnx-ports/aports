@@ -1,0 +1,55 @@
+# Contributor: Patrycja Rosa <alpine@ptrcnull.me>
+# Maintainer: Patrycja Rosa <alpine@ptrcnull.me>
+pkgname=labwc
+pkgver=0.20.1
+pkgrel=0
+pkgdesc="Wayland stacking compositor"
+url="https://github.com/labwc/labwc"
+arch="all"
+license="GPL-2.0-only"
+depends="wlroots glib cairo libxml2 pango libsfdo"
+makedepends="
+	cairo-dev
+	glib-dev
+	libxml2-dev
+	meson
+	pango-dev
+	scdoc
+	wayland-protocols
+	wlroots0.20-dev
+	libsfdo-dev
+	qnx-fd-notify-dev
+	"
+subpackages="$pkgname-doc $pkgname-lang"
+source="https://github.com/labwc/labwc/archive/$pkgver/labwc-$pkgver.tar.gz
+	remove-aports-git-version.patch
+	input-event-codes.h
+	qnx-fix.patch
+	"
+
+prepare() {
+	default_prepare
+	mkdir -p "$builddir"/linux
+	ln -s ""$srcdir/"input-event-codes.h" "$builddir/linux/input-event-codes.h"
+}
+
+build() {
+	abuild-meson . output -Dman-pages=enabled -Dc_link_args="-ltimerfd -lsignalfd"
+	meson compile -C output
+}
+
+check() {
+	meson test --print-errorlogs -C output
+}
+
+package() {
+	DESTDIR="$pkgdir" meson install --no-rebuild -C output
+}
+
+
+sha512sums="
+7c4940db41cbe13ea5a92c5eb25c324c1ff88761e18d726cf1137ab98116ab1e8301bf7eac58644fd719e49a3276d5c30720a891ff9d21b1446e1adebca7005a  labwc-0.20.1.tar.gz
+08b1c7f45eda434400b61b8cad1d0e800c8f4ecd9e3f93fc42b10f4e8e0e599ed61a7a7e363dfa0acb45b174269278c136a244ec87940e84cc2362cdda5f5ef6  remove-aports-git-version.patch
+9c15657ca0b121a8c5128a066ba631782e1b22f51257d69e623181c806d3d883d27722c15850867ad546d6725d72b4c4612372a72e7111f94f04337a3ab38b60  input-event-codes.h
+cf4a14eb985f256ccb231dec1e63c4f14aec9fd8ea9f7ee059f02b29ba6bb2cb82ec2d890f0feb845082423a0f0ec8dfb76a82363cdecc6b19ff3c2d5ba040a0  qnx-fix.patch
+"
