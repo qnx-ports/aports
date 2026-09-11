@@ -1,0 +1,85 @@
+# Alphin Maintainer: Daniel Sabogal <dsabogalcc@gmail.com>
+# Maintainer: Narayana Murthy <nnarayanamurthy@qnx.com>
+pkgname=csmith
+pkgver=2.3.0
+pkgrel=0
+pkgdesc="Tool for generating random C programs"
+url="https://embed.cs.utah.edu/csmith/"
+arch="all"
+license="BSD-2-Clause"
+depends="qnx-gcc-libs libc++"
+makedepends="automake cmake libc++-dev m4 perl "
+subpackages="$pkgname-dev:_dev $pkgname-doc"
+source="https://github.com/csmith-project/$pkgname/archive/refs/tags/$pkgname-$pkgver.tar.gz
+    add_qnx_support.patch
+	"
+builddir="$srcdir/$pkgname-$pkgname-$pkgver"
+
+prepare() {
+    default_prepare
+
+    # CSmith ships outdated Autotools config scripts that do not recognize
+    # the QNX target triplet.
+    cp /usr/share/automake*/config.sub autoconf/config.sub
+    cp /usr/share/automake*/config.guess autoconf/config.guess
+}
+
+build() {
+    # bind2nd/ptr_fun removed in C++17; enum bitset non-constexpr with clang
+    # Suppress unused QNX-specific flags not supported on Alpine/musl
+    export CFLAGS="$CFLAGS \
+        -Wno-unused-command-line-argument"
+    export CXXFLAGS="$CXXFLAGS \
+        -std=c++14 \
+        -Wno-unused-command-line-argument \
+        -Wno-deprecated-declarations"
+
+    ./configure \
+        --prefix=/usr \
+        --sysconfdir=/etc \
+        --mandir=/usr/share/man \
+        --infodir=/usr/share/info \
+        --localstatedir=/var
+    make
+}
+
+check() {
+    export CSMITH_HOME="$builddir"
+    cd scripts  
+    perl compiler_test.pl 10 compiler_test.in
+
+    # perl compiler_test.pl <test_count> compiler_test.in [--with-wrong-code-bugs]
+
+    # Where:
+    # <test_count> is the number of tests to run (0 for unlimited)
+    # compiler_test.in is a file containing compiler commands to test
+    # --with-wrong-code-bugs enables testing for wrong-code bugs (not just crashes)
+}
+
+package() {
+	make DESTDIR="$pkgdir" install
+
+	# scripts depend on source tree to be available
+	rm "$pkgdir"/usr/bin/*.pl "$pkgdir"/usr/bin/*.in
+}
+
+_dev() {
+	pkgdesc="$pkgdesc (development files)"
+
+	amove \
+		usr/include/csmith-$pkgver \
+		usr/lib/libcsmith.a \
+		usr/lib/libcsmith.la
+}
+
+doc() {
+    pkgdesc="$pkgdesc (documentation)"
+
+    amove \
+        usr/share/doc/csmith
+}
+
+sha512sums="
+063dc6442a9e850fdd0557d1c7bdb199d5a762daad3418d6730dae6155101b2a11841d5eaf885f76dbea8eb212bdacedf31da7e171b4ac58f530acd435c969f9  csmith-2.3.0.tar.gz
+07473ae8d0ce58b3b9c7a19ac1ca70e3893aaa5ee273f6e6a1924038ebab8a731b2b516a5b8ef870e31256a0e5d6a3fc301fcaee5074f1b0d8c4012c133f3cc4  add_qnx_support.patch
+"
