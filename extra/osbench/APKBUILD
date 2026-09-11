@@ -1,0 +1,30 @@
+# Maintainer: Harshini Yarasi <hyarasi@qnx.com>
+pkgname=osbench
+pkgver=1.0.2_git20171024
+_commit=c59c7c58649162c33250a326ca8fa582b520a29e
+pkgrel=0
+pkgdesc="Micro benchmarks for measuring operating system performance"
+url="https://gitlab.com/mbitsnbites/osbench"
+arch="all"
+license="Unlicense"
+source="$pkgname-$pkgver.tar.gz::https://gitlab.com/mbitsnbites/osbench/-/archive/$_commit/osbench-$_commit.tar.gz
+"
+builddir="$srcdir/osbench-$_commit"
+build() {
+	meson setup \
+		--buildtype=release \
+		../src
+
+	ninja
+}
+package() {
+	install -d "$pkgdir/usr/bin"
+	install -m755 build/create_files "$pkgdir/usr/bin/"
+	install -m755 build/create_processes "$pkgdir/usr/bin/"
+	install -m755 build/create_threads "$pkgdir/usr/bin/"
+	install -m755 build/launch_programs "$pkgdir/usr/bin/"
+	install -m755 build/mem_alloc "$pkgdir/usr/bin/"
+}
+sha512sums="
+b32ddca93d0ef1a6b6917262131fb7a87f72810df99c23ccb07cb460710e8e902a34798a6abc68e4eef35b625673e200118ecf2ebf3de08117871e4baf5eae0a  osbench-1.0.2_git20171024.tar.gz
+"
