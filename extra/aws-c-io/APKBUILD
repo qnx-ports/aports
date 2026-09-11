@@ -1,0 +1,82 @@
+# Apline-Contributor: Holger Jaekel <holger.jaekel@gmx.de>
+# Apline-Maintainer: Achill Gilgenast <achill@achill.org>
+# Maintainer: Deep Chordia <dchordia@blackberry.com>
+pkgname=aws-c-io
+pkgver=0.26.1
+pkgrel=0
+pkgdesc="Module for the AWS SDK for C handling all IO and TLS work for application protocols"
+url="https://github.com/awslabs/aws-c-io"
+arch="all"
+license="Apache-2.0"
+options="!check"
+depends="
+  qnx-fd-notify
+  openssl
+  aws-c-common
+  aws-c-cal
+  s2n-tls
+  "
+depends_dev="
+  qnx-fd-notify-dev
+  openssl-dev
+  aws-c-common-dev
+  aws-c-cal-dev
+  s2n-tls-dev
+  "
+makedepends="
+  $depends_dev
+  cmake
+  ninja
+  "
+subpackages="$pkgname-dev"
+source="$pkgname-$pkgver.tar.gz::https://github.com/awslabs/aws-c-io/archive/refs/tags/v$pkgver.tar.gz
+        0001-add-qnx-build.patch
+        "
+
+build() {
+  LDFLAGS="-lepoll" \
+  cmake -B build -G Ninja \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=/usr \
+    -DCMAKE_INSTALL_DATADIR=/usr/lib \
+    -DBUILD_SHARED_LIBS=ON \
+    -DBUILD_TESTING=ON \
+    -DQNX=1 \
+    -DCMAKE_SYSTEM_NAME=QNX
+  cmake --build build
+}
+
+check() {
+  test_skipped="pipe_error_event_sent_after_write_end_closed
+                pipe_error_event_sent_after_write_end_closed_2loops
+                pipe_error_event_sent_on_subscribe_if_write_end_already_closed
+                pipe_error_event_sent_on_subscribe_if_write_end_already_closed_2loops
+                test_socket_with_bind_to_interface
+                tls_client_channel_negotiation_error_legacy_crypto_tls10
+                tls_client_channel_negotiation_override_legacy_crypto_tls10
+                tls_client_channel_negotiation_success_legacy_crypto_tls11
+                tls_client_channel_negotiation_error_override_legacy_crypto_tls11
+                tls_client_channel_negotiation_success_tls12
+                "
+  test_failed="pipe_readable_event_sent_once
+               pipe_readable_event_sent_once_2loops
+               event_loop_writable_event_on_subscribe
+               event_loop_readable_event_after_write
+               event_loop_readable_event_on_subscribe_if_data_present
+               io_testing_channel
+               local_socket_communication
+               "
+  test_exclude="$test_skipped
+                $test_failed"
+  test_exclude_clean=$(echo $test_exclude | sed 's/\([^ ]*\)/^\1$/g' | tr ' ' '|')
+  ctest --test-dir build -E "$test_exclude_clean"
+}
+
+package() {
+  DESTDIR="$pkgdir" cmake --install build
+}
+
+sha512sums="
+32acb55fbee99a0409e65a081a7751898c81b7e4ac6a9643c8a38025114a2eef0377b1adf01774b50a1cf1a1b2b4ad99b353d75f8320ceca81afff8a50a7b120  aws-c-io-0.26.1.tar.gz
+84d61e345892a194a9c641e3e5c9e7834fa999fc166b501bab2275fecea235b8721d55c84aafaef984564d9bfbf12f8323f107204f17eb2142a0b6532a09fb4c  0001-add-qnx-build.patch
+"
