@@ -1,0 +1,187 @@
+diff -ruN dlt-daemon-2.18.10/CMakeLists.txt dlt-daemon/CMakeLists.txt
+--- dlt-daemon-2.18.10/CMakeLists.txt	2023-08-14 12:46:00.000000000 +0530
++++ dlt-daemon/CMakeLists.txt	2026-04-01 11:57:03.657860219 +0530
+@@ -49,6 +49,8 @@
+     message(STATUS "Build type not defined. Using default build type 'RelWithDebInfo'.")
+ endif()
+ 
++include(CMakeDependentOption)
++
+ # Set of indiviual options
+ option(BUILD_SHARED_LIBS      "Set to OFF to build static libraries"                                             ON)
+ option(WITH_SYSTEMD           "Set to ON to create unit files and systemd check on dlt-daemon startup"           OFF)
+@@ -81,6 +83,7 @@
+ option(WITH_DLT_DBUS          "Set to ON to build src/dbus binaries"                                             OFF)
+ option(WITH_DLT_TESTS         "Set to ON to build src/test binaries"                                             ON)
+ option(WITH_DLT_UNIT_TESTS    "Set to ON to build gtest framework and tests/binaries"                            OFF)
++cmake_dependent_option(WITH_DLT_INSTALLED_TESTS "Set to ON to install tests/binaries"                            OFF WITH_DLT_UNIT_TESTS OFF)
+ option(WITH_DLT_COVERAGE      "Set to ON to generate coverage report for dlt-daemon source code"                 OFF)
+ option(WITH_DLT_QNX_SYSTEM    "Set to ON to build QNX system binary dlt-qnx-system"                              OFF)
+ option(WITH_DLT_FILE_LOGGING_SYSLOG_FALLBACK "Set to ON to enable fallback to syslog if dlt logging to file fails" OFF)
+@@ -250,8 +253,8 @@
+     install(FILES ${PROJECT_BINARY_DIR}/${PROJECT_NAME}-c++.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig COMPONENT devel)
+ endif()
+ 
+-set(CONFIGURATION_FILES_DIR ${CMAKE_INSTALL_FULL_SYSCONFDIR})
+-add_definitions(-DCONFIGURATION_FILES_DIR="${CONFIGURATION_FILES_DIR}")
++set(CONFIGURATION_FILES_DIR ${CMAKE_INSTALL_SYSCONFDIR})
++add_definitions(-DCONFIGURATION_FILES_DIR="${CMAKE_INSTALL_PREFIX}/${CONFIGURATION_FILES_DIR}")
+ 
+ add_subdirectory(cmake)
+ 
+@@ -354,7 +357,7 @@
+ if(WITH_DLT_UNIT_TESTS)
+     find_package(GTest)
+ 
+-    if(NOT GTEST_FOUND)
++    if(NOT GTEST_FOUND OR QNX)
+         add_subdirectory(googletest)
+     endif()
+     enable_testing()
+@@ -381,6 +384,9 @@
+ message(STATUS "WITH_DLT_DBUS = ${WITH_DLT_DBUS}")
+ message(STATUS "WITH_DLT_TESTS = ${WITH_DLT_TESTS}")
+ message(STATUS "WITH_DLT_UNIT_TESTS = ${WITH_DLT_UNIT_TESTS}")
++if(WITH_DLT_UNIT_TESTS)
++    message(STATUS "WITH_DLT_INSTALLED_TESTS = ${WITH_DLT_INSTALLED_TESTS}")
++endif(WITH_DLT_UNIT_TESTS)
+ message(STATUS "WITH_DLT_COVERAGE = ${WITH_DLT_COVERAGE}")
+ message(STATUS "WITH_DLT_SHM_ENABLE = ${WITH_DLT_SHM_ENABLE}")
+ message(STATUS "WITH_DLTTEST = ${WITH_DLTTEST}")
+diff -ruN dlt-daemon-2.18.10/.gitmodules dlt-daemon/.gitmodules
+--- dlt-daemon-2.18.10/.gitmodules	2023-08-14 12:46:00.000000000 +0530
++++ dlt-daemon/.gitmodules	2026-04-01 11:57:03.656860219 +0530
+@@ -1,3 +1,3 @@
+ [submodule "googletest"]
+ 	path = googletest
+-	url = https://github.com/google/googletest.git
++	url = ../googletest.git
+diff -ruN dlt-daemon-2.18.10/src/console/dlt-control-common.c dlt-daemon/src/console/dlt-control-common.c
+--- dlt-daemon-2.18.10/src/console/dlt-control-common.c	2023-08-14 12:46:00.000000000 +0530
++++ dlt-daemon/src/console/dlt-control-common.c	2026-04-01 11:57:03.669860219 +0530
+@@ -827,8 +827,12 @@
+ 
+         char app_id[DLT_ID_SIZE];
+         char context_id[DLT_ID_SIZE];
++
++        #pragma GCC diagnostic push
++        #pragma GCC diagnostic ignored "-Wstringop-truncation"
+         strncpy(app_id, s_app_id, DLT_ID_SIZE);
+         strncpy(context_id, s_context_id, DLT_ID_SIZE);
++        #pragma GCC diagnostic pop
+ 
+         dlt_filter_add(filter, app_id, context_id, log_level, payload_min, payload_max, verbose);
+ 
+diff -ruN dlt-daemon-2.18.10/src/offlinelogstorage/dlt_offline_logstorage.c dlt-daemon/src/offlinelogstorage/dlt_offline_logstorage.c
+--- dlt-daemon-2.18.10/src/offlinelogstorage/dlt_offline_logstorage.c	2023-08-14 12:46:00.000000000 +0530
++++ dlt-daemon/src/offlinelogstorage/dlt_offline_logstorage.c	2026-04-01 11:57:03.679860219 +0530
+@@ -22,7 +22,9 @@
+ #include <stdlib.h>
+ #include <limits.h>
+ #include <ctype.h>
++#ifndef __QNX__
+ #include <sys/syslog.h>
++#endif
+ #include <syslog.h>
+ #include <sys/stat.h>
+ #include <sys/stat.h>
+diff -ruN dlt-daemon-2.18.10/src/tests/CMakeLists.txt dlt-daemon/src/tests/CMakeLists.txt
+--- dlt-daemon-2.18.10/src/tests/CMakeLists.txt	2023-08-14 12:46:00.000000000 +0530
++++ dlt-daemon/src/tests/CMakeLists.txt	2026-04-01 11:57:03.682860220 +0530
+@@ -34,9 +34,6 @@
+ #TODO: Enable again once dlt-test-non-verbose is adapted to non-macro usage
+ if (NOT WITH_DLT_DISABLE_MACRO)
+     set(TARGET_LIST ${TARGET_LIST} dlt-test-non-verbose)
+-    if(WITH_DLT_CXX11_EXT)
+-        set(TARGET_LIST ${TARGET_LIST} dlt-test-cpp-extension)
+-    endif()
+ endif()
+ 
+ if(WITH_DLT_QNX_SYSTEM)
+diff -ruN dlt-daemon-2.18.10/tests/CMakeLists.txt dlt-daemon/tests/CMakeLists.txt
+--- dlt-daemon-2.18.10/tests/CMakeLists.txt	2023-08-14 12:46:00.000000000 +0530
++++ dlt-daemon/tests/CMakeLists.txt	2026-04-01 11:57:03.683860220 +0530
+@@ -8,6 +8,13 @@
+ configure_file(${PROJECT_SOURCE_DIR}/tests/testfilter.txt ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
+ configure_file(${PROJECT_SOURCE_DIR}/tests/testfile_filetransfer.txt ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
+ 
++if(WITH_DLT_INSTALLED_TESTS)
++    set(DLT_TEST_DIR ${CMAKE_INSTALL_BINDIR}/dlt_tests)
++    install(FILES testfile.dlt DESTINATION ${DLT_TEST_DIR})
++    install(FILES testfilter.txt DESTINATION ${DLT_TEST_DIR})
++    install(FILES testfile_filetransfer.txt DESTINATION ${DLT_TEST_DIR})
++endif(WITH_DLT_INSTALLED_TESTS)
++
+ if("${GTEST_BOTH_LIBRARIES}" STREQUAL "")
+     set(GTEST_LIBS gtest gtest_main)
+     set(GTEST_LIBS ${GTEST_LIBS} CACHE STRING "Gtest libraries")
+@@ -17,6 +24,8 @@
+ 
+ if("${CMAKE_SYSTEM_NAME}" MATCHES "Linux|CYGWIN")
+     set(LIBRARIES "")
++elseif(QNX)
++    set(LIBRARIES regex socket)
+ else()
+     set(LIBRARIES socket)
+ endif()
+@@ -27,7 +36,11 @@
+ 
+ set(DLT_LIBRARIES dlt ${GTEST_LIBS} ${LIBRARIES})
+ set(DLT_DAEMON_LIBRARIES dlt_daemon ${GTEST_LIBS} ${LIBRARIES} ${SYSTEMD_LIBS})
+-set(DLT_CONTROL_LIBRARIES dlt dlt_control_common_lib ${GTEST_LIBS})
++if(QNX)
++  set(DLT_CONTROL_LIBRARIES dlt dlt_control_common_lib ${GTEST_LIBS} ${LIBRARIES})
++else()
++  set(DLT_CONTROL_LIBRARIES dlt dlt_control_common_lib ${GTEST_LIBS})
++endif()
+ 
+ #Receiver used for QTs. add_test() is not required
+ add_executable(dlt_test_receiver dlt_test_receiver.c)
+@@ -49,6 +62,9 @@
+     endif()
+     add_executable(${target} ${target_SRCS})
+     target_link_libraries(${target} ${DLT_LIBRARIES})
++    if(WITH_DLT_INSTALLED_TESTS)
++        install(TARGETS ${target} RUNTIME DESTINATION ${DLT_TEST_DIR})
++    endif(WITH_DLT_INSTALLED_TESTS)
+     add_test(NAME ${target}
+              COMMAND ${target})
+ endforeach()
+@@ -71,6 +87,10 @@
+     target_link_libraries(${target} ${DLT_DAEMON_LIBRARIES} ${ZLIB_LIBRARY})
+     if(EXISTS ${PROJECT_SOURCE_DIR}/tests/${target}.sh)
+         configure_file(${PROJECT_SOURCE_DIR}/tests/${target}.sh ${PROJECT_BINARY_DIR}/tests COPYONLY)
++        if(WITH_DLT_INSTALLED_TESTS)
++            install(PROGRAMS ${target}.sh DESTINATION ${DLT_TEST_DIR})
++            install(TARGETS ${target} RUNTIME DESTINATION ${DLT_TEST_DIR})
++        endif(WITH_DLT_INSTALLED_TESTS)
+         add_test(NAME ${target}
+                  COMMAND /bin/sh -e -c "\
+                          sh $<TARGET_FILE:${target}>.sh ; \
+@@ -81,6 +101,9 @@
+         set_tests_properties(${target} PROPERTIES ENVIRONMENT "PATH=$<TARGET_FILE_DIR:dlt-daemon>:$ENV{PATH}; \
+                                                                DLT_UT_DAEMON_PATH=$<TARGET_FILE:dlt-daemon>")
+     else()
++        if(WITH_DLT_INSTALLED_TESTS)
++            install(TARGETS ${target} RUNTIME DESTINATION ${DLT_TEST_DIR})
++        endif(WITH_DLT_INSTALLED_TESTS)
+         add_test(NAME ${target}
+                  COMMAND ${target})
+     endif()
+@@ -93,9 +116,15 @@
+ if(WITH_EXTENDED_FILTERING)
+     configure_file(${PROJECT_SOURCE_DIR}/tests/testfile_extended.dlt ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
+     configure_file(${PROJECT_SOURCE_DIR}/tests/testfilter.json ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
+-
++    if(WITH_DLT_INSTALLED_TESTS)
++        install(FILES testfile_extended.dlt DESTINATION ${DLT_TEST_DIR})
++        install(FILES testfilter.json DESTINATION ${DLT_TEST_DIR})
++    endif(WITH_DLT_INSTALLED_TESTS)
+     add_executable(gtest_dlt_json_filter gtest_dlt_json_filter.cpp)
+     target_link_libraries(gtest_dlt_json_filter ${DLT_CONTROL_LIBRARIES})
++    if(WITH_DLT_INSTALLED_TESTS)
++        install(TARGETS gtest_dlt_json_filter RUNTIME DESTINATION ${DLT_TEST_DIR})
++    endif(WITH_DLT_INSTALLED_TESTS)
+     add_test(NAME gtest_dlt_json_filter
+              COMMAND gtest_dlt_json_filter)
+     set_tests_properties(${target} PROPERTIES TIMEOUT "${seconds}")
