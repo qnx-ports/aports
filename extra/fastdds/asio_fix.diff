@@ -1,0 +1,148 @@
+diff -ruN asio-asio-1-29-0/asio/include/asio/detail/impl/posix_thread.ipp asio/asio/include/asio/detail/impl/posix_thread.ipp
+--- asio-asio-1-29-0/asio/include/asio/detail/impl/posix_thread.ipp	2023-11-08 19:20:57.000000000 +0530
++++ asio/asio/include/asio/detail/impl/posix_thread.ipp	2026-03-31 15:15:49.419587445 +0530
+@@ -3,6 +3,7 @@
+ // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ //
+ // Copyright (c) 2003-2023 Christopher M. Kohlhoff (chris at kohlhoff dot com)
++// Copyright (c) 2025 Pavlo Kleymonov (pkleymonov at qnx dot com)
+ //
+ // Distributed under the Boost Software License, Version 1.0. (See accompanying
+ // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+@@ -47,6 +48,11 @@
+ {
+ #if defined(_SC_NPROCESSORS_ONLN)
+   long result = sysconf(_SC_NPROCESSORS_ONLN);
++
++#if defined(__QNX__)
++  result &= 0xFFFFFFFF;
++#endif //defined(__QNX__)
++
+   if (result > 0)
+     return result;
+ #endif // defined(_SC_NPROCESSORS_ONLN)
+diff -ruN asio-asio-1-29-0/asio/include/asio/detail/socket_types.hpp asio/asio/include/asio/detail/socket_types.hpp
+--- asio-asio-1-29-0/asio/include/asio/detail/socket_types.hpp	2023-11-08 19:20:57.000000000 +0530
++++ asio/asio/include/asio/detail/socket_types.hpp	2026-03-31 15:15:49.426587446 +0530
+@@ -3,6 +3,7 @@
+ // ~~~~~~~~~~~~~~~~~~~~~~~
+ //
+ // Copyright (c) 2003-2023 Christopher M. Kohlhoff (chris at kohlhoff dot com)
++// Copyright (c) 2025 Pavlo Kleymonov (pkleymonov at qnx dot com)
+ //
+ // Distributed under the Boost Software License, Version 1.0. (See accompanying
+ // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+@@ -411,7 +412,13 @@
+ // POSIX platforms are not required to define IOV_MAX.
+ const int max_iov_len = 16;
+ # endif
+-# define ASIO_OS_DEF_SA_RESTART SA_RESTART
++// Note: QNX does not support SA_RESTART
++// Therefore they are specifically excluded here.
++# if defined(__QNX__)
++#  define ASIO_OS_DEF_SA_RESTART 0
++# else
++#  define ASIO_OS_DEF_SA_RESTART SA_RESTART
++# endif
+ # define ASIO_OS_DEF_SA_NOCLDSTOP SA_NOCLDSTOP
+ # define ASIO_OS_DEF_SA_NOCLDWAIT SA_NOCLDWAIT
+ #endif
+diff -ruN asio-asio-1-29-0/asio/src/examples/cpp11/local/fd_passing_stream_client.cpp asio/asio/src/examples/cpp11/local/fd_passing_stream_client.cpp
+--- asio-asio-1-29-0/asio/src/examples/cpp11/local/fd_passing_stream_client.cpp	2023-11-08 19:20:57.000000000 +0530
++++ asio/asio/src/examples/cpp11/local/fd_passing_stream_client.cpp	2026-03-31 15:15:49.472587447 +0530
+@@ -4,6 +4,7 @@
+ //
+ // Copyright (c) 2003-2023 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+ // Copyright (c) 2021 Heiko Hund (heiko at openvpn dot net)
++// Copyright (c) 2025 Pavlo Kleymonov (pkleymonov at qnx dot com)
+ //
+ // Distributed under the Boost Software License, Version 1.0. (See accompanying
+ // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+@@ -23,6 +24,14 @@
+ #include <sys/types.h>
+ #include <sys/socket.h>
+ 
++#if defined(__QNX__)
++   #undef CMSG_ALIGN
++   #define CMSG_ALIGN(len) (((len) + sizeof (size_t) - 1) & (size_t) ~(sizeof (size_t) - 1))
++
++   #undef CMSG_SPACE
++   #define CMSG_SPACE(len) (CMSG_ALIGN (len) + CMSG_ALIGN (sizeof (struct cmsghdr)))
++#endif //defined(__QNX__)
++
+ using asio::local::stream_protocol;
+ 
+ constexpr std::size_t max_length = 1024;
+diff -ruN asio-asio-1-29-0/asio/src/examples/cpp11/local/fd_passing_stream_server.cpp asio/asio/src/examples/cpp11/local/fd_passing_stream_server.cpp
+--- asio-asio-1-29-0/asio/src/examples/cpp11/local/fd_passing_stream_server.cpp	2023-11-08 19:20:57.000000000 +0530
++++ asio/asio/src/examples/cpp11/local/fd_passing_stream_server.cpp	2026-03-31 15:15:49.472587447 +0530
+@@ -4,6 +4,7 @@
+ //
+ // Copyright (c) 2003-2023 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+ // Copyright (c) 2021 Heiko Hund (heiko at openvpn dot net)
++// Copyright (c) 2025 Pavlo Kleymonov (pkleymonov at qnx dot com)
+ //
+ // Distributed under the Boost Software License, Version 1.0. (See accompanying
+ // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+@@ -22,6 +23,14 @@
+ 
+ #if defined(ASIO_HAS_LOCAL_SOCKETS)
+ 
++#if defined(__QNX__)
++   #undef CMSG_ALIGN
++   #define CMSG_ALIGN(len) (((len) + sizeof (size_t) - 1) & (size_t) ~(sizeof (size_t) - 1))
++
++   #undef CMSG_SPACE
++   #define CMSG_SPACE(len) (CMSG_ALIGN (len) + CMSG_ALIGN (sizeof (struct cmsghdr)))
++#endif //defined(__QNX__)
++
+ using asio::local::stream_protocol;
+ 
+ class session
+diff -ruN asio-asio-1-29-0/asio/src/tests/unit/ip/multicast.cpp asio/asio/src/tests/unit/ip/multicast.cpp
+--- asio-asio-1-29-0/asio/src/tests/unit/ip/multicast.cpp	2023-11-08 19:20:57.000000000 +0530
++++ asio/asio/src/tests/unit/ip/multicast.cpp	2026-03-31 15:15:49.482587447 +0530
+@@ -3,6 +3,7 @@
+ // ~~~~~~~~~~~~~
+ //
+ // Copyright (c) 2003-2023 Christopher M. Kohlhoff (chris at kohlhoff dot com)
++// Copyright (c) 2025 Pavlo Kleymonov (pkleymonov at qnx dot com)
+ //
+ // Distributed under the Boost Software License, Version 1.0. (See accompanying
+ // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+@@ -146,17 +147,20 @@
+ #if (defined(__MACH__) && defined(__APPLE__)) \
+   || defined(__FreeBSD__) \
+   || defined(__NetBSD__) \
+-  || defined(__OpenBSD__)
++  || defined(__OpenBSD__) \
++  || defined(__QNX__)
+   const ip::address multicast_address_v6 = ip::make_address("ff02::1%lo0", ec);
+ #else // (defined(__MACH__) && defined(__APPLE__))
+       //   || defined(__FreeBSD__)
+       //   || defined(__NetBSD__)
+       //   || defined(__OpenBSD__)
++      //   || defined(__QNX__)
+   const ip::address multicast_address_v6 = ip::make_address("ff01::1", ec);
+ #endif // (defined(__MACH__) && defined(__APPLE__))
+        //   || defined(__FreeBSD__)
+        //   || defined(__NetBSD__)
+        //   || defined(__OpenBSD__)
++       //   || defined(__QNX__)
+   ASIO_CHECK(!have_v6 || !ec);
+ 
+   // join_group class.
+@@ -207,11 +211,11 @@
+ 
+   if (have_v6)
+   {
+-#if defined(__hpux)
++#if defined(__hpux) || defined(__QNX__)
+     ip::multicast::outbound_interface outbound_interface(if_nametoindex("lo0"));
+ #else
+     ip::multicast::outbound_interface outbound_interface(1);
+-#endif
++#endif // defined(__hpux) || defined(__QNX__)
+     sock_v6.set_option(outbound_interface, ec);
+     ASIO_CHECK_MESSAGE(!ec, ec.value() << ", " << ec.message());
+   }
