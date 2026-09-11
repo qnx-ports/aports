@@ -1,0 +1,110 @@
+# Alpine-Maintainer: leso-kn <info@lesosoftware.com>
+# Maintainer: Deep Chordia <dchordia@blackberry.com>
+pkgname=onnxruntime
+pkgrel=0
+pkgver=1.24.4
+pkgdesc="Cross-platform, high performance ML inferencing and training accelerator"
+url="https://onnxruntime.ai"
+arch="all"
+license="MIT"
+depends="
+    abseil-cpp
+    flatbuffers
+    protobuf
+    onnx
+    re2
+    eigen
+    libiconv
+    "
+depends_dev="
+    abseil-cpp-dev
+    flatbuffers-dev
+    protobuf-dev
+    onnx-dev
+    re2-dev
+    eigen-dev
+    libiconv-dev
+    python3-dev
+    python3-numpy-dev
+    python3-pybind11-dev
+    "
+makedepends="
+    $depends_dev
+    cmake
+    ninja
+    gtest-dev
+    benchmark-dev
+    flatc
+    python3-setuptools
+    python3-wheel
+    ca-certificates
+    "
+subpackages="
+    $pkgname-dev
+    python3-$pkgname:py3
+    "
+source="
+    $pkgname-$pkgver.tar.gz::https://github.com/microsoft/onnxruntime/archive/refs/tags/v$pkgver.tar.gz
+    0001-add-qnx-build.patch
+    "
+builddir="$srcdir/$pkgname-$pkgver"
+options="net"
+
+prepare() {
+  default_prepare
+  python3 onnxruntime/core/flatbuffers/schema/compile_schema.py --flatc /usr/bin/flatc
+  python3 onnxruntime/lora/adapter_format/compile_schema.py --flatc /usr/bin/flatc
+}
+
+build() {
+  LDFLAGS="-ldl" \
+  cmake -S cmake -B build -G Ninja \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=/usr \
+    -DCMAKE_INSTALL_LIBDIR=lib \
+    -DCMAKE_INSTALL_DATADIR=/usr/lib \
+    -DCMAKE_POLICY_MINIMUM_VERSION=3.5 \
+    -DBUILD_ONNX_PYTHON=ON \
+    -Donnxruntime_BUILD_SHARED_LIB=ON \
+    -Donnxruntime_ENABLE_PYTHON=ON \
+    -Donnxruntime_USE_FULL_PROTOBUF=ON \
+    -Donnx_SOURCE_DIR="/usr/include" \
+    -Donnxruntime_ENABLE_CPUINFO=OFF \
+    -Donnxruntime_BUILD_BENCHMARKS=ON \
+    -Donnxruntime_QNX=1
+  cmake --build build -j6 --verbose
+
+  cd build
+  python3 ../setup.py build
+}
+
+check() {
+  _test_exclude="onnxruntime_test_all|onnxruntime_provider_test"
+  ctest --test-dir build -E $_test_exclude
+}
+
+package() {
+  DESTDIR="$pkgdir" cmake --install build
+
+  cd build
+  python3 ../setup.py install --skip-build --root="$pkgdir"
+
+  cd "$pkgdir"/usr/lib/python3*/site-packages/onnxruntime/capi
+  ln -sfv ../../../../libonnxruntime_providers_shared.so ../../../../libonnxruntime.so.* .
+}
+
+py3() {
+  pkgdesc="Generate $pkgname python3 bindings"
+  depends="
+      python3
+      python3-flatbuffers
+      python3-numpy
+      python3-packaging
+      python3-protobuf"
+  amove usr/lib/python*
+}
+
+sha512sums="
+53b3aed02e085c83aa3c7e1faffeae7f70675d6770bc44d148085ded47940f29471eef76e0c4565bbb471f0f814610e0d1892ce9305c63d011fe851a22b1f7ab  onnxruntime-1.24.4.tar.gz
+c133caadf8d099e7f179c322fb2c2824f6f232a6766d665eebbfd060314f76e6223723c4571f1340ef162e1e68dbb5ede79343ea8d662be8442e8754c5d76fe9  0001-add-qnx-build.patch
+"
