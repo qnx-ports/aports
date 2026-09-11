@@ -1,0 +1,75 @@
+# Contributor: V.Krishn <vkrishn4@gmail.com>
+# Alphine Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+# Maintainer: Narayana Murthy <nnarayanamurthy@qnx.com>
+pkgname=libwebsockets
+pkgver=4.2.2
+pkgrel=0
+pkgdesc="C library for lightweight websocket clients and servers"
+url="https://libwebsockets.org/"
+arch="all"
+license="MIT"
+depends="libcrypto3 libssl3 qnx-io-sock libuv"
+makedepends="cmake openssl-dev>3 zlib-dev libuv-dev ninja libc++-dev qnx-io-sock-dev"
+subpackages="$pkgname-doc $pkgname-dev $pkgname-test:_test $pkgname-evlib_uv:_evlib"
+source="
+	libwebsockets-$pkgver.tar.gz::https://github.com/warmcat/libwebsockets/archive/v$pkgver.tar.gz
+	add_qnx_support.patch
+"
+options="!check" # Disabling test as ref from alpinelinux.
+
+build() {
+	cmake -B build -G Ninja \
+        -DCMAKE_BUILD_TYPE=MinSizeRel \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DCMAKE_VERBOSE_MAKEFILE=TRUE \
+        -DLWS_IPV6=ON \
+        -DLWS_WITH_LIBUV=ON \
+        -DLWS_WITH_STATIC=OFF \
+        -DLWS_LINK_TESTAPPS_DYNAMIC=ON \
+        -DLWS_WITH_SDEVENT=OFF \
+        -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+        -DCMAKE_C_FLAGS="-Wno-error=sign-conversion -Wno-error=conversion -Wno-error=implicit-function-declaration" \
+        -DCMAKE_CXX_FLAGS="-Wno-error=sign-conversion -Wno-error=conversion -Wno-error=implicit-function-declaration"
+	cmake --build build 
+}
+
+check() {
+	ctest --test-dir build
+}
+
+package() {
+	DESTDIR="$pkgdir" cmake --install build
+
+	# Ensure license exists (only if not installed)
+	[ -f LICENSE ] && install -Dm644 LICENSE \
+		"$pkgdir"/usr/share/licenses/$pkgname/LICENSE
+
+	# Fix pkg-config version
+	sed -i "s/^Version:.*/Version: $pkgver/" \
+		"$pkgdir/usr/lib/pkgconfig/libwebsockets.pc"
+
+	sed -i "s/^Version:.*/Version: $pkgver/" \
+		"$pkgdir/usr/lib/pkgconfig/libwebsockets_static.pc"
+}
+
+_test() {
+    pkgdesc="$pkgdesc (test server)"
+    depends="$pkgname=$pkgver-r$pkgrel"
+
+    amove \
+        usr/bin/libwebsockets-test-* \
+        usr/share/libwebsockets-test-server
+}
+
+_evlib() {
+	local _plugin=${subpkgname#$pkgname-}
+	pkgdesc="libwebsocket $_plugin plugin"
+    depends="$pkgname=$pkgver-r$pkgrel"
+
+	amove usr/lib/libwebsockets-$_plugin.so
+}
+
+sha512sums="
+52d9b4511fc484781108a3036f870905d4427fcbab02f3e84ee38f534ae7d1979c2cc3eec0719f4609226d4aae788a79fe7d99a8506537bbcf8fc3d9b8a7b478  libwebsockets-4.2.2.tar.gz
+2dfcc1d77582e56994114bbfd5b403f78d214d8dd963b577ba7b596deef139e7013f64d4a931d308d2461b85048f7c2c3658d8b69b38741c63c2bafeea411c43  add_qnx_support.patch
+"
