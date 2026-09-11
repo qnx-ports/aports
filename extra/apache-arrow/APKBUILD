@@ -8,7 +8,8 @@ arch="aarch64 x86_64"
 license="Apache-2.0"
 _commit="e336d9944e38e72f9c3679b98032ed21b3bb89dd"
 source="apache-arrow-$pkgver.tar.gz::https://github.com/apache/arrow/archive/$_commit.tar.gz
-arrow-cmakelists-qnx.patch"
+        arrow-testing.tar.gz::https://github.com/apache/arrow-testing/archive/refs/heads/master.tar.gz
+        arrow-cmakelists-qnx.patch"
 builddir="$srcdir/arrow-$_commit/cpp"
 depends="libc++"
 makedepends="
@@ -21,9 +22,13 @@ subpackages="$pkgname-dev"
 prepare() {
     cd "$srcdir/arrow-$_commit"
     patch -p1 < "$startdir/arrow-cmakelists-qnx.patch"
+
+    mkdir -p testing
+    tar -xf "$srcdir/arrow-testing.tar.gz" -C testing --strip-components=1
 }
 options="net"
 build() {
+    export ARROW_TEST_DATA="$srcdir/arrow-$_commit/testing/data"
     case "$(uname -m)" in
     x86_64|x86pc)
         ARROW_CPU_FLAG=x86
@@ -81,8 +86,7 @@ build() {
 }
 
 check() {
-    cd "$builddir/build"
-    ctest --output-on-failure || true
+  ctest --test-dir build --output-on-failure  -E 'arrow-array-test|arrow-io-file-test|arrow-utility-test|arrow-ipc-tensor-test|arrow-ipc-read-write-test'
 }
 
 package() {
@@ -92,5 +96,6 @@ package() {
 
 sha512sums="
 4c6028c6835c024605598207ea70fa6d16b4f44589deee0f9760294f38be1095e628443316df932fa425b240dc3643ed163cc31d5c81b47ed807015fa207c0d1  apache-arrow-25.0.0.tar.gz
-f41b7e7ca2ad4f8c0b286d09a451ef33e7f0f459abd3b05b08ca33486945542c927954a7f2262973e13558d56e4c07544c982dd0d5eae6f77577fb0225affb69  arrow-cmakelists-qnx.patch
+d73f6e0ec189bc6ff8f9fd8671e7e98ffa9f225bbe149dc98589fa18916d6415d465849c8a85e8fa4399006b3415a614ef04ece5b88a38ca13b7b395872b9ffd  arrow-testing.tar.gz
+0d2852f40983f8c813e3db7ddaa332eacb9ae3d24ee5a70d272247fc89699536db63bdbc99d8e5e80d0616ceb64734c5c43ae0732e532e57633569a333491d74  arrow-cmakelists-qnx.patch
 "

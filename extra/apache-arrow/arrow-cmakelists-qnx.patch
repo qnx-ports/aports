@@ -1,10 +1,9 @@
 --- a/cpp/src/arrow/CMakeLists.txt
 +++ b/cpp/src/arrow/CMakeLists.txt
-@@ -713,7 +713,10 @@
-   list(APPEND ARROW_TESTING_STATIC_LINK_LIBS "ws2_32")
+@@ -714,6 +714,10 @@
    list(APPEND ARROW_TESTING_STATIC_INSTALL_INTERFACE_LIBS "ws2_32")
  endif()
--
+ 
 +if(CMAKE_SYSTEM_NAME STREQUAL "QNX")
 +  list(APPEND ARROW_TESTING_SHARED_LINK_LIBS socket)
 +  list(APPEND ARROW_TESTING_STATIC_LINK_LIBS socket)
