@@ -1,5 +1,5 @@
---- a/UnixBench/src/syscall.c
-+++ b/UnixBench/src/syscall.c
+--- a/src/syscall.c
++++ b/src/syscall.c
 @@ -28,7 +28,6 @@
  #include <sys/stat.h>
  #include <sys/types.h>
