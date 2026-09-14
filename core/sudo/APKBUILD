@@ -14,11 +14,11 @@ makedepends="qnx-security-dev qnx-io-sock-dev ncurses-dev"
 checkdepends="diffutils"
 subpackages="$pkgname-doc $pkgname-dev"
 source="
-    https://github.com/qnx-ports/sudo/archive/refs/heads/qnx-v1.9.17p2.tar.gz
+    https://github.com/qnx-ports/sudo/archive/refs/tags/qnx-v$_realver-r$pkgrel.tar.gz
     sudo.pam
 "
 options="suid"
-builddir="$srcdir/$pkgname-qnx-v$_realver"
+builddir="$srcdir/$pkgname-qnx-v$_realver-r$pkgrel"
 
 build() {
     cd $builddir
@@ -65,6 +65,6 @@ package() {
 }
 
 sha512sums="
-a8fa5e82073e579b868046b6489076ada04a309c32f225f925abda98e48a7ab8ae15bc0b15c56a47f61cdbb836d33a511f82a5e716e189bb21489c7011d7ed75  qnx-v1.9.17p2.tar.gz
+933107b65eec4cc5dbaf2abcb06a513126fd7d8740528c8b726e061f9254524fc20a683c0d2dd410dd04bedf7a4e10ee49fc7da06a8f8d197a21a491e8741a55  qnx-v1.9.17p2-r0.tar.gz
 d6c67d3cc7f274e3c2b0bc298a7b249b8e0551824d1f6a186ca404ce4994b2a1551f72ada358e94697e3180ba2549846db081b1100c6d54609faadad8458c38a  sudo.pam
 "
