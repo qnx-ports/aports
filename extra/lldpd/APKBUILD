@@ -1,0 +1,88 @@
+# Alpine-Contributor: Francesco Colista <fcolista@alpinelinux.org>
+# Alpine-Maintainer: Francesco Colista <fcolista@alpinelinux.org>
+# Maintainer: Marcin Sochacki <msochacki@qnx.com>
+pkgname=lldpd
+pkgver=1.0.22
+pkgrel=0
+pkgdesc="Implementation of IEEE 802.1ab"
+url="https://lldpd.github.io/"
+arch="all"
+license="ISC"
+makedepends="autoconf automake libtool
+	libevent-dev libxml2-dev jansson-dev
+	perl-dev readline-dev"
+checkdepends="check check-dev"
+install="$pkgname.post-install"
+subpackages="
+	$pkgname-dev
+	$pkgname-doc
+	$pkgname-bash-completion
+	$pkgname-zsh-completion
+	"
+pkgusers="lldpd"
+pkggroups="lldpd"
+source="$pkgname-$pkgver.tar.gz::https://github.com/lldpd/lldpd/archive/refs/tags/$pkgver.tar.gz
+	lldpd.initd
+	0001-qnx-recognize-nto-qnx-and-build-bsd-backend.patch
+	0002-qnx-open-ioctl-socket-before-privsep-chroot.patch
+	0003-qnx-proxy-getifaddrs-through-privileged-monitor.patch
+	0004-qnx-open-route-socket-before-privsep-chroot.patch
+	0005-qnx-use-single-dev-bpf-clone-device.patch
+	0006-qnx-treat-enoent-as-stale-socket-in-retry-loop.patch
+	"
+builddir="$srcdir/$pkgname-$pkgver"
+
+prepare() {
+	default_prepare
+	echo $pkgver > .dist-version
+	"$builddir"/autogen.sh
+}
+
+build() {
+	export LDFLAGS="$LDFLAGS -lsocket -lregex"
+	# QNX's userspace <signal.h> has SA_RESTART commented out ("not supported
+	# yet"), so src/daemon/priv.c's two privileged-monitor sigaction structs
+	# (SIGALRM/SIGTERM/SIGHUP/SIGINT/SIGQUIT and SIGCHLD) fail to compile
+	# with "use of undeclared identifier 'SA_RESTART'" unless something
+	# defines it. Forcing it to 0 here (rather than patching priv.c) is safe
+	# for those two handlers specifically: that process's own blocking I/O
+	# (may_read/must_read/must_write in privsep_io.c) already retries
+	# explicitly on EINTR/EAGAIN in a while loop, independent of SA_RESTART.
+	export CPPFLAGS="$CPPFLAGS -DSA_RESTART=0"
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--sbindir=/usr/bin \
+		--prefix=/usr \
+		--localstatedir=/var \
+		--sysconfdir=/etc \
+		--enable-static=no \
+		--enable-min-macro \
+		--with-privsep-user=lldpd \
+		--with-privsep-group=lldpd \
+		--with-privsep-chroot=/var/empty \
+		--with-lldpd-ctl-socket=/var/run/$pkgname/$pkgname.socket \
+		--with-lldpd-pid-file=/var/run/$pkgname/$pkgname.pid
+	make
+}
+
+check() {
+	make check
+}
+
+package() {
+	install -d "$pkgdir"/var/empty
+	install -Dm755 "$srcdir"/$pkgname.initd "$pkgdir/etc/init.d/$pkgname"
+	install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+	make DESTDIR="$pkgdir" install
+}
+sha512sums="
+591f09d68c683ddaa80fe5984efd476fbd5f734164d10924ca574b738ab8b047c0acce5f72b74cde12338de969327ae3eb292cb07961c4f4bc54c3ccf4de59b6  lldpd-1.0.22.tar.gz
+a2940e284f418cd4cf87225397878d2cda20a27a74100a3475f4d3e41ec0bf67a5629ded066f4f57e2f5e9749f6e570a7710f6f27d3ca21b95b39c2055f286c4  lldpd.initd
+15c764feb0eaf501caf458e9032aeed8921d757cce1b8e75ea79e059e49dbcd9eff9915d308e25abfcf91645d633ad9d7946beb3a6bb7a0cd6f6e3f465c51b84  0001-qnx-recognize-nto-qnx-and-build-bsd-backend.patch
+08cc9020f3ecb15836d70942a837797fc14e9aca0853ff109fad1ba009c500c1d3c39512e060883a52aa4ff377444b7dff915d5d0434c6337e78cc4b631bc0f4  0002-qnx-open-ioctl-socket-before-privsep-chroot.patch
+731967c15ce6bff1c598b8f7f55082e4eaf476b44aa2dabfa6ae241f4bcb2cc9e31080bc02a49f3bd975db54c7360d09793d6bfda34195a08ff7a268c72dead4  0003-qnx-proxy-getifaddrs-through-privileged-monitor.patch
+936e4bed6270c0364b56f899574c493f318f18bd5eb8a1dfaabd41f12b5f9fa1fa395e65fb97034bba20ce884628f8980559acde70307c224c8c4451b5170166  0004-qnx-open-route-socket-before-privsep-chroot.patch
+57975718fe754b6a22a324c67d9483b5995958f5864838ea687997b3a11d266538a92dbbd0d55a629d49ce5ee2c0af2d97314270c0d5103f0688a8f515fa13fd  0005-qnx-use-single-dev-bpf-clone-device.patch
+f4bd41afbcdae33e26fb10117878f4d56995f892ee03aeb738d9758e4d9066deee0d1354e08e6397ab7db87b9fa668649c8bf632ed2f5b972d399068f43ff5b1  0006-qnx-treat-enoent-as-stale-socket-in-retry-loop.patch
+"
