@@ -9,7 +9,7 @@ arch="all"
 options="!check"  # No test suite.
 license="BSD-2-Clause"
 subpackages="$pkgname-dev"
-source="linenoise-$pkgver.tar.gz::https://github.com/antirez/linenoise/archive/archive/refs/tags/$pkgver.tar.gz
+source="linenoise-$pkgver.tar.gz::https://github.com/antirez/linenoise/archive/refs/tags/$pkgver.tar.gz
 	build-shared-lib.patch
 	"
 depends="libc++"
