@@ -1,0 +1,39 @@
+# Alpine-Contributor: Taner Tas <taner76@gmail.com>
+# Alpine-Maintainer: Taner Tas <taner76@gmail.com>
+# Maintainer: Felix Lionardo <flionardo@qnx.com>
+pkgname=freeimage
+_pkgname="FreeImage"
+pkgver=3.18.0
+pkgrel=0
+pkgdesc="Open Source library project for developers who would like to support popular graphics image formats."
+url="https://freeimage.sourceforge.net/"
+arch="all"
+license="GPL-2.0-or-later AND FreeImage"
+makedepends="cmake ninja libc++-dev qnx-io-sock-dev"
+depends="qnx-io-sock"
+subpackages="$pkgname-dev"
+source="$_pkgname-qnx-v$pkgver.tar.gz::https://github.com/qnx-ports/FreeImage/archive/refs/tags/qnx-v$pkgver.tar.gz"
+builddir="$srcdir/$_pkgname-qnx-v$pkgver"
+options="!check"
+
+prepare() {
+	find "$builddir" -type f -exec dos2unix {} \;
+	default_prepare
+}
+
+build() {
+	case "$CARCH" in
+		aarch64) export CFLAGS="$CFLAGS -DPNG_ARM_NEON_OPT=0";;
+	esac
+	CFLAGS="$CFLAGS -std=gnu89 -fPIC" \
+	CXXFLAGS="$CXXFLAGS -std=gnu++14 -fPIC" \
+	make
+}
+
+package() {
+	make DESTDIR="$pkgdir" install
+}
+
+sha512sums="
+8706cdac06e5cf6e5a19929a56ea593b72c2eb46bd37ed9f44f408e4a0d6e9d80f1a7ca8ec9bb94ee0d642db5d750350a90229ae2d8b83a7067cad5a2aeb4be2  FreeImage-qnx-v3.18.0.tar.gz
+"
