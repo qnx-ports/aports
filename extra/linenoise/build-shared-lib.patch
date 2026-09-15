@@ -1,0 +1,37 @@
+--- Makefile.orig
++++ Makefile
+@@ -1,5 +1,18 @@
+-all: linenoise-example linenoise-test
++MAJOR_VERSION = 0
++EXTRA_VERSION = .0.0
++SONAME = liblinenoise.so.$(MAJOR_VERSION)
++LIB = $(SONAME)$(EXTRA_VERSION)
+ 
++export CFLAGS ?= -Os -g
++CFLAGS += -Wall -fpic -DUSE_UTF8
++LIBDIR ?= /usr/lib
++INCLUDEDIR ?= /usr/include
++
++.PHONY: all
++all: $(LIB) linenoise-example linenoise-test
++
++$(LIB): linenoise.o
++	$(CC) $(CFLAGS) -shared -Wl,-soname,$(SONAME) $(LDFLAGS) -o $@ $^
+ linenoise-example: linenoise.h linenoise.c example.c
+ 	$(CC) -Wall -W -Os -g -o linenoise-example linenoise.c example.c
+ 
+@@ -11,3 +24,13 @@
+ 
+ clean:
+ 	rm -f linenoise-example linenoise-test
++	rm -f $(LIB)  linenoise-example *.o
++
++.PHONY: install
++install: $(LIB)
++	install -m 0755 -d $(DESTDIR)$(INCLUDEDIR)
++	install -m 0644 linenoise.h $(DESTDIR)$(INCLUDEDIR)
++	install -m 0755 -d $(DESTDIR)$(LIBDIR)
++	install -m 0755 $(LIB) $(DESTDIR)$(LIBDIR)
++	
++	ln -sf $(LIB) $(DESTDIR)$(LIBDIR)/liblinenoise.so
+\ No newline at end of file
