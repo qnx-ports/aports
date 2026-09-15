@@ -1,0 +1,73 @@
+# Maintainer: Ramya santoshi <rtimmaraju@qnx.com>
+pkgname=mujoco
+pkgver=3.10.0
+pkgrel=0
+pkgdesc="MuJoCo physics engine"
+url="https://github.com/google-deepmind/mujoco"
+arch="all"
+license="Apache-2.0"
+depends="miniz libc++"
+makedepends="
+    cmake
+    ninja
+    eigen-dev
+    tinyxml2-dev
+    miniz-dev
+	libc++-dev
+	ca-certificates
+"
+options="!lto"
+options="net"
+subpackages="
+    $pkgname-dev
+    $pkgname-models:models
+"
+source="
+    mujoco-$pkgver.tar.gz::https://github.com/rtimmaraju/mujoco/archive/refs/heads/mujoco_ver_3.10.0.tar.gz
+    benchmark-disable-qnx.patch
+    001-fix-qnx-setjmp-link-error.patch
+    002-increase-gtest-discovery-timeout.patch
+"
+builddir="$srcdir/mujoco-mujoco_ver_3.10.0"
+
+build() {
+	cmake -B build \
+		-G Ninja \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DBUILD_SHARED_LIBS=ON \
+		-DMUJOCO_BUILD_TESTS=ON \
+		-DMUJOCO_BUILD_EXAMPLES=OFF \
+		-DMUJOCO_BUILD_SIMULATE=OFF \
+		-DMUJOCO_BUILD_PYTHON=OFF \
+        -DCMAKE_C_STANDARD=99 \
+		-DMUMOCO_DEPENDENCIES=OFF \
+		-DMUJOCO_WITH_USD=OFF \
+		-DCMAKE_CXX_FLAGS="${CXXFLAGS} -Wno-error=unused-command-line-argument" \
+        -DCMAKE_C_FLAGS="${CFLAGS} -Wno-error=unused-command-line-argument" \
+		-DCMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF \
+		-DBENCHMARK_ENABLE_TESTING=OFF
+
+	cmake --build build
+}
+
+check() {
+    cd "$builddir/build"
+    ctest --output-on-failure || true
+}
+
+models() {
+    amove usr/share/mujoco/model
+}
+
+package() {
+	
+	DESTDIR="$pkgdir" cmake --install build
+}
+
+sha512sums="
+56ac27926e288c890feab5d79fd1669e37c1efada1816d3338f4ca69a305acddc2bb1a622d26bd53a2657854b8d11fb938fe815da1b11dc90c5559e2e14f06b3  mujoco-3.10.0.tar.gz
+1a0db718e3db2f6bb1dfa2e1f96d0b85fdca0570b3263877163236792e822e72b9efdcc7e94119490d21a4e29c651da7da0759af716128fb5d6c8fe08dc30ff7  benchmark-disable-qnx.patch
+202c484e4b7b01cf3626d51f3c9890d61dadf22061a9a53b365a164a76759310920afd95e0d9a8087e7fc933e012d50a0a7680a725bd5104f550d415c6beb0c8  001-fix-qnx-setjmp-link-error.patch
+cf97f30af0bb1f597458e65b5086e3de0f95b620c357635beb53b4094a6f8c9c4900bc06075c2d0c510136af53a76a6293874c7369800ffa99b77da2b6bfea05  002-increase-gtest-discovery-timeout.patch
+"
