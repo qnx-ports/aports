@@ -1,5 +1,5 @@
---- Makefile.orig
-+++ Makefile
+--- ./Makefile.orig
++++ ./Makefile
 @@ -1,5 +1,18 @@
 -all: linenoise-example linenoise-test
 +MAJOR_VERSION = 0
