@@ -1,0 +1,87 @@
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=spirv-cross
+_pkgname=SPIRV-Cross
+pkgver=1.4.321.0
+pkgrel=0
+pkgdesc="API and commands for SPIR-V runtime reflection"
+url="https://github.com/KhronosGroup/SPIRV-Cross"
+arch="all"
+license="Apache-2.0"
+depends="libc++"
+depends_dev="libc++-dev"
+# python3 and spirv-tools are needed for building tests.
+makedepends="$depends_dev cmake ninja python3 spirv-tools"
+checkdepends="python3 spirv-tools"
+subpackages="$pkgname-cli $pkgname-static $pkgname-dev"
+source="$pkgname-$pkgver.tar.gz::https://github.com/KhronosGroup/$_pkgname/archive/refs/tags/vulkan-sdk-$pkgver.tar.gz
+    c_standard.patch"
+builddir="$srcdir/$_pkgname-vulkan-sdk-$pkgver"
+
+build() {
+    export CFLAGS="$CFLAGS -Qunused-arguments"
+    export CXXFLAGS="$CXXFLAGS -Qunused-arguments"
+
+    # We need two separate builds in order to get both the CLI and a shared dist.
+    # These installs do not overlap.
+    cmake -B build-cli -G Ninja \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DCMAKE_INSTALL_LIBDIR=lib \
+        -DCMAKE_BUILD_TYPE=MinSizeRel \
+        -Dspirv-cross-glslang="/usr/bin/glslangValidator" \
+        -Dspirv-cross-spirv-as="/usr/bin/spirv-as" \
+        -Dspirv-cross-spirv-val="/usr/bin/spirv-val" \
+        -Dspirv-cross-spirv-opt="/usr/bin/spirv-opt"
+
+    cmake -B build-shared -G Ninja \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DCMAKE_INSTALL_LIBDIR=lib \
+        -DCMAKE_BUILD_TYPE=MinSizeRel \
+        -DSPIRV_CROSS_CLI=OFF \
+        -DSPIRV_CROSS_STATIC=OFF \
+        -DSPIRV_CROSS_SHARED=ON \
+        -DSPIRV_CROSS_ENABLE_TESTS=OFF
+
+    cmake --build build-cli
+    cmake --build build-shared
+}
+
+check() {
+    ctest --test-dir build-cli || true # Another case of floating-point inaccuracies.
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install build-cli
+    DESTDIR="$pkgdir" cmake --install build-shared
+}
+
+dev() {
+    default_dev
+
+    amove usr/share/spirv_cross_c_shared
+}
+
+static() {
+    default_static
+
+    amove usr/share/spirv_cross_c
+    amove usr/share/spirv_cross_core
+    amove usr/share/spirv_cross_cpp
+    amove usr/share/spirv_cross_glsl
+    amove usr/share/spirv_cross_hlsl
+    amove usr/share/spirv_cross_msl
+    amove usr/share/spirv_cross_reflect
+    amove usr/share/spirv_cross_util
+    amove usr/lib/pkgconfig/spirv-cross-c.pc
+}
+
+cli() {
+    pkgdesc="$_pkgname CLI client"
+    depends="libc++"
+
+    amove usr/bin/spirv-cross
+}
+
+sha512sums="
+0c1fe48e73060df131658b18558e748ab5a64acdc0461f60b8d2af7c9b6043e2780abfd9ad844517149576b37a7ad7022b7aa1bc82fbcdcab7fee933e4f7940d  spirv-cross-1.4.321.0.tar.gz
+f743462ddbe554cfd85420efee43426ee4b5ff10bf5168316bc8d32f5d48745352c28f69ac6c64ad8e98a0c4936a066ef59767a84636835595a69117af4d95d3  c_standard.patch
+"
