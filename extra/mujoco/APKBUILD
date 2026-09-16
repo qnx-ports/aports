@@ -38,7 +38,6 @@ build() {
 		-DMUJOCO_BUILD_TESTS=ON \
 		-DMUJOCO_BUILD_EXAMPLES=OFF \
 		-DMUJOCO_BUILD_SIMULATE=OFF \
-		-DMUJOCO_BUILD_PYTHON=OFF \
 		-DMUJOCO_WITH_USD=OFF \
 		-DCMAKE_CXX_FLAGS="${CXXFLAGS} -Wno-error=unused-command-line-argument" \
         -DCMAKE_C_FLAGS="${CFLAGS} -Wno-error=unused-command-line-argument" \
@@ -49,8 +48,8 @@ build() {
 }
 
 check() {
-    cd "$builddir/build"
-    ctest --output-on-failure || true
+    ctest --test-dir build --output-on-failure -j1 \
+        -E 'KeyframeTest\.(CheckValues|ResetDataKeyframe)|UserUtilTest\.StringToVectorError|XMLReaderTest\.(LargeTextureTest|LargeTextureAddressTest|ParseFrame)|AllModels/WriteReadCompareTest\.WriteReadCompare/(flag_xml_4|bunny_shell_xml_218|quadratic_xml_235)'
 }
 
 models() {
@@ -63,7 +62,7 @@ package() {
 
 sha512sums="
 56ac27926e288c890feab5d79fd1669e37c1efada1816d3338f4ca69a305acddc2bb1a622d26bd53a2657854b8d11fb938fe815da1b11dc90c5559e2e14f06b3  mujoco-3.10.0.tar.gz
-1a0db718e3db2f6bb1dfa2e1f96d0b85fdca0570b3263877163236792e822e72b9efdcc7e94119490d21a4e29c651da7da0759af716128fb5d6c8fe08dc30ff7  benchmark-disable-qnx.patch
+f7653fcad3af8d00b9602cf63668d92cdcbad6e003198752a4b45e4f2f6fcd7a37d7b172c63b5f18cd92da18317bb46734935271512f92a2b4e75a4ce323ef41  003-disable-benchmark-qnx.patch
 202c484e4b7b01cf3626d51f3c9890d61dadf22061a9a53b365a164a76759310920afd95e0d9a8087e7fc933e012d50a0a7680a725bd5104f550d415c6beb0c8  001-fix-qnx-setjmp-link-error.patch
-cf97f30af0bb1f597458e65b5086e3de0f95b620c357635beb53b4094a6f8c9c4900bc06075c2d0c510136af53a76a6293874c7369800ffa99b77da2b6bfea05  002-increase-gtest-discovery-timeout.patch
+3e0eb250fe86e14ac815b4a31ede96cb5d8862b9f51a56ace5e902d7e173e12be8314d5d267a72c44de11bd387625ed42821986297b1a8a153251e43bece8491  002-increase-gtest-discovery-timeout.patch
 "
