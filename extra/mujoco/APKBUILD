@@ -2,7 +2,6 @@
 pkgname=mujoco
 pkgver=3.10.0
 pkgrel=0
-_commit=28009f9105cd92784b7b0b30c0605a5e29107a77
 pkgdesc="MuJoCo physics engine"
 url="https://github.com/google-deepmind/mujoco"
 arch="all"
@@ -22,12 +21,13 @@ subpackages="
     $pkgname-dev
     $pkgname-models:models
 "
-source="$pkgname-$pkgver.tar.gz::https://github.com/google-deepmind/mujoco/archive/$_commit.tar.gz
+source="$pkgname-$pkgver.tar.gz::https://github.com/google-deepmind/mujoco/archive/$pkgver.tar.gz
+    004-mujoco-qnx.patch
     003-disable-benchmark-qnx.patch
     001-fix-qnx-setjmp-link-error.patch
     002-increase-gtest-discovery-timeout.patch
 "
-builddir="$srcdir/${pkgname}-$_commit"
+builddir="$srcdir/${pkgname}-$pkgver"
 
 build() {
 	cmake -B build \
@@ -61,7 +61,8 @@ package() {
 }
 
 sha512sums="
-8b2a4310c03d654f19ccb94a1795ac646f58e4d67008df683cf6b2e11b0c8aab5c17910e28cb5794fc1242f89bc48fe76f98d7483701f78932377aa9e23454bd  mujoco-3.10.0.tar.gz
+dafc848fbda134156f32b1c7668ab95d458e587d10f699ff6f233a03b3cb9e5ae4ceb76df5cc9f7b34d007f4a7419a66f56389e85c4c2cbb2e79a525a63ba557  mujoco-3.10.0.tar.gz
+95b536fa19681c664f9fd6f273f7fa9ba9012dd5de4d0d5831faae37e6bd2fed4503170e497173a4e47455073405df5bb80a4cb692d62c3006fa90b08a5622b4  004-mujoco-qnx.patch
 f7653fcad3af8d00b9602cf63668d92cdcbad6e003198752a4b45e4f2f6fcd7a37d7b172c63b5f18cd92da18317bb46734935271512f92a2b4e75a4ce323ef41  003-disable-benchmark-qnx.patch
 202c484e4b7b01cf3626d51f3c9890d61dadf22061a9a53b365a164a76759310920afd95e0d9a8087e7fc933e012d50a0a7680a725bd5104f550d415c6beb0c8  001-fix-qnx-setjmp-link-error.patch
 3e0eb250fe86e14ac815b4a31ede96cb5d8862b9f51a56ace5e902d7e173e12be8314d5d267a72c44de11bd387625ed42821986297b1a8a153251e43bece8491  002-increase-gtest-discovery-timeout.patch
