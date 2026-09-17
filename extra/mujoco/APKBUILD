@@ -21,7 +21,7 @@ subpackages="
     $pkgname-dev
     $pkgname-models:models
 "
-source="$pkgname-$pkgver.tar.gz::https://github.com/google-deepmind/mujoco/archive/$pkgver.tar.gz
+source="$pkgname-$pkgver.tar.gz::https://github.com/google-deepmind/mujoco/archive/refs/tags/$pkgver.tar.gz
     004-mujoco-qnx.patch
     003-disable-benchmark-qnx.patch
     001-fix-qnx-setjmp-link-error.patch
