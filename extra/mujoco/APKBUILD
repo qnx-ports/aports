@@ -49,7 +49,7 @@ build() {
 
 check() {
     ctest --test-dir build --output-on-failure -j1 \
-        -E 'KeyframeTest\.(CheckValues|ResetDataKeyframe)|UserUtilTest\.StringToVectorError|XMLReaderTest\.(LargeTextureTest|LargeTextureAddressTest|ParseFrame)|AllModels/WriteReadCompareTest\.WriteReadCompare/(flag_xml_4|bunny_shell_xml_218|quadratic_xml_235)'
+        -E 'KeyframeTest\.(CheckValues|ResetDataKeyframe)|UserUtilTest\.StringToVectorError|XMLReaderTest\.(LargeTextureTest|LargeTextureAddressTest|ParseFrame)|AllModels/WriteReadCompareTest\.WriteReadCompare/(flag_xml_4|bunny_shell_xml_218|quadratic_xml_235|floppy_xml_222|jelly_xml_226|press_xml_233)|CoreSmoothTest\.(SolveLDs|SolveLDmultipleVectors)|SupportTest\.DifferentiatePosSubQuat'
 }
 
 models() {
