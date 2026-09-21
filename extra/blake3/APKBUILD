@@ -1,0 +1,80 @@
+# Maintainer: Cris Sinnott <csinnott@qnx.com>
+pkgname=blake3
+pkgver=1.5.4
+pkgrel=0
+pkgdesc="The official Rust and C implementations of the BLAKE3 cryptographic hash function"
+url="https://github.com/BLAKE3-team/BLAKE3"
+arch="all"
+license="Apache-2.0 OR CC0-1.0"
+makedepends="cmake ninja python3"
+checkdepends="python3"
+subpackages="$pkgname-dev"
+source="$pkgname-$pkgver.tar.gz::https://github.com/BLAKE3-team/BLAKE3/archive/refs/tags/$pkgver.tar.gz"
+builddir="$srcdir/BLAKE3-$pkgver"
+
+# No QNX source patches needed: BLAKE3_SIMD_TYPE is auto-selected by
+# c/CMakeLists.txt based on CMAKE_SYSTEM_PROCESSOR, which QNX's CMake does not
+# resolve to a name in BLAKE3_AMD64_NAMES/BLAKE3_ARMv8_NAMES on this box, so
+# it already falls through to the portable ("none") SIMD path with zero
+# special flags -- confirmed via CMakeCache.txt (BLAKE3_SIMD_TYPE:STRING=none)
+# on both build machines this was verified on. This leaves SIMD throughput on
+# the table (portable C only) but is correct and unmodified upstream
+# behavior, not a QNX workaround.
+
+build() {
+	cmake -B build -S c \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DBUILD_SHARED_LIBS=ON \
+		-G Ninja
+	cmake --build build
+}
+
+check() {
+	# Upstream's real test harness (c/test.py) drives a CLI built from the
+	# same portable sources through every mode (hash/xof/keyed-hash/
+	# derive-key) against the official test_vectors/test_vectors.json,
+	# using plain assert() -- it isn't built by c/CMakeLists.txt (that only
+	# builds the library) and has no native JUnit/XML writer, so the CLI is
+	# compiled the same way upstream's own c/Makefile.testing does it, and
+	# the result is wrapped into one real JUnit testcase by hand. Same
+	# wrap-a-proven-smoke-test pattern used in extra/riegeli and
+	# extra/qnx-boringssl-randstub, for the same reason (no upstream tests
+	# ship for those, or, here, upstream's own test driver has no XML mode).
+	local simdflags="-DBLAKE3_NO_SSE2 -DBLAKE3_NO_SSE41 -DBLAKE3_NO_AVX2 -DBLAKE3_NO_AVX512 -DBLAKE3_USE_NEON=0"
+	$CC $CFLAGS -O2 -std=c11 -DBLAKE3_TESTING $simdflags \
+		c/blake3.c c/blake3_dispatch.c c/blake3_portable.c c/main.c \
+		-o c/blake3 -lm
+
+	local status=0 start end dur
+	start=$(date +%s)
+	( cd c && python3 test.py ) || status=1
+	end=$(date +%s)
+	dur=$((end - start))
+
+	# Written under $startdir (this aports package dir), not $builddir --
+	# abuild deletes $srcdir/$builddir after a successful build by
+	# default, which would silently discard the report before CI could
+	# collect it.
+	mkdir -p "$startdir"/output-junit
+	local failure=""
+	[ "$status" -ne 0 ] && failure='<failure message="test.py assertion failed">see build log above</failure>'
+	cat > "$startdir"/output-junit/blake3.xml <<-EOF
+	<?xml version="1.0" encoding="UTF-8"?>
+	<testsuites tests="1" failures="$status" name="blake3">
+	  <testsuite name="c.test_py" tests="1" failures="$status">
+	    <testcase name="test_vectors" classname="c.test_py" time="$dur">$failure</testcase>
+	  </testsuite>
+	</testsuites>
+	EOF
+
+	[ "$status" -eq 0 ]
+}
+
+package() {
+	DESTDIR="$pkgdir" cmake --install build
+}
+
+sha512sums="
+39b8c49f70a84ac23df1ddaf920ad3d829268db108077e67108b19bc7cdf7e18d468eba5d58a10d79269101204dad52c9463a5b1729d212e15f6c7a419fcfbe7  blake3-1.5.4.tar.gz
+"
