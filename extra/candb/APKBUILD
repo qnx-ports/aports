@@ -36,7 +36,6 @@ prepare() {
 
 build() {
     cd "$builddir"
-  
     export CXXFLAGS="$CXXFLAGS \
         -Wno-error=unused-command-line-argument \
         -Wno-error=character-conversion \
