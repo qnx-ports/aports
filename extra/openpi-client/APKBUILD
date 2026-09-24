@@ -1,0 +1,45 @@
+# Maintainer: Deep Chordia <dchordia@blackberry.com>
+pkgname=openpi-client
+_commit=c23745b5ad24e98f66967ea795a07b2588ed6c79
+pkgver=0.1.0
+pkgrel=0
+pkgdesc="QNX client for the pi0 robot policy inference server"
+url="https://github.com/Physical-Intelligence/openpi"
+arch="noarch"
+license="Apache-2.0"
+depends="
+	python3
+	python3-dm-tree
+	python3-msgpack
+	python3-numpy
+	python3-pillow
+	python3-typing-extensions
+	python3-websockets
+	"
+makedepends="
+	python3-gpep517
+	python3-hatchling
+	"
+checkdepends="python3-pytest"
+source="openpi-$_commit.tar.gz::https://github.com/Physical-Intelligence/openpi/archive/$_commit.tar.gz"
+builddir="$srcdir/openpi-$_commit/packages/openpi-client"
+
+build() {
+	gpep517 build-wheel --wheel-dir .dist --output-fd 3 3>&1 >&2
+}
+
+check() {
+	python3 -m venv --clear --without-pip --system-site-packages .testenv
+	.testenv/bin/python3 -m installer .dist/*.whl
+	.testenv/bin/python3 -m pytest src/openpi_client/msgpack_numpy_test.py \
+		src/openpi_client/image_tools_test.py \
+		--junitxml="$startdir/junit-$pkgname.xml"
+}
+
+package() {
+	python3 -m installer -d "$pkgdir" .dist/*.whl
+}
+
+sha512sums="
+c417ef948df360bf234c421972e93378c3e4829c025a9a6bf68b12bef0e0448ef6d0ed7a8c0a3a34325aebd3b9f410a364eacca9b991420d2591134be972b171  openpi-c23745b5ad24e98f66967ea795a07b2588ed6c79.tar.gz
+"
