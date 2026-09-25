@@ -1,28 +1,29 @@
+# Alpine Maintainer: qaqland <qaq@qaq.land>
+# Maintainer: Leo Shen <yishen@qnx.com>
+# Contributor Abdulfatah Ahmoda <abahmoda@qnx.com>
 pkgname="sudo"
 pkgver="1.9.17_p2"
-if [ "${pkgver%_*}" != "$pkgver" ]; then
-    _realver=${pkgver%_*}${pkgver#*_}
-else
-    _realver=$pkgver
-fi
-pkgrel=4
+_realver=${pkgver/_/}
+pkgrel=5
 pkgdesc="Give certain users the ability to run some commands as root"
 url="https://www.sudo.ws"
 arch="all"
 license="LicenseRef-ISC"
-depends="qnx-security qnx-io-sock"
-makedepends="qnx-security-dev qnx-io-sock-dev ncurses-dev"
+depends="qnx-security qnx-io-sock openssl"
+makedepends="qnx-security-dev qnx-io-sock-dev ncurses-dev openssl-dev"
+checkdepends="diffutils"
 subpackages="$pkgname-doc $pkgname-dev"
 source="
-    https://www.sudo.ws/dist/$pkgname-$_realver.tar.gz
-    fix-qnx.patch
+    https://github.com/qnx-ports/sudo/archive/refs/tags/qnx-v$_realver-r$pkgrel.tar.gz
     sudo.pam
 "
 options="suid"
-builddir="$srcdir/sudo-$_realver"
+builddir="$srcdir/$pkgname-qnx-v$_realver-r$pkgrel"
 
 build() {
-    LDFLAGS="$LDFLAGS -lregex" \
+    cd $builddir
+    LDFLAGS="$LDFLAGS -lregex -Wl,-z,stack-size=8388608" \
+    CFLAGS="$CFLAGS -Wno-error=incompatible-function-pointer-types"
     ./configure \
         --build=$CBUILD \
         --host=$CHOST \
@@ -44,6 +45,10 @@ build() {
     make
 }
 
+check() {
+    make check
+}
+
 package() {
     # the sudo's mkinstalldir script miscreates the leading
     # path components with bad permissions. fix this.
@@ -60,7 +65,6 @@ package() {
 }
 
 sha512sums="
-c8abd6ca56e54a081c9ef1e9f6579d1db5b93ff857e60d1f58d1f425d7dc23c31c58d40b7819780688f66dfdf87a1f3bbe0a78387b007e2beb1b0e546203ea93  sudo-1.9.17p2.tar.gz
-d28bd08b9cb8f33fe5427283097488eb6fa6371d2f04f67279a936e326508a2c7c52547dc7118229a6da0787fbb738d588ef9e18c2095ead5949b44c2c7f59ee  fix-qnx.patch
+8490fcb9bd6af245b15c320eb00b9fc2a3cdf24d982436eabdcdcd63e7a8ba0bbc8fd02ea3551fc9dfb53b04516e9f46fbf327d42190fa268e4a26259fd5e06d  qnx-v1.9.17p2-r5.tar.gz
 d6c67d3cc7f274e3c2b0bc298a7b249b8e0551824d1f6a186ca404ce4994b2a1551f72ada358e94697e3180ba2549846db081b1100c6d54609faadad8458c38a  sudo.pam
 "
