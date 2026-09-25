@@ -1,0 +1,83 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index b35975af..0a2a5702 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -165,10 +165,13 @@ add_subdirectory(src/engine)
+ add_subdirectory(src/user)
+ add_subdirectory(src/xml)
+ add_subdirectory(src/xml/mjz)
+-if(NOT EMSCRIPTEN AND NOT MUJOCO_USE_FILAMENT_MJR_COMPAT)
++if(NOT EMSCRIPTEN
++   AND NOT MUJOCO_USE_FILAMENT_MJR_COMPAT
++   AND NOT CMAKE_SYSTEM_NAME STREQUAL "QNX")
+   add_subdirectory(src/render/classic)
+   add_subdirectory(src/ui)
+ endif()
++
+ add_subdirectory(src/render/noop)
+ 
+ if(MUJOCO_USE_FILAMENT)
+diff --git a/cmake/MujocoDependencies.cmake b/cmake/MujocoDependencies.cmake
+index b48537fc..4af29f8d 100644
+--- a/cmake/MujocoDependencies.cmake
++++ b/cmake/MujocoDependencies.cmake
+@@ -200,7 +200,12 @@ if(CMAKE_POLICY_VERSION_MINIMUM_LOCALLY_DEFINED)
+   unset(CMAKE_POLICY_VERSION_MINIMUM_LOCALLY_DEFINED)
+ endif()
+ 
+-set(ENABLE_DOUBLE_PRECISION ON)
++# build ccd in single precision when MuJoCo is built with mjUSESINGLE
++if(CMAKE_C_FLAGS MATCHES "mjUSESINGLE")
++  set(ENABLE_DOUBLE_PRECISION OFF)
++else()
++  set(ENABLE_DOUBLE_PRECISION ON)
++endif()
+ set(CCD_HIDE_ALL_SYMBOLS ON)
+ 
+ # Patch changes in https://github.com/danfis/libccd/pull/83.patch
+@@ -254,12 +259,16 @@ else()
+   set(_BUILD_TESTS_WAS_DEFINED FALSE)
+ endif()
+ set(BUILD_TESTS OFF)
+-fetchpackage(
+-  PACKAGE_NAME  miniz
+-  GIT_REPO      https://github.com/richgel999/miniz.git
+-  GIT_TAG       ${MUJOCO_DEP_VERSION_miniz}
+-  TARGETS       miniz
+-)
++if(CMAKE_SYSTEM_NAME STREQUAL "QNX")
++  find_package(miniz CONFIG REQUIRED)
++else()
++  fetchpackage(
++    PACKAGE_NAME  miniz
++    GIT_REPO      https://github.com/richgel999/miniz.git
++    GIT_TAG       ${MUJOCO_DEP_VERSION_miniz}
++    TARGETS       miniz
++  )
++endif()
+ if(_BUILD_TESTS_WAS_DEFINED)
+   set(BUILD_TESTS "${_OLD_BUILD_TESTS}")
+ else()
+diff --git a/src/engine/engine_util_errmem.c b/src/engine/engine_util_errmem.c
+index f5e7f8a4..4ca936fa 100644
+--- a/src/engine/engine_util_errmem.c
++++ b/src/engine/engine_util_errmem.c
+@@ -197,7 +197,7 @@ static void mju_localTimeStr(char* buf, int buf_sz) {
+   struct tm timeinfo;
+   time(&rawtime);
+ 
+-#if defined(_POSIX_C_SOURCE) || defined(__APPLE__) || defined(__STDC_VERSION_TIME_H__) || defined(__EMSCRIPTEN__)
++#if defined(_POSIX_C_SOURCE) || defined(__APPLE__) || defined(__STDC_VERSION_TIME_H__) || defined(__EMSCRIPTEN__) || defined(__QNXNTO__)
+   localtime_r(&rawtime, &timeinfo);
+ #elif defined(_WIN32)
+   localtime_s(&timeinfo, &rawtime);
+diff --git a/src/xml/mjz/CMakeLists.txt b/src/xml/mjz/CMakeLists.txt
+index ab92623b..4ec37e9c 100644
+--- a/src/xml/mjz/CMakeLists.txt
++++ b/src/xml/mjz/CMakeLists.txt
+@@ -18,4 +18,4 @@ set(MUJOCO_MJZ_SRCS
+ )
+ 
+ target_sources(mujoco PRIVATE ${MUJOCO_MJZ_SRCS})
+-target_link_libraries(mujoco PRIVATE miniz)
++target_link_libraries(mujoco PRIVATE miniz::miniz)
