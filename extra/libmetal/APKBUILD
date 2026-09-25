@@ -1,0 +1,47 @@
+# Maintainer: Deep Chordia <dchordia@blackberry.com>
+pkgname=libmetal
+pkgver=2025.10.1
+pkgrel=0
+pkgdesc="An abstraction layer across RTOS, baremetal, and user-space Linux environments"
+url="https://github.com/OpenAMP/libmetal"
+arch="all"
+license="BSD-3-Clause"
+makedepends="
+    cmake
+    ninja"
+subpackages="$pkgname-dev"
+source="$pkgname-$pkgver.tar.gz::https://github.com/qnx-ports/libmetal/archive/refs/heads/qnx-v$pkgver.tar.gz"
+builddir="$srcdir/$pkgname-qnx-v$pkgver"
+
+build() {
+  if [ -f "/usr/include/sys/cache.h" ]; then
+    CFLAGS="$CFLAGS -DQNX_CACHE"
+    WITH_CACHE="-DQNX_CACHE=ON"
+  else
+    WITH_CACHE="-DQNX_CACHE=OFF"
+  fi
+  CFLAGS="$CFLAGS -D__EXT_UNIX_SOURCE -Wno-unused-parameter -Wno-deprecated-pragma" \
+  cmake -B build -G Ninja \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=/usr \
+    -DWITH_STATIC_LIB=OFF \
+    -DWITH_SHARED_LIB=ON \
+    -DWITH_TESTS=ON \
+    -DWITH_EXAMPLES=ON \
+    -DMACHINE=qemu \
+    -DQNX=1 \
+    $WITH_CACHE
+  cmake --build build
+}
+
+check() {
+  ctest --test-dir build
+}
+
+package() {
+  DESTDIR="$pkgdir" cmake --install build
+}
+
+sha512sums="
+6558f4b6793df631509436e81ff1b25c7a985a16f83e1f41241d61add1815d9399a54526cc954ba522698c54bec6f3067deb2685ad6121b90534bf2a1bed010c  libmetal-2025.10.1.tar.gz
+"
