@@ -1,0 +1,11 @@
+--- Fast-DDS-2.14.4.orig/cmake/modules/FindAsio.cmake	2026-05-28 07:28:43.000000000 +0000
++++ Fast-DDS-2.14.4.new/cmake/modules/FindAsio.cmake	2026-05-28 07:30:08.000000000 +0000
+@@ -8,7 +8,7 @@
+     # If Asio was not found, search for the header file asio.hpp in the common CMake directories.
+     if(NOT Asio_FOUND)
+         if(QNX)
+-            find_path(Asio_INCLUDE_DIR NAMES asio.hpp HINTS ${QNX_INSTALL_ROOT}/usr/include)
++            find_path(Asio_INCLUDE_DIR NAMES asio.hpp HINTS ${QNX_INSTALL_ROOT}/usr/include ${CMAKE_SOURCE_DIR}/thirdparty/asio/include)
+         else()
+             find_path(Asio_INCLUDE_DIR NAMES asio.hpp)
+         endif()
