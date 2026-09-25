@@ -1,0 +1,15 @@
+--- a/third_party/benchmark/src/sysinfo.cc
++++ b/third_party/benchmark/src/sysinfo.cc
+@@ -423,7 +423,12 @@
+         continue;
+         break;
+     }
++    #if !defined(__QNX__)
+     info.size = cache->line_size * cache->num_lines;
++    #else
++    info.size = static_cast<int>(cache->line_size * cache->num_lines);
++    #endif
++    
+     info.num_sharing = 0;
+     res.push_back(std::move(info));
+     cache = SYSPAGE_ARRAY_ADJ_OFFSET(cacheattr, cache, elsize);
