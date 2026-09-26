@@ -1,0 +1,88 @@
+diff --git a/cmake/LwsCheckRequirements.cmake b/cmake/LwsCheckRequirements.cmake
+index 57fc003c3..c599575ef 100644
+--- a/cmake/LwsCheckRequirements.cmake
++++ b/cmake/LwsCheckRequirements.cmake
+@@ -76,10 +76,10 @@ MACRO(require_pthreads result)
+ 	else()
+ 		if (WIN32)
+ 			set(PTHREAD_LIB ${LWS_EXT_PTHREAD_LIBRARIES})
++		elseif (CMAKE_SYSTEM_NAME MATCHES "QNX")
++            set(PTHREAD_LIB "")
+ 		else()
+-			if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "QNX")
+-				set(PTHREAD_LIB pthread)
+-			endif()
++			set(PTHREAD_LIB pthread)
+ 		endif()
+ 	endif()
+ ENDMACRO()
+diff --git a/include/libwebsockets.h b/include/libwebsockets.h
+index 092cbf9ed..b980bf7f6 100644
+--- a/include/libwebsockets.h
++++ b/include/libwebsockets.h
+@@ -48,7 +48,7 @@ extern "C" {
+ #if defined(LWS_HAVE_NET_IF_ETHER_H)
+ #include <net/if_ether.h>
+ #endif
+-#if defined(_WIN32) && !defined(ETHER_ADDR_LEN)
++#if (defined(_WIN32) || defined(__QNX__)) && !defined(ETHER_ADDR_LEN)
+ #define ETHER_ADDR_LEN 6
+ #endif
+ #if defined (__sun)
+diff --git a/lib/core-net/adopt.c b/lib/core-net/adopt.c
+index 58e488395..c9cc67921 100644
+--- a/lib/core-net/adopt.c
++++ b/lib/core-net/adopt.c
+@@ -72,7 +72,7 @@ lws_create_new_server_wsi(struct lws_vhost *vhost, int fixed_tsi, int group,
+ 	lws_wsi_fault_timedclose(new_wsi);
+ 
+ 	__lws_lc_tag(vhost->context, &vhost->context->lcg[group],
+-			&new_wsi->lc, "%s|%s", vhost->name, desc);
++			&new_wsi->lc, "%s|%s", vhost->name, desc ? desc : "");
+ 
+ 	new_wsi->wsistate |= LWSIFR_SERVER;
+ 	new_wsi->tsi = (char)n;
+@@ -512,6 +512,7 @@ lws_adopt_descriptor_vhost(struct lws_vhost *vh, lws_adoption_type type,
+ 	info.fd = fd;
+ 	info.vh_prot_name = vh_prot_name;
+ 	info.parent = parent;
++	info.fi_wsi_name = "";
+ 
+ 	return lws_adopt_descriptor_vhost_via_info(&info);
+ }
+diff --git a/lib/plat/unix/private-lib-plat-unix.h b/lib/plat/unix/private-lib-plat-unix.h
+index 5a5bf52f9..fbf75b3e4 100644
+--- a/lib/plat/unix/private-lib-plat-unix.h
++++ b/lib/plat/unix/private-lib-plat-unix.h
+@@ -64,16 +64,7 @@
+ #endif
+ #if defined(__QNX__)
+ 	#include <gulliver.h>
+-	#if defined(__LITTLEENDIAN__)
+-		#define BYTE_ORDER __LITTLEENDIAN__
+-		#define LITTLE_ENDIAN __LITTLEENDIAN__
+-		#define BIG_ENDIAN 4321  /* to show byte order (taken from gcc); for suppres warning that BIG_ENDIAN is not defined. */
+-	#endif
+-	#if defined(__BIGENDIAN__)
+-		#define BYTE_ORDER __BIGENDIAN__
+-		#define LITTLE_ENDIAN 1234  /* to show byte order (taken from gcc); for suppres warning that LITTLE_ENDIAN is not defined. */
+-		#define BIG_ENDIAN __BIGENDIAN__
+-	#endif
++	#include <sys/param.h>
+ #endif
+ 
+ #if defined(LWS_HAVE_PTHREAD_H)
+@@ -142,13 +133,6 @@ typedef pthread_mutex_t lws_mutex_t;
+ #include <sys/syslog.h>
+ #endif
+ 
+-#ifdef __QNX__
+-# include "netinet/tcp_var.h"
+-# define TCP_KEEPINTVL TCPCTL_KEEPINTVL
+-# define TCP_KEEPIDLE  TCPCTL_KEEPIDLE
+-# define TCP_KEEPCNT   TCPCTL_KEEPCNT
+-#endif
+-
+ #if defined (__sun)
+ 	#include <sys/ethernet.h>
+ 	#if !defined(ETHER_ADDR_LEN) && defined(ETHERADDRL)
