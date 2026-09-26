@@ -1,0 +1,105 @@
+# Maintainer: Ramya Santoshi Timmaraju <rtimmaraju@qnx.com>
+pkgname=apache-arrow
+pkgver=25.0.0
+pkgrel=0
+pkgdesc="Apache Arrow is the universal columnar format and multi-language toolbox for fast data interchange and in-memory analytics"
+url="https://arrow.apache.org/"
+arch="aarch64 x86_64"
+license="Apache-2.0"
+_commit="e336d9944e38e72f9c3679b98032ed21b3bb89dd"
+source="apache-arrow-$pkgver.tar.gz::https://github.com/apache/arrow/archive/$_commit.tar.gz
+        arrow-testing.tar.gz::https://github.com/apache/arrow-testing/archive/refs/heads/master.tar.gz
+        arrow-cmakelists-qnx.patch"
+builddir="$srcdir/arrow-$_commit/cpp"
+depends="libc++"
+makedepends="
+    cmake
+    ninja
+    libc++-dev
+    ca-certificates
+    qnx-io-sock-dev"
+subpackages="$pkgname-dev"
+prepare() {
+    cd "$srcdir/arrow-$_commit"
+    patch -p1 < "$startdir/arrow-cmakelists-qnx.patch"
+
+    mkdir -p testing
+    tar -xf "$srcdir/arrow-testing.tar.gz" -C testing --strip-components=1
+}
+options="net"
+build() {
+    export ARROW_TEST_DATA="$srcdir/arrow-$_commit/testing/data"
+    case "$(uname -m)" in
+    x86_64|x86pc)
+        ARROW_CPU_FLAG=x86
+        BOOST_CONTEXT_ARCH=x86_64
+        CMAKE_PROCESSOR=x86_64
+        BOOST_CONTEXT_ABI=sysv
+        ;;
+
+    aarch64|RaspberryPi5|QEMU_virt)
+        ARROW_CPU_FLAG=aarch64
+        BOOST_CONTEXT_ARCH=arm64
+        CMAKE_PROCESSOR=aarch64
+        BOOST_CONTEXT_ABI=aapcs
+        ;;
+
+    *)
+        ARROW_CPU_FLAG=$(uname -m)
+        BOOST_CONTEXT_ARCH=$(uname -m)
+        CMAKE_PROCESSOR=$(uname -m)
+        ;;
+    esac
+
+    cmake \
+        -S "$builddir" \
+        -B "$builddir/build" \
+        -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_SYSTEM_PROCESSOR=${CMAKE_PROCESSOR} \
+        -DBOOST_CONTEXT_ARCHITECTURE=${BOOST_CONTEXT_ARCH} \
+        -DBOOST_CONTEXT_ABI=${BOOST_CONTEXT_ABI} \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DCMAKE_CXX_STANDARD=20 \
+        -DARROW_BUILD_SHARED=ON \
+        -DARROW_CPU_FLAG=${ARROW_CPU_FLAG} \
+        -DARROW_BUILD_TESTS=ON \
+        -DARROW_BUILD_BENCHMARKS=OFF \
+        -DARROW_BUILD_EXAMPLES=OFF \
+        -DARROW_COMPUTE=OFF \
+        -DARROW_CSV=OFF \
+        -DARROW_IPC=OFF \
+        -DARROW_JSON=OFF \
+        -DARROW_PARQUET=OFF \
+        -DARROW_DATASET=OFF \
+        -DARROW_FLIGHT=OFF \
+        -DARROW_GANDIVA=OFF \
+        -DARROW_PYTHON=OFF
+
+    (
+    cd "$builddir/build"
+    patch -p3 < "$startdir/boost-asio-qnx.patch"
+    patch -p3 < "$startdir/boost-process-qnx.patch"
+    )
+
+    cmake --build  build
+}
+
+check() {
+  check() {
+    ctest --test-dir build --output-on-failure \
+        -E 'arrow-array-test|arrow-io-file-test|arrow-utility-test|arrow-ipc-tensor-test|arrow-ipc-read-write-test|arrow-compute-scalar-cast-test|arrow-ipc-endianness-test'
+}
+
+}
+
+package() {
+    DESTDIR="$pkgdir" \
+        cmake --install build
+}
+
+sha512sums="
+4c6028c6835c024605598207ea70fa6d16b4f44589deee0f9760294f38be1095e628443316df932fa425b240dc3643ed163cc31d5c81b47ed807015fa207c0d1  apache-arrow-25.0.0.tar.gz
+d73f6e0ec189bc6ff8f9fd8671e7e98ffa9f225bbe149dc98589fa18916d6415d465849c8a85e8fa4399006b3415a614ef04ece5b88a38ca13b7b395872b9ffd  arrow-testing.tar.gz
+0d2852f40983f8c813e3db7ddaa332eacb9ae3d24ee5a70d272247fc89699536db63bdbc99d8e5e80d0616ceb64734c5c43ae0732e532e57633569a333491d74  arrow-cmakelists-qnx.patch
+"
