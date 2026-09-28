@@ -1,5 +1,5 @@
---- Fast-DDS-2.14.4/CMakeLists.txt	2026-03-10 06:42:44.000000000 +0000
-+++ Fast-DDS-2.14.4_with_qnx_changes/CMakeLists.txt	2026-03-02 06:27:19.000000000 +0000
+--- a/CMakeLists.txt	2026-03-10 06:42:44.000000000 +0000
++++ b/CMakeLists.txt	2026-03-02 06:27:19.000000000 +0000
 @@ -257,6 +257,7 @@
  option(SECURITY "Activate security" OFF)
  
@@ -19,8 +19,8 @@
  option(SQLITE3_SUPPORT "Activate SQLITE3 support" ON)
  
  ###############################################################################
---- Fast-DDS-2.14.4/src/cpp/rtps/reader/WriterProxy.cpp	2026-03-10 06:42:44.000000000 +0000
-+++ Fast-DDS-2.14.4_with_qnx_changes/src/cpp/rtps/reader/WriterProxy.cpp	2026-03-02 06:27:19.000000000 +0000
+--- a/src/cpp/rtps/reader/WriterProxy.cpp	2026-03-10 06:42:44.000000000 +0000
++++ b/src/cpp/rtps/reader/WriterProxy.cpp	2026-03-02 06:27:19.000000000 +0000
 @@ -34,7 +34,7 @@
  #include "rtps/RTPSDomainImpl.hpp"
  #include "utils/collections/node_size_helpers.hpp"
@@ -30,8 +30,8 @@
  #define SHOULD_DEBUG_LINUX
  #endif // SHOULD_DEBUG_LINUX
  
---- Fast-DDS-2.14.4/src/cpp/utils/threading/threading_pthread.ipp	2026-03-10 06:42:44.000000000 +0000
-+++ Fast-DDS-2.14.4_with_qnx_changes/src/cpp/utils/threading/threading_pthread.ipp	2026-03-02 06:27:19.000000000 +0000
+--- a/src/cpp/utils/threading/threading_pthread.ipp	2026-03-10 06:42:44.000000000 +0000
++++ b/src/cpp/utils/threading/threading_pthread.ipp	2026-03-02 06:27:19.000000000 +0000
 @@ -18,8 +18,10 @@
  #include <limits>
  
@@ -77,8 +77,8 @@
  }
  
  void apply_thread_settings_to_current_thread(
---- Fast-DDS-2.14.4/test/CMakeLists.txt	2026-03-10 06:42:44.000000000 +0000
-+++ Fast-DDS-2.14.4_with_qnx_changes/test/CMakeLists.txt	2026-03-02 06:27:19.000000000 +0000
+--- a/test/CMakeLists.txt	2026-03-10 06:42:44.000000000 +0000
++++ b/test/CMakeLists.txt	2026-03-02 06:27:19.000000000 +0000
 @@ -61,7 +61,7 @@
      add_subdirectory(dds/communication/security)
      add_subdirectory(dds/discovery)
