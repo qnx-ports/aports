@@ -63,7 +63,7 @@ index 000000000..57ce84341
 +endif
 +
 +# Platform identifier (matches ZT_BUILD_PLATFORM values used in other makefiles)
-+ZT_BUILD_PLATFORM=13
++ZT_BUILD_PLATFORM=0
 +
 +# Architecture detection from compiler target triple
 +CC_MACH=$(shell $(CC) -dumpmachine | cut -d '-' -f 1)
@@ -619,3 +619,4 @@ index 000000000..29f173e65
 +}	// namespace ZeroTier
 +
 +#endif
+

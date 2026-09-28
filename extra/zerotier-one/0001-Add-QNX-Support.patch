@@ -9,7 +9,7 @@ index 51a9914bb..cda74eb6c 100644
 +ifeq ($(OSTYPE),QNX)
 +	CC=clang
 +	CXX=clang++
-+	ZT_BUILD_PLATFORM=11
++	ZT_BUILD_PLATFORM=0
 +	include make-qnx.mk
 +endif
 +
@@ -293,3 +293,4 @@ index 11cbe4c05..eb65ae627 100644
  #define ZT_PHY_SOCKFD_TYPE			 int
  #define ZT_PHY_SOCKFD_NULL			 (-1)
  #define ZT_PHY_SOCKFD_VALID(s)		 ((s) > -1)
+
