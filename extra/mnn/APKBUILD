@@ -8,15 +8,14 @@ arch="all"
 license="Apache-2.0"
 depends="libc++"
 makedepends="
-cmake
-ninja
-libc++-dev
-"
+    cmake
+    ninja
+    libc++-dev
+    "
 source="$pkgname-$pkgver.tar.gz::https://github.com/alibaba/MNN/archive/refs/tags/$pkgver.tar.gz
-001-fix-qnx-mixed-kernel-test.patch"
+    001-fix-qnx-mixed-kernel-test.patch"
 builddir="$srcdir/MNN-$pkgver"
 subpackages="$pkgname-dev"
-
 build() {
     cmake -B build \
         -G Ninja \
