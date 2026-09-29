@@ -1,5 +1,5 @@
---- /home/rtimmaraju/snappy_test/tar-snappy/snappy-1.2.2/CMakeLists.txt	2025-03-26 20:49:22.000000000 +0530
-+++ snappy-1.2.2_orig/CMakeLists.txt	2026-09-21 15:23:42.128531285 +0530
+--- a/CMakeLists.txt	2025-03-26 20:49:22.000000000 +0530
++++ b/CMakeLists.txt	2026-09-21 15:23:42.128531285 +0530
 @@ -52,9 +52,12 @@
    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHs-c-")
    add_definitions(-D_HAS_EXCEPTIONS=0)

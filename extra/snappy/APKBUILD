@@ -8,16 +8,17 @@ url="https://github.com/google/snappy"
 arch="all"
 license="BSD-3-Clause"
 depends="libc++"
-makedepends="cmake libc++-dev gtest-dev gmock"
+makedepends="cmake libc++-dev "
+checkdepends="gtest-dev gmock"
 subpackages="$pkgname-dbg $pkgname-static $pkgname-dev $pkgname-doc"
 source="$pkgname-$pkgver.tar.gz::https://github.com/google/snappy/archive/refs/tags/$pkgver.tar.gz
 	snappy-1.2.2-qnx.patch
 	"
 build() {
    cmake -B build  \
-		-DCMAKE_BUILD_TYPE=None \
+		-DCMAKE_BUILD_TYPE=release \
 		-DCMAKE_INSTALL_PREFIX=/usr \
-		-DCMAKE_INSTALL_LIBDIR=/usr/lib \
+		-DCMAKE_INSTALL_LIBDIR=/lib \
 		-DBUILD_SHARED_LIBS=ON \
 		-DBUILD_STATIC_LIBS=ON \
 		-DSNAPPY_BUILD_BENCHMARKS=OFF \
@@ -43,5 +44,5 @@ package() {
 
 sha512sums="
 0c1e1019e1bec9281f9877996d896e59e1533456130143224acb9cbfc35c1b0dd9de0a76e4a36494844d9ec58c295eed8c50bdf6dbabe47cf679652eb24b1281  snappy-1.2.2.tar.gz
-e147bc5aeb8fd7aa6eda0400b05805d7425a8b8a59e8634d62136658325fea1800e3c2900bbab3c5d4266a5c1fedad8700ded9cc71932125b2dd0a66fa0a0118  snappy-1.2.2-qnx.patch
+a6f90ef0494795a390e1d193a0c8b182011f2e30f9805c5fff69fdc58e1ec92015617ecad8090c38740cf99f6998f920fd2c0a9b099db1c38769bdab3babdca8  snappy-1.2.2-qnx.patch
 "
