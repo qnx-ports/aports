@@ -1,0 +1,64 @@
+# Maintainer: Abdulfatah Ahmoda <abahmoda@qnx.com>
+pkgname=mcap-cpp
+_basename=mcap
+pkgver=2.1.3
+pkgrel=0
+arch="noarch"
+pkgdesc="MCAP is a modular, performant, and serialization-agnostic container file format, useful for pub/sub and robotics applications."
+url="https://github.com/foxglove/mcap"
+license="MIT"
+makedepends="
+    libc++-dev
+    cmake
+    lz4-dev>=1.9.3
+    zstd-dev>=1.5.2
+    protobuf-dev>=3
+    "
+depends="
+    lz4>=1.9.3
+    zstd>=1.5.2
+    "
+checkdepends="
+    catch2
+    nlohmann-json
+    "
+subpackages="$pkgname-examples:examples:all"
+builddir="$srcdir/$_basename-qnx-$pkgname-v$pkgver-r$pkgrel/cpp"
+source="$pkgname-v$pkgver.tar.gz::https://github.com/qnx-ports/mcap/archive/refs/tags/qnx-$pkgname-v$pkgver-r$pkgrel.tar.gz"
+
+build() {
+    cd $builddir
+    CC=clang \
+    CXX=clang++ \
+    CFLAGS="$CFLAGS -Qunused-arguments" \
+    CXXFLAGS="$CXXFLAGS -Qunused-arguments" \
+    cmake -B build \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DCMAKE_BUILD_TYPE=MinSizeRel \
+        -DBUILD_TESTING=ON \
+        -DBUILD_EXAMPLES=ON \
+        -DBUILD_CONFORMANCE_TESTS=OFF
+    cmake --build build
+}
+
+check() {
+    cd "$builddir"
+    ctest --test-dir build -VV
+
+    ./run_examples.sh > /dev/null
+    # just run the noisy examples as a smoke test
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install build
+}
+
+examples() {
+    pkgdesc="mcap-cpp (examples)"
+    depends="$depends nlohmann-json protobuf>=3"
+
+    amove usr/lib/mcap-cpp/examples
+}
+sha512sums="
+5141c9e0a8e7563aa135dbf018f30ad8a0b923536ab2d1ab7ebc5aa3eaaca6b33790a6a7d3bb04939a3a1332463e8359435e47dfe6a17e68bdc5b6d515c7dea6  mcap-cpp-v2.1.3.tar.gz
+"
