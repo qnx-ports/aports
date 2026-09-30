@@ -16,6 +16,7 @@ makedepends="
 	libc++-dev
 	qnx-io-sock-dev
 	"
+
 build() {
 	make
 }
