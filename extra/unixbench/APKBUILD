@@ -27,7 +27,7 @@ check() {
 }
 
 package() {
-   cd "${srcdir}/byte-unixbench-${pkgver}/UnixBench"
+   cd "$builddir"
 
    install -dm775 ${pkgdir}/usr/lib/unixbench
    cp -a {pgms,results,testdir,tmp,Run} ${pkgdir}/usr/lib/unixbench
