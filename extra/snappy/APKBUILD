@@ -14,11 +14,12 @@ subpackages="$pkgname-dbg $pkgname-static $pkgname-dev $pkgname-doc"
 source="$pkgname-$pkgver.tar.gz::https://github.com/google/snappy/archive/refs/tags/$pkgver.tar.gz
 	snappy-1.2.2-qnx.patch
 	"
+
 build() {
    cmake -B build  \
 		-DCMAKE_BUILD_TYPE=release \
 		-DCMAKE_INSTALL_PREFIX=/usr \
-		-DCMAKE_INSTALL_LIBDIR=/lib \
+		-DCMAKE_INSTALL_LIBDIR=lib \
 		-DBUILD_SHARED_LIBS=ON \
 		-DBUILD_STATIC_LIBS=ON \
 		-DSNAPPY_BUILD_BENCHMARKS=OFF \
