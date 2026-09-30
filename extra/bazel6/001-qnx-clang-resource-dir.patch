@@ -1,0 +1,22 @@
+--- a/tools/cpp/unix_cc_configure.bzl
++++ b/tools/cpp/unix_cc_configure.bzl
+@@ -231,11 +231,18 @@
+         "-fno-canonical-system-headers",
+     )
+     if len(opt) == 0:
+-        return _add_compiler_option_if_supported(
++        opt = _add_compiler_option_if_supported(
+             repository_ctx,
+             cc,
+             "-no-canonical-prefixes",
+         )
++    qnx = repository_ctx.os.name.lower().find("qnx") != -1
++    if qnx and _is_clang(repository_ctx, cc):
++        # QNX's gcc wrapper invokes Clang through PATH, so resolving the wrapper
++        # cannot preserve Clang's resource path. Discover it before disabling
++        # canonicalization to keep compiler headers available through wrappers.
++        resource_dir = execute(repository_ctx, [cc, "-print-resource-dir"])
++        opt.append("-resource-dir=" + resource_dir)
+     return opt
+ 
+ def get_env(repository_ctx):

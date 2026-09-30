@@ -4,7 +4,7 @@
 pkgname=bazel6
 pkgver=6.5.0_alpha
 _pkgver=${pkgver/_alpha/}
-pkgrel=1
+pkgrel=2
 pkgdesc="Bazel is an open-source build and test tool"
 url="https://bazel.build/"
 arch="all"
@@ -15,7 +15,8 @@ provides="bazel=$pkgver-r$pkgrel"
 # We need jar files from the official distribution, so we apply the changes as a
 # patch
 source="https://github.com/bazelbuild/bazel/releases/download/$_pkgver/bazel-$_pkgver-dist.zip
-    qnx.patch"
+    qnx.patch
+    001-qnx-clang-resource-dir.patch"
 builddir="$srcdir/$pkgname-$pkgver"
 # Bazel binary is thin C++ client with zip file embedded into the binary,
 # stripping breaks that: https://github.com/bazelbuild/bazel/issues/11842
@@ -94,4 +95,5 @@ package() {
 sha512sums="
 c12f3072de3643f2c1754781ef737b85c05fbb39a77f87f0d4230068c519cb352607c42eb8abcad58c736c1d396bc7e7f879f04cbad0ce9e845a3621401451be  bazel-6.5.0-dist.zip
 64d79617990098533a520ccd4611c6d5d5f9abced21b0ea15ee09dcfddaca14bb734e64017c3fa61f3b18088148eb419e341b3af913845ab829f2c48ffc8fdc6  qnx.patch
+714c4324d26bf6dbc0f953082dfe65024cfff39982fbd3447fba92b70de0aac6363c322abc02e41d4ff212358425d8ad81e5f240d934981a3c7f8366266af56c  001-qnx-clang-resource-dir.patch
 "
