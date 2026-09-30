@@ -19,7 +19,6 @@ build() {
 }
 
 check() {
-	cd "$builddir"
 	# UnixBench tests were executed manually and all tests passed.
 	# The full test suite takes a long time, so it is disabled here.
 	# Enable the following command when required:
