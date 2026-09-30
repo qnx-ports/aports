@@ -64,8 +64,6 @@ package() {
 }
 
 _dev() {
-	pkgdesc="$pkgdesc (development files)"
-
 	amove \
 		usr/include/csmith-$pkgver \
 		usr/lib/libcsmith.a
