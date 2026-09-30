@@ -1,0 +1,50 @@
+# Maintainer: gilcu3 ,Ramya santoshi <rtimmaraju@qnx.com>
+# Previous Maintainer: Karol Babioch <karol@babioch.de>
+# Contributor: Oleg Rakhmanov <oleg [at] archlinuxarm [dot] org>
+pkgname='unixbench'
+pkgver=6.0.1
+pkgrel=0
+pkgdesc='UnixBench is a simple benchmark whose purpose is to provide a  basic indicator of the performance of a Unix-like system.'
+url="https://github.com/kdlucas/byte-unixbench"
+arch="aarch64 x86_64"
+license="GPL-2.0-or-later"
+makedepends="libc++-dev"
+depends="perl libc++"
+source="$pkgname-$pkgver.tar.gz::https://github.com/kdlucas/byte-unixbench/archive/refs/tags/v$pkgver.tar.gz
+        unixbench-qnx.patch no-make.patch ubench.sh"
+builddir="$srcdir/byte-unixbench-$pkgver/UnixBench"
+
+build() {
+	make
+}
+
+check() {
+	# UnixBench tests were executed manually and all tests passed.
+	# The full test suite takes a long time, so it is disabled here.
+	# Enable the following command when required:
+	./Run
+}
+
+package() {
+   cd "$builddir"
+
+   install -dm775 ${pkgdir}/usr/lib/unixbench
+   cp -a {pgms,results,testdir,tmp,Run} ${pkgdir}/usr/lib/unixbench
+   install -Dm755 ${srcdir}/ubench.sh ${pkgdir}/usr/bin/ubench.sh
+
+   chmod 775 ${pkgdir}/usr/bin/ubench.sh
+   chmod 775 ${pkgdir}/usr/lib/unixbench/Run
+   chmod ugoa+w ${pkgdir}/usr/lib/unixbench/{results,testdir,tmp}
+
+   install -Dm644 ../README.md ${pkgdir}/usr/share/doc/unixbench/README.md
+   install -Dm644 README ${pkgdir}/usr/share/doc/unixbench/README
+   install -Dm644 USAGE ${pkgdir}/usr/share/doc/unixbench/USAGE
+   install -Dm644 ..//LICENSE.txt ${pkgdir}/usr/share/licenses/unixbench/LICENSE.txt
+}
+
+sha512sums="
+a4b4de7a33726cec7d7ced7b44aaaf0750edfe9f6838ae330073b505b99ff1e38ac6c0b3b20e840ae38db27530d53da441f27b337d69e631a00527bfae32023a  unixbench-6.0.1.tar.gz
+445d9e80e943ebbc317a190c798ccfce2d71f0ff258e69afe37c53f36edb3a57af8b66c163f516ab3207a1afa73b4f464fe7b3f8a23feb143a7d101e0af79dd2  unixbench-qnx.patch
+30a12a2ed1fb0d41d42cb1f53d9086e59bcbe8397459df4be58ff2eea3ea6dcb27e3935a0d058641dfd8e00f11d2df9e412586d3814d1423b530f419ded8ed8e  no-make.patch
+6043dc370dc621b182f406460e974a2099cd9d87ce0e2e463c44cde61a5a0907de013c04009ef755ea436db5ddcea54c8bd193fdc59bf97e9b073b53da5cd694  ubench.sh
+"
