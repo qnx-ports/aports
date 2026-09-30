@@ -1,0 +1,36 @@
+# Alpine-Contributor: Aiden Grossman <agrossman154@yahoo.com>
+# Alpine-Maintainer: Achill Gilgenast <achill@achill.org>
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=python3-pytest-jupyter
+pkgver=0.11.0
+pkgrel=0
+pkgdesc="A pytest plugin for testing Jupyter core libraries and extensions."
+url="https://github.com/jupyter-server/pytest-jupyter"
+arch="noarch"
+license="BSD-3-Clause"
+depends="python3-pytest python3-jupyter_core"
+makedepends="python3-gpep517 python3-installer python3-hatchling"
+checkdepends="python3-jupyter_core python3-jupyter_client python3-jupyter_server"
+source="$pkgname-$pkgver.tar.gz::https://github.com/jupyter-server/pytest-jupyter/archive/refs/tags/v$pkgver.tar.gz"
+builddir="$srcdir/pytest-jupyter-$pkgver"
+options="!check" # Circular dependencies.
+
+build() {
+    gpep517 build-wheel \
+        --wheel-dir .dist \
+        --output-fd 3 3>&1 >&2
+}
+
+check() {
+    python3 -m venv --clear --without-pip --system-site-packages .testenv
+    .testenv/bin/python3 -m installer .dist/*.whl
+    .testenv/bin/python3 -m pytest
+}
+
+package() {
+    python3 -m installer --destdir="$pkgdir" .dist/*.whl
+}
+
+sha512sums="
+ceca74c3ad272cfb5d87330cdde0676991937034c7d7f55bea7778419e7147eb7ed57016326b71cfbbaceb9ae503f160a1f60ac9ef4f9fda6fb048ad38f8cd39  python3-pytest-jupyter-0.11.0.tar.gz
+"
