@@ -1,0 +1,38 @@
+diff -ruN librealsense-2.58.1/CMake/external_catch2.cmake librealsense-2.58.1_changes/CMake/external_catch2.cmake
+--- librealsense-2.58.1/CMake/external_catch2.cmake	2026-06-30 17:45:04.082115755 +0530
++++ librealsense-2.58.1_changes/CMake/external_catch2.cmake	2026-06-30 17:44:18.525114365 +0530
+@@ -48,4 +48,8 @@
+ endfunction()
+ 
+ 
+-get_catch2()
++if(CMAKE_SYSTEM_NAME STREQUAL "QNX")
++    # Use system Catch2
++else()
++    get_catch2()
++endif()
+\ No newline at end of file
+diff -ruN librealsense-2.58.1/CMake/external_fastcdr.cmake librealsense-2.58.1_changes/CMake/external_fastcdr.cmake
+--- librealsense-2.58.1/CMake/external_fastcdr.cmake	2026-06-30 17:45:04.083115755 +0530
++++ librealsense-2.58.1_changes/CMake/external_fastcdr.cmake	2026-06-30 17:42:16.050110627 +0530
+@@ -44,6 +44,6 @@
+ endfunction()
+ 
+ # Only fetch fastcdr if not already available (i.e., BUILD_WITH_DDS is OFF)
+-if(NOT TARGET fastcdr)
++if(NOT TARGET fastcdr AND NOT CMAKE_SYSTEM_NAME STREQUAL "QNX")
+     get_fastcdr_only()
+ endif()
+diff -ruN librealsense-2.58.1/CMake/external_json.cmake librealsense-2.58.1_changes/CMake/external_json.cmake
+--- librealsense-2.58.1/CMake/external_json.cmake	2026-06-30 17:45:04.086115756 +0530
++++ librealsense-2.58.1_changes/CMake/external_json.cmake	2026-06-30 17:43:49.207113470 +0530
+@@ -47,4 +47,8 @@
+ endfunction()
+ 
+ # Trigger the build
+-get_nlohmann_json()
++if(CMAKE_SYSTEM_NAME STREQUAL "QNX")
++    # Use system Catch2
++else()
++    get_nlohmann_json()
++endif()

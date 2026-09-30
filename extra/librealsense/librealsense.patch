@@ -1,0 +1,47 @@
+--- librealsense-2.58.1.orig/third-party/rsutils/CMakeLists.txt	2026-05-18 13:04:08.000000000 +0000
++++ librealsense-2.58.1/third-party/rsutils/CMakeLists.txt	2026-05-18 13:04:08.000000000 +0000
+@@ -36,6 +36,7 @@
+ 
+ # Sources -----------------------------------------------------------------------------------
+ #
++
+ set( UTILITIES_SRC_DIR "${CMAKE_CURRENT_LIST_DIR}/src" )
+ file(GLOB_RECURSE UTILITIES_SOURCE_FILES
+     LIST_DIRECTORIES false
+@@ -42,6 +43,10 @@
+     RELATIVE ${CMAKE_CURRENT_LIST_DIR}
+     "${UTILITIES_SRC_DIR}/*"
+ )
++if(CMAKE_SYSTEM_NAME STREQUAL "QNX")
++    list(REMOVE_ITEM UTILITIES_SOURCE_FILES
++        src/network-adapter-watcher.cpp)
++endif()
+ if( BUILD_EASYLOGGINGPP )
+     target_sources( ${PROJECT_NAME}
+         PRIVATE "${REPO_ROOT}/third-party/easyloggingpp/src/easylogging++.cc" )
+--- librealsense-2.58.1.orig/third-party/rsutils/src/control-c-handler.cpp	2026-05-18 13:04:08.000000000 +0000
++++ librealsense-2.58.1/third-party/rsutils/src/control-c-handler.cpp	2026-05-18 13:04:08.000000000 +0000
+@@ -40,7 +40,11 @@
+ #else
+     struct sigaction sa;
+     sa.sa_handler = &handle_signal;
++    #ifdef __QNXNTO__
++    sa.sa_flags = 0;
++    #else
+     sa.sa_flags = SA_RESTART;
++    #endif
+     sigfillset( &sa.sa_mask );
+     if( sigaction( SIGINT, &sa, NULL ) == -1 )
+         LOG_ERROR( "Cannot install SIGINT handler" );
+@@ -55,7 +59,11 @@
+ #else
+     struct sigaction sa;
+     sa.sa_handler = SIG_DFL;
++     #ifdef __QNXNTO__
++    sa.sa_flags = 0;
++    #else
+     sa.sa_flags = SA_RESTART;
++    #endif
+     sigfillset( &sa.sa_mask );
+     if( sigaction( SIGINT, &sa, NULL ) == -1 )
+         LOG_DEBUG( "cannot uninstall SIGINT handler" );

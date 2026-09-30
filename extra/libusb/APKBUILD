@@ -1,0 +1,73 @@
+# Maintainer: Ramya santoshi <rtimmaraju@qnx.com>
+pkgname=libusb
+pkgver=1.0.23
+pkgrel=0
+pkgdesc="Cross-platform user-mode USB device library"
+url="https://github.com/qnx-ports/libusb"
+arch="all"
+license="LGPL-2.1-or-later"
+
+makedepends="autoconf automake libtool pkgconf ninja libc++-dev"
+depends="libusb"
+
+subpackages="$pkgname-dev"
+
+source="$pkgname-$pkgver.tar.gz::https://github.com/qnx-ports/libusb/archive/refs/heads/libusb-1.0.23.tar.gz"
+
+builddir="$srcdir/libusb-libusb-1.0.23"
+
+prepare() {
+	default_prepare
+
+	cd "$srcdir/libusb-libusb-1.0.23" || return 1
+
+	./bootstrap.sh || autoreconf -fi || return 1
+}
+
+options="!tracedeps !check"
+
+case "$(uname -m)" in
+	x86_64)
+		export CHOST=x86_64-pc-nto
+		;;
+	aarch64)
+		export CHOST=aarch64-unknown-nto-qnx7.1.0
+		;;
+esac
+
+build() {
+    cd "$builddir" || return 1
+
+    export CC=clang
+    export CXX=clang++
+    export CFLAGS="$CFLAGS -D_QNX_SOURCE -g -O2 -fPIC"
+    export CXXFLAGS="$CXXFLAGS -fPIC"
+    export LDFLAGS="-L/usr/local/lib"
+    export LIBS="-lusbdi -lpci"
+
+    ./configure \
+        --host=$CHOST \
+        --prefix=/usr \
+        --enable-shared \
+        --disable-static \
+        CFLAGS="$CFLAGS" \
+        CXXFLAGS="$CXXFLAGS" \
+        LDFLAGS="$LDFLAGS" \
+        LIBS="$LIBS"
+
+    make
+}
+#Tests cannot be executed as the qnxuser, and the build must not be run as root. Therefore, 
+# test execution is being disabled and verified the functional tests on root user .
+package() {
+    cd "$builddir" || return 1
+    make DESTDIR="$pkgdir" install
+    cd "$pkgdir/usr/lib" || return 1
+    ln -sf libusb-1.0.so.0.2.0 libusb-1.0.so.0
+    ln -sf libusb-1.0.so.0 libusb-1.0.so
+}
+
+sha512sums="
+dd1ca809b46029c2cd7ac0db59a163e9fb790bcd5a83e8468313b1502fbef32daf51d3b0ef29d9c4bf65838467fd9148f1106bde36e87d36e1c46d39829b4dcd  libusb-1.0.23.tar.gz
+"
+

@@ -1,0 +1,10 @@
+--- librealsense-2.58.1/CMake/external_fastcdr.cmake
++++ librealsense-2.58.1_changes/CMake/external_fastcdr.cmake
+@@ -44,6 +44,6 @@
+ endfunction()
+ 
+ # Only fetch fastcdr if not already available (i.e., BUILD_WITH_DDS is OFF)
+-if(NOT TARGET fastcdr AND NOT CMAKE_SYSTEM_NAME STREQUAL "QNX")
++if(NOT TARGET fastcdr)
+     get_fastcdr_only()
+ endif()
