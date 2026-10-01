@@ -1,0 +1,93 @@
+# Alpine-Contributor: Łukasz Jendrysik <scadu@yandex.com>
+# Alpine-Maintainer: Simon Zeni <simon@bl4ckb0ne.ca>
+# Maintainer: jscaffidi <jscaffidi@qnx.com>
+pkgname=xwayland
+pkgver=24.1.9
+pkgrel=0
+pkgdesc="Compact xserver to run under wayland for compatibility"
+url="https://www.x.org/wiki"
+arch="all"
+license="MIT"
+# options="!check" # requires piglit, which has no stable releases
+subpackages="$pkgname-dbg $pkgname-dev $pkgname-doc"
+depends="xorg-server-common xkbcomp libdecor libxfont2 libxshmfence wayland libmd libxcvt libxau pixman"
+depends_dev="
+	dbus-dev
+	font-util-dev
+	libepoxy-dev
+	libmd-dev 
+	libxcvt-dev
+	libxfont2-dev
+    freetype-dev
+	libxkbfile-dev
+    libfontenc-dev
+    libxshmfence-dev
+    libx11-dev
+	pixman-dev
+	wayland-dev
+	wayland-protocols
+	xorgproto
+	xtrans
+    qnx-fd-notify-dev
+	qnx-libdrm-dev
+    qnx-io-sock-dev
+	"
+makedepends="
+	$depends_dev
+	meson
+	"
+source="
+https://xorg.freedesktop.org/archive/individual/xserver/xwayland-$pkgver.tar.xz
+qnx-build.patch
+glamor_fix.patch
+input.h
+"
+
+prepare() {
+    default_prepare
+    mkdir -p "$builddir"/include/linux/
+    cp "$srcdir"/input.h "$builddir"/include/linux/input.h
+
+}
+
+build() {
+	abuild-meson \
+        -Dc_args="-DSA_RESTART=0 -I/usr/include/libdrm" \
+        -Dc_link_args="-lsocket -leventfd" \
+		-Db_lto=false \
+		-Dipv6=true \
+		-Dxvfb=false \
+		-Dxdmcp=false \
+		-Dxcsecurity=true \
+		-Ddri3=true \
+        -Dglx=false \
+        -Dsecure-rpc=false \
+		-Dglamor=true \
+		-Dsha1=libmd \
+		-Dxkb_dir=/usr/share/X11/xkb \
+		-Dxkb_output_dir=/var/lib/xkb \
+		. output
+	meson compile -C output
+}
+
+check() {
+	meson test --print-errorlogs -C output
+}
+
+package() {
+	DESTDIR="$pkgdir" meson install --no-rebuild -C output
+
+	# Part of xorg-server-doc
+	rm -f "$pkgdir"/usr/share/man/man1/Xserver.1
+
+	# Part of xorg-server-common
+	rm -f "$pkgdir"/usr/lib/xorg/protocol.txt
+}
+
+
+sha512sums="
+7438a572651dc77c1fd749879abccdc9a245c7b75143668d5561a8e99d41063f042a8eb3f9b931a2a12be1fc3cb9d197eee6794d0702a19e56c20f55acb35a26  xwayland-24.1.9.tar.xz
+5056f2099599deada0b9466f8ff982c026b47681c10629bada4ce74b11968fad242401729acc34912f5bd8c2c925ce93fc2997b5d9c165b29b4874c431095947  qnx-build.patch
+f31a777c1cf4a6d38c813efd6089e8530e04a1d9eba843ccf3820d39135c309a00b99239299b676d1fd30190bef278051caa50908c59b2926ba9de70f210b318  glamor_fix.patch
+bc4fc777c35518ed70b7da11dec0a436c0b0fdc5f08d3b00033cfd16de23a7d184c6b4df73e23e35df1a50c29343d76e57cdaeca368580b979a832084e19d796  input.h
+"
