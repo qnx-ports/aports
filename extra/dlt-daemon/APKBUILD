@@ -6,8 +6,8 @@ pkgdesc="Diagnostic Log and Trace (DLT) daemon"
 url="https://github.com/COVESA/dlt-daemon"
 arch="all"
 license="MPL-2.0"
-makedepends="cmake make libc++-dev zlib-dev qnx-io-sock-dev qnx-libjson-dev  qnx-libslog2-dev"
-depends="libc++ qnx-io-sock qnx-libjson "
+makedepends="cmake make libc++-dev zlib-dev qnx-io-sock-dev qnx-libjson-dev  qnx-libslog2-dev qnx-slogger2-dev"
+depends="libc++ qnx-io-sock qnx-libjson qnx-slogger2"
 source="dlt-daemon-${pkgver}.tar.gz::https://github.com/qnx-ports/dlt-daemon/archive/refs/heads/qnx-v3.0.0.tar.gz
         dlt-daemon-3.0-qnx-clang.patch 
         gtest-1.13.0.tar.gz::https://github.com/google/googletest/archive/refs/tags/v1.13.0.tar.gz"
