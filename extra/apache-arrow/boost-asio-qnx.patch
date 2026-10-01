@@ -1,0 +1,14 @@
+--- a/cpp/build/_deps/boost-src/libs/asio/include/boost/asio/signal_set_base.hpp	2026-09-08 11:21:46.942079100 +0530
++++ b/cpp/build/_deps/boost-src/libs/asio/include/boost/asio/signal_set_base.hpp	2026-09-07 21:34:16.432005079 +0530
+@@ -63,7 +63,11 @@
+   enum class flags : int
+   {
+     none = 0,
++    #ifdef SA_RESTART
+     restart = BOOST_ASIO_OS_DEF(SA_RESTART),
++    #else
++    restart = 0,
++    #endif
+     no_child_stop = BOOST_ASIO_OS_DEF(SA_NOCLDSTOP),
+     no_child_wait = BOOST_ASIO_OS_DEF(SA_NOCLDWAIT),
+     dont_care = -1
