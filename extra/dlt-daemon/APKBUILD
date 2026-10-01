@@ -6,16 +6,12 @@ pkgdesc="Diagnostic Log and Trace (DLT) daemon"
 url="https://github.com/COVESA/dlt-daemon"
 arch="all"
 license="MPL-2.0"
-
 makedepends="cmake make libc++-dev zlib-dev qnx-io-sock-dev qnx-libjson-dev qnx-slogger2-dev"
 depends="libc++ qnx-io-sock qnx-libjson qnx-slogger2"
-
 source="dlt-daemon-${pkgver}.tar.gz::https://github.com/qnx-ports/dlt-daemon/archive/refs/heads/qnx-v3.0.0.tar.gz
         dlt-daemon-3.0-qnx-clang.patch 
         gtest-1.13.0.tar.gz::https://github.com/google/googletest/archive/refs/tags/v1.13.0.tar.gz"
-
 builddir="$srcdir/dlt-daemon-qnx-v3.0.0"
-
 subpackages="$pkgname-dev"
 
 build() {
@@ -35,11 +31,11 @@ build() {
     gtest_src="$srcdir/googletest-1.13.0"
     gtest_build="$builddir/third_party/gtest/build"
     gtest_install="$builddir/third_party/gtest/install"
-
+    export PKG_CONFIG_PATH="$gtest_install/lib/pkgconfig:${PKG_CONFIG_PATH:-}"
     cmake -S "$gtest_src" \
         -B "$gtest_build" \
         -G Ninja \
-        -DCMAKE_BUILD_TYPE=MinSizeRel \
+        -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_INSTALL_PREFIX="$gtest_install" \
         -DCMAKE_INSTALL_LIBDIR=lib \
         -DBUILD_SHARED_LIBS=ON \
@@ -52,11 +48,6 @@ build() {
     cmake -B build -S "$builddir" \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_INSTALL_PREFIX=/usr \
-        -DWITH_SYSTEMD=OFF \
-        -DWITH_DOC=OFF \
-        -DWITH_MAN=OFF \
-        -DWITH_DBUS=OFF \
-        -DWITH_OFFLINE_LOGSTORAGE=OFF \
         -DWITH_DLT_QNX_SYSTEM=ON \
         -DBUILD_SHARED_LIBS=ON \
         -DWITH_DLT_UNIT_TESTS=ON \
@@ -70,7 +61,7 @@ build() {
 
 check() {
     GTEST_FILTER='-t_dlt_get_log_state.normal:t_dlt_daemon_logstorage_setup_internal_storage.normal' \
-    ctest --test-dir build/tests --output-on-failure -j1 \
+        ctest --test-dir build/tests --output-on-failure -j1 \
         -E 'gtest_dlt_daemon_offline_log|logstorage_filepath|logstorage_multi_file|logstorage_one_file|logstorage_fsync|logstorage_max_cache_size|disable_network'
 }
 
