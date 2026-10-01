@@ -1,0 +1,676 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index b74bf4536f..26dba2e78f 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -1060,7 +1060,7 @@ if(ANDROID AND (NOT ANDROID_DEBUG_SYMBOLS))
+   endif()
+ endif()
+ 
+-if(NOT APPLE AND UNIX)
++if(NOT APPLE AND NOT QNX AND UNIX)
+   list(APPEND Caffe2_DEPENDENCY_LIBS dl)
+ endif()
+ 
+diff --git a/aten/src/ATen/CMakeLists.txt b/aten/src/ATen/CMakeLists.txt
+index bf425af5fa..65e5c677e2 100644
+--- a/aten/src/ATen/CMakeLists.txt
++++ b/aten/src/ATen/CMakeLists.txt
+@@ -419,7 +419,7 @@ if(NOT CMAKE_SYSTEM_PROCESSOR MATCHES "^(s390x|ppc64le)$")
+   list(APPEND ATen_CPU_DEPENDENCY_LIBS cpuinfo)
+ endif()
+ 
+-if(NOT MSVC AND NOT EMSCRIPTEN AND NOT INTERN_BUILD_MOBILE)
++if(NOT MSVC AND NOT EMSCRIPTEN AND NOT BUILD_LITE_INTERPRETER)
+   # Preserve values for the main build
+   set(__aten_sleef_build_shared_libs ${BUILD_SHARED_LIBS})
+   set(__aten_sleef_build_tests ${BUILD_TESTS})
+diff --git a/aten/src/ATen/native/quantized/cpu/qnnpack/CMakeLists.txt b/aten/src/ATen/native/quantized/cpu/qnnpack/CMakeLists.txt
+index fd6b7ff551..1844707931 100644
+--- a/aten/src/ATen/native/quantized/cpu/qnnpack/CMakeLists.txt
++++ b/aten/src/ATen/native/quantized/cpu/qnnpack/CMakeLists.txt
+@@ -27,7 +27,7 @@ IF(CMAKE_SYSTEM_NAME STREQUAL "Darwin" AND CMAKE_OSX_ARCHITECTURES MATCHES "^(x8
+   SET(PYTORCH_QNNPACK_TARGET_PROCESSOR "${CMAKE_OSX_ARCHITECTURES}")
+ ENDIF()
+ 
+-if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
++if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "QCC")
+   # TODO: See https://github.com/pytorch/pytorch/issues/56285
+   set_source_files_properties(src/operator-run.c PROPERTIES COMPILE_FLAGS -Wno-deprecated-declarations)
+   set_source_files_properties(src/conv-run.cc PROPERTIES COMPILE_FLAGS -Wno-deprecated-declarations)
+@@ -61,7 +61,7 @@ endif()
+ 
+ if(NOT CMAKE_SYSTEM_NAME)
+   message(FATAL_ERROR "CMAKE_SYSTEM_NAME not defined")
+-elseif(NOT CMAKE_SYSTEM_NAME MATCHES "^(Darwin|Linux|Android)$")
++elseif(NOT CMAKE_SYSTEM_NAME MATCHES "^(Darwin|Linux|Android|QNX)$")
+   message(FATAL_ERROR "Unrecognized CMAKE_SYSTEM_NAME = ${CMAKE_SYSTEM_NAME}")
+ endif()
+ 
+diff --git a/aten/src/ATen/native/quantized/cpu/qnnpack/src/qnnpack/math.h b/aten/src/ATen/native/quantized/cpu/qnnpack/src/qnnpack/math.h
+index 82423546f9..a3b94a876e 100644
+--- a/aten/src/ATen/native/quantized/cpu/qnnpack/src/qnnpack/math.h
++++ b/aten/src/ATen/native/quantized/cpu/qnnpack/src/qnnpack/math.h
+@@ -9,7 +9,7 @@
+ #pragma once
+ 
+ #include <stddef.h>
+-#ifdef _MSC_VER
++#if defined (_MSC_VER) || defined (__QNX__)
+ #undef min
+ #undef max
+ #endif
+diff --git a/aten/src/ATen/test/CMakeLists.txt b/aten/src/ATen/test/CMakeLists.txt
+index f931ab2e89..d43309b409 100644
+--- a/aten/src/ATen/test/CMakeLists.txt
++++ b/aten/src/ATen/test/CMakeLists.txt
+@@ -11,7 +11,6 @@ list(APPEND ATen_CPU_TEST_SRCS
+   ${CMAKE_CURRENT_SOURCE_DIR}/NamedTensor_test.cpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/apply_utils_test.cpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/atest.cpp
+-  ${CMAKE_CURRENT_SOURCE_DIR}/basic.cpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/broadcast_test.cpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/cpu_allocator_test.cpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/cpu_generator_test.cpp
+@@ -55,6 +54,7 @@ list(APPEND ATen_CPU_TEST_SRCS
+   )
+ 
+ list(APPEND ATen_CUDA_TEST_SRCS
++  ${CMAKE_CURRENT_SOURCE_DIR}/basic.cpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/cuda_allocator_test.cpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/cuda_apply_test.cpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/cuda_atomic_ops_test.cu
+diff --git a/c10/core/Scalar.h b/c10/core/Scalar.h
+index 2cd164693e..796a4a51f7 100644
+--- a/c10/core/Scalar.h
++++ b/c10/core/Scalar.h
+@@ -69,10 +69,10 @@ class C10_API Scalar {
+       "int64_t is the same as long long on MacOS");
+   Scalar(long vv) : Scalar(vv, true) {}
+ #endif
+-#if defined(__linux__) && !defined(__ANDROID__)
++#if (defined(__linux__) && !defined(__ANDROID__)) || defined(__QNX__)
+   static_assert(
+       std::is_same_v<long, int64_t>,
+-      "int64_t is the same as long on Linux");
++      "int64_t is the same as long on Linux or QNX");
+   Scalar(long long vv) : Scalar(vv, true) {}
+ #endif
+ 
+diff --git a/c10/macros/Macros.h b/c10/macros/Macros.h
+index 8c0dfea6e2..2f906cc88d 100644
+--- a/c10/macros/Macros.h
++++ b/c10/macros/Macros.h
+@@ -397,6 +397,18 @@ __host__ __device__
+ #define CUDA_KERNEL_ASSERT(cond)
+ #define SYCL_KERNEL_ASSERT(cond)
+ #else
++#if defined(__QNX__)
++#define CUDA_KERNEL_ASSERT(cond)                                         \
++  if (C10_UNLIKELY(!(cond))) {                                           \
++    __assert(                                                       \
++        #cond, __FILE__, static_cast<unsigned int>(__LINE__), __func__); \
++  }
++#define SYCL_KERNEL_ASSERT(cond)                                         \
++  if (C10_UNLIKELY(!(cond))) {                                           \
++    __assert(                                                       \
++        #cond, __FILE__, static_cast<unsigned int>(__LINE__), __func__); \
++  }
++#else
+ #define CUDA_KERNEL_ASSERT(cond)                                         \
+   if (C10_UNLIKELY(!(cond))) {                                           \
+     __assert_fail(                                                       \
+@@ -407,6 +419,7 @@ __host__ __device__
+     __assert_fail(                                                       \
+         #cond, __FILE__, static_cast<unsigned int>(__LINE__), __func__); \
+   }
++#endif // __QNX__
+ #endif //  C10_USE_ROCM_KERNEL_ASSERT and USE_ROCM
+ #endif // __APPLE__
+ 
+diff --git a/c10/test/util/exception_test.cpp b/c10/test/util/exception_test.cpp
+index 0fc7abe982..4ff43f690f 100644
+--- a/c10/test/util/exception_test.cpp
++++ b/c10/test/util/exception_test.cpp
+@@ -37,8 +37,14 @@ TEST(ExceptionTest, TORCH_INTERNAL_ASSERT_DEBUG_ONLY) {
+ #if !defined(__ANDROID__) && !defined(__APPLE__) && \
+     !(defined(USE_ROCM) && ROCM_VERSION < 40100)
+ TEST(ExceptionTest, CUDA_KERNEL_ASSERT) {
++  // On this platform there is no __assert_fail
++#if defined(__QNX__)
++  // This function always throws even in NDEBUG mode
++  ASSERT_DEATH_IF_SUPPORTED({ CUDA_KERNEL_ASSERT(false); }, "");
++#else
+   // This function always throws even in NDEBUG mode
+   ASSERT_DEATH_IF_SUPPORTED({ CUDA_KERNEL_ASSERT(false); }, "Assert");
++#endif
+ }
+ #endif
+ 
+diff --git a/c10/util/BFloat16-inl.h b/c10/util/BFloat16-inl.h
+index 10ab0c828d..abcc18cb43 100644
+--- a/c10/util/BFloat16-inl.h
++++ b/c10/util/BFloat16-inl.h
+@@ -337,6 +337,13 @@ class numeric_limits<c10::BFloat16> {
+     return c10::BFloat16(0x0001, c10::BFloat16::from_bits());
+   }
+ };
++ 
++#if defined(__QNX__)
++  inline bool isnan(c10::BFloat16& val)
++  {
++    return std::isnan(static_cast<float>(val));
++  }
++#endif
+ 
+ } // namespace std
+ 
+diff --git a/c10/util/Half-inl.h b/c10/util/Half-inl.h
+index cad9762d44..439b0c0d85 100644
+--- a/c10/util/Half-inl.h
++++ b/c10/util/Half-inl.h
+@@ -344,6 +344,13 @@ class numeric_limits<c10::Half> {
+     return c10::Half(0x0001, c10::Half::from_bits());
+   }
+ };
++ 
++#if defined(__QNX__)
++  inline bool isnan(c10::Half& val)
++  {
++    return std::isnan(static_cast<float>(val));
++  }
++#endif
+ 
+ } // namespace std
+ 
+diff --git a/c10/util/complex.h b/c10/util/complex.h
+index af810a780d..86a95c054e 100644
+--- a/c10/util/complex.h
++++ b/c10/util/complex.h
+@@ -251,7 +251,7 @@ struct alignas(sizeof(T) * 2) complex {
+     U c = rhs.real();
+     U d = rhs.imag();
+ 
+-#if defined(__GNUC__) && !defined(__clang__)
++#if defined(__GNUC__) && !defined(__clang__) && !defined(__QNX__)
+     // std::abs is already constexpr by gcc
+     auto abs_c = std::abs(c);
+     auto abs_d = std::abs(d);
+diff --git a/c10/util/strong_type.h b/c10/util/strong_type.h
+index da17e2da893..c736f04bda3 100644
+--- a/c10/util/strong_type.h
++++ b/c10/util/strong_type.h
+@@ -1616,12 +1616,14 @@ struct hash<::strong::type<T, Tag, M...>>
+     return hash<T>::operator()(value_of(tt));
+   }
+ };
++#ifndef __QNX__
+ template <typename T, typename Tag, typename ... M>
+ struct is_arithmetic<::strong::type<T, Tag, M...>>
+   : is_base_of<::strong::arithmetic::modifier<::strong::type<T, Tag, M...>>,
+                ::strong::type<T, Tag, M...>>
+ {
+ };
++#endif
+ 
+ #if STRONG_HAS_STD_FORMAT
+ template<typename T, typename Tag, typename... M, typename Char>
+diff --git a/caffe2/CMakeLists.txt b/caffe2/CMakeLists.txt
+index a6b6f0f7d1d..e5c73c2b705 100644
+--- a/caffe2/CMakeLists.txt
++++ b/caffe2/CMakeLists.txt
+@@ -561,7 +561,7 @@ if(CMAKE_COMPILER_IS_GNUCXX)
+ endif()
+ 
+ # Enable conditional FP16 arithmetic intrinsics
+-if(CPU_AARCH64 AND LINUX)
++if(CPU_AARCH64 AND (LINUX OR QNX))
+ set_source_files_properties(${TORCH_ROOT}/aten/src/ATen/native/BlasKernel.cpp PROPERTIES COMPILE_FLAGS "-march=armv8.2-a+fp16")
+ endif()
+ 
+@@ -1551,6 +1551,10 @@ if(MSVC AND BUILD_SHARED_LIBS)
+   target_compile_options(torch_cpu PRIVATE "-DONNX_BUILD_MAIN_LIB")
+ endif()
+ 
++if(QNX)
++  target_compile_options(torch_cpu PRIVATE "-Wno-error=nonnull")
++endif()
++
+ caffe2_interface_library(torch_cpu torch_cpu_library)
+ 
+ if(USE_CUDA)
+diff --git a/cmake/Dependencies.cmake b/cmake/Dependencies.cmake
+index a96075245a..69b88fe035 100644
+--- a/cmake/Dependencies.cmake
++++ b/cmake/Dependencies.cmake
+@@ -334,7 +334,7 @@ if(USE_NNPACK OR USE_QNNPACK OR USE_PYTORCH_QNNPACK OR USE_XNNPACK)
+       set(DISABLE_NNPACK_AND_FAMILY ON)
+     endif()
+   else()
+-    if(NOT IOS AND NOT (CMAKE_SYSTEM_NAME MATCHES "^(Android|Linux|Darwin|Windows)$"))
++    if(NOT IOS AND NOT (CMAKE_SYSTEM_NAME MATCHES "^(Android|Linux|Darwin|Windows|QNX)$"))
+       message(WARNING
+         "Target platform \"${CMAKE_SYSTEM_NAME}\" is not supported in {Q/X}NNPACK. "
+         "Supported platforms are Android, iOS, Linux, and macOS. "
+diff --git a/cmake/External/nnpack.cmake b/cmake/External/nnpack.cmake
+index 9d5f0643ec..d1238de6e2 100644
+--- a/cmake/External/nnpack.cmake
++++ b/cmake/External/nnpack.cmake
+@@ -40,7 +40,7 @@ endif()
+ # (3) Android, iOS, Linux, macOS - supported
+ ##############################################################################
+ 
+-if(ANDROID OR IOS OR ${CMAKE_SYSTEM_NAME} STREQUAL "Linux" OR ${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
++if(ANDROID OR IOS OR ${CMAKE_SYSTEM_NAME} STREQUAL "Linux" OR ${CMAKE_SYSTEM_NAME} STREQUAL "Darwin" OR QNX)
+   message(STATUS "Brace yourself, we are building NNPACK")
+   set(CAFFE2_THIRD_PARTY_ROOT ${PROJECT_SOURCE_DIR}/third_party)
+ 
+diff --git a/scripts/build_mobile_qnx_arm.sh b/scripts/build_mobile_qnx_arm.sh
+new file mode 100755
+index 0000000000..9d86c3ab35
+--- /dev/null
++++ b/scripts/build_mobile_qnx_arm.sh
+@@ -0,0 +1,138 @@
++#!/bin/bash
++##############################################################################
++# Example command to build the mobile target.
++##############################################################################
++#
++# This script shows how one can build a libtorch library optimized for mobile
++# devices using host toolchain.
++
++set -e
++
++export BUILD_PYTORCH_MOBILE_WITH_HOST_TOOLCHAIN=1
++CAFFE2_ROOT="$( cd "$(dirname "$0")"/.. ; pwd -P)"
++
++if [ -z ${QNX_DIR+x} ]; then
++  QNX_DIR=$CAFFE2_ROOT
++fi
++
++if [ -z ${TEST+x} ]; then
++  TEST="OFF"
++fi
++
++echo "Bash: $(/bin/bash --version | head -1)"
++echo "Caffe2 path: $CAFFE2_ROOT"
++echo "Toolchain path: $QNX_DIR"
++
++CMAKE_ARGS=()
++CMAKE_ARGS+=("-DCMAKE_PREFIX_PATH=$(python -c 'import sysconfig; print(sysconfig.get_path("purelib"))')")
++CMAKE_ARGS+=("-DPYTHON_EXECUTABLE=$(python -c 'import sys; print(sys.executable)')")
++CMAKE_ARGS+=("-DBUILD_CUSTOM_PROTOBUF=OFF")
++#CMAKE_ARGS+=("-DBUILD_SHARED_LIBS=OFF")
++CMAKE_ARGS+=("-DBUILD_SHARED_LIBS=ON")
++
++# custom build with selected ops
++if [ -n "${SELECTED_OP_LIST}" ]; then
++  SELECTED_OP_LIST="$(cd $(dirname $SELECTED_OP_LIST); pwd -P)/$(basename $SELECTED_OP_LIST)"
++  echo "Choose SELECTED_OP_LIST file: $SELECTED_OP_LIST"
++  if [ ! -r ${SELECTED_OP_LIST} ]; then
++    echo "Error: SELECTED_OP_LIST file ${SELECTED_OP_LIST} not found."
++    exit 1
++  fi
++  CMAKE_ARGS+=("-DSELECTED_OP_LIST=${SELECTED_OP_LIST}")
++fi
++
++# If Ninja is installed, prefer it to Make
++if [ -x "$(command -v ninja)" ]; then
++  CMAKE_ARGS+=("-GNinja")
++fi
++
++# Don't build artifacts we don't need
++CMAKE_ARGS+=("-DBUILD_TEST=${TEST}")
++CMAKE_ARGS+=("-DINSTALL_TEST=OFF")
++CMAKE_ARGS+=("-DBUILD_BINARY=OFF")
++
++# If there exists env variable and it equals to 1, build lite interpreter.
++# Default behavior is to build full jit interpreter.
++# cmd:  BUILD_LITE_INTERPRETER=1 ./scripts/build_mobile.sh
++if [ "x${BUILD_LITE_INTERPRETER}" == "x1" ]; then
++  CMAKE_ARGS+=("-DBUILD_LITE_INTERPRETER=ON")
++else
++  CMAKE_ARGS+=("-DBUILD_LITE_INTERPRETER=OFF")
++fi
++if [ "x${TRACING_BASED}" == "x1" ]; then
++  CMAKE_ARGS+=("-DTRACING_BASED=ON")
++else
++  CMAKE_ARGS+=("-DTRACING_BASED=OFF")
++fi
++
++# Lightweight dispatch bypasses the PyTorch Dispatcher.
++if [ "${USE_LIGHTWEIGHT_DISPATCH}" == 1 ]; then
++  CMAKE_ARGS+=("-DUSE_LIGHTWEIGHT_DISPATCH=ON")
++  CMAKE_ARGS+=("-DSTATIC_DISPATCH_BACKEND=CPU")
++else
++  CMAKE_ARGS+=("-DUSE_LIGHTWEIGHT_DISPATCH=OFF")
++fi
++
++# Disable unused dependencies
++CMAKE_ARGS+=("-DUSE_ROCM=OFF")
++CMAKE_ARGS+=("-DUSE_CUDA=OFF")
++CMAKE_ARGS+=("-DUSE_ITT=OFF")
++CMAKE_ARGS+=("-DUSE_GFLAGS=OFF")
++CMAKE_ARGS+=("-DUSE_OPENCV=OFF")
++CMAKE_ARGS+=("-DUSE_LMDB=OFF")
++CMAKE_ARGS+=("-DUSE_LEVELDB=OFF")
++CMAKE_ARGS+=("-DUSE_MPI=OFF")
++CMAKE_ARGS+=("-DUSE_OPENMP=OFF")
++CMAKE_ARGS+=("-DUSE_MKLDNN=OFF")
++CMAKE_ARGS+=("-DUSE_NNPACK=OFF")
++CMAKE_ARGS+=("-DUSE_NUMPY=OFF")
++CMAKE_ARGS+=("-DUSE_BLAS=OFF")
++
++# Only toggle if VERBOSE=1
++if [ "${VERBOSE:-}" == '1' ]; then
++  CMAKE_ARGS+=("-DCMAKE_VERBOSE_MAKEFILE=1")
++fi
++
++# QNX config
++CMAKE_ARGS+=("-DXNNPACK_ENABLE_ASSEMBLY=OFF")
++
++CMAKE_ARGS+=("-DBUILD_QNX_ASM_FLAGS=-D_QNX_SOURCE -D__QNXNTO__")
++CMAKE_ARGS+=("-DBUILD_QNX_C_FLAGS=-D_QNX_SOURCE -D__QNXNTO__")
++CMAKE_ARGS+=("-DBUILD_QNX_CXX_FLAGS=-D_QNX_SOURCE -D__QNXNTO__")
++CMAKE_ARGS+=("-DBUILD_QNX_LINKER_FLAGS=-Wl,--build-id=md5")
++CMAKE_ARGS+=("-DCMAKE_TOOLCHAIN_FILE=$QNX_DIR/qnx.nto.toolchain.cmake")
++CMAKE_ARGS+=("-DCMAKE_SYSTEM_PROCESSOR=aarch64")
++CMAKE_ARGS+=("-DCMAKE_ASM_COMPILER_TARGET=gcc_ntoaarch64le")
++CMAKE_ARGS+=("-DCMAKE_C_COMPILER_TARGET=gcc_ntoaarch64le")
++CMAKE_ARGS+=("-DCMAKE_CXX_COMPILER_TARGET=gcc_ntoaarch64le")
++CMAKE_ARGS+=("-DCAFFE2_CUSTOM_PROTOC_EXECUTABLE=$QNX_DIR/host/protobuf/install/bin/protoc")
++CMAKE_ARGS+=("-DNATIVE_BUILD_DIR=$QNX_DIR/host/sleef")
++
++# User-specified CMake arguments go last to allow overridding defaults
++CMAKE_ARGS+=("$@")
++
++# Now, actually build the Android target.
++BUILD_ROOT=${BUILD_ROOT:-"$CAFFE2_ROOT/build_mobile"}
++INSTALL_PREFIX=${BUILD_ROOT}/install
++mkdir -p $BUILD_ROOT
++
++echo "${CMAKE_ARGS[@]}"
++
++cd $BUILD_ROOT
++cmake "$CAFFE2_ROOT" \
++    -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
++    -DCMAKE_BUILD_TYPE=Release \
++    "${CMAKE_ARGS[@]}" \
++
++# Cross-platform parallel build
++if [ -z "$MAX_JOBS" ]; then
++  if [ "$(uname)" == 'Darwin' ]; then
++    MAX_JOBS=$(sysctl -n hw.ncpu)
++  else
++    MAX_JOBS=$(nproc)
++  fi
++fi
++
++echo "Will install headers and libs to $INSTALL_PREFIX for further project usage."
++cmake --build . --target install "-j${MAX_JOBS}" 2>> log.txt
++echo "Installation completed, now you can copy the headers/libs from $INSTALL_PREFIX to your project directory."
+diff --git a/test/cpp/lite_interpreter_runtime/CMakeLists.txt b/test/cpp/lite_interpreter_runtime/CMakeLists.txt
+index 6a2e6db6ea..2df57bfeb5 100644
+--- a/test/cpp/lite_interpreter_runtime/CMakeLists.txt
++++ b/test/cpp/lite_interpreter_runtime/CMakeLists.txt
+@@ -7,10 +7,16 @@ set(LITE_INTERPRETER_RUNTIME_TEST_DIR
+   ${TORCH_ROOT}/test/cpp/lite_interpreter_runtime/test_mobile_profiler.cpp
+ )
+ 
+-add_library(backend_with_compiler_runtime SHARED
+-        ${TORCH_ROOT}/test/cpp/jit/test_backend_compiler_lib.cpp
+-        ${TORCH_ROOT}/torch/csrc/jit/backends/backend_interface.cpp
+-        )
++if(QNX)
++  add_library(backend_with_compiler_runtime SHARED
++          ${TORCH_ROOT}/test/cpp/jit/test_backend_compiler_lib.cpp
++          )
++else()
++  add_library(backend_with_compiler_runtime SHARED
++          ${TORCH_ROOT}/test/cpp/jit/test_backend_compiler_lib.cpp
++          ${TORCH_ROOT}/torch/csrc/jit/backends/backend_interface.cpp
++          )
++endif()
+ target_link_libraries(backend_with_compiler_runtime PRIVATE torch)
+ 
+ add_executable(
+diff --git a/test/cpp/lite_interpreter_runtime/test_lite_interpreter_runtime.cpp b/test/cpp/lite_interpreter_runtime/test_lite_interpreter_runtime.cpp
+index f26cfcb2b5..b45ae3c2dd 100644
+--- a/test/cpp/lite_interpreter_runtime/test_lite_interpreter_runtime.cpp
++++ b/test/cpp/lite_interpreter_runtime/test_lite_interpreter_runtime.cpp
+@@ -16,9 +16,14 @@ namespace mobile {
+ 
+ TEST(RunTimeTest, LoadAndForward) {
+   // Load check in model: sequence.ptl
++#if defined(__QNX__)
++  // Don't compile an absolute path when building for a target.
++  auto testModelFile = "sequence.ptl";
++#else
+   std::string filePath(__FILE__);
+   auto testModelFile = filePath.substr(0, filePath.find_last_of("/\\") + 1);
+   testModelFile.append("sequence.ptl");
++#endif
+ 
+   //  sequence.ptl source code:
+   //  class A(torch.nn.Module):
+@@ -53,6 +58,10 @@ TEST(RunTimeTest, LoadAndForward) {
+ }
+ 
+ TEST(RunTimeTest, Delegate) {
++#if defined(__QNX__)
++  // Don't compile an absolute path when building for a target.
++  auto testModelFile = "delegate_test.ptl";
++#else
+   std::string filePath(__FILE__);
+   auto testModelFile = filePath.substr(0, filePath.find_last_of("/\\") + 1);
+   // "delegate_test.ptl" is generated from test/cpp/jit/test_backend.cpp,
+@@ -66,6 +75,7 @@ TEST(RunTimeTest, Delegate) {
+   //        return x + h
+   //  )");
+   testModelFile.append("delegate_test.ptl");
++#endif
+   auto mlm = _load_for_mobile(testModelFile);
+   std::vector<IValue> inputs;
+   inputs.emplace_back(2.0 * at::ones({}));
+@@ -76,6 +86,10 @@ TEST(RunTimeTest, Delegate) {
+ }
+ 
+ TEST(RunTimeTest, DelegateException) {
++#if defined(__QNX__)
++  // Don't compile an absolute path when building for a target.
++  auto testModelFile = "delegated_submodule_with_debug_info.ptl";
++#else
+   std::string filePath(__FILE__);
+   auto testModelFile = filePath.substr(0, filePath.find_last_of("/\\") + 1);
+   /*
+@@ -138,6 +152,7 @@ TEST(RunTimeTest, DelegateException) {
+    *
+    */
+   testModelFile.append("delegated_submodule_with_debug_info.ptl");
++#endif
+   auto mlm = _load_for_mobile(testModelFile);
+   std::vector<IValue> inputs;
+   inputs.emplace_back(torch::rand({2, 4}));
+diff --git a/test/cpp/lite_interpreter_runtime/test_mobile_profiler.cpp b/test/cpp/lite_interpreter_runtime/test_mobile_profiler.cpp
+index 2ebb247bd2..189f526791 100644
+--- a/test/cpp/lite_interpreter_runtime/test_mobile_profiler.cpp
++++ b/test/cpp/lite_interpreter_runtime/test_mobile_profiler.cpp
+@@ -45,15 +45,24 @@ bool checkMetaData(
+ } // namespace
+ 
+ TEST(MobileProfiler, ModuleHierarchy) {
++#if defined(__QNX__)
++  // Don't compile an absolute path when building for a target.
++  auto testModelFile = "to_be_profiled_module.ptl";
++#else
+   auto testModelFile = torch::testing::getResourcePath(
+       "test/cpp/lite_interpreter_runtime/to_be_profiled_module.ptl");
++#endif
+ 
+   std::vector<IValue> inputs;
+   inputs.emplace_back(at::rand({64, 64}));
+   inputs.emplace_back(at::rand({64, 64}));
+   std::string trace_file_name("/tmp/test_trace.trace");
+ 
++#if defined(__QNX__)
++  mobile::Module bc = _load_for_mobile(testModelFile);
++#else
+   mobile::Module bc = _load_for_mobile(testModelFile.string());
++#endif
+   {
+     KinetoEdgeCPUProfiler profiler(
+         bc,
+@@ -99,15 +108,24 @@ TEST(MobileProfiler, ModuleHierarchy) {
+ }
+ 
+ TEST(MobileProfiler, Backend) {
++#if defined(__QNX__)
++  // Don't compile an absolute path when building for a target.
++  auto testModelFile = "test_backend_for_profiling.ptl";
++#else
+   auto testModelFile = torch::testing::getResourcePath(
+       "test/cpp/lite_interpreter_runtime/test_backend_for_profiling.ptl");
++#endif
+ 
+   std::vector<IValue> inputs;
+   inputs.emplace_back(at::rand({64, 64}));
+   inputs.emplace_back(at::rand({64, 64}));
+   std::string trace_file_name("/tmp/test_trace_backend.trace");
+ 
++#if defined(__QNX__)
++  mobile::Module bc = _load_for_mobile(testModelFile);
++#else
+   mobile::Module bc = _load_for_mobile(testModelFile.string());
++#endif
+   {
+     KinetoEdgeCPUProfiler profiler(
+         bc,
+@@ -133,15 +151,24 @@ TEST(MobileProfiler, Backend) {
+ }
+ 
+ TEST(MobileProfiler, BackendMemoryEvents) {
++#if defined(__QNX__)
++  // Don't compile an absolute path when building for a target.
++  auto testModelFile = "test_backend_for_profiling.ptl";
++#else
+   auto testModelFile = torch::testing::getResourcePath(
+       "test/cpp/lite_interpreter_runtime/test_backend_for_profiling.ptl");
++#endif
+ 
+   std::vector<IValue> inputs;
+   inputs.emplace_back(at::rand({64, 64}));
+   inputs.emplace_back(at::rand({64, 64}));
+   std::string trace_file_name("/tmp/test_trace_backend_memory.trace");
+ 
++#if defined(__QNX__)
++  mobile::Module bc = _load_for_mobile(testModelFile);
++#else
+   mobile::Module bc = _load_for_mobile(testModelFile.string());
++#endif
+   {
+     mobile::KinetoEdgeCPUProfiler profiler(
+         bc,
+@@ -165,8 +192,13 @@ TEST(MobileProfiler, BackendMemoryEvents) {
+ }
+ 
+ TEST(MobileProfiler, ProfilerEvent) {
++#if defined(__QNX__)
++  // Don't compile an absolute path when building for a target.
++  auto testModelFile = "test_backend_for_profiling.ptl";
++#else
+   auto testModelFile = torch::testing::getResourcePath(
+       "test/cpp/lite_interpreter_runtime/test_backend_for_profiling.ptl");
++#endif
+ 
+   std::vector<IValue> inputs;
+   inputs.emplace_back(at::rand({64, 64}));
+@@ -177,7 +209,11 @@ TEST(MobileProfiler, ProfilerEvent) {
+       torch::profiler::ProfilerPerfEvents.begin(),
+       torch::profiler::ProfilerPerfEvents.end());
+ 
++#if defined(__QNX__)
++  mobile::Module bc = _load_for_mobile(testModelFile);
++#else
+   mobile::Module bc = _load_for_mobile(testModelFile.string());
++#endif
+   {
+     // Bail if something goes wrong here
+     try {
+diff --git a/test/cpp/tensorexpr/CMakeLists.txt b/test/cpp/tensorexpr/CMakeLists.txt
+index 012471d0e58..78b7deaa730 100644
+--- a/test/cpp/tensorexpr/CMakeLists.txt
++++ b/test/cpp/tensorexpr/CMakeLists.txt
+@@ -54,7 +54,11 @@ target_include_directories(tutorial_tensorexpr PRIVATE ${ATen_CPU_INCLUDE})
+ # pthreadpool header. For some build environment we need add the dependency
+ # explicitly.
+ if(USE_PTHREADPOOL)
+-  target_link_libraries(test_tensorexpr PRIVATE pthreadpool_interface)
++  if(QNX)
++    target_link_libraries(test_tensorexpr PRIVATE pthreadpool)
++  else()
++    target_link_libraries(test_tensorexpr PRIVATE pthreadpool_interface)
++  endif()
+ endif()
+ if(USE_CUDA)
+   target_compile_definitions(test_tensorexpr PRIVATE USE_CUDA)
+diff --git a/test/edge/CMakeLists.txt b/test/edge/CMakeLists.txt
+index 2f29f27e0b..4786000836 100644
+--- a/test/edge/CMakeLists.txt
++++ b/test/edge/CMakeLists.txt
+@@ -67,7 +67,7 @@ if((CMAKE_CXX_COMPILER_ID MATCHES "AppleClang") OR (APPLE AND CMAKE_CXX_COMPILER
+   target_link_options(test_edge_op_registration PRIVATE
+           "-Wl,-force_load,$<TARGET_FILE:unbox_lib>"
+           )
+-elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
++elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU|QCC")
+   target_link_options(test_edge_op_registration PRIVATE
+           "-Wl,--whole-archive,$<TARGET_FILE:unbox_lib>,--no-whole-archive"
+           )
+diff --git a/torch/csrc/DataLoader.cpp b/torch/csrc/DataLoader.cpp
+index a0c668043b0..0a95b96a4d2 100644
+--- a/torch/csrc/DataLoader.cpp
++++ b/torch/csrc/DataLoader.cpp
+@@ -56,7 +56,11 @@ static inline void setSignalHandler(
+     struct sigaction* old_sa_ptr) {
+   struct sigaction sa {};
+   sa.sa_sigaction = handler;
++#ifndef SA_RESTART
++  sa.sa_flags = SA_SIGINFO | SA_NOCLDSTOP | SA_NODEFER;
++#else
+   sa.sa_flags = SA_RESTART | SA_SIGINFO | SA_NOCLDSTOP | SA_NODEFER;
++#endif
+   if (sigemptyset(&sa.sa_mask) != 0 ||
+       sigaction(signal, &sa, old_sa_ptr) != 0) {
+     std::ostringstream oss;
+diff --git a/test/mobile/lightweight_dispatch/CMakeLists.txt b/test/mobile/lightweight_dispatch/CMakeLists.txt
+index 5ab3232f6a..b83fc7528f 100644
+--- a/test/mobile/lightweight_dispatch/CMakeLists.txt
++++ b/test/mobile/lightweight_dispatch/CMakeLists.txt
+@@ -8,7 +8,11 @@ add_executable(test_codegen_unboxing
+   ${TEST_ROOT}/test_codegen_unboxing.cpp
+ )
+ 
+-target_include_directories(test_codegen_unboxing PRIVATE ${ATen_CPU_INCLUDE})
++if(QNX)
++  target_include_directories(test_codegen_unboxing PRIVATE ${ATen_CPU_INCLUDE} ${TORCH_ROOT}/torch/csrc/api/include)
++else()
++  target_include_directories(test_codegen_unboxing PRIVATE ${ATen_CPU_INCLUDE})
++endif()
+ 
+ target_compile_definitions(test_codegen_unboxing PRIVATE USE_GTEST)
+ 
+diff --git a/torch/csrc/utils/byte_order.h b/torch/csrc/utils/byte_order.h
+index d960b287e20..529bf301ec2 100644
+--- a/torch/csrc/utils/byte_order.h
++++ b/torch/csrc/utils/byte_order.h
+@@ -21,6 +21,11 @@
+ #define thp_bswap16(x) OSSwapInt16(x)
+ #define thp_bswap32(x) OSSwapInt32(x)
+ #define thp_bswap64(x) OSSwapInt64(x)
++#elif defined (__QNX__)
++#include <gulliver.h>
++#define thp_bswap16(x) ENDIAN_SWAP16(x)
++#define thp_bswap32(x) ENDIAN_SWAP32(x)
++#define thp_bswap64(x) ENDIAN_SWAP64(x)
+ #elif defined(__GNUC__) && !defined(__MINGW32__)
+ #include <byteswap.h>
+ #define thp_bswap16(x) bswap_16(x)
