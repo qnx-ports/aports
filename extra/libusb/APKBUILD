@@ -11,19 +11,12 @@ depends="libc++ qnx-libpci"
 subpackages="$pkgname-dev"
 source="$pkgname-$pkgver.tar.gz::https://github.com/qnx-ports/libusb/archive/refs/heads/libusb-1.0.23.tar.gz"
 builddir="$srcdir/libusb-libusb-1.0.23"
-options="!tracedeps !check"
 
-prepare() {
-	default_prepare
-	cd "$srcdir/libusb-libusb-1.0.23"     
+prepare() {   
 	./bootstrap.sh
 }
 
 build() {
-    cd "$builddir" 
-    echo "===== Searching for libusbdi ====="
-find /usr /lib /usr/local/lib -name 'libusbdi*' 2>/dev/null
-echo "================================="
     export CC=clang
     export CXX=clang++
     export CFLAGS="$CFLAGS -D_QNX_SOURCE -g -O2 -fPIC"
@@ -39,15 +32,7 @@ echo "================================="
     --disable-static \
     CFLAGS="$CFLAGS" \
     CXXFLAGS="$CXXFLAGS" \
-    LDFLAGS="$LDFLAGS" \
-    LIBS="$LIBS" || {
-        echo "========== CONFIGURE FAILED =========="
-        pwd
-        echo "========== config.log =========="
-        cat "$builddir/config.log"
-        echo "========== END config.log =========="
-        return 1
-    }
+    LDFLAGS="$LDFLAGS"
 
     make
 }
