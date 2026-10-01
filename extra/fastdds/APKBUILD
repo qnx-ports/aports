@@ -76,8 +76,7 @@ package() {
 
 
 dev() {
-    amove usr/include
-    amove usr/lib/libfastrtps.so
+    default_dev
     amove usr/share/fastrtps/cmake
 }
 
