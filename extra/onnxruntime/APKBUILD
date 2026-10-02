@@ -1,7 +1,7 @@
 # Alpine-Maintainer: leso-kn <info@lesosoftware.com>
 # Maintainer: Deep Chordia <dchordia@blackberry.com>
 pkgname=onnxruntime
-pkgrel=0
+pkgrel=1
 pkgver=1.24.4
 pkgdesc="Cross-platform, high performance ML inferencing and training accelerator"
 url="https://onnxruntime.ai"

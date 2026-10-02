@@ -3,7 +3,7 @@
 # Maintainer: Felix Xing <fxing@qnx.com>
 pkgname=xfce4-panel
 pkgver=4.21.0
-pkgrel=2
+pkgrel=3
 pkgdesc="Panel for the Xfce desktop environment"
 url="https://xfce.org/"
 arch="all"

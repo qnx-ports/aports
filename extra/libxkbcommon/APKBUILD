@@ -1,6 +1,6 @@
 pkgname=libxkbcommon
 pkgver=1.8.0
-pkgrel=3
+pkgrel=4
 pkgdesc="keyboard handling library"
 url="https://xkbcommon.org/"
 arch="all"

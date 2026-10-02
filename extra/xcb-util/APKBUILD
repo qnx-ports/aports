@@ -2,7 +2,7 @@
 # Maintainer: jscaffidi <jscaffidi@qnx.com>
 pkgname=xcb-util
 pkgver=0.4.1
-pkgrel=0
+pkgrel=1
 pkgdesc="Utility libraries for X C-language Binding"
 url="https://xcb.freedesktop.org/"
 arch="all"

@@ -1,7 +1,7 @@
 # Maintainer: Leo Shen <yishen@qnx.com>
 pkgname=openrc
 pkgver=0.63.1_p2
-pkgrel=0
+pkgrel=1
 pkgdesc="OpenRC manages the services, startup and shutdown of a host"
 url="https://github.com/OpenRC/openrc"
 vcs_url="$url"

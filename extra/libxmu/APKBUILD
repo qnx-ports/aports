@@ -2,7 +2,7 @@
 # Maintainer: jscaffidi <jscaffidi@qnx.com>
 pkgname=libxmu
 pkgver=1.3.1
-pkgrel=0
+pkgrel=1
 pkgdesc="X11 miscellaneous micro-utility library"
 url="https://xorg.freedesktop.org/"
 arch="all"

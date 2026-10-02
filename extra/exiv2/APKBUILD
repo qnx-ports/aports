@@ -2,7 +2,7 @@
 # Maintainer: Roberto Speranza <rsperanza@qnx.com>
 pkgname=exiv2
 pkgver=0.28.7
-pkgrel=1
+pkgrel=2
 pkgdesc="Exif and Iptc metadata manipulation library and tools."
 url="https://exiv2.org/"
 arch="all"

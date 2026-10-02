@@ -3,7 +3,7 @@
 # Maintainer: Ethan Leir <eleir@qnx.com>
 pkgname=capstone
 pkgver=5.0.9
-pkgrel=0
+pkgrel=1
 pkgdesc="The Ultimate Disassembler"
 url="https://www.capstone-engine.org"
 arch="all"

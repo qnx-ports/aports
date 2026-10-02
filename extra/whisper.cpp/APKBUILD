@@ -1,7 +1,7 @@
 # Maintainer: Cris Sinnott <csinnott@qnx.com>
 pkgname=whisper.cpp
 pkgver=0_git20260729
-pkgrel=0
+pkgrel=1
 _whispercommit=caae177d00292310d5878a467465524023ed61e5
 # CPU backend only: the Vulkan GPU backend has two separate blockers on QNX --
 # an unresolved drm-virtio runtime deadlock under QEMU/Venus (see
