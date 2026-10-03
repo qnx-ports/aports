@@ -2,8 +2,8 @@
 # Maintainer: Ethan Leir <eleir@qnx.com>
 pkgname=sdl3
 _pkgname=SDL
-pkgver=3.2.28
-pkgrel=4
+pkgver=3.4.18
+pkgrel=0
 pkgdesc="Simple Directmedia Layer"
 url="https://libsdl.org/"
 arch="all"
@@ -22,61 +22,50 @@ makedepends="
      gles-headers
      wayland-dev
      wayland-protocols
-     qnx-usb-static
-     qnx-usb-dev
      libxkbcommon-static
      libxkbcommon-dev
      autoconf
      clang
      cmake
      ninja"
-subpackages="$pkgname-static $pkgname-dev $pkgname-dbg $pkgname-doc"
-_git_rev=12
-source="$pkgname-$pkgver-r$_git_rev.tar.gz::https://www.github.com/qnx-ports/$_pkgname/archive/refs/tags/qnx-release-$pkgver-r$_git_rev.tar.gz"
+subpackages="$pkgname-dev $pkgname-dbg $pkgname-doc"
+_git_rev=0
+source="$pkgname-$pkgver-r$_git_rev.tar.gz::https://www.github.com/eleir9268/$_pkgname/archive/refs/tags/qnx-release-$pkgver-r$_git_rev.tar.gz"
 builddir="$srcdir/$_pkgname-qnx-release-$pkgver-r$_git_rev"
 
 build() {
     export CPPFLAGS="${CPPFLAGS} -D_QNX_SOURCE -Wno-error=incompatible-function-pointer-types"
-    cmake -B build-shared -G Ninja \
+    cmake -B build -G Ninja \
         -DCMAKE_C_COMPILER=clang \
         -DCMAKE_CXX_COMPILER=clang++ \
         -DCMAKE_ASM_COMPILER=clang \
         -DCMAKE_INSTALL_PREFIX=/usr \
-        -DBUILD_SHARED_LIBS=True \
         -DCMAKE_SKIP_INSTALL_RPATH=ON \
+        -DSDL_SHARED=ON \
+        -DSDL_STATIC=ON \
         -DSDL_X11=0 \
         -DSDL_WAYLAND=1 \
         -DSDL_VIDEO=1 \
         -DSDL_AUDIO=1 \
         -DSDL_JOYSTICK=1 \
         -DSDL_TESTS=1
-    cmake --build build-shared
-
-    cmake -B build-static -G Ninja \
-        -DCMAKE_C_COMPILER=clang \
-        -DCMAKE_CXX_COMPILER=clang++ \
-        -DCMAKE_ASM_COMPILER=clang \
-        -DCMAKE_INSTALL_PREFIX=/usr \
-        -DBUILD_SHARED_LIBS=False \
-        -DCMAKE_SKIP_INSTALL_RPATH=ON \
-        -DSDL_X11=0 \
-        -DSDL_WAYLAND=1 \
-        -DSDL_VIDEO=1 \
-        -DSDL_AUDIO=1 \
-        -DSDL_JOYSTICK=1
-    cmake --build build-static
+    cmake --build build
 }
 
 package() {
-    DESTDIR="$pkgdir" cmake --install build-static
-    DESTDIR="$pkgdir" cmake --install build-shared
+    DESTDIR="$pkgdir" cmake --install build
 }
 
 check() {
     # Disable SDL_strtod() failures
-    ctest --test-dir build-shared -E "(testautomation|testautomation-no-simd)"
+    ctest --test-dir build -E "(testautomation|testautomation-no-simd)"
+}
+
+dev() {
+    default_dev
+    provides="$pkgname-static=$pkgver-r$pkgrel"
 }
 
 sha512sums="
-b10702190b8eeb403b91b2ecf3daf559045098373f14cc061478547503d33683c15b57f70fadc74146c441baf52f399856508bd10b76c452d55aec685aef1684  sdl3-3.2.28-r12.tar.gz
+29927087a67d8f20a90401f17a1b5d1579fdaf4df381d2466dd2da14f812da344b90cb6051e2d2f9657b4f7a458dcba293afa38da6e1c17c5b9d1a8cb3fe11bb  sdl3-3.4.18-r0.tar.gz
 "
