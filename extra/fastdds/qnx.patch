@@ -1,5 +1,5 @@
---- CMakeLists.txt_orig	2026-10-05 20:09:51.142328465 +0530
-+++ CMakeLists.txt	2026-10-05 20:10:39.778329949 +0530
+--- a/CMakeLists.txt	2026-10-05 20:09:51.142328465 +0530
++++ b/CMakeLists.txt	2026-10-05 20:10:39.778329949 +0530
 @@ -257,6 +257,7 @@
  option(SECURITY "Activate security" OFF)
  
