@@ -26,7 +26,7 @@ makedepends="
 "   
 depends="libc++ fast-cdr foonathan_memory openssl foonathan_memory_vendor qnx-fs-notify  qnx-fs-gpt"
 source="
-    fast-dds-$pkgver.tar.gz::https://github.com/eProsima/Fast-DDS/archive/refs/tags/v$pkgver.tar.gz
+    fast-dds-$pkgver.tar.gz::https://github.com/qnx-ports/Fast-DDS/archive/refs/heads/qnx_v2.14.4.tar.gz
     qnx.patch
     fast-dds-asiofix.diff
     fast-dds-disable-shm-tests.patch
@@ -93,7 +93,7 @@ tools() {
 
 sha512sums="
 f5cdbb9ebb18208f6ef68799934e1f2a7f7cdd547983769eacf30f29198ad5d4a31df5dfe011aab17886c4ef3108c36a5a9e493c568ce8fe6379df806d90877f  fast-dds-2.14.4.tar.gz
-3c707a803f1a818719bd6444b60b1fd558e3f024775ea5d4cf41aea4df693e4e7e5bb85756c86cfc2f38fbbe05e56dbaa5a2b38a912cbabde22066ebd7d3b556  qnx.patch
+72990672e3608859fc2fb93a8785aca8b2d9f9c340645583c7df850d26abe02f05a6bdc5bea40f71fd3eafb5ac4e86e93f5609057faa1fadb7d01feeee2000cc  qnx.patch
 2b55723db797838dc14294b3e0e0bc3b4a2fe7cd75ea5654c7f8e5c345868dfbf219d99a389653be1c5baf6c585363a11e60d38ac037b06b445891788aa49a52  fast-dds-asiofix.diff
 b5398f4ba40b19ac0418d9eb9800a8561e2caa66435449387d2bfa1c1d34597ae54d23e042878949f5131a90b9144f93c33e539522a3aa6ec73aaf35eeaca1fd  fast-dds-disable-shm-tests.patch
 f8df39c5a5e89dcfe4bd37c7e757e44e3e94d9b79d7ab08d1804ad8980993a607070f7e12238ffe3286840cd08c0b3c8e3639d3a1177e5ff795994cbc42a8292  asio-1-29-0.tar.gz
