@@ -4,26 +4,22 @@ pkgname=dump1090
 pkgver=1.0
 pkgrel=0
 pkgdesc="Mode S ADS-B decoder for RTL-SDR devices"
-url="https://github.com/qnx-ports/dump1090"
+url="https://github.com/antirez/dump1090"
 arch="all"
 license="BSD-3-Clause"
-
 depends=""
 makedepends="
 	make
 	rtl-sdr-dev
 	libusb-dev
 "
-# No unit tests (UT) are provided for this library. Functional verification will be performed through real-time testing, 
-# and the results will be validated to ensure successful operation.
-
 options="!check"
-
 source="
 	$pkgname-$pkgver.tar.gz::https://github.com/qnx-ports/dump1090/archive/refs/heads/master.tar.gz
 "
-
 builddir="$srcdir/$pkgname-master"
+# No unit tests (UT) are provided for this library. Functional verification will be performed through real-time testing, 
+# and the results will be validated to ensure successful operation.
 
 build() {
 	make \
