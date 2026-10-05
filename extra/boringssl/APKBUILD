@@ -1,0 +1,60 @@
+# Maintainer: Harshini Yarasi <hyarasi@qnx.com>
+pkgname=boringssl
+
+pkgver="0.20260327.0"
+pkgrel=0
+pkgdesc="BoringSSL cryptographic library"
+url="https://boringssl.googlesource.com/boringssl"
+arch="all"
+license="Apache-2.0"
+makedepends="cmake ninja perl libc++-dev qnx-io-sock-dev"
+depends="
+libc++
+qnx-gcc-libs
+qnx-io-sock
+qnx-microkernel
+"
+subpackages="$pkgname-dev"
+
+source="$pkgname-${pkgver}.tar.gz::https://boringssl.googlesource.com/boringssl/+archive/refs/tags/${pkgver}.tar.gz
+qnx-getentropy.patch
+qnx-benchmark.patch"
+
+builddir="$srcdir"
+
+build(){
+    cmake -GNinja -B build \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DBUILD_SHARED_LIBS=ON \
+        -DCMAKE_C_FLAGS="-Wno-error " \
+        -DCMAKE_CXX_FLAGS="-Wno-error " \
+        -DCMAKE_EXE_LINKER_FLAGS="-lsocket"  
+      
+    ninja -C build  
+}
+
+check() {
+	local test
+
+	for test in \
+		"$builddir/build/urandom_test" \
+		"$builddir/build/crypto_test" \
+		"$builddir/build/decrepit_test" \
+		"$builddir/build/ssl_test" \
+		"$builddir/build/pki_test"
+	do
+		echo ">>> Running $(basename "$test")"
+		LD_LIBRARY_PATH="$builddir/build${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" \
+			"$test"
+	done
+}
+
+package(){
+	DESTDIR="$pkgdir" ninja -C build install
+}
+sha512sums="
+039515b5bb557c9c5175d6839b776d6a89dc6baceec971a9307080e77d383d697ebce844ca98c983907830504ed2313fd41d173d6517ab29e99c4b681a87a4ae  boringssl-0.20260327.0.tar.gz
+2796fd3265ccd140b755d5974ce19ec5b4c605595ea2f3cfaf09a5917fd93948e485a415ed9b004dee32507f882ddc020171795b1a6fa48739b1c73a07eb834f  qnx-getentropy.patch
+8ba0c9d1bdca4d5dd524f7274054b1882fe4fe1877d48dd87383b0940bc410b21f82674d725f9e69fee1c35c872ff9e7b8767c11d1089b99c1c8e2598e369b9b  qnx-benchmark.patch
+"
