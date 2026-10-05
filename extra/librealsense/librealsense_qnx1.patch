@@ -1,5 +1,5 @@
---- librealsense-2.58.1/CMake/external_fastcdr.cmake
-+++ librealsense-2.58.1_changes/CMake/external_fastcdr.cmake
+--- a/CMake/external_fastcdr.cmake
++++ b/CMake/external_fastcdr.cmake
 @@ -44,6 +44,6 @@
  endfunction()
  

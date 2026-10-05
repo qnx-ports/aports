@@ -1,5 +1,5 @@
---- librealsense-2.58.1.orig/third-party/rsutils/CMakeLists.txt	2026-05-18 13:04:08.000000000 +0000
-+++ librealsense-2.58.1/third-party/rsutils/CMakeLists.txt	2026-05-18 13:04:08.000000000 +0000
+--- a/third-party/rsutils/CMakeLists.txt	2026-05-18 13:04:08.000000000 +0000
++++ b/third-party/rsutils/CMakeLists.txt	2026-05-18 13:04:08.000000000 +0000
 @@ -36,6 +36,7 @@
  
  # Sources -----------------------------------------------------------------------------------
@@ -19,8 +19,8 @@
  if( BUILD_EASYLOGGINGPP )
      target_sources( ${PROJECT_NAME}
          PRIVATE "${REPO_ROOT}/third-party/easyloggingpp/src/easylogging++.cc" )
---- librealsense-2.58.1.orig/third-party/rsutils/src/control-c-handler.cpp	2026-05-18 13:04:08.000000000 +0000
-+++ librealsense-2.58.1/third-party/rsutils/src/control-c-handler.cpp	2026-05-18 13:04:08.000000000 +0000
+--- a/third-party/rsutils/src/control-c-handler.cpp	2026-05-18 13:04:08.000000000 +0000
++++ b/third-party/rsutils/src/control-c-handler.cpp	2026-05-18 13:04:08.000000000 +0000
 @@ -40,7 +40,11 @@
  #else
      struct sigaction sa;

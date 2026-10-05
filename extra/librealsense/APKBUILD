@@ -29,7 +29,6 @@ source="
 builddir="$srcdir/librealsense-$pkgver"
 
 prepare() {
-
 	patch -p1 < ../librealsense.patch
     patch -p1 < ../qnx.patch
     patch -p1 < ../dependencies.patch
@@ -37,7 +36,6 @@ prepare() {
 }
 
 build() {
-
 	CFLAGS=$(echo "$CFLAGS" | sed 's/-fstack-clash-protection//g')
 	CXXFLAGS=$(echo "$CXXFLAGS" | sed 's/-fstack-clash-protection//g')
 
