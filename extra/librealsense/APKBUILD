@@ -5,7 +5,6 @@ pkgdesc="Intel RealSense SDK 2.0"
 url="https://github.com/IntelRealSense/librealsense"
 arch="all"
 license="Apache-2.0"
-
 makedepends="
 	cmake
 	libusb-dev
@@ -26,11 +25,10 @@ source="
     dependencies.patch
     librealsense_qnx1.patch
 "
-
 builddir="$srcdir/librealsense-$pkgver"
 
 prepare() {
-	cd "$builddir"
+
 	patch -p1 < ../librealsense.patch
     patch -p1 < ../qnx.patch
     patch -p1 < ../dependencies.patch
@@ -39,21 +37,19 @@ prepare() {
 
 build() {
 
-	cd "$builddir"
-
 	CFLAGS=$(echo "$CFLAGS" | sed 's/-fstack-clash-protection//g')
 	CXXFLAGS=$(echo "$CXXFLAGS" | sed 's/-fstack-clash-protection//g')
 
 	cmake -B build -S . \
 		-DFORCE_RSUSB_BACKEND=ON \
-                -DBUILD_PYTHON_BINDINGS=ON \
+        -DBUILD_PYTHON_BINDINGS=ON \
 		-DBUILD_SHARED_LIBS=ON \
 		-DBUILD_UNIT_TESTS=true \
 		-DBUILD_EXAMPLES=OFF \
 		-DBUILD_GRAPHICAL_EXAMPLES=OFF \
 		-DBUILD_TOOLS=OFF \
 		-DCMAKE_C_FLAGS="$CFLAGS -DPLATFORM_POSIX" \
-                -DCMAKE_INSTALL_PREFIX=/usr \
+        -DCMAKE_INSTALL_PREFIX=/usr \
 		-DCMAKE_CXX_FLAGS="$CXXFLAGS -DPLATFORM_POSIX"
 
 	cmake --build build
