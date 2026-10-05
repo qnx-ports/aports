@@ -1,0 +1,444 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 8458b82..52b853e 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -45,6 +45,21 @@ endif()
+ 
+ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/tools/cmake)
+ 
++# QNX port: CMake's $<LINK_LIBRARY:WHOLE_ARCHIVE,...> generator expression (used throughout
++# bazel_to_cmake's generated build_rules.cmake for targets that need all their static archive's
++# object files pulled in, e.g. for static-initializer-based driver/codec registration) requires
++# CMake to know how to implement "WHOLE_ARCHIVE" for the current compiler/platform via the
++# CMAKE_<LANG>_LINK_LIBRARY_USING_WHOLE_ARCHIVE variable. QNX isn't in CMake's built-in rule
++# database for this (as of CMake's version here), even though the actual linker in use (GNU ld,
++# confirmed via /usr/bin/ld) supports --whole-archive/--no-whole-archive exactly like it does on
++# Linux. Defining these two variables is the standard, documented way to add a new platform to
++# this mechanism (see CMake docs for LINK_LIBRARY generator expressions).
++foreach(_lang C CXX)
++  set(CMAKE_${_lang}_LINK_LIBRARY_USING_WHOLE_ARCHIVE
++      "LINKER:--whole-archive" "<LINK_ITEM>" "LINKER:--no-whole-archive")
++  set(CMAKE_${_lang}_LINK_LIBRARY_USING_WHOLE_ARCHIVE_SUPPORTED TRUE)
++endforeach()
++
+ ##
+ ## Using tensorstore targets
+ ##
+@@ -77,6 +92,66 @@ if(MSVC AND CMAKE_CXX_COMPILER_LAUNCHER MATCHES "sccache")
+   endif()
+ endif()
+ 
++# QNX port: local_proto_mirror's own proto-dependency resolution computes plain
++# "protobuf_<type>_proto" target names (e.g. "protobuf_duration_proto") directly from bazel
++# labels like "@com_google_protobuf//:duration_proto", independent of the
++# PROTOBUF_CMAKE_MAPPING redirect added to third_party/com_google_protobuf/workspace.bzl (that
++# redirect only covers targets resolved through the normal cmake_target_mapping lookup, which
++# this code path bypasses). Since TENSORSTORE_USE_SYSTEM_PROTOBUF=ON skips ever generating real
++# targets under these names, pre-define them here as INTERFACE libraries pointing at the same
++# system protobuf install everything else already resolves to. See project_tensorstore_qnx.md.
++if(TENSORSTORE_USE_SYSTEM_PROTOBUF)
++  foreach(_wkt IN ITEMS any api duration empty field_mask source_context struct timestamp type wrappers descriptor)
++    if(NOT TARGET protobuf_${_wkt}_proto)
++      add_library(protobuf_${_wkt}_proto INTERFACE)
++      target_include_directories(protobuf_${_wkt}_proto INTERFACE /usr/include)
++    endif()
++  endforeach()
++
++  # Same gap, for protoc plugin *executables* this time: local_proto_mirror's codegen
++  # (opencensus/validate protos, pulled in by grpc's optional observability integration --
++  # see third_party/com_github_grpc_grpc/workspace.bzl) invokes protoc with these upb plugins
++  # by IMPORTED-executable target name, which also never gets defined under
++  # TENSORSTORE_USE_SYSTEM_PROTOBUF=ON. Real binaries exist system-wide (apk protobuf package).
++  # No separate "minitable_stage1" binary ships -- minitable generation is folded into the same
++  # protoc-gen-upb binary in this protobuf version (31.1), so it's pointed at the same binary.
++  find_program(_qnx_protoc_gen_upb protoc-gen-upb REQUIRED)
++  find_program(_qnx_protoc_gen_upbdefs protoc-gen-upbdefs REQUIRED)
++  if(NOT TARGET protobuf::upb_generator_protoc-gen-upb)
++    add_executable(protobuf::upb_generator_protoc-gen-upb IMPORTED)
++    set_target_properties(protobuf::upb_generator_protoc-gen-upb PROPERTIES IMPORTED_LOCATION "${_qnx_protoc_gen_upb}")
++  endif()
++  if(NOT TARGET protobuf::upb_generator_protoc-gen-upb_minitable_stage1)
++    add_executable(protobuf::upb_generator_protoc-gen-upb_minitable_stage1 IMPORTED)
++    set_target_properties(protobuf::upb_generator_protoc-gen-upb_minitable_stage1 PROPERTIES IMPORTED_LOCATION "${_qnx_protoc_gen_upb}")
++  endif()
++  if(NOT TARGET protobuf::upb_generator_protoc-gen-upbdefs)
++    add_executable(protobuf::upb_generator_protoc-gen-upbdefs IMPORTED)
++    set_target_properties(protobuf::upb_generator_protoc-gen-upbdefs PROPERTIES IMPORTED_LOCATION "${_qnx_protoc_gen_upbdefs}")
++  endif()
++endif()
++
++# QNX port: bazel_to_cmake's grpc_generate_cc module writes generated
++# *.grpc.pb.h/*.pb.h files under ${CMAKE_BINARY_DIR}/<same relative path as
++# the source .proto> (e.g. build/tensorstore/kvstore/ocdbt/distributed/
++# cooperator.grpc.pb.h), and the target that owns the custom command
++# compiling that generated .cc can find its own sibling header fine, but
++# that include root isn't propagated as a PUBLIC/INTERFACE include
++# directory to *consumers* of that target (e.g.
++# tensorstore_kvstore_ocdbt_distributed_lease_cache_for_cooperator, which
++# only #includes the generated header transitively) -- confirmed via the
++# actual generated build.ninja INCLUDES line for that target: it has
++# build/_gen_cpp (a different generated-sources root, for plain protoc
++# codegen) but not plain ${CMAKE_BINARY_DIR}. Same shape of gap as the
++# WELL_KNOWN_TYPES/upb PROTOBUF_CMAKE_MAPPING fixes in
++# third_party/com_google_protobuf/workspace.bzl -- something that's wired
++# correctly for the target that owns the codegen but not propagated to
++# every consumer. Adding this globally (rather than patching
++# grpc_generate_cc's target definitions directly) is the low-risk fix: an
++# extra readable include root can't break anything else in this
++# single-project, --target-scoped build.
++include_directories(${CMAKE_BINARY_DIR})
++
+ include(bazel_to_cmake)
+ 
+ bazel_to_cmake(
+@@ -84,8 +159,28 @@ bazel_to_cmake(
+   --bazel-repo-name tensorstore
+   "--include-package="
+   "--include-package=tensorstore/**"
+-  "--exclude-package=tensorstore/examples/python/**"
++  "--exclude-package=tensorstore/examples/**"
+   "--exclude-package=third_party/local_proto_mirror/**"
++  # Real lazy, dependency-driven analysis instead of eagerly processing
++  # every target in the included packages above (which is what pulled in
++  # S3/GCS/HTTP/AVIF/etc. despite excluding their packages -- top-level
++  # //tensorstore:BUILD has alias targets to every driver, and package-level
++  # excludes don't stop those aliases from being analyzed). --target
++  # replaces the "scan everything in included packages" default with just
++  # these four targets and their real transitive closure, matching how
++  # Bazel itself would build this.
++  --target "//tensorstore/kvstore/ocdbt"
++  --target "//tensorstore/kvstore/file"
++  --target "//tensorstore/kvstore/memory"
++  --target "//tensorstore/driver/zarr3"
++  --target "//tensorstore:open"
++  # Python bindings (//python/tensorstore:_tensorstore) intentionally NOT
++  # included here -- pybind11_py_extension/pybind11_cc_library are custom
++  # Starlark macros bazel_to_cmake has no module for, and ~24 sub-targets
++  # would all hit the same issue. Scoped out as its own separate future
++  # effort; see project_tensorstore_qnx.md for the driver-scoping patches
++  # (tensorstore/driver/BUILD's all_drivers_qnx_scoped,
++  # python/tensorstore/BUILD's dep swap) already in place as a head start.
+   --ignore-library "//third_party:python/python_configure.bzl"
+   --ignore-library "//docs:doctest.bzl"
+   --ignore-library "//bazel:non_compile.bzl"
+@@ -103,3 +198,45 @@ if(TENSORSTORE_DEBUG_DUMP_TARGETS)
+   include(TensorstoreDebugHelpers)
+   dump_cmake_targets(${CMAKE_CURRENT_SOURCE_DIR})
+ endif()
++
++# QNX port: functional verification test (write+read a real zarr3 array backed by OCDBT on the
++# local file kvstore, through a fresh reopened handle) -- see project_tensorstore_qnx.md. Added
++# here (not a separate project) so it reuses this build's already-resolved CMake target graph
++# and compiled objects directly, rather than needing its own add_subdirectory/relink.
++add_executable(qnx_smoke_test
++    ${CMAKE_CURRENT_SOURCE_DIR}/qnx_smoke_test.cc)
++# Drivers/kvstores register themselves via static initializers at link time;
++# ordinary target_link_libraries doesn't force those object files in since
++# nothing directly calls their symbols, so they need WHOLE_ARCHIVE treatment
++# here too (same mechanism the WHOLE_ARCHIVE fix above enables generally).
++find_library(_qnx_smoke_test_zstd NAMES zstd REQUIRED)
++target_link_libraries(qnx_smoke_test PRIVATE
++    tensorstore_open
++    tensorstore_tensorstore
++    $<LINK_LIBRARY:WHOLE_ARCHIVE,tensorstore_driver_zarr3_driver>
++    $<LINK_LIBRARY:WHOLE_ARCHIVE,tensorstore_kvstore_ocdbt>
++    $<LINK_LIBRARY:WHOLE_ARCHIVE,tensorstore_kvstore_file>
++    $<LINK_LIBRARY:WHOLE_ARCHIVE,tensorstore_kvstore_memory>
++    ${_qnx_smoke_test_zstd}
++)
++
++# QNX port: bazel_to_cmake's generated build_rules.cmake defines internal
++# tensorstore_* library targets but emits no install() rules for them at all
++# (confirmed: the generated cmake_install.cmake is empty boilerplate).
++# Upstream's normal consumption path is the Python extension
++# (python/tensorstore/BUILD), which is out of scope here (see the --target
++# list above and project_tensorstore_qnx.md). Install every static library
++# actually built plus the full tensorstore/ public header tree, so a C++
++# consumer can link against this the same way qnx_smoke_test does just
++# above (same WHOLE_ARCHIVE-wrapped targets) -- this is a flat library/
++# header drop, not a real CMake package Config export with automatic
++# transitive-dependency propagation (a downstream consumer needs to know
++# the same WHOLE_ARCHIVE target list qnx_smoke_test uses). A proper
++# tensorstoreConfig.cmake is a real follow-up, not attempted here.
++install(CODE "
++  file(GLOB_RECURSE _qnx_ts_libs \"${CMAKE_BINARY_DIR}/*.a\")
++  file(INSTALL \${_qnx_ts_libs} DESTINATION \"${CMAKE_INSTALL_PREFIX}/lib/tensorstore\")
++")
++install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tensorstore
++    DESTINATION ${CMAKE_INSTALL_PREFIX}/include
++    FILES_MATCHING PATTERN "*.h")
+diff --git a/python/tensorstore/BUILD b/python/tensorstore/BUILD
+index 80d573e..5bf3543 100644
+--- a/python/tensorstore/BUILD
++++ b/python/tensorstore/BUILD
+@@ -59,7 +59,9 @@ pybind11_py_extension(
+         ":unit",
+         ":virtual_chunked",
+         ":write_futures",
+-        "//tensorstore:all_drivers",
++        # QNX port: scoped driver set, not all_drivers -- see
++        # tensorstore/driver/BUILD's QNX_SCOPED_DRIVERS / all_drivers_qnx_scoped comment.
++        "//tensorstore/driver:all_drivers_qnx_scoped",
+         "@com_github_pybind_pybind11//:pybind11",
+         "@com_google_absl//absl/base:log_severity",
+         "@com_google_absl//absl/log:globals",
+diff --git a/tensorstore/driver/BUILD b/tensorstore/driver/BUILD
+index a6e7b6f..2c1ea7d 100644
+--- a/tensorstore/driver/BUILD
++++ b/tensorstore/driver/BUILD
+@@ -54,6 +54,31 @@ tensorstore_cc_library(
+     alwayslink = True,
+ )
+ 
++# QNX port: reduced driver set for python/tensorstore's _tensorstore extension (which otherwise
++# hard-depends on :all_drivers). Excludes image/{avif,jpeg,png,tiff,webp,bmp}, n5, zarr (v2),
++# and neuroglancer_precomputed -- these pull in the AVIF/AOM/libjpeg/libpng/libtiff/libwebp
++# dependency chain that Attempt 1 got stuck on (see project_tensorstore_qnx.md), none of which
++# openpi/orbax-checkpoint's zarr3+ocdbt usage needs. Keeps everything else DRIVERS has that our
++# proven C++ scope already builds cleanly.
++QNX_SCOPED_DRIVERS = [
++    "array",
++    "cast",
++    "downsample",
++    "json",
++    "stack",
++    "virtual_chunked",
++    "zarr3",
++]
++
++tensorstore_cc_library(
++    name = "all_drivers_qnx_scoped",
++    deps = [
++        "//tensorstore/driver/" + driver
++        for driver in QNX_SCOPED_DRIVERS
++    ],
++    alwayslink = True,
++)
++
+ tensorstore_cc_library(
+     name = "chunk",
+     hdrs = ["chunk.h"],
+diff --git a/tensorstore/internal/os/file_util_posix.cc b/tensorstore/internal/os/file_util_posix.cc
+index ccbc905..4e05a6c 100644
+--- a/tensorstore/internal/os/file_util_posix.cc
++++ b/tensorstore/internal/os/file_util_posix.cc
+@@ -437,25 +437,33 @@
+       size = file_size - offset;
+     }
+     if (size == 0) {
+       return MemoryRegion(nullptr, 0, UnmapFilePosix);
+     }
+   }
+ 
+   void* address = ::mmap(nullptr, size, PROT_READ, MAP_PRIVATE, fd, offset);
+   if (address == MAP_FAILED) {
+     return std::move(tspan).EndWithStatus(
+         StatusFromOsError(errno, "Failed to mmap"));
+   }
++  // QNX port: no BSD/Linux-derived madvise()/MADV_WILLNEED; QNX implements
++  // the POSIX-standard posix_madvise()/POSIX_MADV_WILLNEED instead (same
++  // signature, same readahead-hint semantics, return value already
++  // intentionally ignored here on other platforms too).
++#ifdef __QNX__
++  ::posix_madvise(address, size, POSIX_MADV_WILLNEED);
++#else
+   ::madvise(address, size, MADV_WILLNEED);
++#endif
+ 
+   mmap_count.Increment();
+   mmap_bytes.IncrementBy(size);
+   mmap_active.Increment();
+   return MemoryRegion(static_cast<char*>(address), size, UnmapFilePosix);
+ #else
+   return absl::UnimplementedError("::mmap not supported");
+ #endif
+ }
+ 
+ absl::Status FsyncFile(FileDescriptor fd) {
+   LoggedTraceSpan tspan(__func__, detail_logging.Level(1), {{"fd", fd}});
+@@ -532,20 +540,30 @@
+     return absl::OkStatus();
+   }
+   auto status = StatusFromOsError(
+       errno, "Failed to create directory: ", QuoteString(path));
+   return std::move(tspan).EndWithStatus(std::move(status));
+ }
+ 
+ absl::Status FsyncDirectory(FileDescriptor fd) {
+   LoggedTraceSpan tspan(__func__, detail_logging.Level(1), {{"fd", fd}});
+ 
+   PotentiallyBlockingRegion region;
+   if (::fsync(fd) == 0) {
++    return absl::OkStatus();
++  }
++  // QNX port: fsync() on a directory file descriptor is implementation-
++  // defined by POSIX, and this filesystem returns EINVAL rather than
++  // supporting it. This call exists to durably flush a new file's directory
++  // entry as an extra crash-consistency guarantee -- the file's own content
++  // is fsynced separately elsewhere, so treating "not supported" as success
++  // here preserves correctness for normal operation, just without that one
++  // additional guarantee on platforms/filesystems that don't support it.
++  if (errno == EINVAL) {
+     return absl::OkStatus();
+   }
+   auto status = StatusFromOsError(errno, "Failed to fsync directory");
+   return std::move(tspan).EndWithStatus(std::move(status));
+ }
+ 
+ }  // namespace internal_os
+ }  // namespace tensorstore
+diff --git a/third_party/blake3/workspace.bzl b/third_party/blake3/workspace.bzl
+index 6f309fb..88283d3 100644
+--- a/third_party/blake3/workspace.bzl
++++ b/third_party/blake3/workspace.bzl
+@@ -31,7 +31,12 @@ def repo():
+         cmake_name = "BLAKE3",
+         cmake_languages = ["ASM", "ASM_MASM"],
+         bazel_to_cmake = {},
++        # QNX port: the real qnx-ports blake3 package (real upstream
++        # c/CMakeLists.txt, project(libblake3 ...)) exports its target as
++        # BLAKE3::blake3 (lowercase target name), not BLAKE3::BLAKE3 as this
++        # tool's own auto-derived guess assumes -- confirmed via the actual
++        # installed blake3-targets.cmake.
+         cmake_target_mapping = {
+-            "@blake3//:blake3": "BLAKE3::BLAKE3",
++            "@blake3//:blake3": "BLAKE3::blake3",
+         },
+     )
+diff --git a/third_party/com_github_grpc_grpc/workspace.bzl b/third_party/com_github_grpc_grpc/workspace.bzl
+index 4cc49d8..b8f1cf3 100644
+--- a/third_party/com_github_grpc_grpc/workspace.bzl
++++ b/third_party/com_github_grpc_grpc/workspace.bzl
+@@ -45,7 +45,15 @@ def repo():
+         },
+         cmake_name = "gRPC",
+         # We currently use grpc++_test, which is not public. Fix that, test, and enable.
+-        cmake_enable_system_package = False,
++        # QNX port: grpc++_test (-> gRPC::grpc_test_util) is only referenced by
++        # tensorstore's own *_test.cc targets, none of which are in scope for
++        # this build (--target is limited to the ocdbt/file/memory/zarr3
++        # production driver targets, no tests), so enabling the system
++        # package here is safe for this narrower build. See
++        # project_grpc_qnx.md / project_tensorstore_qnx.md for the real,
++        # verified QNX grpc build (qnx-ports/aports#453) this now uses via
++        # -DTENSORSTORE_USE_SYSTEM_GRPC=ON.
++        cmake_enable_system_package = True,
+         bazel_to_cmake = {
+             "args": [
+                 "--ignore-library=//bazel:objc_grpc_library.bzl",
+@@ -92,6 +100,14 @@ def repo():
+             "//:grpc++": "gRPC::grpc++",
+             "//:grpc++_test": "gRPC::grpc_test_util",
+             "//src/compiler:grpc_cpp_plugin": "gRPC::grpc_cpp_plugin",
++            # QNX port: bazel_to_cmake's own grpc_generate_cc module references these two
++            # internal-only bazel labels when generating C++ grpc-service targets (e.g. for
++            # OCDBT's distributed cooperator/coordinator .proto files), regardless of whether
++            # TENSORSTORE_USE_SYSTEM_GRPC is set. Neither is separately exported by a real grpc
++            # CMake install (confirmed: not in gRPCTargets.cmake) -- both are folded into the
++            # public grpc/grpc++ libraries already. See project_tensorstore_qnx.md.
++            "//:grpc++_codegen_proto": "gRPC::grpc++",
++            "//:grpc_security_base": "gRPC::grpc",
+         },
+     )
+     for key in GRPC_NATIVE_BINDINGS.keys():
+diff --git a/third_party/com_google_protobuf/workspace.bzl b/third_party/com_google_protobuf/workspace.bzl
+index 7c42aa5..0393b1d 100644
+--- a/third_party/com_google_protobuf/workspace.bzl
++++ b/third_party/com_google_protobuf/workspace.bzl
+@@ -159,3 +159,45 @@ EXTRA_PROTO_TARGETS = [
+     for x in WELL_KNOWN_TYPES
+     for y in SUFFIXES
+ ]
++
++# QNX port: EXTRA_PROTO_TARGETS above (and PROTOBUF_CMAKE_MAPPING's original 4 entries) are
++# only actually applied when protobuf is FetchContent-vendored and its own real BUILD files are
++# processed by bazel_to_cmake. With TENSORSTORE_USE_SYSTEM_PROTOBUF=ON, that whole path is
++# skipped (early return in third_party_http_archive.py before "bazel_to_cmake"/"args" is ever
++# read), so callers referencing e.g. "@com_google_protobuf//:duration_proto" or its
++# __cpp_library/__upb_library/__upbdefs_library/__minitable_library variants get an unresolved
++# target error -- exactly what this module's own docstring says should NOT happen ("when using
++# system protobuf, the well_known_proto_types are available via protobuf::libprotobuf"). This
++# extends PROTOBUF_CMAKE_MAPPING (the one thing that *does* survive the system-package early
++# return) to actually deliver on that comment: every well-known-type proto target, in every
++# generated variant, redirects to the same protobuf::libprotobuf the system protobuf install
++# already provides (which already contains the compiled-in well-known types). See
++# project_tensorstore_qnx.md for the full investigation.
++PROTOBUF_CMAKE_MAPPING.update({
++    "//:" + x + "_proto" + y: "protobuf::libprotobuf"
++    for x in WELL_KNOWN_TYPES
++    for y in SUFFIXES
++})
++
++# Same gap, one layer deeper: the "# upb" / "# upb support libraries" --target entries just
++# above (also only applied when protobuf is FetchContent-vendored) reference ~15 fine-grained
++# internal upb C library targets. The system protobuf-dev package bundles all of upb into one
++# consolidated protobuf::libupb target (confirmed via protobuf-targets.cmake), so redirect all
++# of them there.
++PROTOBUF_CMAKE_MAPPING.update({
++    "//upb:base": "protobuf::libupb",
++    "//upb:descriptor_upb_proto_reflection": "protobuf::libupb",
++    "//upb:descriptor_upb_proto": "protobuf::libupb",
++    "//upb:json": "protobuf::libupb",
++    "//upb:mem": "protobuf::libupb",
++    "//upb:message_compare": "protobuf::libupb",
++    "//upb:message_copy": "protobuf::libupb",
++    "//upb:message": "protobuf::libupb",
++    "//upb:port": "protobuf::libupb",
++    "//upb:reflection": "protobuf::libupb",
++    "//upb:text": "protobuf::libupb",
++    "//upb:wire": "protobuf::libupb",
++    "//upb:generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me": "protobuf::libupb",
++    "//upb:generated_reflection_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me": "protobuf::libupb",
++    "//upb:upb_proto_library_copts__for_generated_code_only_do_not_use": "protobuf::libupb",
++})
+diff --git a/third_party/com_google_riegeli/workspace.bzl b/third_party/com_google_riegeli/workspace.bzl
+index 8532768..9507a9f 100644
+--- a/third_party/com_google_riegeli/workspace.bzl
++++ b/third_party/com_google_riegeli/workspace.bzl
+@@ -51,4 +51,45 @@ def repo():
+                 "riegeli/tensorflow/**",
+             ],
+         },
++        # QNX port: riegeli has no official CMake Find-module, so
++        # TENSORSTORE_USE_SYSTEM_RIEGELI resolves via a hand-written
++        # Findriegeli.cmake (see qnx-thirdparty-prefix/cmake-modules/) that
++        # defines a single riegeli::riegeli target backed by a scoped local
++        # build (see project_riegeli_qnx.md: riegeli/bytes+digests+varint+
++        # zstd+base only, the subset tensorstore's OCDBT format actually
++        # uses). Every fine-grained riegeli target OCDBT references is
++        # mapped to that one target rather than generating ~14 separate
++        # ones.
++        cmake_target_mapping = {
++            "@com_google_riegeli//riegeli/bytes:reader": "riegeli::riegeli",
++            "@com_google_riegeli//riegeli/bytes:writer": "riegeli::riegeli",
++            "@com_google_riegeli//riegeli/bytes:cord_reader": "riegeli::riegeli",
++            "@com_google_riegeli//riegeli/bytes:cord_writer": "riegeli::riegeli",
++            "@com_google_riegeli//riegeli/bytes:limiting_reader": "riegeli::riegeli",
++            "@com_google_riegeli//riegeli/digests:crc32c_digester": "riegeli::riegeli",
++            "@com_google_riegeli//riegeli/digests:digesting_reader": "riegeli::riegeli",
++            "@com_google_riegeli//riegeli/digests:digesting_writer": "riegeli::riegeli",
++            "@com_google_riegeli//riegeli/endian:endian_reading": "riegeli::riegeli",
++            "@com_google_riegeli//riegeli/endian:endian_writing": "riegeli::riegeli",
++            "@com_google_riegeli//riegeli/varint:varint_reading": "riegeli::riegeli",
++            "@com_google_riegeli//riegeli/varint:varint_writing": "riegeli::riegeli",
++            "@com_google_riegeli//riegeli/zstd:zstd_reader": "riegeli::riegeli",
++            "@com_google_riegeli//riegeli/zstd:zstd_writer": "riegeli::riegeli",
++            # Needed by tensorstore's zarr3 gzip codec and OCDBT's
++            # distributed subsystem; added to the local riegeli build.
++            "@com_google_riegeli//riegeli/zlib:zlib_reader": "riegeli::riegeli",
++            "@com_google_riegeli//riegeli/zlib:zlib_writer": "riegeli::riegeli",
++            "@com_google_riegeli//riegeli/bytes:wrapping_writer": "riegeli::riegeli",
++            "@com_google_riegeli//riegeli/bytes:string_reader": "riegeli::riegeli",
++            "@com_google_riegeli//riegeli/bytes:read_all": "riegeli::riegeli",
++            "@com_google_riegeli//riegeli/bytes:string_writer": "riegeli::riegeli",
++            # Needed by tensorstore/internal/riegeli/* (generic array-via-
++            # riegeli I/O helpers used across multiple drivers) -- header-
++            # only, already compiled in via riegeli/base/*.cc.
++            "@com_google_riegeli//riegeli/base:types": "riegeli::riegeli",
++            "@com_google_riegeli//riegeli/base:chain": "riegeli::riegeli",
++            "@com_google_riegeli//riegeli/base:arithmetic": "riegeli::riegeli",
++            "@com_google_riegeli//riegeli/base:object": "riegeli::riegeli",
++            "@com_google_riegeli//riegeli/bytes:copy_all": "riegeli::riegeli",
++        },
+     )
+ 
