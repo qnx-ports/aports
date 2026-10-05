@@ -1,3 +1,4 @@
+# Maintainer: Ramya santoshi <rtimmaraju@qnx.com>
 pkgname=librealsense
 pkgver=2.58.1
 pkgrel=0
