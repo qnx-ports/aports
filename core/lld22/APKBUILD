@@ -3,7 +3,7 @@
 # Alpine-Contributor: Rasmus Thomsen <oss@cogitri.dev>
 # Alpine-Maintainer: Achill Gilgenast <achill@achill.org>
 # Maintainer: Aaron Bassett <abassett@qnx.com>
-_patch_rev=2
+_patch_rev=3
 pkgver=22.1.8_p$_patch_rev
 pkgrel=0
 # NOTE: Upgrade together with the whole LLVM suite.
@@ -100,6 +100,6 @@ dev() {
 
 
 sha512sums="
-2a458bec38ddb3306a6ad0732784b71f508c919812a28fb37668575000d0c42bb578da4b3c4b62de3e4cedf67a71c670cc781670d3a9ce68b913a8091de147b6  qnx-22.1.8_p2.tar.gz
+3b767e6b0f2f173c54dc13908f87bec06e5f02bae6655e9005d8df09d95b80db0c99b6e272fc84bde62b3336c637d5993ad987e610750c2dbfcebcbd4371e8e3  qnx-22.1.8_p3.tar.gz
 cf1aaa583f3f3558b6362730c6725e6760c27665b1f9c439328b28f7c0fcc1002c4fd57f503d279419ad297da4cfde46039a0ace6dcf09c37fd6c650896c03b9  accept-zlib-ng-compessed-size.patch
 "
