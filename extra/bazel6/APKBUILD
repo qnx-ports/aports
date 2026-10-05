@@ -20,7 +20,7 @@ source="https://github.com/bazelbuild/bazel/releases/download/$_pkgver/bazel-$_p
 builddir="$srcdir/$pkgname-$pkgver"
 # Bazel binary is thin C++ client with zip file embedded into the binary,
 # stripping breaks that: https://github.com/bazelbuild/bazel/issues/11842
-options="!check !strip" # Bazel test targets are buggy.
+options="!check !strip net" # Bazel test targets are buggy.
 
 cleanup_srcdir() {
     [[ -d "$srcdir" ]] && chmod -R +w "$srcdir"
