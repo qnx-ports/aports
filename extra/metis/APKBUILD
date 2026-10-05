@@ -1,0 +1,50 @@
+# Maintainer: Harshini Yarasi <hyarasi@qnx.com>
+pkgname=metis  
+pkgver=5.2.1  
+pkgrel=0  
+pkgdesc="Serial graph partitioning and fill-reducing matrix ordering algorithms"  
+url="https://github.com/KarypisLab/METIS"  
+arch="all"  
+license="Apache-2.0"  
+depends="gklib qnx-microkernel"
+makedepends="cmake gklib-dev"  
+subpackages="$pkgname-dev"  
+source="$pkgname-$pkgver.tar.gz::https://github.com/KarypisLab/METIS/archive/refs/tags/v$pkgver.tar.gz"  
+  
+prepare() {
+	default_prepare
+
+	cd "$srcdir/METIS-$pkgver"
+
+	mkdir -p build/xinclude
+	{
+		echo "#define IDXTYPEWIDTH 32"
+		echo "#define REALTYPEWIDTH 32"
+		cat include/metis.h
+	} > build/xinclude/metis.h
+
+	cp include/CMakeLists.txt build/xinclude/
+}
+
+build() {
+	cd "$srcdir/METIS-$pkgver"
+	cmake -B build \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DBUILD_SHARED_LIBS=ON \
+		-DGKLIB_PATH=/usr \
+		-DCMAKE_POLICY_VERSION_MINIMUM=3.5
+	cmake --build build
+}  
+
+check(){
+build
+}
+
+package() {  
+	cd "$srcdir/METIS-$pkgver/build"
+    make install DESTDIR="$pkgdir" 
+}  
+sha512sums="
+69127b7a777f9ba14cf399a7122000af9d6094a5f44be600a28384cfc0495c024fb0c6eab37c4473a5763ec1077cd9f30d9bcbb3c952462f6c9ead31c6b9e790  metis-5.2.1.tar.gz
+"
