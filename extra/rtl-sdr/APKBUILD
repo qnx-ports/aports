@@ -6,14 +6,13 @@ pkgdesc="Software defined radio receiver for Realtek RTL2832U"
 url="https://github.com/qnx-ports/rtl-sdr"
 arch="all"
 license="GPL-2.0-or-later"
-
 makedepends=" libusb-dev libc++-dev qnx-io-sock-dev "
 depends="libc++ libusb qnx-io-sock"
 subpackages="$pkgname-dev"
 source="$pkgname-$pkgver.tar.gz::https://github.com/qnx-ports/rtl-sdr/archive/refs/heads/qnx_$pkgver.tar.gz"
-
 builddir="$srcdir/rtl-sdr-qnx_$pkgver"
 options="!tracedeps"
+
 build() {
     cd "$builddir"
     cmake -B build -S . \
