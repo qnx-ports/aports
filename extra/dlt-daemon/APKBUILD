@@ -41,9 +41,10 @@ build() {
         -DBUILD_SHARED_LIBS=ON \
         -Dgtest_build_tests=OFF \
         -DBUILD_GMOCK=OFF
-
+    
     cmake --build "$gtest_build"
     cmake --install "$gtest_build"
+    cat build/CMakeCache.txt
 
     cmake -B build -S "$builddir" \
         -DCMAKE_BUILD_TYPE=Release \
@@ -56,7 +57,13 @@ build() {
         -DGTest_DIR="$gtest_install/lib/cmake/GTest" \
         -DCMAKE_POLICY_VERSION_MINIMUM=3.5
 
+    echo "===== DLT CMake cache ====="
+
+    cat build/CMakeCache.txt
+    
     cmake --build build
+
+    
 }
 
 check() {
