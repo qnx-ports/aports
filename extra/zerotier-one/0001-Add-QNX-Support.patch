@@ -1,5 +1,5 @@
 diff --git a/Makefile b/Makefile
-index 51a9914bb..cda74eb6c 100644
+index 51a9914bb..68beb07f4 100644
 --- a/Makefile
 +++ b/Makefile
 @@ -27,6 +27,13 @@ ifeq ($(OSTYPE),NetBSD)
@@ -62,19 +62,50 @@ index 6baf8c7fe..1c4251161 100644
  #include <endian.h>
  #endif
 diff --git a/node/Utils.cpp b/node/Utils.cpp
-index 705b6bd46..38e195780 100644
+index 705b6bd46..a2b60c70b 100644
 --- a/node/Utils.cpp
 +++ b/node/Utils.cpp
-@@ -93,7 +93,7 @@ const char Utils::HEXCHARS[16] = { '0', '1', '2', '3', '4', '5', '6', '7', '8',
+@@ -65,6 +65,10 @@ static inline long getauxval(int caps)
+ }
+ #endif
+ 
++#ifdef __QNXNTO__
++#include <sys/syspage.h>
++#endif
++
+ // If these are not even defined, obviously they are not supported.
+ #ifndef HWCAP_AES
+ #define HWCAP_AES 0
+@@ -93,7 +97,7 @@ const char Utils::HEXCHARS[16] = { '0', '1', '2', '3', '4', '5', '6', '7', '8',
  #ifdef ZT_ARCH_ARM_HAS_NEON
  Utils::ARMCapabilities::ARMCapabilities() noexcept
  {
 -#ifdef __APPLE__
-+#if defined(__APPLE__) || defined(__QNXNTO__)
++#if defined(__APPLE__)
  
  	this->aes = true;
  	this->crc32 = true;
-@@ -274,19 +274,28 @@ void Utils::getSecureRandom(void* buf, unsigned int bytes)
+@@ -101,6 +105,19 @@ Utils::ARMCapabilities::ARMCapabilities() noexcept
+ 	this->sha1 = true;
+ 	this->sha2 = true;
+ 
++#elif defined(__QNXNTO__)
++
++	// Startup fills these from ID_AA64ISAR0_EL1; require them on every core.
++	uint64_t flags = ~(uint64_t)0;
++	for (unsigned i = 0; i < _syspage_ptr->num_cpu; ++i) {
++			flags &= (uint64_t)SYSPAGE_ENTRY(cpuinfo)[i].flags;
++	}
++	this->aes = (flags & AARCH64_CPU_FLAG_AES) != 0;
++	this->crc32 = false;
++	this->pmull = (flags & AARCH64_CPU_FLAG_PMULL) != 0;
++	this->sha1 = (flags & AARCH64_CPU_FLAG_SHA1) != 0;
++	this->sha2 = (flags & AARCH64_CPU_FLAG_SHA256) != 0;
++
+ #else
+ 
+ #ifdef HWCAP2_AES
+@@ -274,19 +291,28 @@ void Utils::getSecureRandom(void* buf, unsigned int bytes)
  
  	for (unsigned int i = 0; i < bytes; ++i) {
  		if (randomPtr >= sizeof(randomBuf)) {
@@ -141,7 +172,7 @@ index 1d35e01dc..93dc642dc 100644
  
  	return std::shared_ptr<EthernetTap>();
 diff --git a/osdep/ManagedRoute.cpp b/osdep/ManagedRoute.cpp
-index 6a605b856..7702a3ac1 100644
+index 6a605b856..0bd6d7dd5 100644
 --- a/osdep/ManagedRoute.cpp
 +++ b/osdep/ManagedRoute.cpp
 @@ -33,7 +33,7 @@
