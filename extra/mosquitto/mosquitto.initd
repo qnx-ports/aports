@@ -1,4 +1,4 @@
-#!/sbin/openrc-run
+#!/usr/bin/openrc-run
 
 name="Mosquitto message broker"
 description="MQTT v3.1.1 Message Broker"
