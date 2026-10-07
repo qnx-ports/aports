@@ -1,0 +1,38 @@
+# Maintainer: jscaffidi <jscaffidi@qnx.com>
+pkgname=linux-headers-input-codes
+pkgdesc="Provides input-event-codes for packages from kernel uapi"
+pkgver=7.2.9
+pkgrel=0
+arch="noarch"
+url="https://github.com/torvalds/linux"
+vcs_url="https://git.kernel.org/"
+license="GPL-2.0 WITH Linux-syscall-note" # see https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/LICENSES/exceptions/Linux-syscall-note
+options="!check" # just a header file
+source="
+https://cdn.kernel.org/pub/linux/kernel/v7.x/linux-$pkgver.tar.xz
+input.h
+"
+
+builddir="$srcdir/linux-$pkgver"
+
+unpack(){
+	default_unpack
+    # bring our own input.h since linux adds a bunch of stuff which might not work for us
+    cp "$srcdir"/input.h "$builddir"/include/uapi/linux/input.h 
+}
+
+build(){
+    # static files, nothing to build
+    return 0
+}
+
+package(){
+    for header in linux/input.h linux/input-event-codes.h; do
+        install -D -m 644 "$builddir"/include/uapi/$header "$pkgdir"/usr/include/$header
+    done
+}
+
+sha512sums="
+45db368b0cb1a099dd8ee49621dc286398a92df7ef6af4970bde5542637826de3e554113e9a142c7f7775c4021bc774a5ff801e7546e5f9edf18c7a23136abea  linux-7.2.9.tar.xz
+81ddb81b2d71c3d3a021e2a1c547062614cdd0d4bebfdf25a7f98c28c2f4c66d36d5a9f000c524f35b17b2cf0ab28d2dcc74eb2942521fe56ed4c5002c837f7d  input.h
+"
