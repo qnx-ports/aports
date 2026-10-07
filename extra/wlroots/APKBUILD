@@ -1,0 +1,75 @@
+# Alpine-Contributor: Henrik Riomar <henrik.riomar@gmail.com>
+# Alpine-Maintainer: Achill Gilgenast <achill@achill.org>
+# Maintainer: Aaron Bassett <abassett@qnx.com>
+pkgname=wlroots0.20
+pkgver=0.20.2
+_pkgver=${pkgver/_/-}
+pkgrel=0
+pkgdesc="Modular Wayland compositor library"
+url="https://gitlab.freedesktop.org/wlroots/wlroots"
+license="MIT"
+arch="all"
+depends="libxkbcommon lcms2 pixman wayland qnx-screen qnx-libdrm qnx-libgbm qnx-egl qnx-gles qnx-io-sock qnx-fd-notify"
+makedepends="
+	libxkbcommon-dev
+    cmake
+	lcms2-dev
+	meson
+	ninja
+	pixman-dev
+	wayland-dev
+	wayland-protocols
+	qnx-screen-dev
+	qnx-libdrm-dev
+	qnx-libgbm-dev
+	qnx-io-sock-dev
+	qnx-fd-notify-dev
+	egl-headers
+	gles-headers
+    linux-headers-input-codes
+	"
+# wlroots >= 0.18.0 does no longer ship a libwlroots.so symlink in the -dev
+# subpackage. Hence, abuild's dependency tracing fails to identify that the
+# -dev subpackage depends on the origin package and we need to add that
+# manually. Otherwise, the wlroots shared object is not installed with -dev.
+depends_dev="$pkgname=$pkgver-r$pkgrel qnx-libdrm-dev qnx-libgbm-dev  qnx-screen-dev wayland-protocols wayland-dev pixman-dev lcms2-dev libxkbcommon-dev"
+subpackages="$pkgname-dbg $pkgname-static $pkgname-dev"
+source="wlroots-$_pkgver-r$pkgrel.tar.gz::https://github.com/qnx-ports/wlroots/archive/refs/tags/qnx-$_pkgver-r$pkgrel.tar.gz"
+builddir="$srcdir/wlroots-qnx-$_pkgver-r$pkgrel"
+options="!check" # no test suite
+
+# whether this is the default version (latest stable wlroots)
+_default="yes"
+
+if [ "$_default" = yes ]; then
+	provides="wlroots=$pkgver-r$pkgrel"
+	replaces="wlroots"
+
+	dev() {
+		default_dev
+		provides="wlroots-dev=$pkgver-r$pkgrel"
+		replaces="wlroots-dev"
+	}
+fi
+
+build() {
+	#-Db_lto=true \
+	abuild-meson \
+		-Dexamples=false \
+		-Ddefault_library=both \
+		-Drenderers=gles2 \
+		-Dallocators=gbm \
+		-Dc_args="-D__EXPORTED_HEADERS__" \
+		-Dc_link_args="-lsocket -leventfd" \
+		. build
+	meson compile -C build
+}
+
+package() {
+	DESTDIR="$pkgdir" meson install --no-rebuild -C build
+}
+
+
+sha512sums="
+2285064420ebf59a12fb4bead1a4fadac137e3f0e95aeab9dd9cd0dfb39ed185d9f9571dc32295b623f1e06f16d78aceba6995e2de1cd8dbf2702685743c777e  wlroots-0.20.2-r0.tar.gz
+"
