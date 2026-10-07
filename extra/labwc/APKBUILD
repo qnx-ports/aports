@@ -1,0 +1,52 @@
+# Alpine-Contributor: Patrycja Rosa <alpine@ptrcnull.me>
+# Alpine-Maintainer: Patrycja Rosa <alpine@ptrcnull.me>
+# Maintainer: Aaron Bassett <abassett@qnx.com>
+pkgname=labwc
+pkgver=0.20.2
+pkgrel=0
+pkgdesc="Wayland stacking compositor"
+url="https://github.com/labwc/labwc"
+arch="all"
+license="GPL-2.0-only"
+depends="wlroots glib cairo libxml2 pango libsfdo"
+makedepends="
+	cairo-dev
+	glib-dev
+	libxml2-dev
+	meson
+	pango-dev
+	scdoc
+	wayland-protocols
+	wlroots0.20-dev
+	libsfdo-dev
+    linux-headers-input-codes
+	qnx-fd-notify-dev
+	"
+subpackages="$pkgname-doc $pkgname-lang"
+source="https://github.com/qnx-ports/labwc/archive/refs/tags/qnx-$pkgver-r$pkgrel.tar.gz
+	remove-aports-git-version.patch
+	"
+builddir="$srcdir/labwc-qnx-$pkgver-r$pkgrel"
+
+prepare() {
+	default_prepare
+}
+
+build() {
+	abuild-meson . output -Dman-pages=enabled -Dc_link_args="-ltimerfd -lsignalfd"
+	meson compile -C output
+}
+
+check() {
+	meson test --print-errorlogs -C output
+}
+
+package() {
+	DESTDIR="$pkgdir" meson install --no-rebuild -C output
+}
+
+
+sha512sums="
+129192749ed82027c29fbfe693c722bb75dbc4b011d48178b16e1c57518b9fdba5ddb5bb6d52ea0483eea0d98060fdae9fdbddee2ab44c05f239563de797137b  qnx-0.20.2-r0.tar.gz
+e47e63b07ac05a175c033f1e1110af9e5e45b8f7539a7e194a0f22bb4931ed5f2bcfa9a887b5fb67c22f1132f7833ba5c6ab6853d754f8cd3b87caa31f7e6992  remove-aports-git-version.patch
+"
