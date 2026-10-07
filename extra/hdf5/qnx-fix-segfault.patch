@@ -1,0 +1,26 @@
+diff --git a/src/H5A.c b/src/H5A.c
+index 10475919fb..b3fed255e9 100644
+--- a/src/H5A.c
++++ b/src/H5A.c
+@@ -451,7 +451,7 @@ H5A__open_common(H5VL_object_t *vol_obj, H5VL_loc_params_t *loc_params, const ch
+     /* Open the attribute */
+     if (NULL ==
+         (attr = H5VL_attr_open(vol_obj, loc_params, attr_name, aapl_id, H5P_DATASET_XFER_DEFAULT, token_ptr)))
+-        HGOTO_ERROR(H5E_ATTR, H5E_CANTOPENOBJ, H5I_INVALID_HID, "unable to open attribute: '%s'", attr_name);
++        HGOTO_ERROR(H5E_ATTR, H5E_CANTOPENOBJ, H5I_INVALID_HID, "unable to open attribute: '%s'", (attr_name == NULL) ? "(null)" : attr_name);
+ 
+     /* Register the attribute and get an ID for it */
+     if ((ret_value = H5VL_register(H5I_ATTR, attr, vol_obj->connector, true)) < 0)
+diff --git a/tools/src/h5format_convert/h5format_convert.c b/tools/src/h5format_convert/h5format_convert.c
+index 0ac4f3a6d3..eee0c79e5e 100644
+--- a/tools/src/h5format_convert/h5format_convert.c
++++ b/tools/src/h5format_convert/h5format_convert.c
+@@ -122,7 +122,7 @@ parse_command_line(int argc, const char *const *argv)
+                     dname_g = strdup(H5_optarg);
+                 if (dname_g == NULL) {
+                     h5tools_setstatus(EXIT_FAILURE);
+-                    error_msg("No dataset name `%s`\n", H5_optarg);
++                    error_msg("No dataset name `%s`\n", (H5_optarg == NULL) ? "(null)" : H5_optarg);
+                     usage(h5tools_getprogname());
+                     goto error;
+                 }
