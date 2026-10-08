@@ -3,14 +3,14 @@
 pkgname=mame
 pkgver=0.281
 _pkgver=${pkgver/.}
-pkgrel=0
+pkgrel=1
 pkgdesc="Multi Arcade Machine Emulator."
 url="https://mamedev.org"
 arch="all"
 license="GPL-2.0-or-later"
 depends="
     $pkgname-common
-    sdl2-compat
+    sdl2-compat>=2.32.74
     sdl2-ttf
     fontconfig
     freetype
@@ -31,7 +31,7 @@ makedepends="
     freetype-dev
     libpng-dev
     sdl3-dev
-    sdl2-compat-dev
+    sdl2-compat-dev>=2.32.74
     sdl2-ttf-dev
     zlib-dev
     qnx-screen-dev
@@ -58,6 +58,7 @@ _git_rev=1
 source="
     ${pkgname}-${pkgver}-r${_git_rev}.tar.gz::https://github.com/qnx-ports/${pkgname}/archive/refs/tags/qnx-${pkgname}${_pkgver}-r${_git_rev}.tar.gz
     mame.patch
+    sdl2compat.patch
     mame.ini
     "
 builddir="${srcdir}/${pkgname}-qnx-${pkgname}${_pkgver}-r${_git_rev}"
@@ -186,5 +187,6 @@ lang() {
 sha512sums="
 23db675f15da1007683779a92d8e181d4961cc46dd871a2f061ae48835c6cfb559212aed3e2191c0f4bc52cf6fb4b1ca6cfa1b62f1e8a2e3aea2b4045474f397  mame-0.281-r1.tar.gz
 be6b2bd1c35ba098448437c600fdbb8241f4ce81078ec703770c23da675ffd3149e45ebb75f4f62d7cdc6b9c87a2dd73231684a87787d8a3512c85b270d13519  mame.patch
+5c6e5b91b889e019b71f5f89ddfd1e3bc17fbd58e87fb62614e3d85332849f220aa22eb084efc0f46cd20a608b0868be6a35f19ddb15d5b332a282d461807b2b  sdl2compat.patch
 3a1ec9902bdd11e4a55e06c401258d31ef95638f931dbc3ba7e95bac7280a35e54664e261a2daa28c3b32524e3f9f1244f724b92729badcc12b0d09561ce0bf0  mame.ini
 "
