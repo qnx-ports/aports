@@ -1,0 +1,189 @@
+# Maintainer: Deep Chordia <dchordia@qnx.com>
+pkgname=openvino
+pkgver=2026.1.2
+pkgrel=0
+pkgdesc="OpenVINO toolkit for QNX"
+url="https://github.com/qnx-ports/openvino"
+arch="all"
+license="Apache-2.0"
+_kleidiai_commit="7d82645ca2f3c3d58a5c0b1a96905e53916c8ff8"
+_libxsmm_commit="13df674c4b73a1b84f6456de8595903ebfbb43e0"
+_mlas_branch="qnx-openvino-2026.1.2-d1bc25ec4660cddd87804fcf03b2411b5dfb2e94"
+_onednn_cpu_branch="qnx-openvino-2026.1.2-6b6492b1ea9ef5ca9ff3c5c59ed71dcca683a446"
+_onednn_gpu_branch="qnx-openvino-2026.1.2-470e87eb07bdc805937a9f6d45d5c3a0fe4d27e7"
+_gflags_commit="e171aa2d15ed9eb17054558e0b3a6a413bb01067"
+_gtest_commit="99760ac1776430f3df65947992bf4e8ebc0d7660"
+_ittapi_commit="ca45fef1a12cef3316e6ff362a4d36571270e392"
+_pugixml_commit="ee86beb30e4973f5feffe3ce63bfa4fbadf72f38"
+_snappy_commit="2c94e11145f0b7b184b831577c93e5a41c4c0346"
+_xbyak_commit="0d67fd1530016b7c56f3cd74b3fca920f4c3e2b4"
+_zlib_commit="51b7f2abdade71cd9bb0e7a373ef2610ec6f9daf"
+_level_zero_commit="d562046e7266120e8be3533597b65f34a00524c1"
+depends="
+    libc++
+    protobuf
+    gflags
+    zlib
+    flatbuffers
+    onetbb
+    onnx
+    python3
+"
+depends_dev="
+    libc++-dev
+    protobuf-dev
+    gflags-dev
+    zlib-dev
+    flatbuffers-dev
+    onetbb-dev
+    onnx-dev
+    python3-dev
+"
+if [ "$CARCH" = "aarch64" ]; then
+    depends="$depends computelibrary"
+    depends_dev="$depends_dev computelibrary-dev"
+elif [ "$CARCH" = "x86_64" ]; then
+    depends="$depends qnx-opencl"
+    depends_dev="$depends_dev opencl-headers"
+fi
+makedepends="
+    $depends_dev
+    cmake
+    ninja
+    python3-setuptools
+    python3-wheel
+"
+subpackages="
+    $pkgname-tools
+    python3-$pkgname:python3_openvino
+    $pkgname-dev
+"
+source="
+    $pkgname-$pkgver.tar.gz::https://github.com/qnx-ports/openvino/archive/refs/heads/qnx-$pkgver.tar.gz
+    kleidiai-$_kleidiai_commit.tar.gz::https://github.com/ARM-software/kleidiai/archive/$_kleidiai_commit.tar.gz
+    libxsmm-$_libxsmm_commit.tar.gz::https://github.com/hfp/libxsmm/archive/$_libxsmm_commit.tar.gz
+    mlas-$_mlas_branch.tar.gz::https://github.com/qnx-ports/mlas/archive/refs/heads/$_mlas_branch.tar.gz
+    onednn_cpu-$_onednn_cpu_branch.tar.gz::https://github.com/qnx-ports/intel-oneDNN/archive/refs/heads/$_onednn_cpu_branch.tar.gz
+    onednn_gpu-$_onednn_gpu_branch.tar.gz::https://github.com/qnx-ports/oneDNN/archive/refs/heads/$_onednn_gpu_branch.tar.gz
+    gflags-$_gflags_commit.tar.gz::https://github.com/gflags/gflags/archive/$_gflags_commit.tar.gz
+    gtest-$_gtest_commit.tar.gz::https://github.com/google/googletest/archive/$_gtest_commit.tar.gz
+    ittapi-$_ittapi_commit.tar.gz::https://github.com/intel/ittapi/archive/$_ittapi_commit.tar.gz
+    pugixml-$_pugixml_commit.tar.gz::https://github.com/zeux/pugixml/archive/$_pugixml_commit.tar.gz
+    snappy-$_snappy_commit.tar.gz::https://github.com/google/snappy/archive/$_snappy_commit.tar.gz
+    xbyak-$_xbyak_commit.tar.gz::https://github.com/herumi/xbyak/archive/$_xbyak_commit.tar.gz
+    zlib-$_zlib_commit.tar.gz::https://github.com/madler/zlib/archive/$_zlib_commit.tar.gz
+    level_zero-$_level_zero_commit.tar.gz::https://github.com/oneapi-src/level-zero/archive/$_level_zero_commit.tar.gz
+"
+builddir="$srcdir/$pkgname-qnx-$pkgver"
+options="!tracedeps"
+
+prepare() {
+    default_prepare
+    rm -rf src/plugins/intel_cpu/thirdparty/kleidiai && mv "$srcdir"/kleidiai-$_kleidiai_commit src/plugins/intel_cpu/thirdparty/kleidiai
+    rm -rf src/plugins/intel_cpu/thirdparty/libxsmm && mv "$srcdir"/libxsmm-$_libxsmm_commit src/plugins/intel_cpu/thirdparty/libxsmm
+    rm -rf src/plugins/intel_cpu/thirdparty/mlas && mv "$srcdir"/mlas-$_mlas_branch src/plugins/intel_cpu/thirdparty/mlas
+    rm -rf src/plugins/intel_cpu/thirdparty/onednn && mv "$srcdir"/intel-oneDNN-$_onednn_cpu_branch src/plugins/intel_cpu/thirdparty/onednn
+    rm -rf src/plugins/intel_gpu/thirdparty/onednn_gpu && mv "$srcdir"/oneDNN-$_onednn_gpu_branch src/plugins/intel_gpu/thirdparty/onednn_gpu
+    rm -rf thirdparty/gflags/gflags && mv "$srcdir"/gflags-$_gflags_commit thirdparty/gflags/gflags
+    rm -rf thirdparty/gtest/gtest && mv "$srcdir"/googletest-$_gtest_commit thirdparty/gtest/gtest
+    rm -rf thirdparty/ittapi/ittapi && mv "$srcdir"/ittapi-$_ittapi_commit thirdparty/ittapi/ittapi
+    rm -rf thirdparty/pugixml && mv "$srcdir"/pugixml-$_pugixml_commit thirdparty/pugixml
+    rm -rf thirdparty/snappy && mv "$srcdir"/snappy-$_snappy_commit thirdparty/snappy
+    rm -rf thirdparty/xbyak && mv "$srcdir"/xbyak-$_xbyak_commit thirdparty/xbyak
+    rm -rf thirdparty/zlib/zlib && mv "$srcdir"/zlib-$_zlib_commit thirdparty/zlib/zlib
+    rm -rf thirdparty/level_zero/level-zero && mv "$srcdir"/level-zero-$_level_zero_commit thirdparty/level_zero/level-zero
+}
+
+build() {
+    export LDFLAGS="$LDFLAGS -lgomp -lregex"
+    if [ "$CARCH" = "aarch64" ]; then
+        export ASFLAGS="$ASFLAGS -Wa,-march=armv8.2-a+fp16+sve"
+    fi
+
+    export CMAKE_ARGS="-DQNX=1"
+
+    cmake -B build -G Ninja \
+        -DCMAKE_C_FLAGS="$CFLAGS -U_FORTIFY_SOURCE" \
+        -DCMAKE_CXX_FLAGS="$CXXFLAGS -U_FORTIFY_SOURCE" \
+        -DCMAKE_ASM_FLAGS="$ASFLAGS" \
+        -DCMAKE_EXE_LINKER_FLAGS="$LDFLAGS" \
+        -DCMAKE_SHARED_LINKER_FLAGS="$LDFLAGS" \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DCMAKE_INSTALL_LIBDIR=lib \
+        -DBUILD_SHARED_LIBS=ON \
+        -DENABLE_TESTS=ON \
+        -DENABLE_SAMPLES=OFF \
+        -DACL_INCLUDE_DIR=/usr/include \
+        -DARM_COMPUTE_INCLUDE_DIR=/usr/include \
+        -DARM_COMPUTE_LIB_DIR=/usr/lib \
+        -DENABLE_SYSTEM_PROTOBUF=ON \
+        -DProtobuf_USE_STATIC_LIBS=OFF \
+        -DENABLE_SYSTEM_GFLAGS=ON \
+        -DENABLE_SYSTEM_ZLIB=ON \
+        -DENABLE_SYSTEM_FLATBUFFERS=ON \
+        -DENABLE_SYSTEM_TBB=ON \
+        -DENABLE_SYSTEM_OPENCL=ON \
+        -DENABLE_WHEEL=ON \
+        -DQNX=1
+    cmake --build build
+}
+
+check() {
+    ctest --test-dir build -R "^ov_.*_unit_tests_.*" -E "gpu|vectorized"
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install build
+
+    mkdir -p "$pkgdir"/usr/lib/cmake
+    mkdir -p "$pkgdir"/usr/include
+    mv "$pkgdir"/usr/runtime/include/* "$pkgdir"/usr/include/
+    mv "$pkgdir"/usr/runtime/lib/*/* "$pkgdir"/usr/lib/
+    mv "$pkgdir"/usr/runtime/cmake/* "$pkgdir"/usr/lib/cmake/
+
+    rm -rf "$pkgdir"/usr/licenses
+    rm -rf "$pkgdir"/usr/runtime
+    rm -rf "$pkgdir"/usr/python
+    rm -rf "$pkgdir"/usr/samples
+    rm -f "$pkgdir"/usr/setupvars.sh
+
+    python3 -m pip install \
+        --prefix=/usr \
+        --root="$pkgdir" \
+        --no-deps \
+        build/wheels/openvino*.whl
+}
+
+python3_openvino() {
+    pkgdesc="Python 3 bindings for OpenVINO"
+    depends="$pkgname python3"
+
+    mkdir -p "$subpkgdir"/usr/lib
+    mv "$pkgdir"/usr/lib/python3* "$subpkgdir"/usr/lib/
+}
+
+tools() {
+    pkgdesc="OpenVINO benchmarking and conversion tools"
+    depends="$pkgname"
+
+    mkdir -p "$subpkgdir"/usr
+    mv "$pkgdir"/usr/bin "$subpkgdir"/usr/
+}
+
+sha512sums="
+d884118fc24087703798584f66d762bd35fabfedca3f456224eb39a527760620ecd5d6d66032bc28893f8745db07adff5f4fd9c095dec1a902655c4978c3553f  openvino-2026.1.2.tar.gz
+09cdea7a219be8a23a2991ba88219c27573d10a1aaae2c78771d1a9ad6b040c0d9a342443c05a30c1226d51bfd15c8aad500ccd8fce840dc8fb5290ffdcae8d4  kleidiai-7d82645ca2f3c3d58a5c0b1a96905e53916c8ff8.tar.gz
+793afd3897e456e1cea6513ab65c31c5f0508ba4372253f191be18025abe20ae205640e45b3e9a1a2a559b5b6f818299d78b2b2d539d934bc3d370eca425527a  libxsmm-13df674c4b73a1b84f6456de8595903ebfbb43e0.tar.gz
+316e4272b57443ac5f8f8761aedd068c75e246d00b33f03820fa030e6bffcabe5ce35c295b6197b7823632fb0868d70d45e20142085105baac96a7ea79d81bba  mlas-qnx-openvino-2026.1.2-d1bc25ec4660cddd87804fcf03b2411b5dfb2e94.tar.gz
+0924851206c9cf673226a05db319101563f712076a25d2cc1ba608030df1d08793da627ed41f46bb3bd22d1162acbfa3d8b00e9fbb6497ac3e1d6c29d6f7e9c7  onednn_cpu-qnx-openvino-2026.1.2-6b6492b1ea9ef5ca9ff3c5c59ed71dcca683a446.tar.gz
+387ed0e307ccdb61b9efe1c8540deaced849fd6e261d56daab56e4140885ec9a42c5433c3b950656d0f78fc07dedcb1bb73fbc351ade329f3138c853732a0349  onednn_gpu-qnx-openvino-2026.1.2-470e87eb07bdc805937a9f6d45d5c3a0fe4d27e7.tar.gz
+4f0a6bd1d3f2d41345d0203eaaac7d68c606b4f8206a46d615393778bb6f7fae575231d82d47d170d067b52af851646c4cb869b848dc5bb9397f1c357590b08c  gflags-e171aa2d15ed9eb17054558e0b3a6a413bb01067.tar.gz
+f762bec23cf47ac27b9661663ff0df4a5da98597bd1cd4d445908c4da6bdd9900e19452daae24d2dd55a6241775257d921bf7bc38d3b9e361d0405b214d918fe  gtest-99760ac1776430f3df65947992bf4e8ebc0d7660.tar.gz
+d1af8be98e03123b96bf1cebafe50527d0c673aa5fd6fa9921a3589b2ede827f646c81abacc4fe643a1445ae21f190109044a8be53304149b2d2820460e4a05e  ittapi-ca45fef1a12cef3316e6ff362a4d36571270e392.tar.gz
+4158231abeb15b5ecb74702c2c887e01c7d27c3970fcb51f3fb287a0fc83c84efa5d6190f51b7b2e250e413b0de5b9a5a6a2c0987a7ac49d5c42fd61fd437e83  pugixml-ee86beb30e4973f5feffe3ce63bfa4fbadf72f38.tar.gz
+1844eb8d19ec4a00ec6ea0dd697ed9481765d1ce7088f724605aad79214d368cfb5af14389ed6c40131da34f70c37440d5ddec67454148789963971d427da126  snappy-2c94e11145f0b7b184b831577c93e5a41c4c0346.tar.gz
+a8f183f48e0f0bbf273a97bb1df67d2e6820bf66791b84b5c44831b08ef4209597f9d361645ab26b5cfe074d8cb100362e7662a30f95eaf5d8581b955597987f  xbyak-0d67fd1530016b7c56f3cd74b3fca920f4c3e2b4.tar.gz
+ef7e1c355e2077ff2c02b1489d4f03805dab32b8cac2086c397db0fd4bd7c29d8d7621a907451c447122c0f546d078b9a15a47d73e7aa581d3ce06df4543c289  zlib-51b7f2abdade71cd9bb0e7a373ef2610ec6f9daf.tar.gz
+d081dcce7abb6ac9fa0d01354db88e5a02c9ade441c5c9c858d226249baabd86afe253ba44da69a9b48256a9c989d8b94fa4ec23a6dea9309582c8bfce854305  level_zero-d562046e7266120e8be3533597b65f34a00524c1.tar.gz
+"
