@@ -1,0 +1,54 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 0b9209c..314bb2c 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -247,7 +247,7 @@ endif()
+ 
+ add_compile_options(
+     $<$<COMPILE_LANGUAGE:C>:-std=gnu11>
+-    $<$<COMPILE_LANGUAGE:CXX>:-std=gnu++14>
++    $<$<COMPILE_LANGUAGE:CXX>:-std=gnu++17>
+     -Wall
+     -Wextra
+     -pedantic
+@@ -446,21 +446,14 @@ if(WITH_GIT_SUBMODULE)
+ endif()
+ 
+ if(WITH_DLT_UNIT_TESTS)
+-    find_package(GTest)
++    find_package(GTest REQUIRED)
+     if(GTEST_FOUND)
+-        if(QNX)
+-            set(GTEST_VERSION "1.13.0")
+-            add_compile_definitions(GTEST_HAS_ABSL=0
+-             GTEST_OS_WINDOWS=0)
+-             add_compile_options(-Wno-undef)
+-        else()
+-            find_package(PkgConfig REQUIRED)
+-            execute_process(COMMAND pkg-config --modversion gtest OUTPUT_VARIABLE GTEST_VERSION)
+-            string(REPLACE "\n" "" GTEST_VERSION ${GTEST_VERSION})
+-            if(${GTEST_VERSION} VERSION_LESS 1.7.0)
+-                message(WARNING "Please use Gtest version greater or equal to 1.7.0,
+-                        or use option 'WITH_GIT_SUBMODULE' for latest version")
+-            endif()
++        find_package(PkgConfig REQUIRED)
++        execute_process(COMMAND pkg-config --modversion gtest OUTPUT_VARIABLE GTEST_VERSION)
++        string(REPLACE "\n" "" GTEST_VERSION ${GTEST_VERSION})
++        if(${GTEST_VERSION} VERSION_LESS 1.7.0)
++            message(WARNING "Please use Gtest version greater or equal to 1.7.0,
++                    or use option 'WITH_GIT_SUBMODULE' for latest version")
+         endif()
+     else()
+         message(STATUS "No Gtest package found, preparing submodule ...")
+diff --git a/tests/CMakeLists.txt b/tests/CMakeLists.txt
+index 5039607..fd546c3 100644
+--- a/tests/CMakeLists.txt
++++ b/tests/CMakeLists.txt
+@@ -1,7 +1,5 @@
+ # Setup testing
+ enable_testing()
+-SET(CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -isystem ${gtest_SOURCE_DIR}/include")
+-SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -isystem ${gtest_SOURCE_DIR}/include -std=gnu++0x")
+ 
+ configure_file(${PROJECT_SOURCE_DIR}/tests/testfile.dlt ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
+ configure_file(${PROJECT_SOURCE_DIR}/tests/testfile-v2.dlt ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
