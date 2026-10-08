@@ -1,0 +1,14 @@
+--- a/src/Filter.h	2026-03-06 10:32:58.000000000 +0000
++++ b/src/Filter.h	2026-03-06 10:33:24.000000000 +0000
+@@ -35,9 +35,10 @@
+ enum FilterKind {
+ 	fDefault,
+ 	fDFS,
++fFilterKindCount
+ };
+ 
+-#define MAX_FILTER_KIND_SIZE ((FilterKind) (fDFS + 1))
++#define MAX_FILTER_KIND_SIZE (fFilterKindCount)
+ 
+ // Filter base class
+ class Filter
