@@ -1,0 +1,64 @@
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=taisei
+pkgver=1.4.6
+pkgrel=0
+pkgdesc="Free Touhou Project fangame"
+url="https://github.com/taisei-project/taisei"
+arch="all"
+license="MIT AND CC-BY-4.0 AND LicenseRef-scancode-public-domain"
+depends="$pkgname-data cglm freetype libcrypto3 libc++ libogg libpng libunibreak
+    libwebp libwebpdecoder opus opusfile sdl3 spirv-cross spirv-tools zlib zstd
+    zstd-libs"
+makedepends="meson cglm-dev freetype-dev libc++-dev libogg-dev libpng-dev
+    libunibreak-dev libwebp-dev shaderc spirv-cross-dev spirv-tools-dev
+    openssl-dev opus-dev opusfile-dev sdl3-dev zlib-dev zstd-dev"
+subpackages="$pkgname-doc $pkgname-data::noarch"
+source="$pkgname-$pkgver.tar.gz::https://github.com/taisei-project/taisei/archive/refs/tags/v$pkgver.tar.gz
+    https://github.com/taisei-project/basis_universal/archive/380ef9389b38ec42506d5728dd05e94ac2f3c301.tar.gz
+    https://github.com/taisei-project/SDL_GameControllerDB/archive/7988b5e84c31616200ee2ffd2347386c6b3165a8.tar.gz
+    https://github.com/taisei-project/koishi/archive/f899ac2f96051ffbc6cf9aa250f52832f0dfef9b.tar.gz
+    fix-gles.patch"
+builddir="$srcdir/$pkgname-$pkgver"
+
+prepare() {
+    default_prepare
+
+    mv "$srcdir"/basis_universal-380ef9389b38ec42506d5728dd05e94ac2f3c301/* \
+        "$builddir"/external/basis_universal
+    mv "$srcdir"/SDL_GameControllerDB-7988b5e84c31616200ee2ffd2347386c6b3165a8/* \
+        "$builddir"/external/gamecontrollerdb
+    mv "$srcdir"/koishi-f899ac2f96051ffbc6cf9aa250f52832f0dfef9b/* \
+        "$builddir"/external/koishi
+}
+
+build() {
+    meson setup build \
+        --buildtype=release \
+        -Dprefix=/usr \
+        -Db_lto=false \
+        -Dr_gles30=enabled
+    meson compile -C build
+}
+
+package() {
+    DESTDIR="$pkgdir" meson install --no-rebuild -C build
+}
+
+check() {
+    meson test --print-errorlogs -C build
+}
+
+data() {
+    pkgdesc="Data files for taisei"
+
+    # Runs after doc
+    amove usr/share
+}
+
+sha512sums="
+461ca4671602948ecef7d0f1cb0a8c45348bcbc5f177aa5da20f160d55602b642c1d20b6da8de1c55fabc36600695664c5b2d0d83b913131f0dc28b078f01631  taisei-1.4.6.tar.gz
+094dff835cfefd0c459255eac506ad6f52999445b0796421f193d3fbee5d87b97b17441d3022260a6f2707e3aec15f56c23cb6690f9fe55097ada2ceaa110945  380ef9389b38ec42506d5728dd05e94ac2f3c301.tar.gz
+844db4bf5636cb04fa64274fa8bbd2b09c8bff74e7f4a8969dd642b37dc57ffdb4c24191165257971ce7a1d992824f9b8a793d7f8837a072a0b9b2afed758038  7988b5e84c31616200ee2ffd2347386c6b3165a8.tar.gz
+0cb9c2076a85caacea72744f69969fdbdec1549e0a4af0333c914bb279b231aeb581093384bf9d356f7e8eae71b13a88a1155bb55f22cdeb7be2cb79d15b21b2  f899ac2f96051ffbc6cf9aa250f52832f0dfef9b.tar.gz
+f067b2084b05c9fe306ed0472f6d18e49ed41586944f43d507079fc051cd724280c08b7e4543cf5cf75ebaf5488dd580eb07c50ca54c293550a6990c9270da53  fix-gles.patch
+"

@@ -1,0 +1,13 @@
+diff --git a/src/renderer/glcommon/opengl.c b/src/renderer/glcommon/opengl.c
+index 5c42a0cb..4fae5a27 100644
+--- a/src/renderer/glcommon/opengl.c
++++ b/src/renderer/glcommon/opengl.c
+@@ -1058,6 +1058,8 @@ bool glcommon_init(RendererBackend *backend) {
+ 		return false;
+ 	}
+ 
++	SDL_GL_ResetAttributes();
++
+ 	// We need to create the GL context early to make sure that it works,
+ 	// but that requires a window, which is not created until after the
+ 	// renderer is ready. Create a temporary window to work around that.
