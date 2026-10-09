@@ -1,4 +1,4 @@
-# Maintainer:Ramya santoshi <rtimmaraju@qnx.com>
+# Maintainer: Ramya santoshi <rtimmaraju@qnx.com>
 pkgname=dlt-daemon
 pkgver=3.0.0
 pkgrel=0
