@@ -8,15 +8,19 @@ pkgdesc="C++ wrapper around the aws-c-* libraries. Provides Cross-Platform Trans
 url="https://github.com/awslabs/aws-crt-cpp"
 arch="all"
 license="Apache-2.0"
-depends_dev="aws-c-common-dev
-             aws-c-cal-dev
-             aws-c-io-dev
-             s2n-tls-dev
-             "
-makedepends="$depends_dev
-             cmake
-             ninja
-             "
+depends="libc++"
+depends_dev="
+    aws-c-common-dev
+    aws-c-cal-dev
+    aws-c-io-dev
+    s2n-tls-dev
+    libc++-dev
+"
+makedepends="
+    $depends_dev
+    cmake
+    ninja
+"
 subpackages="$pkgname-dev"
 _aws_c_auth_commit="c6155516c4ed5267563fac4bbf208e6a7a9ee4c4"
 _aws_c_compression_commit="d8264e64f698341eb03039b96b4f44702a9b3f83"
