@@ -1,0 +1,33 @@
+--- a/src/daemon/lldpd.c
++++ b/src/daemon/lldpd.c
+@@ -1912,6 +1912,17 @@
+ 		lsb_release = lldpd_get_lsb_release();
+ 	}
+ 
++	/* Get ioctl socket. Must happen before priv_init() chroots: on QNX,
++	 * socket() is backed by a resource manager reachable only through the
++	 * filesystem (/dev/socket), so a fresh socket() call made after the
++	 * chroot cannot reach it and fails with EAFNOSUPPORT. An fd opened
++	 * before the chroot keeps working inside the jail since chroot() only
++	 * affects new pathname resolution, not already-open descriptors. */
++	log_debug("main", "get an ioctl socket");
++	int ioctl_sock;
++	if ((ioctl_sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
++		fatal("main", "failed to get ioctl socket");
++
+ 	log_debug("main", "initialize privilege separation");
+ #ifdef ENABLE_PRIVSEP
+ 	priv_init(PRIVSEP_CHROOT, ctl, uid, gid, ctlname);
+@@ -1947,10 +1958,8 @@
+ 	cfg->g_config.c_bond_slave_src_mac_type =
+ 	    LLDP_BOND_SLAVE_SRC_MAC_TYPE_LOCALLY_ADMINISTERED;
+ 
+-	/* Get ioctl socket */
+-	log_debug("main", "get an ioctl socket");
+-	if ((cfg->g_sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
+-		fatal("main", "failed to get ioctl socket");
++	/* Socket was already obtained before priv_init()'s chroot; see above. */
++	cfg->g_sock = ioctl_sock;
+ 
+ 	/* Description */
+ 	if (!(cfg->g_config.c_advertise_version = advertise_version) && lsb_release &&

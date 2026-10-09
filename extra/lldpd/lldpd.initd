@@ -1,0 +1,19 @@
+#!/usr/bin/openrc-run
+# Copyright 1999-2016 Gentoo Foundation
+# Distributed under the terms of the GNU General Public License v2
+
+name=lldpd
+pidfile=/var/run/lldpd/lldpd.pid
+command=/usr/bin/lldpd
+retry="TERM/10/KILL/5"
+command_args="${LLDPD_OPTS}"
+start_stop_daemon_args="--wait 300"
+
+depend() {
+	use net
+}
+
+start_pre() {
+	checkpath --directory /var/run/lldpd -o lldpd -m 0770
+}
+
