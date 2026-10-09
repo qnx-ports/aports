@@ -1,0 +1,43 @@
+# Alpine-Contributor: Henrik Riomar <henrik.riomar@gmail.com>
+# Alpine-Maintainer: Michał Polański <michal@polanski.me>
+# Maintainer: Aaron Bassett <abassett@qnx.com>
+pkgname=swaybg
+pkgver=1.2.2
+pkgrel=0
+pkgdesc="Wallpaper daemon for Wayland"
+url="https://swaywm.org/"
+license="MIT"
+arch="all"
+depends="cairo gdk-pixbuf glib wayland"
+makedepends="
+	cairo-dev
+	gdk-pixbuf-dev
+	libxkbcommon-dev
+	meson
+	ninja
+	scdoc
+	wayland-dev
+	wayland-protocols
+	"
+subpackages="$pkgname-doc $pkgname-openrc"
+source="https://github.com/swaywm/swaybg/archive/v$pkgver/swaybg-$pkgver.tar.gz
+	swaybg.initd
+	"
+options="!check" # no test suite
+
+build() {
+	abuild-meson . output
+	meson compile -C output
+}
+
+package() {
+	DESTDIR="$pkgdir" meson install --no-rebuild -C output
+
+	install -Dm755 "$srcdir"/swaybg.initd "$pkgdir"/etc/user/init.d/swaybg
+}
+
+
+sha512sums="
+b3123f1c635b85147c8d66221d014333d232d698c575e929481df0cee5ea3fc11cef951ca1fe705e95cb07f8ae5e6de6b3a315a4ab9059611b9b42ca412834b2  swaybg-1.2.2.tar.gz
+c12a3b7054aff3663525e0f3e6de4334e5c913bbf6ae3a82d70ab6a34fb535d9bd99eedee298f841eecfedd77960ca70474f58081f0d4f018f28d24308825543  swaybg.initd
+"
