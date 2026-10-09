@@ -1,0 +1,18 @@
+--- a/BLAS/SRC/xerbla.c
++++ b/BLAS/SRC/xerbla.c
+@@ -16,6 +16,7 @@
+ 
+ #include "f2c.h"
+ #include "blaswrap.h"
++#include <stdio.h>
+ 
+ /* Table of constant values */
+ 
+@@ -66,7 +67,7 @@
+ 
+ 	printf("** On entry to %6s, parameter number %2i had an illegal value\n",
+-		srname, *info);
++		srname, (long)*info);
+
+
+ /*     End of XERBLA */
