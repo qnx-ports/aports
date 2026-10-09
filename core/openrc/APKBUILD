@@ -12,6 +12,7 @@ depends_dev="qnx-security-dev qnx-memstream-dev qnx-io-sock-dev ncurses-dev"
 makedepends="meson ninja scdoc $depends_dev"
 subpackages="$pkgname-dev $pkgname-doc $pkgname-bash-completion $pkgname-zsh-completion"
 source="$pkgname-$pkgver.tar.gz::https://github.com/qnx-ports/openrc/archive/refs/tags/qnx-$pkgver.tar.gz
+rc.conf
 "
 builddir="$srcdir/$pkgname-qnx-$pkgver"
 
@@ -29,8 +30,10 @@ check() {
 
 package() {
     DESTDIR="$pkgdir" meson install --no-rebuild -C build
+    install -Dm644 "$srcdir"/rc.conf "$pkgdir"/etc/rc.conf
 }
 
 sha512sums="
 7081ac8f9161606cdfd2cf4f8a5bcaf29550f7f0b1e8d22830a946ca367d4152df34272baefdb4cf9317171e2e77daf3ca25aa9b99a71037710777fcdecb6367  openrc-0.63.1_p2.tar.gz
+cacb12d6b83b6ec14ffd5e7b665ea4ffa242ab968156bab3b05ab6214280349eb4fd16853d33959be751eea93363af1b6067c1555db6adeb4a3522830f6248f5  rc.conf
 "
