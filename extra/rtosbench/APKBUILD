@@ -7,7 +7,7 @@ url="https://github.com/gchamp20/RTOSBench"
 arch="all"
 license="MIT"
 options="!check"
-source="https://github.com/rtimmaraju/RTOSBench/archive/refs/heads/master.tar.gz"
+source="https://github.com/gchamp20/RTOSBench/archive/refs/heads/master.tar.gz  rtosbench-qnx.patch"
 builddir="$srcdir/RTOSBench-master"
 
 build() {
@@ -38,5 +38,6 @@ find example/qnx -type f -perm -111 \
 }
 
 sha512sums="
-9c2cb264b7ad58c5187b0ce178555aa5e805f51bdcc367a8bbce0b637e13ebbdde48ec55fbc262ae9c32c957a63bd2562a4646d9aedcabe7943b96c1a36725d2  master.tar.gz
+29c28e2f1aaa37dca746a1b101adb3a34e7bc05c444d42028003c20aa304b900b92202c394896361425f040b508136e43b4628c9b78c32762e313036845adffc  master.tar.gz
+c04ea3aad1a39e9511755ef98ddb0e5971945ca62181c62b3175fe2908030147636ec102bc21b8e66cb1e5544e8240d4caceed12c14ed2d0d8bbed8fddef29ec  rtosbench-qnx.patch
 "

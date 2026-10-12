@@ -1,0 +1,1240 @@
+--- a/Makefile
++++ b/Makefile
+@@ -1,3 +1,8 @@
++
++ifeq ($(shell uname -s),QNX)
++EXAMPLE = qnx
++endif
++
+ ifndef EXAMPLE
+ EXAMPLE = linux
+ endif
+new file mode 100644
+--- /dev/null
++++ b/example/qnx/Makefile
+@@ -0,0 +1,58 @@
++NOBENCH_PATH = ../..
++QNX_PORT_DIR := $(shell pwd)
++
++OBJDIR = bld
++
++ifeq ($(NOBENCH_TRACING), 1)
++LIBS += -lrt -lpthread -lm -llttng-ust -ldl
++CFLAGS += -D_GNU_SOURCE \
++		  -I $(QNX_PORT_DIR)/include \
++		  -I $(QNX_PORT_DIR)/tracing \
++		  -I $(NOBENCH_PATH)/include -O3 \
++		  -I $(NOBENCH_PATH)/tracing \
++		  -DNB_ITER=$(NO_NB_ITER) \
++		  -DBASE_PRIO=$(NO_BASE_PRIO) \
++		  -DTRACING
++QNX_OBJS = $(OBJDIR)/tp.o $(OBJDIR)/qnx_porting_layer.o
++else
++LIBS += -lrt -lpthread -lm -lc
++CFLAGS += -D_GNU_SOURCE \
++		  -I $(QNX_PORT_DIR)/include \
++		  -I $(NOBENCH_PATH)/include -O3 \
++		  -DNB_ITER=$(NO_NB_ITER) \
++		  -DBASE_PRIO=$(NO_BASE_PRIO) \
++		  -DNO_AFFINITY=$(NO_AFFINITY)
++
++QNX_OBJS = $(OBJDIR)/qnx_porting_layer.o
++endif
++
++ifdef DEBUG
++CFLAGS += -g -O0
++endif
++
++
++TARGETS = $(NO_TEST_SRC:.c=)
++
++
++VPATH += $(QNX_PORT_DIR):
++VPATH += $(QNX_PORT_DIR)/tracing:
++VPATH += $(NOBENCH_PATH)/src/tests/context-switch:
++VPATH += $(NOBENCH_PATH)/src/tests/semaphore:
++VPATH += $(NOBENCH_PATH)/src/tests/mutex:
++VPATH += $(NOBENCH_PATH)/src/tests/latency:
++VPATH += $(NOBENCH_PATH)/src/tests/event:
++VPATH += $(NOBENCH_PATH)/src/tests/mq:
++VPATH += $(NOBENCH_PATH)/src/lib/:
++
++CC = gcc
++
++.PHONY: all
++#print:
++#	@echo $(QNX_OBJS)
++
++all: $(OBJDIR) $(TARGETS)
++
++$(TARGETS): % : $(QNX_OBJS) $(OBJDIR)/%.o
++	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
++
++include $(NOBENCH_PATH)/mk/common.mk
+new file mode 100644
+--- /dev/null
++++ b/example/qnx/include/config.h
+@@ -0,0 +1,76 @@
++/* Copyright (c) 2019, Guillaume Champagne
++ * All rights reserved.
++ * This source code is licensed under the BSD-style license found in the
++ * LICENSE file in the root directory of this source tree.
++ */
++
++#ifndef CONFIG_H_
++#define CONFIG_H_
++#include <stdint.h>
++#include <pthread.h>
++#include <mqueue.h>
++#include <semaphore.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++#include <sched.h>
++#include <time.h>
++
++/**
++ * Parameters
++ */
++
++#ifndef BASE_PRIO
++#define BASE_PRIO 10
++#endif
++
++/**
++ * Type definitions
++ */
++typedef void* no_task_retval_t;
++typedef void* no_task_argument_t;
++typedef int no_main_retval_t;
++typedef int no_main_argument_t;
++typedef no_task_retval_t (*no_task_entry_t)(no_task_argument_t);
++typedef pthread_t no_task_handle_t;
++typedef struct timespec no_time_t;
++typedef sem_t no_sem_t;
++typedef pthread_mutex_t no_mutex_t;
++typedef pthread_cond_t no_event_t;
++typedef mqd_t no_mq_t;
++typedef void (*no_int_handler_t)(int, void*);
++
++/**
++ * Macros
++ */
++#define INITIALIZATION_TASK_RETVAL int
++#define INITIALIZATION_TASK_ARG void
++#define INITIALIZATION_TASK_NAME main
++
++#define TASK_DEFAULT_RETURN NULL
++#define MAIN_DEFAULT_RETURN 0
++
++#define NO_INIT_MAX_TIME_VALUE 0x7FFFFFFF
++
++#ifndef TRACING
++#ifndef NO_VERBOSE_RESULTS
++#define REPORT_BENCHMARK_RESULTS(STR_PTR) do { \
++			no_serial_write(STR_PTR); \
++			no_result_report(max_cycles, min_cycles, average_cycles); \
++			fflush(stdout); \
++		} while (0);
++#else
++#define REPORT_BENCHMARK_RESULTS(STR_PTR) do { \
++			for (int _i; _i < NB_ITER; _i++) { \
++				no_single_result_report("", no_cycles_results[_i]); \
++			} \
++		} while (0);
++#endif
++#endif
++
++#define BITSPERLONG 32
++#define TOP2BITS(x) ((x & (3L << (BITSPERLONG-2))) >> (BITSPERLONG-2))
++
++#define DO_WORKLOAD(i) \
++
++#endif
+new file mode 100644
+--- /dev/null
++++ b/example/qnx/qnx_porting_layer.c
+@@ -0,0 +1,422 @@
++/* Copyright (c) 2019, Guillaume Champagne
++ * All rights reserved.
++ * This source code is licensed under the BSD-style license found in the
++ * LICENSE file in the root directory of this source tree.
++ */
++
++#include "porting_layer.h"
++#include <sys/neutrino.h>
++#include <errno.h>
++#include <sys/types.h>
++#include <sys/stat.h>
++#include <unistd.h>
++#include <fcntl.h>
++#include <signal.h>
++uint64_t runmask = 0x01;   /* CPU 2*/
++#ifdef TRACING
++#include "tracing/tp.h"
++#endif
++
++#define BASE_THREAD_COUNT 10
++
++#ifndef NO_AFFINITY
++#define NO_AFFINITY 7
++#endif
++
++#define USEC_PER_SEC		1000000
++#define NSEC_PER_SEC		1000000000
++
++pthread_t* thread_pool;
++unsigned int thread_count;
++unsigned int thread_count_limit;
++
++pthread_mutex_t event_condvar_mutex;
++
++static void set_latency_target(void);
++static inline void tsnorm(struct timespec *ts);
++
++void no_initialize_test(no_task_entry_t init_function)
++{
++	struct sched_param sched_param;
++//cpu_set_t cpuset;
++
++	/* seed */
++	srand(time(0));
++
++	/* Allocate thread pool */
++	thread_pool = malloc(BASE_THREAD_COUNT * sizeof(pthread_t));
++	thread_count = 0;
++	thread_count_limit = BASE_THREAD_COUNT;
++
++	/* Allocate sem pool */
++//CPU_ZERO(&cpuset);
++//CPU_SET(NO_AFFINITY, &cpuset);
++printf("setting 8888up runmask %llu\n",
++       (unsigned long long)runmask);
++
++if (ThreadCtl(_NTO_TCTL_RUNMASK, (void *)runmask) == -1) {
++    perror("ThreadCtl");
++    no_serial_write("Thread runmask failed.");
++    return;
++}
++
++	char* prio_env = getenv("NO_PRIO");
++	int prio = BASE_PRIO;
++	if (prio_env != NULL) {
++		prio = atoi(prio_env);
++	}
++
++	printf("setting up prio %d\n", prio);
++	sched_param.sched_priority = prio;
++	if (sched_setscheduler(0, SCHED_FIFO, &sched_param) != 0) {
++		no_serial_write("Sched set scheduler failed.\n");
++		return;
++	}
++
++	set_latency_target();
++
++	/* Init test */
++	init_function(NULL);
++    int sig;
++	sigset_t set;
++	sigemptyset(&set);
++	sigaddset(&set, SIGINT);
++	sigwait(&set, &sig);
++}
++
++no_task_handle_t no_create_task(no_task_entry_t task_entry, char task_name[4], unsigned int prio)
++{
++	pthread_attr_t attr;
++	struct sched_param sched_param;
++
++	if (thread_count >= thread_count_limit) {
++		/* Double the size of the thread pool and the sem pool */
++		pthread_t* new_thread_pool = malloc(thread_count_limit * 2 * sizeof(pthread_t));
++
++		memcpy((void*)new_thread_pool, (void*)thread_pool, thread_count_limit * sizeof(pthread_t));
++
++		free(thread_pool);
++
++		thread_pool = new_thread_pool;
++
++		thread_count_limit = thread_count_limit * 2;
++	}
++
++	/* Set SCHED_FIFO policy and thread priority */
++	int err = pthread_attr_init(&attr);
++	sched_param.sched_priority = prio;
++	if (err != 0) {
++		no_serial_write("Attr init failed\n");
++	}
++
++	err = pthread_attr_setschedpolicy(&attr, SCHED_FIFO);
++	if (err != 0) {
++		no_serial_write("Set sched policy failed\n");
++	}
++
++	err = pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
++	if (err != 0) {
++		no_serial_write("Set inherit sched param failed\n");
++	}
++
++	err = pthread_attr_setschedparam(&attr, &sched_param);
++	if (err != 0) {
++		no_serial_write("Set sched param failed\n");
++	}
++
++	err = pthread_create(&thread_pool[thread_count], &attr, task_entry, NULL);
++	pthread_attr_destroy(&attr);
++
++	/* Create associated semaphore */
++
++	thread_count++;
++
++	if (err != 0) {
++		no_serial_write("Task creation failed\n");
++	}
++
++	return (no_task_handle_t)thread_pool[thread_count - 1];
++}
++
++void no_task_yield()
++{
++	sched_yield();
++}
++
++void no_task_suspend(no_task_handle_t task)
++{
++}
++
++void no_task_suspend_self()
++{
++}
++
++void no_task_resume(no_task_handle_t task)
++{
++}
++
++void no_task_delay(unsigned int ticks)
++{
++	struct timespec req;
++	long nsec = ticks * 1000000L;
++	long sec = (nsec) / 1000000000L;
++	nsec = nsec % 1000000000L;
++	req.tv_nsec = nsec;
++	req.tv_sec = sec;
++	nanosleep(&req, NULL);
++}
++
++void no_init_timer()
++{
++}
++
++void no_disable_timer()
++{
++}
++
++void no_reset_timer()
++{
++}
++
++no_time_t no_add_times(const no_time_t* base, unsigned int ticks)
++{
++	struct timespec* ts = (struct timespec*)base;
++	struct timespec time;
++	time.tv_nsec = ticks + ts->tv_nsec;
++	time.tv_sec = ts->tv_sec;
++	tsnorm(&time);
++	return time;
++}
++
++no_time_t no_time_get()
++{
++	struct timespec res;
++	clock_gettime(CLOCK_MONOTONIC, &res);
++	return res;
++}
++
++/** TAKEN FOR rt-test **/
++long no_time_diff(const no_time_t* t1, const no_time_t* t2)
++{
++	long diff;
++	diff = NSEC_PER_SEC * (int64_t)((int) t2->tv_sec - (int) t1->tv_sec);
++	//printf("sec diff=%ld\n", diff);
++	diff += ((int) t2->tv_nsec - (int) t1->tv_nsec);
++	/*printf("nsec t2 - t1; %ld - %ld\n", t2->tv_nsec, t1->tv_nsec);
++	printf("sec t2 - t1; %ld - %ld", t2->tv_sec, t1->tv_sec);
++	printf("final diff=%ld\n", diff);*/
++	if (diff < 0)
++	{
++		diff = -diff;
++	}
++	return diff;
++}
++
++void no_sem_create(no_sem_t* sem, int current_value)
++{
++	sem_init((sem_t*)sem, 0, current_value);
++}
++
++void no_sem_wait(no_sem_t* sem)
++{
++	sem_wait((sem_t*)sem);
++}
++
++void no_sem_signal(no_sem_t* sem)
++{
++	sem_post((sem_t*)sem);
++}
++
++void no_mutex_create(no_mutex_t* mutex)
++{
++	pthread_mutex_init((pthread_mutex_t*)mutex, NULL);
++}
++
++void no_mutex_acquire(no_mutex_t* mutex)
++{
++	pthread_mutex_lock((pthread_mutex_t*)mutex);
++}
++
++void no_mutex_release(no_mutex_t* mutex)
++{
++	pthread_mutex_unlock((pthread_mutex_t*)mutex);
++}
++
++void no_event_create(no_event_t* event)
++{
++	pthread_mutex_init(&event_condvar_mutex, NULL);
++	pthread_cond_init((pthread_cond_t*)event, NULL);
++	pthread_mutex_lock(&event_condvar_mutex);
++}
++
++void no_event_set(no_event_t* event)
++{
++	pthread_cond_broadcast((pthread_cond_t*)event);
++}
++
++void no_event_wait(no_event_t* event)
++{
++	pthread_cond_wait(event, &event_condvar_mutex);
++}
++
++void no_event_reset(no_event_t* event)
++{
++}
++
++static void gen_random_str(char *s, int len) {
++	int i;
++	static const char alphanum[] = "ABCDEFGHIJKLMNOPQRSTUVXYWZabcdefghijklmnoqrstuvxyz123456789";
++	for (i = 0; i < len; i++) {
++		s[i] = alphanum[rand() % (sizeof(alphanum) - 1)];
++	}
++}
++
++void no_mq_create(no_mq_t* mq, unsigned int length, unsigned int msgsize)
++{
++	char name[18];
++	struct mq_attr attr;
++	mqd_t* mq_handle = (mqd_t*)mq;
++
++	attr.mq_maxmsg = length;
++	attr.mq_msgsize = msgsize;
++
++	name[0] = '/';
++	name[17] = '\0';
++	gen_random_str(&name[1], 16);
++
++	*mq_handle = mq_open(name, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR, &attr);
++	if (*mq_handle == -1) {
++		printf("mq create error\n");
++	}
++}
++
++void no_mq_send(no_mq_t* mq, unsigned int msg)
++{
++	mq_send(*((mqd_t*)mq), (const char*)&msg, sizeof(msg), 1);
++}
++
++void no_mq_receive(no_mq_t* mq)
++{
++	unsigned int msg;
++	int err = mq_receive(*((mqd_t*)mq), (char*)&msg, sizeof(msg), NULL);
++	if (err == -1) {
++		printf("error mq receive\n");
++	}
++}
++
++void no_serial_write(const char* string)
++{
++	printf("%s\n", string);
++}
++
++void no_cycle_reset_counter()
++{
++}
++
++unsigned int no_cycle_get_count()
++{
++	struct timespec res;
++	clock_gettime(CLOCK_MONOTONIC, &res);
++	return res.tv_nsec;
++}
++
++void no_result_report(int64_t max, int64_t min, int64_t average)
++{
++	int a, b, c;
++	a = (int)max;
++	b = (int)min;
++	c = (int)average;
++	printf("max=%d\nmin=%d\naverage=%d\n", a, b, c);
++}
++
++void no_single_result_report(char* prefix, int64_t value)
++{
++	int a = (int)value;
++	printf("%s%d\n", prefix, a);
++}
++
++/** TAKEN FOR rt-test **/
++static void set_latency_target(void)
++{
++	struct stat s;
++	int err;
++
++	errno = 0;
++	err = stat("/dev/cpu_dma_latency", &s);
++	if (err == -1) {
++		return;
++	}
++
++	errno = 0;
++	int latency_target_fd;
++	latency_target_fd = open("/dev/cpu_dma_latency", O_RDWR);
++	if (latency_target_fd == -1) {
++		printf("Cannot set cpu_dma_latency\n");
++		return;
++	}
++
++	errno = 0;
++	int32_t latency_target_value = 0;
++	err = write(latency_target_fd, &latency_target_value, 4);
++	if (err < 1) {
++		printf("nooo\n");
++		close(latency_target_fd);
++		return;
++	}
++}
++
++/** TAKEN FOR rt-test **/
++static inline void tsnorm(struct timespec *ts)
++{
++	while (ts->tv_nsec >= NSEC_PER_SEC) {
++		ts->tv_nsec -= NSEC_PER_SEC;
++		ts->tv_sec++;
++	}
++}
++
++/** TAKEN FOR rt-test **/
++static inline int64_t calcdiff(struct timespec t1, struct timespec t2)
++{
++	int64_t diff;
++	diff = USEC_PER_SEC * (long long)((int) t1.tv_sec - (int) t2.tv_sec);
++	diff += ((int) t1.tv_nsec - (int) t2.tv_nsec) / 1000;
++	return diff;
++}
++
++#ifdef TRACING
++void no_tracing_write_event(int ev_id)
++{
++	switch(ev_id)
++	{
++		case NOBENCH_TEST_ID_COOP_SCHED:
++			tracepoint(nobench_trace, no_begin_coop_sched);
++			break;
++		case NOBENCH_TEST_ID_COOP_SCHED + 1:
++			tracepoint(nobench_trace, no_end_coop_sched);
++			break;
++		case NOBENCH_TEST_ID_SEM_INC:
++			tracepoint(nobench_trace, no_begin_sem_inc);
++			break;
++		case NOBENCH_TEST_ID_SEM_INC + 1:
++			tracepoint(nobench_trace, no_end_sem_inc);
++			break;
++		case NOBENCH_TEST_ID_SEM_SIGNAL_PRIO:
++			tracepoint(nobench_trace, no_begin_sem_prio);
++			break;
++		case NOBENCH_TEST_ID_SEM_SIGNAL_PRIO + 1:
++			tracepoint(nobench_trace, no_end_sem_prio);
++			break;
++		case NOBENCH_TEST_ID_MQ_SEND:
++			tracepoint(nobench_trace, no_begin_mq_send);
++			break;
++		case NOBENCH_TEST_ID_MQ_SEND + 1:
++			tracepoint(nobench_trace, no_end_mq_send);
++			break;
++	}
++}
++
++void no_tracing_report()
++{
++
++}
++#endif
+new file mode 100644
+--- /dev/null
++++ b/example/qnx/qnx_porting_layer_back.c
+@@ -0,0 +1,424 @@
++/* Copyright (c) 2019, Guillaume Champagne
++ * All rights reserved.
++ * This source code is licensed under the BSD-style license found in the
++ * LICENSE file in the root directory of this source tree.
++ */
++
++#include "porting_layer.h"
++#include <sched.h>
++#include <errno.h>
++#include <sys/types.h>
++#include <sys/stat.h>
++#include <unistd.h>
++#include <fcntl.h>
++#include <signal.h>
++#include <stdint.h>
++#include <inttypes.h>
++#ifdef TRACING
++#include "tracing/tp.h"
++#endif
++
++#define BASE_THREAD_COUNT 10
++
++#ifndef NO_AFFINITY
++#define NO_AFFINITY 2
++#endif
++
++#define USEC_PER_SEC		1000000
++#define NSEC_PER_SEC		1000000000
++
++pthread_t* thread_pool;
++unsigned int thread_count;
++unsigned int thread_count_limit;
++
++pthread_mutex_t event_condvar_mutex;
++
++static void set_latency_target(void);
++static inline void tsnorm(struct timespec *ts);
++
++void no_initialize_test(no_task_entry_t init_function)
++{
++	struct sched_param sched_param;
++	//cpu_set_t cpuset;
++
++	/* seed */
++	srand(time(0));
++
++	/* Allocate thread pool */
++	thread_pool = malloc(BASE_THREAD_COUNT * sizeof(pthread_t));
++	thread_count = 0;
++	thread_count_limit = BASE_THREAD_COUNT;
++
++	/* Allocate sem pool */
++	#if 0
++	CPU_ZERO(&cpuset);
++	CPU_SET(NO_AFFINITY, &cpuset);
++	
++	printf("setting up affinity %d\n", NO_AFFINITY);
++
++	if (sched_setaffinity(0, sizeof(cpuset), &cpuset) != 0) {
++	no_serial_write("Sched set affinity failed.\n");
++	return;
++	}
++
++	char* prio_env = getenv("NO_PRIO");
++	int prio = BASE_PRIO;
++	if (prio_env != NULL) {
++		prio = atoi(prio_env);
++	}
++
++	printf("setting up prio %d\n", prio);
++	sched_param.sched_priority = prio;
++	if (sched_setscheduler(0, SCHED_FIFO, &sched_param) != 0) {
++		no_serial_write("Sched set scheduler failed.\n");
++		return;
++	}
++	#endif
++	set_latency_target();
++
++	/* Init test */
++	init_function(NULL);
++
++	sigset_t set;
++	sigemptyset(&set);
++	sigaddset(&set, SIGINT);
++	sigwait(&set, NULL);
++}
++
++no_task_handle_t no_create_task(no_task_entry_t task_entry, char task_name[4], unsigned int prio)
++{
++	pthread_attr_t attr;
++	struct sched_param sched_param;
++
++	if (thread_count >= thread_count_limit) {
++		/* Double the size of the thread pool and the sem pool */
++		pthread_t* new_thread_pool = malloc(thread_count_limit * 2 * sizeof(pthread_t));
++
++		memcpy((void*)new_thread_pool, (void*)thread_pool, thread_count_limit * sizeof(pthread_t));
++
++		free(thread_pool);
++
++		thread_pool = new_thread_pool;
++
++		thread_count_limit = thread_count_limit * 2;
++	}
++
++	/* Set SCHED_FIFO policy and thread priority */
++	int err = pthread_attr_init(&attr);
++	sched_param.sched_priority = prio;
++	if (err != 0) {
++		no_serial_write("Attr init failed\n");
++	}
++
++	err = pthread_attr_setschedpolicy(&attr, SCHED_FIFO);
++	if (err != 0) {
++		no_serial_write("Set sched policy failed\n");
++	}
++
++	err = pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
++	if (err != 0) {
++		no_serial_write("Set inherit sched param failed\n");
++	}
++
++	err = pthread_attr_setschedparam(&attr, &sched_param);
++	if (err != 0) {
++		no_serial_write("Set sched param failed\n");
++	}
++
++	err = pthread_create(&thread_pool[thread_count], &attr, task_entry, NULL);
++	pthread_attr_destroy(&attr);
++
++	/* Create associated semaphore */
++
++	thread_count++;
++
++	if (err != 0) {
++		no_serial_write("Task creation failed\n");
++	}
++
++	return (no_task_handle_t)thread_pool[thread_count - 1];
++}
++
++void no_task_yield()
++{
++	sched_yield();
++}
++
++void no_task_suspend(no_task_handle_t task)
++{
++}
++
++void no_task_suspend_self()
++{
++}
++
++void no_task_resume(no_task_handle_t task)
++{
++}
++
++void no_task_delay(unsigned int ticks)
++{
++	struct timespec req;
++	long nsec = ticks * 1000000L;
++	long sec = (nsec) / 1000000000L;
++	nsec = nsec % 1000000000L;
++	req.tv_nsec = nsec;
++	req.tv_sec = sec;
++	nanosleep(&req, NULL);
++}
++
++void no_init_timer()
++{
++}
++
++void no_disable_timer()
++{
++}
++
++void no_reset_timer()
++{
++}
++
++no_time_t no_add_times(const no_time_t* base, unsigned int ticks)
++{
++	struct timespec* ts = (struct timespec*)base;
++	struct timespec time;
++	time.tv_nsec = ticks + ts->tv_nsec;
++	time.tv_sec = ts->tv_sec;
++	tsnorm(&time);
++	return time;
++}
++
++no_time_t no_time_get()
++{
++	struct timespec res;
++	clock_gettime(CLOCK_MONOTONIC, &res);
++	return res;
++}
++
++/** TAKEN FOR rt-test **/
++long no_time_diff(const no_time_t* t1, const no_time_t* t2)
++{
++	long diff;
++	diff = NSEC_PER_SEC * (int64_t)((int) t2->tv_sec - (int) t1->tv_sec);
++	//printf("sec diff=%ld\n", diff);
++	diff += ((int) t2->tv_nsec - (int) t1->tv_nsec);
++	/*printf("nsec t2 - t1; %ld - %ld\n", t2->tv_nsec, t1->tv_nsec);
++	printf("sec t2 - t1; %ld - %ld", t2->tv_sec, t1->tv_sec);
++	printf("final diff=%ld\n", diff);*/
++	if (diff < 0)
++	{
++		diff = -diff;
++	}
++
++	return diff;
++}
++
++void no_sem_create(no_sem_t* sem, int current_value)
++{
++	sem_init((sem_t*)sem, 0, current_value);
++}
++
++void no_sem_wait(no_sem_t* sem)
++{
++	sem_wait((sem_t*)sem);
++}
++
++void no_sem_signal(no_sem_t* sem)
++{
++	sem_post((sem_t*)sem);
++}
++
++void no_mutex_create(no_mutex_t* mutex)
++{
++	pthread_mutex_init((pthread_mutex_t*)mutex, NULL);
++}
++
++void no_mutex_acquire(no_mutex_t* mutex)
++{
++	pthread_mutex_lock((pthread_mutex_t*)mutex);
++}
++
++void no_mutex_release(no_mutex_t* mutex)
++{
++	pthread_mutex_unlock((pthread_mutex_t*)mutex);
++}
++
++void no_event_create(no_event_t* event)
++{
++	pthread_mutex_init(&event_condvar_mutex, NULL);
++	pthread_cond_init((pthread_cond_t*)event, NULL);
++	pthread_mutex_lock(&event_condvar_mutex);
++}
++
++void no_event_set(no_event_t* event)
++{
++	pthread_cond_broadcast((pthread_cond_t*)event);
++}
++
++void no_event_wait(no_event_t* event)
++{
++	pthread_cond_wait(event, &event_condvar_mutex);
++}
++
++void no_event_reset(no_event_t* event)
++{
++}
++
++static void gen_random_str(char *s, int len) {
++	int i;
++	static const char alphanum[] = "ABCDEFGHIJKLMNOPQRSTUVXYWZabcdefghijklmnoqrstuvxyz123456789";
++	for (i = 0; i < len; i++) {
++		s[i] = alphanum[rand() % (sizeof(alphanum) - 1)];
++	}
++}
++
++void no_mq_create(no_mq_t* mq, unsigned int length, unsigned int msgsize)
++{
++	char name[18];
++	struct mq_attr attr;
++	mqd_t* mq_handle = (mqd_t*)mq;
++
++	attr.mq_maxmsg = length;
++	attr.mq_msgsize = msgsize;
++
++	name[0] = '/';
++	name[17] = '\0';
++	gen_random_str(&name[1], 16);
++
++	*mq_handle = mq_open(name, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR, &attr);
++	if (*mq_handle == -1) {
++		printf("mq create error\n");
++	}
++}
++
++void no_mq_send(no_mq_t* mq, unsigned int msg)
++{
++	mq_send(*((mqd_t*)mq), (const char*)&msg, sizeof(msg), 1);
++}
++
++void no_mq_receive(no_mq_t* mq)
++{
++	unsigned int msg;
++	int err = mq_receive(*((mqd_t*)mq), (char*)&msg, sizeof(msg), NULL);
++	if (err == -1) {
++		printf("error mq receive\n");
++	}
++}
++
++void no_serial_write(const char* string)
++{
++	printf("%s\n", string);
++}
++
++void no_cycle_reset_counter()
++{
++}
++
++unsigned int no_cycle_get_count()
++{
++	struct timespec res;
++	clock_gettime(CLOCK_MONOTONIC, &res);
++	return res.tv_nsec;
++}
++
++void no_result_report(int64_t max, int64_t min, int64_t average)
++{
++	int a, b, c;
++	a = (int)max;
++	b = (int)min;
++	c = (int)average;
++	printf("max=%d\nmin=%d\naverage=%d\n", a, b, c);
++}
++
++void no_single_result_report(char* prefix, int64_t value)
++{
++	int a = (int)value;
++	printf("%s%d\n", prefix, a);
++}
++
++/** TAKEN FOR rt-test **/
++static void set_latency_target(void)
++{
++	struct stat s;
++	int err;
++
++	errno = 0;
++	err = stat("/dev/cpu_dma_latency", &s);
++	if (err == -1) {
++		return;
++	}
++
++	errno = 0;
++	int latency_target_fd;
++	latency_target_fd = open("/dev/cpu_dma_latency", O_RDWR);
++	if (latency_target_fd == -1) {
++		printf("Cannot set cpu_dma_latency\n");
++		return;
++	}
++
++	errno = 0;
++	int32_t latency_target_value = 0;
++	err = write(latency_target_fd, &latency_target_value, 4);
++	if (err < 1) {
++		printf("nooo\n");
++		close(latency_target_fd);
++		return;
++	}
++}
++
++/** TAKEN FOR rt-test **/
++static inline void tsnorm(struct timespec *ts)
++{
++	while (ts->tv_nsec >= NSEC_PER_SEC) {
++		ts->tv_nsec -= NSEC_PER_SEC;
++		ts->tv_sec++;
++	}
++}
++
++/** TAKEN FOR rt-test **/
++static inline int64_t calcdiff(struct timespec t1, struct timespec t2)
++{
++	int64_t diff;
++	diff = USEC_PER_SEC * (long long)((int) t1.tv_sec - (int) t2.tv_sec);
++	diff += ((int) t1.tv_nsec - (int) t2.tv_nsec) / 1000;
++	return diff;
++}
++
++#ifdef TRACING
++void no_tracing_write_event(int ev_id)
++{
++	switch(ev_id)
++	{
++		case NOBENCH_TEST_ID_COOP_SCHED:
++			tracepoint(nobench_trace, no_begin_coop_sched);
++			break;
++		case NOBENCH_TEST_ID_COOP_SCHED + 1:
++			tracepoint(nobench_trace, no_end_coop_sched);
++			break;
++		case NOBENCH_TEST_ID_SEM_INC:
++			tracepoint(nobench_trace, no_begin_sem_inc);
++			break;
++		case NOBENCH_TEST_ID_SEM_INC + 1:
++			tracepoint(nobench_trace, no_end_sem_inc);
++			break;
++		case NOBENCH_TEST_ID_SEM_SIGNAL_PRIO:
++			tracepoint(nobench_trace, no_begin_sem_prio);
++			break;
++		case NOBENCH_TEST_ID_SEM_SIGNAL_PRIO + 1:
++			tracepoint(nobench_trace, no_end_sem_prio);
++			break;
++		case NOBENCH_TEST_ID_MQ_SEND:
++			tracepoint(nobench_trace, no_begin_mq_send);
++			break;
++		case NOBENCH_TEST_ID_MQ_SEND + 1:
++			tracepoint(nobench_trace, no_end_mq_send);
++			break;
++	}
++}
++
++void no_tracing_report()
++{
++
++}
++#endif
+\ No newline at end of file
+new file mode 100644
+--- /dev/null
++++ b/example/qnx/tracing/here.txt
+@@ -0,0 +1,38 @@
++                 U abort
++0000000000000269 t cds_list_empty
++                 U dlclose
++                 U dlopen
++                 U dlsym
++0000000000000000 d __event_desc___nobench_trace
++0000000000000300 r __event_desc___nobench_trace_my_tracepoint
++00000000000001a0 r __event_fields___nobench_trace___my_tracepoint
++000000000000037a t __event_get_align__nobench_trace___my_tracepoint
++000000000000034a t __event_get_size__nobench_trace___my_tracepoint
++000000000000036b t __event_prepare_filter_stack__nobench_trace___my_tracepoint
++000000000000038c t __event_probe__nobench_trace___my_tracepoint
++                 U fprintf
++0000000000000284 t lib_ring_buffer_ctx_init
++                 w _loglevel___nobench_trace___my_tracepoint
++00000000000006a5 t __lttng_events_exit__nobench_trace
++000000000000064e t __lttng_events_init__nobench_trace
++                 U lttng_probe_register
++                 U lttng_probe_unregister
++                 U memset
++                 w _model_emf_uri___nobench_trace___my_tracepoint
++0000000000000020 d __probe_desc___nobench_trace
++0000000000000080 b __probe_register_refcount___nobench_trace
++                 U stderr
++00000000000002e0 r __tp_event_signature___nobench_trace___my_tracepoint
++0000000000000080 r __tp_name_len_checknobench_trace___my_tracepoint
++0000000000000060 V tracepoint_destructors_syms
++0000000000000078 V tracepoint_destructors_syms_ptr
++0000000000000020 V tracepoint_dlopen
++0000000000000050 V tracepoint_dlopen_ptr
++0000000000000000 t __tracepoint__init_urcu_sym
++0000000000000339 t __tracepoint_provider_check_nobench_trace
++0000000000000332 t __tracepoint_provider_mismatch_nobench_trace
++0000000000000004 C __tracepoint_provider_nobench_trace
++0000000000000004 V __tracepoint_ptrs_registered
++0000000000000000 V __tracepoint_registered
++000000000000014f t __tracepoints__destroy
++00000000000000bd t __tracepoints__init
+new file mode 100644
+--- /dev/null
++++ b/example/qnx/tracing/there.txt
+@@ -0,0 +1,29 @@
++                 U abort
++                 U dlclose
++                 U dlopen
++                 U dlsym
++0000000000000050 d __event_desc___nobench_trace
++0000000000000000 r __event_desc___nobench_trace_my_tracepoint
++0000000000000080 r __event_fields___nobench_trace___my_tracepoint
++0000000000000000 t __event_probe__nobench_trace___my_tracepoint
++                 U fprintf
++                 w _loglevel___nobench_trace___my_tracepoint
++00000000000000c0 t __lttng_events_exit__nobench_trace
++0000000000000100 t __lttng_events_init__nobench_trace
++                 U lttng_probe_register
++                 U lttng_probe_unregister
++                 w _model_emf_uri___nobench_trace___my_tracepoint
++0000000000000000 d __probe_desc___nobench_trace
++0000000000000078 b __probe_register_refcount___nobench_trace
++                 U stderr
++0000000000000060 r __tp_event_signature___nobench_trace___my_tracepoint
++0000000000000010 V tracepoint_destructors_syms
++0000000000000000 V tracepoint_destructors_syms_ptr
++0000000000000040 V tracepoint_dlopen
++0000000000000028 V tracepoint_dlopen_ptr
++0000000000000000 t __tracepoint__init_urcu_sym
++0000000000000004 C __tracepoint_provider_nobench_trace
++0000000000000070 V __tracepoint_ptrs_registered
++0000000000000074 V __tracepoint_registered
++0000000000000000 t __tracepoints__destroy
++0000000000000090 t __tracepoints__init
+new file mode 100644
+--- /dev/null
++++ b/example/qnx/tracing/tp.c
+@@ -0,0 +1,4 @@
++#define TRACEPOINT_CREATE_PROBES
++#define TRACEPOINT_DEFINE
++
++#include "tp.h"
+new file mode 100644
+--- /dev/null
++++ b/example/qnx/tracing/tp.h
+@@ -0,0 +1,134 @@
++#undef TRACEPOINT_PROVIDER
++#define TRACEPOINT_PROVIDER nobench_trace
++
++#undef TRACEPOINT_INCLUDE
++#define TRACEPOINT_INCLUDE "tp.h"
++
++#if !defined(_TP_H) || defined(TRACEPOINT_HEADER_MULTI_READ)
++#define _TP_H
++
++#include <lttng/tracepoint.h>
++
++/*
++ * TRACEPOINT_EVENT(), TRACEPOINT_EVENT_CLASS(),
++ * TRACEPOINT_EVENT_INSTANCE(), TRACEPOINT_LOGLEVEL(),
++ * and `TRACEPOINT_ENUM()` are used here.
++ */
++
++TRACEPOINT_EVENT(
++	nobench_trace,
++
++	no_begin_coop_sched,
++
++	/* List of tracepoint arguments (input) */
++	TP_ARGS(
++	),
++
++	/* List of fields of eventual event (output) */
++	TP_FIELDS(
++	)
++)
++
++TRACEPOINT_EVENT(
++	nobench_trace,
++
++	no_end_coop_sched,
++
++	/* List of tracepoint arguments (input) */
++	TP_ARGS(
++	),
++
++	/* List of fields of eventual event (output) */
++	TP_FIELDS(
++	)
++)
++
++TRACEPOINT_EVENT(
++	nobench_trace,
++
++	no_begin_sem_inc,
++
++	/* List of tracepoint arguments (input) */
++	TP_ARGS(
++	),
++
++	/* List of fields of eventual event (output) */
++	TP_FIELDS(
++	)
++)
++
++TRACEPOINT_EVENT(
++	nobench_trace,
++
++	no_end_sem_inc,
++
++	/* List of tracepoint arguments (input) */
++	TP_ARGS(
++	),
++
++	/* List of fields of eventual event (output) */
++	TP_FIELDS(
++	)
++)
++
++TRACEPOINT_EVENT(
++	nobench_trace,
++
++	no_begin_sem_prio,
++
++	/* List of tracepoint arguments (input) */
++	TP_ARGS(
++	),
++
++	/* List of fields of eventual event (output) */
++	TP_FIELDS(
++	)
++)
++
++TRACEPOINT_EVENT(
++	nobench_trace,
++
++	no_end_sem_prio,
++
++	/* List of tracepoint arguments (input) */
++	TP_ARGS(
++	),
++
++	/* List of fields of eventual event (output) */
++	TP_FIELDS(
++	)
++)
++
++TRACEPOINT_EVENT(
++	nobench_trace,
++
++	no_begin_mq_send,
++
++	/* List of tracepoint arguments (input) */
++	TP_ARGS(
++	),
++
++	/* List of fields of eventual event (output) */
++	TP_FIELDS(
++	)
++)
++
++TRACEPOINT_EVENT(
++	nobench_trace,
++
++	no_end_mq_send,
++
++	/* List of tracepoint arguments (input) */
++	TP_ARGS(
++	),
++
++	/* List of fields of eventual event (output) */
++	TP_FIELDS(
++	)
++)
++
++
++
++#endif /* _TP_H */
++
++#include <lttng/tracepoint-event.h>
+--- a/mk/common.mk
++++ b/mk/common.mk
+@@ -26,7 +26,7 @@ $(OBJDIR)/%.o: %.s | $(OBJDIR)
+ 	$(CC) -c -Dgcc $< $(ALFLAGS) -o $@
+ 
+ $(OBJDIR):
+-	mkdir $(OBJDIR)
++	mkdir -p $(OBJDIR)
+ 
+ $(OBJDIR)/libnobench.a: $(LIBNOBENCHOBJS)
+ 	$(AR) rcs $@ $^
