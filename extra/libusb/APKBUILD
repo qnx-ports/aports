@@ -9,39 +9,28 @@ license="LGPL-2.1-or-later"
 makedepends="autoconf automake libtool pkgconf ninja libc++-dev qnx-libpci-dev  qnx-usb-dev"
 depends="libc++ qnx-libpci qnx-usb"
 subpackages="$pkgname-dev"
-source="$pkgname-$pkgver.tar.gz::https://github.com/qnx-ports/libusb/archive/refs/heads/libusb-1.0.23.tar.gz"
-builddir="$srcdir/libusb-libusb-1.0.23"
+source="$pkgname-$pkgver.tar.gz::https://github.com/qnx-ports/libusb/archive/refs/tags/qnx-1.0.23-r0.tar.gz"
+builddir="$srcdir/libusb-qnx-1.0.23-r0"
+options="!check"
 
 prepare() {   
 	./bootstrap.sh
 }
 
 build() {
-    export CC=clang
-    export CXX=clang++
-    export CFLAGS="$CFLAGS -D_QNX_SOURCE -g -O2 -fPIC"
-    export CXXFLAGS="$CXXFLAGS -fPIC"
-    export LDFLAGS="$LDFLAGS -L/usr/local/lib -L/usr/lib"
+
     export LIBS="$LIBS -lusbdi -lpci"
 
     ./configure \
-    --host="$CHOST" \
-    --build="$CHOST" \
     --prefix=/usr \
     --enable-shared \
-    --disable-static \
-    CFLAGS="$CFLAGS" \
-    CXXFLAGS="$CXXFLAGS" \
-    LDFLAGS="$LDFLAGS"
+    --disable-static
 
     make
 }
 
-#Tests cannot be executed as the qnxuser, and the build must not be run as root. Therefore, 
-#test execution is being disabled and verified the functional tests on root user .
-
 package() {
-    cd "$builddir"
+    
     make DESTDIR="$pkgdir" install
     cd "$pkgdir/usr/lib"
     ln -sf libusb-1.0.so.0.2.0 libusb-1.0.so.0
@@ -49,5 +38,5 @@ package() {
 }
 
 sha512sums="
-dd1ca809b46029c2cd7ac0db59a163e9fb790bcd5a83e8468313b1502fbef32daf51d3b0ef29d9c4bf65838467fd9148f1106bde36e87d36e1c46d39829b4dcd  libusb-1.0.23.tar.gz
+760ac2d728a04dd0b7ca1cf2121da1bc9070e59f0f9609bb62d81e2c3290c69cd437b9c458b6be66ff04751023ad23e599bbb7c9dd5b9ced5f792aa4066e5978  libusb-1.0.23.tar.gz
 "
