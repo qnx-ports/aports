@@ -3,7 +3,7 @@
 # Maintainer: Deep Chordia <dchordia@blackberry.com>
 pkgname=aws-c-io
 pkgver=0.26.1
-pkgrel=1
+pkgrel=0
 pkgdesc="Module for the AWS SDK for C handling all IO and TLS work for application protocols"
 url="https://github.com/awslabs/aws-c-io"
 arch="all"
@@ -29,19 +29,20 @@ makedepends="
   ninja
   "
 subpackages="$pkgname-dev"
-source="$pkgname-$pkgver.tar.gz::https://github.com/qnx-ports/aws-c-io/archive/refs/heads/qnx-v$pkgver.tar.gz"
-builddir="$srcdir/$pkgname-qnx-v$pkgver"
+source="$pkgname-$pkgver.tar.gz::https://github.com/awslabs/aws-c-io/archive/refs/tags/v$pkgver.tar.gz
+        0001-add-qnx-build.patch
+        "
 
 build() {
+  LDFLAGS="-lepoll" \
   cmake -B build -G Ninja \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX=/usr \
-    -DCMAKE_INSTALL_LIBDIR=lib \
-    -DCMAKE_EXE_LINKER_FLAGS="-lepoll" \
+    -DCMAKE_INSTALL_DATADIR=/usr/lib \
     -DBUILD_SHARED_LIBS=ON \
     -DBUILD_TESTING=ON \
-    -DCMAKE_SYSTEM_NAME=QNX \
-    -DQNX=ON
+    -DQNX=1 \
+    -DCMAKE_SYSTEM_NAME=QNX
   cmake --build build
 }
 
@@ -76,5 +77,6 @@ package() {
 }
 
 sha512sums="
-6b57aab51fc233fd47bdd1eab0a9444f9c9e62b1c460855a08fa601c8e2bc2a484edd48c42ce7b825a2340c0cfc66667416508d97ee46e0e2c41dec29059711f  aws-c-io-0.26.1.tar.gz
+32acb55fbee99a0409e65a081a7751898c81b7e4ac6a9643c8a38025114a2eef0377b1adf01774b50a1cf1a1b2b4ad99b353d75f8320ceca81afff8a50a7b120  aws-c-io-0.26.1.tar.gz
+84d61e345892a194a9c641e3e5c9e7834fa999fc166b501bab2275fecea235b8721d55c84aafaef984564d9bfbf12f8323f107204f17eb2142a0b6532a09fb4c  0001-add-qnx-build.patch
 "
