@@ -1,3 +1,6 @@
+# Contributor: Hidde van der Heide <hvanderheide@nexuz.net>
+# Alpine-Maintainer: Roberto Oliveira <robertoguimaraes8@gmail.com>
+# Maintainer: Terence Ang <taang@qnx.com>
 pkgname=log4cpp
 pkgver=1.1.4
 pkgrel=0
@@ -6,7 +9,8 @@ url="https://log4cpp.sourceforge.net/"
 arch="all"
 license="LGPL-2.1-or-later"
 subpackages="$pkgname-dev"
-makedepends="qnx-base-dev make libtool"
+depends="libc++"
+makedepends="make libtool diffutils libc++-dev glib-dev"
 source="https://downloads.sourceforge.net/$pkgname/$pkgname-$pkgver.tar.gz"
 builddir="$srcdir/$pkgname"
 
@@ -18,10 +22,21 @@ prepare() {
 }
 
 build() {
+    if [ "$CARCH" = "aarch64" ]; then
+        build_arch="$(arch)"
+        build_os="$(uname -s)"
+        build_release="$(uname -r)"
+
+        host_platform="--host=$CARCH-$build_arch-nto-${build_os,,}$build_release"
+        build_platform="--build=$CARCH-$build_arch-nto-${build_os,,}$build_release"
+    fi
+
     ./configure \
-        --prefix=$PREFIX \
+        "$host_platform" \
+        "$build_platform" \
+        --prefix=/usr \
         --sysconfdir=/etc \
-        --mandir=$PREFIX/share/man \
+        --mandir=/usr/share/man \
         --localstatedir=/var \
         --disable-dot \
         --disable-static \
