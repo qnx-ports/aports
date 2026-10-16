@@ -1,0 +1,246 @@
+--- a/src/daemon/priv.c
++++ b/src/daemon/priv.c
+@@ -37,6 +37,7 @@
+ #include <sys/utsname.h>
+ #include <sys/ioctl.h>
+ #include <netinet/if_ether.h>
++#include <ifaddrs.h>
+ 
+ #ifdef HAVE_LINUX_CAPABILITIES
+ #  include <sys/capability.h>
+@@ -188,6 +189,111 @@
+ 	return receive_fd(PRIV_UNPRIVILEGED);
+ }
+ 
++#ifdef HOST_OS_QNX
++/* Wire format for one getifaddrs() entry, covering only what
++ * interfaces-bsd.c's ifbsd_extract()/ifbsd_extract_device() consume.
++ * Used to proxy interface enumeration through the privileged monitor:
++ * on QNX, getifaddrs() needs to reach /dev/socket (QNX's socket
++ * implementation is resource-manager/filesystem backed, unlike
++ * Linux/BSD), which is unreachable from the unprivileged worker once
++ * it has chroot()ed into the (deliberately empty) privsep jail. The
++ * monitor never chroots, so it can call the real getifaddrs() freely
++ * and hand the results down over the existing privsep channel. */
++struct priv_ifaddr {
++	char name[IFNAMSIZ];
++	int flags;
++	sa_family_t family; /* AF_LINK, AF_INET or AF_INET6 */
++	union {
++		struct {
++			u_char type;
++			u_short index;
++			u_char mac[ETHER_ADDR_LEN];
++		} link;
++		struct sockaddr_in in;
++		struct sockaddr_in6 in6;
++	} addr;
++};
++
++/* Proxy for getifaddrs(). Reconstructs a getifaddrs()-compatible list so
++ * ifbsd_extract()/ifbsd_extract_device() can be reused unchanged. */
++int
++priv_getifaddrs(struct ifaddrs **ifap)
++{
++	int count, i;
++	enum priv_cmd cmd = PRIV_GET_IFADDRS;
++	struct ifaddrs *head = NULL, *tail = NULL;
++
++	must_write(PRIV_UNPRIVILEGED, &cmd, sizeof(enum priv_cmd));
++	priv_wait();
++	must_read(PRIV_UNPRIVILEGED, &count, sizeof(int));
++	if (count < 0) {
++		*ifap = NULL;
++		return -1;
++	}
++
++	for (i = 0; i < count; i++) {
++		struct priv_ifaddr entry;
++		struct ifaddrs *ifa;
++
++		must_read(PRIV_UNPRIVILEGED, &entry, sizeof(entry));
++
++		if ((ifa = calloc(1, sizeof(struct ifaddrs))) == NULL)
++			fatal("privsep", NULL);
++		if ((ifa->ifa_name = strdup(entry.name)) == NULL)
++			fatal("privsep", NULL);
++		ifa->ifa_flags = entry.flags;
++
++		if (entry.family == AF_LINK) {
++			struct sockaddr_dl *sdl;
++			if ((sdl = calloc(1, sizeof(struct sockaddr_dl))) == NULL)
++				fatal("privsep", NULL);
++			sdl->sdl_len = sizeof(struct sockaddr_dl);
++			sdl->sdl_family = AF_LINK;
++			sdl->sdl_index = entry.addr.link.index;
++			sdl->sdl_type = entry.addr.link.type;
++			sdl->sdl_nlen = strlen(entry.name);
++			sdl->sdl_alen = ETHER_ADDR_LEN;
++			memcpy(sdl->sdl_data, entry.name, sdl->sdl_nlen);
++			memcpy(sdl->sdl_data + sdl->sdl_nlen, entry.addr.link.mac,
++			    ETHER_ADDR_LEN);
++			ifa->ifa_addr = (struct sockaddr *)sdl;
++		} else if (entry.family == AF_INET) {
++			struct sockaddr_in *sin;
++			if ((sin = malloc(sizeof(struct sockaddr_in))) == NULL)
++				fatal("privsep", NULL);
++			memcpy(sin, &entry.addr.in, sizeof(struct sockaddr_in));
++			ifa->ifa_addr = (struct sockaddr *)sin;
++		} else {
++			struct sockaddr_in6 *sin6;
++			if ((sin6 = malloc(sizeof(struct sockaddr_in6))) == NULL)
++				fatal("privsep", NULL);
++			memcpy(sin6, &entry.addr.in6, sizeof(struct sockaddr_in6));
++			ifa->ifa_addr = (struct sockaddr *)sin6;
++		}
++
++		if (tail) tail->ifa_next = ifa;
++		else head = ifa;
++		tail = ifa;
++	}
++
++	*ifap = head;
++	return 0;
++}
++
++void
++priv_freeifaddrs(struct ifaddrs *ifap)
++{
++	struct ifaddrs *next;
++	while (ifap) {
++		next = ifap->ifa_next;
++		free(ifap->ifa_name);
++		free(ifap->ifa_addr);
++		free(ifap);
++		ifap = next;
++	}
++}
++#endif /* HOST_OS_QNX */
++
+ static void
+ asroot_ping()
+ {
+@@ -324,7 +430,60 @@
+ 	must_write(PRIV_PRIVILEGED, &rc, sizeof(rc));
+ }
+ 
++#ifdef HOST_OS_QNX
+ static void
++asroot_get_ifaddrs()
++{
++	struct ifaddrs *ifaddrs = NULL, *ifa;
++	int rc;
++
++	if (getifaddrs(&ifaddrs) < 0) {
++		rc = -1;
++		must_write(PRIV_PRIVILEGED, &rc, sizeof(int));
++		return;
++	}
++
++	rc = 0;
++	for (ifa = ifaddrs; ifa != NULL; ifa = ifa->ifa_next) {
++		if (!ifa->ifa_name || !ifa->ifa_addr) continue;
++		if (ifa->ifa_addr->sa_family != AF_LINK &&
++		    ifa->ifa_addr->sa_family != AF_INET &&
++		    ifa->ifa_addr->sa_family != AF_INET6)
++			continue;
++		rc++;
++	}
++	must_write(PRIV_PRIVILEGED, &rc, sizeof(int));
++
++	for (ifa = ifaddrs; ifa != NULL; ifa = ifa->ifa_next) {
++		struct priv_ifaddr entry;
++		if (!ifa->ifa_name || !ifa->ifa_addr) continue;
++		memset(&entry, 0, sizeof(entry));
++		entry.family = ifa->ifa_addr->sa_family;
++		if (entry.family != AF_LINK && entry.family != AF_INET &&
++		    entry.family != AF_INET6)
++			continue;
++		strlcpy(entry.name, ifa->ifa_name, sizeof(entry.name));
++		entry.flags = ifa->ifa_flags;
++		if (entry.family == AF_LINK) {
++			struct sockaddr_dl *sdl =
++			    ALIGNED_CAST(struct sockaddr_dl *, ifa->ifa_addr);
++			entry.addr.link.type = sdl->sdl_type;
++			entry.addr.link.index = sdl->sdl_index;
++			memcpy(entry.addr.link.mac, LLADDR(sdl), ETHER_ADDR_LEN);
++		} else if (entry.family == AF_INET) {
++			memcpy(&entry.addr.in, ifa->ifa_addr,
++			    sizeof(struct sockaddr_in));
++		} else {
++			memcpy(&entry.addr.in6, ifa->ifa_addr,
++			    sizeof(struct sockaddr_in6));
++		}
++		must_write(PRIV_PRIVILEGED, &entry, sizeof(entry));
++	}
++	freeifaddrs(ifaddrs);
++}
++#endif /* HOST_OS_QNX */
++
++static void
+ asroot_snmp_socket()
+ {
+ 	int sock, rc;
+@@ -391,7 +550,11 @@
+ 	{ PRIV_IFACE_MULTICAST, asroot_iface_multicast },
+ 	{ PRIV_IFACE_DESCRIPTION, asroot_iface_description },
+ 	{ PRIV_IFACE_PROMISC, asroot_iface_promisc },
+-	{ PRIV_SNMP_SOCKET, asroot_snmp_socket }, { -1, NULL } };
++	{ PRIV_SNMP_SOCKET, asroot_snmp_socket },
++#ifdef HOST_OS_QNX
++	{ PRIV_GET_IFADDRS, asroot_get_ifaddrs },
++#endif
++	{ -1, NULL } };
+ 
+ /* Main loop, run as root */
+ static void
+--- a/src/daemon/lldpd.h
++++ b/src/daemon/lldpd.h
+@@ -214,6 +214,11 @@
+ int priv_iface_promisc(const char *);
+ int asroot_iface_promisc_os(const char *);
+ int priv_snmp_socket(struct sockaddr_un *);
++#ifdef HOST_OS_QNX
++struct ifaddrs;
++int priv_getifaddrs(struct ifaddrs **);
++void priv_freeifaddrs(struct ifaddrs *);
++#endif
+ 
+ enum priv_cmd {
+ 	PRIV_PING,
+@@ -226,6 +231,9 @@
+ 	PRIV_IFACE_DESCRIPTION,
+ 	PRIV_IFACE_PROMISC,
+ 	PRIV_SNMP_SOCKET,
++#ifdef HOST_OS_QNX
++	PRIV_GET_IFADDRS,
++#endif
+ };
+ 
+ /* priv-seccomp.c */
+--- a/src/daemon/interfaces-bsd.c
++++ b/src/daemon/interfaces-bsd.c
+@@ -586,7 +586,11 @@
+ 	}
+ 	TAILQ_INIT(interfaces);
+ 	TAILQ_INIT(addresses);
++#if defined HOST_OS_QNX
++	if (priv_getifaddrs(&ifaddrs) < 0) {
++#else
+ 	if (getifaddrs(&ifaddrs) < 0) {
++#endif
+ 		log_warnx("interfaces", "unable to get list of interfaces");
+ 		goto end;
+ 	}
+@@ -641,7 +645,11 @@
+ end:
+ 	interfaces_free_devices(interfaces);
+ 	interfaces_free_addresses(addresses);
++#if defined HOST_OS_QNX
++	if (ifaddrs) priv_freeifaddrs(ifaddrs);
++#else
+ 	if (ifaddrs) freeifaddrs(ifaddrs);
++#endif
+ }
+ 
+ void
