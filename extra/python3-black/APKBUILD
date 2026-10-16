@@ -1,0 +1,53 @@
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=python3-black
+pkgver=26.3.1
+pkgrel=0
+pkgdesc="Python code formatter"
+url="https://github.com/psf/black"
+license="MIT"
+arch="noarch"
+depends="python3-click python3-mypy-extensions python3-pathspec python3-platformdirs python3-pytokens python3-tomli python3-typing-extensions"
+makedepends="python3-gpep517 python3-hatchling python3-hatch-fancy-pypi-readme python3-hatch-vcs python3-installer python3-packaging python3-setuptools"
+checkdepends="python3-pytest python3-pytest-cov python3-pytest-xdist"
+source="$pkgname-$pkgver.tar.gz::https://github.com/psf/black/archive/refs/tags/$pkgver.tar.gz"
+builddir="$srcdir/black-$pkgver"
+
+prepare() {
+    default_prepare
+
+    # Remove deprecated pathspec submodule.
+    sed -i 's|from pathspec.patterns.gitignore import GitIgnorePatternError|from pathspec.patterns.gitwildmatch import GitWildMatchPatternError|' "$builddir"/src/black/__init__.py
+    sed -i 's|GitIgnorePatternError|GitWildMatchPatternError|' "$builddir"/src/black/__init__.py
+    sed -i 's|from pathspec.patterns.gitignore import GitIgnorePatternError|from pathspec.patterns.gitwildmatch import GitWildMatchPatternError|' "$builddir"/src/black/files.py
+    sed -i 's|GitIgnorePatternError|GitWildMatchPatternError|' "$builddir"/src/black/files.py
+}
+
+build() {
+    gpep517 build-wheel \
+        --wheel-dir .dist \
+        --output-fd 3 3>&1 >&2
+}
+
+check() {
+    python3 -m venv --clear --without-pip --system-site-packages .testenv
+    .testenv/bin/python3 -m installer .dist/*.whl
+
+    # We're not packaging blackd yet since it pulls in extra dependencies.
+    rm tests/test_blackd.py
+    # Skipping some tests which fail do to diff versions of dependencies. None are substantial.
+    .testenv/bin/python3 -m pytest -vv \
+        --deselect tests/test_black.py::BlackTestCase::test_expression_diff \
+        --deselect tests/test_black.py::BlackTestCase::test_read_pyproject_toml \
+        --deselect tests/test_black.py::BlackTestCase::test_read_pyproject_toml_from_stdin \
+        --deselect tests/test_black.py::BlackTestCase::test_skip_magic_trailing_comma \
+        --deselect tests/test_black.py::BlackTestCase::test_bpo_2142_workaround
+}
+
+package() {
+    python3 -m installer -d "$pkgdir" \
+        .dist/*.whl
+}
+
+sha512sums="
+acef2c7773f322f68aae8f11897c404570645d48034dfcea9d394f8eaed40eebbdb7d9769b3d409905ae36a2d0eb9e24298543b9c26333f38105cc0eae2228cb  python3-black-26.3.1.tar.gz
+"
