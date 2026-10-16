@@ -1,0 +1,15 @@
+diff --git a/apps/db_dump/db_dump.c b/apps/db_dump/db_dump.c
+index 9cf48c82..967d4969 100644
+--- a/apps/db_dump/db_dump.c
++++ b/apps/db_dump/db_dump.c
+@@ -42,6 +42,10 @@ Contributors:
+ #include <sys/endian.h>
+ #endif
+ 
++#ifdef __QNXNTO__
++#include <arpa/inet.h>
++#endif
++
+ struct client_data {
+ 	UT_hash_handle hh_id;
+ 	char *id;
