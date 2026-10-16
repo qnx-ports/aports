@@ -1,0 +1,95 @@
+# Alpine-Contributor: Isaac Dunham <ibid.ag@gmail.com>
+# Alpine-Maintainer: Holger Jaekel <holger.jaekel@gmx.de>
+# Maintainer: Ethan Leir <eleir@qnx.com>
+#
+# HDF5 depends on zlib and provides a C interface by default.
+# Optionally, it can be built with szip (which has limitations on
+# commercial use and thus is non-free), MPI, and C++ and Fortran bindings.
+# C++ and Fortran bindings may not be thread-safe:
+# building either and passing --enable-threadsafe is unsupported.
+# Additionally, the 'high-level' bindings are incompatible with threadsafe
+# builds, due to inadequate locking.
+
+pkgname=hdf5
+pkgver=1.14.6
+pkgrel=0
+pkgdesc="HDF5 is a data model, library, and file format for storing and managing data"
+url="https://www.hdfgroup.org/solutions/hdf5/"
+arch="all"
+license="custom"
+depends="libc++"
+depends_dev="zlib-dev"
+makedepends="cmake $depends_dev clang libaec-dev perl libc++-dev"
+checkdepends="diffutils"
+subpackages="$pkgname-tools $pkgname-cpp $pkgname-hl $pkgname-hl-cpp:hl_cpp $pkgname-static $pkgname-doc $pkgname-dev"
+source="https://github.com/HDFGroup/hdf5/releases/download/hdf5_$pkgver/hdf5-$pkgver.tar.gz
+    qnx-fix-segfault.patch
+    "
+builddir=$srcdir/$pkgname-$pkgver
+
+build() {
+    export LDFLAGS="${LDFLAGS} -lz"
+    export CC=clang
+    export CXX=clang++
+
+    mkdir build && cd build
+    cmake -G "Unix Makefiles" \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DBUILD_SHARED_LIBS=True \
+        -DCMAKE_BUILD_TYPE=None \
+        -DCMAKE_VERBOSE_MAKEFILE=ON \
+        -DHDF5_BUILD_HL_LIB=ON \
+        -DHDF5_BUILD_CPP_LIB=ON \
+        -DHDF5_BUILD_FORTRAN=OFF \
+        -DHDF5_ENABLE_Z_LIB_SUPPORT=ON \
+        -DHDF5_ENABLE_SZIP_SUPPORT=ON \
+        -DHDF5_ENABLE_SZIP_ENCODING=ON \
+        -DUSE_LIBAEC=ON \
+        -DDEFAULT_API_VERSION=v18 \
+        $CMAKE_CROSSOPTS ..
+    cmake --build .
+}
+
+check() {
+    # It looks like the tests expect dynamics to already be installed
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$builddir/build/bin
+    ctest --timeout 900 --exclude-regex "H5DUMP-tfloatsattrs" --test-dir build
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install build
+    install -Dm0644 COPYING "$pkgdir"/usr/share/licenses/"$pkgname"/COPYING
+
+    # Install pkg-config files from CMake tree
+    install -Dm644 build/CMakeFiles/hdf5*.pc -t "$pkgdir"/usr/lib/pkgconfig/
+}
+
+tools() {
+    pkgdesc="Runtime tools for HDF5 library"
+    amove usr/bin/*
+}
+
+cpp() {
+    pkgdesc="C++ runtime files for serial platforms for HDF5 library"
+    amove usr/lib/libhdf5_cpp.so.*
+}
+
+hl() {
+    pkgdesc="High Level C API runtime files for serial platforms for HDF5 library"
+    amove usr/lib/libhdf5_hl.so.*
+}
+
+hl_cpp() {
+    pkgdesc="High Level C++ runtime files for serial platforms for HDF5 library"
+    amove usr/lib/libhdf5_hl_cpp.so.*
+}
+
+dev() {
+    default_dev
+    amove usr/lib/libhdf5.settings
+}
+
+sha512sums="
+d93194ad8f48acf110aae317f4c37104b9042f89ef72919aac887817e4c2713449c4cb2ab6a163c61ab1c12811170d7611cdf69322b0e0f96420fcc7f99fdd67  hdf5-1.14.6.tar.gz
+d24f701881aad859e7032e14475f2088459c9539c76096d811dbf91dbf3149f5eb2f8c513bc55ad24e4ed3a60c31e879f6a56725468512f26610f05a37344751  qnx-fix-segfault.patch
+"
