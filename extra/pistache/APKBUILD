@@ -1,0 +1,46 @@
+# Contributor: Marcin Sochacki <msochacki@qnx.com>
+# Maintainer: Marcin Sochacki <msochacki@qnx.com>
+pkgname=pistache
+pkgver=0.4.26
+pkgrel=0
+pkgdesc="A high-performance REST toolkit written in C++"
+url="https://pistacheio.github.io/pistache/"
+arch="all"
+license="Apache-2.0"
+depends="libc++ libevent qnx-io-sock"
+depends_dev="
+	libc++-dev
+	libevent-dev
+	qnx-io-sock-dev
+	rapidjson-dev
+	"
+makedepends="$depends_dev meson"
+checkdepends="curl-dev gmock gtest-dev"
+subpackages="$pkgname-dev"
+source="$pkgname-${pkgver}_p0.tar.gz::https://github.com/qnx-ports/pistache/archive/refs/tags/qnx-v${pkgver}_p0.tar.gz
+	pkgconf_version_string.patch
+	"
+builddir="$srcdir/$pkgname-qnx-v${pkgver}_p0"
+
+# The BSD socket API lives in libsocket on QNX, and pistache's meson.build
+# does not link it; without it the link fails on setsockopt, bind, listen.
+build() {
+	export LDFLAGS="$LDFLAGS -lsocket"
+	abuild-meson \
+		-DPISTACHE_BUILD_TESTS="$(want_check && echo true || echo false)" \
+		. output
+	meson compile -C output
+}
+
+check() {
+	meson test -C output
+}
+
+package() {
+	DESTDIR="$pkgdir" meson install --no-rebuild -C output
+}
+
+sha512sums="
+5af7496cd0cd00b752c4ab13b1029bc457b6dcf4862cb05cf5a28eebfaf4ec1d37ef7dae04fd0202bfcc4d24c04f053387228df6235aff7e743438e9a4aca838  pistache-0.4.26_p0.tar.gz
+c1dc17439a601bcb849b4678efdfcb9a52cdcc4fe953a8bbcdce356041ab018d91b8daedfae1b7d4c8287753e3553a02357d83733d973a180349a24250e23559  pkgconf_version_string.patch
+"
