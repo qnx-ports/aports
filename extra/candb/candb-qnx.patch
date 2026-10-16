@@ -1,0 +1,15 @@
+--- CANdb-150c42a8cdfc0748915f09d2cd0c5a68591263a7_orig/src/cantypes.hpp	2026-08-22 08:21:23.445053572 +0530
++++ CANdb-150c42a8cdfc0748915f09d2cd0c5a68591263a7/src/cantypes.hpp	2026-08-22 08:18:46.589048785 +0530
+@@ -83,6 +83,12 @@
+     std::string ecu;
+     std::uint32_t updateCycle{ 0 };
+     std::string initValue{ "" };
++
++    bool operator<(const CANmessage& rhs) const
++    {
++        return id < rhs.id;
++    }
++
+ };
+ 
+ namespace std {
