@@ -1,0 +1,62 @@
+# Alpine-Contributor: Michał Polański <michal@polanski.me>
+# Alpine-Maintainer: Michał Polański <michal@polanski.me>
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=fnott
+pkgver=1.8.0
+pkgrel=0
+pkgdesc="Keyboard driven and lightweight Wayland notification daemon"
+url="https://codeberg.org/dnkl/fnott"
+license="MIT"
+arch="all"
+depends="qnx-fd-notify qnx-io-sock"
+makedepends="
+	meson
+	pixman-dev
+	libpng-dev
+	wayland-protocols
+	wayland-dev
+	dbus-dev
+	tllist-dev
+	fcft-dev
+	scdoc
+	qnx-fd-notify-dev
+	qnx-io-sock-dev
+	clang
+	"
+subpackages="$pkgname-doc $pkgname-zsh-completion $pkgname-openrc"
+source="$pkgname-$pkgver.tar.gz::https://codeberg.org/dnkl/fnott/archive/$pkgver.tar.gz
+	input-event-codes.h
+	fnott.initd
+	"
+builddir="$srcdir/fnott"
+options="!check" # no test suite
+
+prepare() {
+	default_prepare
+
+	mkdir -p linux
+
+	cp "$srcdir"/input-event-codes.h linux
+}
+
+build() {
+	CC="clang" \
+	CXX="clang++" \
+	CPPFLAGS="${CPPFLAGS} -D_QNX_SOURCE" \
+	LDFLAGS="${LDFLAGS} -lsocket -lepoll -ltimerfd" \
+	abuild-meson \
+		. output
+	meson compile -C output
+}
+
+package() {
+	DESTDIR="$pkgdir" meson install --no-rebuild -C output
+
+	install -Dm755 "$srcdir"/fnott.initd "$pkgdir"/etc/user/init.d/fnott
+}
+
+sha512sums="
+dbffe09cedac32ac2d54acbb49fcb465100bc1e8f72ec63f3f44b93f7b23ddc41186c5b35cc6ec834a892582bb3b94769711690b1cd6c9034046f0a121a31f7a  fnott-1.8.0.tar.gz
+39980eb3a268c6cf7f3547a5aeeacf88e7f2c7019287a1edf7e8657f445233371518adf9a23ff6e5bf775e624a9ba0b0fa61ce8144dec474b4f7f3e7f1b6b11e  input-event-codes.h
+45432b757c0ff8efb7227babe7a0a7e9601e5f4d746a32e671064a83c53c072376441b6065ffa34805975cf17ff48cc04aff73cdceecf76b27287699b6dbd78c  fnott.initd
+"
