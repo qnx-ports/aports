@@ -9,7 +9,7 @@ url="https://github.com/benhoyt/inih"
 arch="all"
 license="BSD-3-Clause"
 depends="libc++"
-makedepends="meson"
+makedepends="meson libc++-dev"
 checkdepends="bash"
 subpackages="
     $pkgname-dev:_dev
