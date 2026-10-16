@@ -1,0 +1,110 @@
+# Alpine-Contributor: Sergei Lukin <sergej.lukin@gmail.com>
+# Alpine-Contributor: Sören Tempel <soeren+alpine@soeren-tempel.net>
+# Alpine-Contributor: Pierre-Gilas MILLON <pgmillon@gmail.com>
+# Alpine-Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+# Maintainer: jscaffidi <jscaffidi@qnx.com>
+pkgname=libgit2
+pkgver=1.9.2
+pkgrel=0
+pkgdesc="linkable library for Git"
+url="https://libgit2.org/"
+arch="all"
+license="GPL-2.0-only WITH GCC-exception-2.0"
+depends_dev="curl-dev libssh2-dev http-parser-dev qnx-io-sock-dev"
+depends="libssh2 pcre2 http-parser"
+makedepends_host="$depends_dev zlib-dev openssl-dev>3 pcre2-dev"
+makedepends_build="python3 cmake ninja"
+subpackages="$pkgname-dbg $pkgname-static $pkgname-dev $pkgname-tools $pkgname-tests::noarch"
+source="$pkgname-$pkgver.tar.gz::https://github.com/libgit2/libgit2/archive/v$pkgver.tar.gz
+qnx_buildconf.patch
+	"
+#fix-util-tests.patch
+#no-online-test.patch
+
+# secfixes:
+#   1.7.2-r0:
+#     - CVE-2024-24577
+#     - CVE-2024-24575
+#   1.4.4-r0:
+#     - CVE-2022-29187
+#     - CVE-2022-24765
+#   0.28.4-r0:
+#     - CVE-2019-1348
+#     - CVE-2019-1349
+#     - CVE-2019-1350
+#     - CVE-2019-1351
+#     - CVE-2019-1352
+#     - CVE-2019-1353
+#     - CVE-2019-1354
+#     - CVE-2019-1387
+#   0.27.4-r0:
+#     - CVE-2018-15501
+#   0.27.3-r0:
+#     - CVE-2018-10887
+#     - CVE-2018-10888
+#   0.25.1-r0:
+#     - CVE-2016-10128
+#     - CVE-2016-10129
+#     - CVE-2016-10130
+#   0.24.3-r0:
+#     - CVE-2016-8568
+#     - CVE-2016-8569
+
+build() {
+	CFLAGS="$CFLAGS -Qunused-arguments" \
+	cmake -B build-shared -G Ninja \
+		-DCMAKE_BUILD_TYPE=None \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DCMAKE_INSTALL_LIBDIR=lib \
+		-DUSE_HTTP_PARSER=http-parser \
+		-DUSE_HTTPS=OpenSSL \
+		-DREGEX_BACKEND=pcre2 \
+		-DUSE_BUNDLED_ZLIB=OFF \
+		-DUSE_SSH=ON
+	cmake --build build-shared
+
+	cmake -B build-static -G Ninja \
+		-DCMAKE_BUILD_TYPE=None \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DCMAKE_INSTALL_LIBDIR=lib \
+		-DUSE_HTTP_PARSER=http-parser \
+		-DUSE_HTTPS=OpenSSL \
+		-DREGEX_BACKEND=pcre2 \
+		-DUSE_BUNDLED_ZLIB=OFF \
+		-DBUILD_TESTS=OFF \
+		-DBUILD_SHARED_LIBS=OFF
+	cmake --build build-static
+}
+
+check() {
+	cd "$builddir"/build-shared
+	# Test 'offline' fails on s390x, aarch64 and ppc64le
+	ctest -E 'offline|online'
+}
+
+package() {
+	DESTDIR="$pkgdir" cmake --install build-static
+	DESTDIR="$pkgdir" cmake --install build-shared
+
+	mkdir -p "$pkgdir"/usr/src/$pkgname/
+	cp -a tests "$pkgdir"/usr/src/$pkgname/tests
+}
+
+tools() {
+	pkgdesc="$pkgdesc (tools)"
+
+	amove usr/bin
+}
+
+tests() {
+	pkgdesc="$pkgdesc (tests)"
+
+	amove usr/src/$pkgname
+}
+
+
+
+sha512sums="
+b9ac2d0a7cc92a31057fbf066e47145cdda89ebf0489d712d4452c709c3de9923a93a3c37128fdcfd8fbb5498f513a519a7f2a77ad6ef4efafe865323d481f18  libgit2-1.9.2.tar.gz
+68150d0690bfb612b559a2b1f4097ccf46a5ce24333959c404c0bb4d4fa6894b17b4d227e2e3c5ed53cffc2d77a51b6f2fd498d0a6269ab2a922c2f0455b2ff1  qnx_buildconf.patch
+"
