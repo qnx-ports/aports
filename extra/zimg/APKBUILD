@@ -51,6 +51,7 @@ build() {
             CC=clang \
             CXX=clang++
         make
+        ninja -C test/extra/googletest/build
         make test/unit_test.log
         test/unit_test
         make clean
