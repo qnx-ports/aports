@@ -12,10 +12,9 @@ subpackages="$pkgname-static $pkgname-dev $pkgname-doc"
 source="https://mirror.csclub.uwaterloo.ca/gnu/libunistring/libunistring-$pkgver.tar.xz"
 
 build() {
+    export ac_cv_func_inet_pton=yes
     CFLAGS="$CFLAGS -fPIC" \
     ./configure \
-        --build="$CBUILD" \
-        --host="$CHOST" \
         --prefix=/usr \
         --sysconfdir=/etc \
         --mandir=/usr/share/man \
