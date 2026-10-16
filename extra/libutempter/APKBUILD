@@ -1,0 +1,31 @@
+# Alpine Contributor: Francesco Colista <fcolista@alpinelinux.org>
+# Alpine Maintainer: Francesco Colista <fcolista@alpinelinux.org>
+# Maintainer: abdulahmoda <abahmoda@qnx.com>
+pkgname=libutempter
+pkgver=1.2.3
+pkgrel=0
+pkgdesc="Library interface to record user sessions in utmp/wtmp files"
+url="http://freecode.com/projects/libutempter"
+arch="all"
+license="LGPL-2.1-or-later"
+makedepends="qnx-io-sock-dev"
+subpackages="$pkgname-dev $pkgname-doc"
+options="suid !check"  # NO TEST SUITE
+pkggroups="utmp"
+source="$pkgname-qnx-$pkgver.tar.gz::https://github.com/qnx-ports/libutempter/archive/refs/tags/qnx-v$pkgver.tar.gz"
+builddir="$srcdir/$pkgname-qnx-v$pkgver/$pkgname"
+
+build() {
+	cd $builddir
+	make CFLAGS="$CFLAGS -DQNX=ON" LDLIBS="-Wl,--no-as-needed -Wl,--as-needed"
+}
+
+package() {
+	make DESTDIR="$pkgdir" install
+	chown root:$pkggroups "$pkgdir/usr/lib/utempter/utempter"
+	chmod 2755 "$pkgdir/usr/lib/utempter/utempter"
+}
+
+sha512sums="
+4080732d64c9b2fe9b3a165cf1b9d89b1b2c8bbf91fd2a3c52ad19f40dce6cac1abff6b38ce8a941864018ab2486624bd2758cf0940ef86bb0b7fa9e91aa004a  libutempter-qnx-1.2.3.tar.gz
+"
