@@ -2,7 +2,7 @@
 pkgname=apk-tools
 pkgver=3.0.6
 _luaver=5.4
-pkgrel=0
+pkgrel=1
 pkgdesc="Alpine Package Keeper - package manager for alpine"
 arch="all"
 url="https://gitlab.alpinelinux.org/alpine/apk-tools"

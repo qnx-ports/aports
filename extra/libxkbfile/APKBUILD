@@ -2,7 +2,7 @@
 # Maintainer: jscaffidi <jscaffidi@qnx.com>
 pkgname=libxkbfile
 pkgver=1.2.0
-pkgrel=0
+pkgrel=1
 pkgdesc="X11 keyboard file manipulation library"
 url="https://xorg.freedesktop.org/"
 arch="all"
