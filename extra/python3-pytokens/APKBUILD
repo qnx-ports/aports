@@ -1,0 +1,34 @@
+# Alpine-Maintainer: Michał Polański <michal@polanski.me>
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=python3-pytokens
+pkgver=0.3.0
+pkgrel=0
+pkgdesc="Fast, spec-compliant Python 3.13+ tokenizer"
+url="https://github.com/tusharsadhwani/pytokens"
+license="MIT"
+arch="noarch"
+makedepends="python3-gpep517 python3-installer python3-setuptools"
+checkdepends="python3-pytest python3-pytest-cov"
+source="https://github.com/tusharsadhwani/pytokens/archive/$pkgver/py3-pytokens-$pkgver.tar.gz"
+builddir="$srcdir/pytokens-$pkgver"
+
+build() {
+    gpep517 build-wheel \
+        --wheel-dir .dist \
+        --output-fd 3 3>&1 >&2
+}
+
+check() {
+    python3 -m venv --clear --without-pip --system-site-packages .testenv
+    .testenv/bin/python3 -m installer .dist/*.whl
+    .testenv/bin/python3 -m pytest -vv
+}
+
+package() {
+    python3 -m installer -d "$pkgdir" \
+        .dist/*.whl
+}
+
+sha512sums="
+51e08b241d2202569993fb1a2cd96ceed23a203bf8bff62f311852c03ba4248cd00e24ac0815380e4385aa86d93d4e4f9277727581bfab4ccb682b6bf508f7ba  py3-pytokens-0.3.0.tar.gz
+"
