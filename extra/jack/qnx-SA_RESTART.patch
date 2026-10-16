@@ -1,0 +1,40 @@
+diff --color -U 6 -N -r before/common/JackControlAPI.cpp after/common/JackControlAPI.cpp
+--- before/common/JackControlAPI.cpp	2026-04-06 11:05:26.491635051 -0400
++++ after/common/JackControlAPI.cpp	2026-04-07 11:19:54.855310118 -0400
+@@ -42,12 +42,16 @@
+ #include "JackControlAPI.h"
+ #include "JackLockedEngine.h"
+ #include "JackConstants.h"
+ #include "JackDriverLoader.h"
+ #include "JackServerGlobals.h"
+ 
++#ifdef __QNX__
++#define SA_RESTART 0
++#endif
++
+ using namespace Jack;
+ 
+ /* JackEngine::CheckPortsConnect() has some assumptions about char values */
+ static struct jack_constraint_enum_char_descriptor self_connect_mode_constraint_descr_array[] =
+ {
+     { ' ', "Don't restrict self connect requests" },
+diff --color -U 6 -N -r before/common/netjack_packet.c after/common/netjack_packet.c
+--- before/common/netjack_packet.c	2026-04-06 11:05:26.499635134 -0400
++++ after/common/netjack_packet.c	2026-04-07 11:20:45.747746558 -0400
+@@ -32,12 +32,16 @@
+ #endif
+ 
+ #ifdef __APPLE__
+ #define _DARWIN_C_SOURCE
+ #endif
+ 
++#ifdef __QNX__
++#define SA_RESTART 0
++#endif
++
+ #if HAVE_PPOLL
+ #define _GNU_SOURCE
+ #endif
+ 
+ #include <alloca.h>
+ #include <math.h>
