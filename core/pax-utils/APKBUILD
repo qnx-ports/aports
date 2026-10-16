@@ -1,6 +1,9 @@
+# Contributor: Sören Tempel <soeren+alpine@soeren-tempel.net>
+# Alpine-Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+# Maintainer: Terence Ang <taang@qnx.com>
 pkgname=pax-utils
 pkgver=1.3.8
-pkgrel=1
+pkgrel=2
 pkgdesc="ELF utils that can check files for security relevant properties"
 url="https://wiki.gentoo.org/wiki/Hardened/PaX_Utilities"
 arch="all"
@@ -15,9 +18,9 @@ source="https://dev.gentoo.org/~sam/distfiles/app-misc/pax-utils/pax-utils-$pkgv
 build() {
 
     _extra_flags=""
-        if [[ $CBUILD = $CHOST ]]; then
+    if [[ $CBUILD = $CHOST ]]; then
         # Compile natively
-        _extra_flags="-Dc_link_args=-lregex"
+        _extra_flags="-Dc_link_args=-lregex -Duse_fuzzing=false"
     else
         # Cross compiling
         BUILD_ROOT=$CBUILDROOT $CBUILDROOT/system/bin/gen-meson-cross
