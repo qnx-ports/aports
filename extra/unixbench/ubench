@@ -1,0 +1,13 @@
+#!/bin/bash
+
+tmpdir=$(mktemp -d "/tmp/.unixbench-XXXXXXXX")
+mkdir "$tmpdir"/{results,tmp}
+cp -r /usr/bin/unixbench/testdir "$tmpdir"
+
+cd /usr/bin/unixbench
+UB_TMPDIR="$tmpdir"/tmp  \
+UB_RESULTDIR="$tmpdir"/results  \
+UB_TESTDIR="$tmpdir"/testdir  \
+    ./Run $@ 2>/dev/null
+
+echo "UNIXBENCH Results in '$tmpdir/results'"
