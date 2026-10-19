@@ -1,7 +1,7 @@
 # Maintainer: jscaffidi <jscaffidi@qnx.com>
 pkgname=raylib
 pkgver=6.0
-pkgrel=0
+pkgrel=1
 pkgdesc="A simple and easy-to-use library to enjoy videogames programming"
 url="https://github.com/raysan5/raylib"
 arch="all"

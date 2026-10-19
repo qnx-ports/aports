@@ -3,7 +3,7 @@
 # Maintainer: jscaffidi <jscaffidi@qnx.com>
 pkgname=libxcvt
 pkgver=0.1.3
-pkgrel=0
+pkgrel=1
 pkgdesc="xorg xcvt library and cvt program"
 url="https://gitlab.freedesktop.org/xorg/lib/libxcvt"
 arch="all"

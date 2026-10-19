@@ -5,7 +5,7 @@
 # Maintainer: Elliott Mazzuca <emazzuca@qnx.com>
 pkgname=webkit2gtk-4.1
 pkgver=2.51.1
-pkgrel=8
+pkgrel=9
 pkgdesc="Portable web rendering engine WebKit for GTK+ - GTK+3 libsoup3 version"
 url="https://webkitgtk.org/"
 arch="all"

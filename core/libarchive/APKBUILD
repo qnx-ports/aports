@@ -1,6 +1,6 @@
 pkgname=libarchive
 pkgver=3.8.9
-pkgrel=0
+pkgrel=1
 pkgdesc="Multi-format archive and compression library"
 url="https://libarchive.org/"
 arch="all"

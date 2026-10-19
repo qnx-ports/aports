@@ -4,7 +4,7 @@
 
 pkgname=libsoup
 pkgver=2.74.3
-pkgrel=1
+pkgrel=2
 pkgdesc="Gnome HTTP client/server Library"
 url="https://gitlab.gnome.org/GNOME/libsoup"
 arch="all"

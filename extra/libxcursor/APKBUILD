@@ -2,7 +2,7 @@
 # Maintainer: jscaffidi <jscaffidi@qnx.com>
 pkgname=libxcursor
 pkgver=1.2.3
-pkgrel=0
+pkgrel=1
 pkgdesc="X cursor management library"
 url="https://xorg.freedesktop.org/"
 arch="all"
