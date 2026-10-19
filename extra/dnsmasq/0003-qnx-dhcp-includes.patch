@@ -1,0 +1,36 @@
+diff --git a/contrib/lease-tools/dhcp_lease_time.c b/contrib/lease-tools/dhcp_lease_time.c
+index e2bad3c..4f45757 100644
+--- a/contrib/lease-tools/dhcp_lease_time.c
++++ b/contrib/lease-tools/dhcp_lease_time.c
+@@ -34,9 +34,13 @@
+ #include <stdlib.h>
+ #include <net/if_arp.h>
+ #include <sys/ioctl.h>
++
++#ifndef __QNX__
+ #include <linux/types.h>
+ #include <linux/netlink.h>
+ #include <linux/rtnetlink.h>
++#endif
++
+ #include <errno.h>
+ 
+ #define DHCP_CHADDR_MAX          16
+diff --git a/contrib/lease-tools/dhcp_release.c b/contrib/lease-tools/dhcp_release.c
+index 84f5610..fb23688 100644
+--- a/contrib/lease-tools/dhcp_release.c
++++ b/contrib/lease-tools/dhcp_release.c
+@@ -44,9 +44,13 @@
+ #include <stdlib.h>
+ #include <net/if_arp.h>
+ #include <sys/ioctl.h>
++
++#ifndef __QNX__
+ #include <linux/types.h>
+ #include <linux/netlink.h>
+ #include <linux/rtnetlink.h>
++#endif
++
+ #include <errno.h>
+ 
+ #define DHCP_CHADDR_MAX          16
