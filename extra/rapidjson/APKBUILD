@@ -22,9 +22,6 @@ source="$pkgname-$pkgver.tar.gz::https://github.com/miloyip/rapidjson/archive/re
 	libcxx19-char-traits.patch
 	"
 
-# secfixes:
-#   1.1.0-r7:
-#     - CVE-2024-38517
 
 build() {
 	cmake -B build -G Ninja . \
