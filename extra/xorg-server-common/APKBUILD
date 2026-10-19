@@ -1,0 +1,20 @@
+# Maintainer: jscaffidi <jscaffidi@qnx.com>
+pkgname=xorg-server-common
+pkgver=21.1.21
+pkgrel=0
+pkgdesc="X11 server common files"
+url="https://xorg.freedesktop.org/"
+arch="noarch"
+license="MIT"
+makedepends=""
+source="protocol.txt"
+options="!check"
+
+package() {
+	install -D -m644 "$srcdir"/protocol.txt \
+		"$pkgdir"/usr/lib/xorg/protocol.txt
+}
+
+sha512sums="
+0e14dcc8f1299bcd481dc3de11e7bcf7b3dc0da0fbf859014038cde4c7986daa0fe191123a480de4cdc4e49bc62c6a08915263e76dbf3c567c13e7576345927b  protocol.txt
+"
