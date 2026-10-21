@@ -1,11 +1,11 @@
 # Maintainer: Ramya santoshi <rtimmaraju@qnx.com>
 pkgname=rtosbench
-pkgver=0.1
+pkgver=1
 pkgrel=0
 pkgdesc="Benchmark suite for real-time operating system services"
 url="https://github.com/gchamp20/RTOSBench"
 arch="all"
-license="MIT"
+license="BSD 3-Clause"
 options="!check"
 source="https://github.com/gchamp20/RTOSBench/archive/refs/heads/master.tar.gz  rtosbench-qnx.patch"
 builddir="$srcdir/RTOSBench-master"
