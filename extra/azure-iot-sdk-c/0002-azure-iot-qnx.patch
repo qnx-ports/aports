@@ -1,0 +1,22 @@
+diff --git a/testtools/iothub_test/src/iothub_account.c b/testtools/iothub_test/src/iothub_account.c
+index af7267a2d..6f2533efe 100644
+--- a/testtools/iothub_test/src/iothub_account.c
++++ b/testtools/iothub_test/src/iothub_account.c
+@@ -1206,7 +1206,7 @@ IOTHUB_GATEWAY_VERSION IoTHubAccount_GetIoTHubVersion(IOTHUB_ACCOUNT_INFO_HANDLE
+ 
+         if (commandLength > 0 && commandLength < NSLOOKUP_MAX_COMMAND_SIZE)
+         {
+-#if defined(__APPLE__) || defined(AZIOT_LINUX)
++#if defined(__APPLE__) || defined(AZIOT_LINUX) || defined(__QNX__)
+             FILE* stdOut = popen(command, "r");
+ #else
+             FILE* stdOut = _popen(command, "r");
+@@ -1231,7 +1231,7 @@ IOTHUB_GATEWAY_VERSION IoTHubAccount_GetIoTHubVersion(IOTHUB_ACCOUNT_INFO_HANDLE
+                 }
+             }
+ 
+-#if defined(__APPLE__) || defined(AZIOT_LINUX)
++#if defined(__APPLE__) || defined(AZIOT_LINUX) || defined(__QNX__)
+             (void)pclose(stdOut);
+ #else
+             (void)_pclose(stdOut);
