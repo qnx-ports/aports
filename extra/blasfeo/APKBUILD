@@ -1,0 +1,89 @@
+# Maintainer: Terence Ang <taang@qnx.com>
+pkgname=blasfeo
+pkgver=0.1.4.3_git20261013
+_commit="0a3df8683c6bf9d98168d616e0c5d05938c9d51c"
+pkgrel=0
+pkgdesc="Basic linear algebra subroutines for embedded optimization"
+url="https://github.com/giaf/blasfeo"
+arch="all"
+license="BSD-2-Clause"
+makedepends="cmake"
+checkdepends="python3-jinja2 openblas-dev"
+subpackages="$pkgname-dev"
+source="$pkgname-$_commit.tar.gz::https://github.com/giaf/blasfeo/archive/$_commit.tar.gz"
+builddir="$srcdir/$pkgname-$_commit"
+
+prepare() {
+    default_prepare
+
+    # Below is workaround to avoid creating separate patch file
+    sed -i 's/^ifeq ($(UNAME_S), Linux).*/ifneq ($(filter Linux QNX,$(UNAME_S)),)/' Makefile.rule
+
+    # Below will only used for tests and we expect no additional patch is required
+    # original sources assume openblas in other location and may even need -lgfortran / -pthread
+    sed -i 's|/opt/openblas/include|/usr/include/openblas|g' CMakeLists.txt
+    sed -i 's|/opt/openblas/lib/libopenblas.a -pthread -lgfortran|/usr/lib/libopenblas.so|g' CMakeLists.txt
+
+    sed -i 's|/opt/openblas/include|/usr/include/openblas|g' Makefile.external_blas
+    sed -i 's|/opt/openblas/lib/libopenblas.a -pthread -lgfortran|/usr/lib/libopenblas.so|g' Makefile.external_blas
+
+    # Below assumed using BLAS bundled in system
+    # We modify them to use openblas in the tests instead
+    json_list=$(find ./tests -type f -name "testset_ci_*.json")
+    for file in $json_list; do
+       sed -i 's|SYSTEM|OPENBLAS|g' "$file"
+    done
+}
+
+build() {
+    cmake -B build -S . \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DCMAKE_INSTALL_DATAROOTDIR=lib \
+        -DBUILD_SHARED_LIBS=ON \
+        -DEXTERNAL_BLAS=OPENBLAS \
+        -DTARGET=GENERIC
+
+    cmake --build build -j"$nproc"
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install build
+}
+
+check() {
+    if [ "$CARCH" = "x86_64" ]; then
+        test_arch=amd64
+    elif [ "$CARCH" = "aarch64" ]; then
+        test_arch=arm64
+    else
+        echo "Incorrect architecture"
+	return 1
+    fi
+
+    cd tests
+    passed=""
+    failed=""
+    json_list=$(find . -type f -name "testset_ci_*$test_arch*.json")
+    for test in $json_list; do
+        python tester.py "$test" && {
+            passed="$passed $test"
+        } || {
+            failed="$failed $test"
+	    true
+        }
+    done
+
+    echo "Test summary:"
+    for i in $passed; do
+        echo "PASSED: $i"
+    done
+
+    for i in $failed; do
+        echo "FAILED: $i"
+    done
+}
+
+
+sha512sums="
+14c07d2267b4383a1e1b5571f1c02af6c276346f1980a4aa21a18efe9e9d15f0134f1dfe575bf73d365d040b4252cc8605eceef26610f56725f7e6536259a8ec  blasfeo-0a3df8683c6bf9d98168d616e0c5d05938c9d51c.tar.gz
+"
