@@ -6,7 +6,7 @@ pkgrel=0
 pkgdesc="Benchmark suite for real-time operating system services"
 url="https://github.com/gchamp20/RTOSBench"
 arch="all"
-license="BSD 3-Clause"
+license="BSD-3-Clause"
 options="!check"
 source="https://github.com/gchamp20/RTOSBench/archive/$_pkgver.tar.gz
         rtosbench-qnx.patch"
