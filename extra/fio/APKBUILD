@@ -3,15 +3,15 @@
 # Maintainer: Leo Shen <yishen@qnx.com>
 pkgname=fio
 pkgver=3.41
-pkgrel=0
+pkgrel=1
 pkgdesc="Flexible I/O Tester"
 url="https://github.com/axboe/fio"
 arch="all"
 license="GPL-2.0-only"
-depends="zlib-ng"
-makedepends="zlib-ng-dev"
+depends="zlib-ng qnx-io-sock"
+makedepends="zlib-ng-dev qnx-io-sock-dev"
 subpackages="$pkgname-doc"
-source="$pkgname-$pkgver.tar.gz::https://github.com/axboe/fio/archive/fio-$pkgver.tar.gz
+source="$pkgname-$pkgver.tar.gz::https://github.com/axboe/fio/archive/refs/tags/fio-$pkgver.tar.gz
     fix-qnx.patch
 "
 builddir="$srcdir/fio-$pkgname-$pkgver"
