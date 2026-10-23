@@ -1,0 +1,33 @@
+--- a/src/syscall.c
++++ b/src/syscall.c
+@@ -28,7 +28,9 @@
+ #include <sys/stat.h>
+ #include <sys/types.h>
+ #include <sys/wait.h>
++#ifndef __QNX__
+ #include <sys/syscall.h>
++#endif
+ #include <unistd.h>
+ #include "timeit.c"
+ 
+@@ -79,7 +81,9 @@
+ 	   fd = create_fd();
+ 	   while (1) {
+ 		close(dup(fd));
+-		syscall(SYS_getpid);
++        #ifndef __QNX__
++        syscall(SYS_getpid);
++        #endif
+ 		getuid();
+ 		umask(022);
+ 		iter++;
+@@ -94,7 +98,9 @@
+            /* NOTREACHED */
+         case 'g':
+            while (1) {
++                #ifndef __QNX__
+                 syscall(SYS_getpid);
++                #endif
+                 iter++;
+            }
+            /* NOTREACHED */
