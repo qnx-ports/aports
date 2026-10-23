@@ -1,9 +1,8 @@
 # Contributor: Holger Jaekel <holger.jaekel@gmx.de>
-# QNX Maintainer: Felix Xing <fxing@qnx.com>
-
+# Maintainer: Felix Xing <fxing@qnx.com>
 pkgname=libdeflate
 pkgver=1.24
-pkgrel=0
+pkgrel=1
 pkgdesc="Library for fast, whole-buffer DEFLATE-based compression and decompression"
 url="https://github.com/ebiggers/libdeflate"
 arch="all"
@@ -25,6 +24,7 @@ source="
 	"
 
 build() {
+	CFLAGS="$CFLAGS -D__EVEX512__" \
 	cmake -B build -G Ninja \
 		-DCMAKE_INSTALL_PREFIX=/usr \
 		-DCMAKE_BUILD_TYPE=Release \
@@ -43,6 +43,7 @@ package() {
 
 utils() {
 	pkgdesc="Command line utilities for the DEFLATE library"
+	depends="$pkgname=$pkgver-r$pkgrel"
 	amove usr/bin
 }
 
