@@ -1,0 +1,68 @@
+# Maintainer: Cris Sinnott <cris.sinnott@qnx.com>
+pkgname=xwayland
+pkgver=24.1.9
+pkgrel=0
+pkgdesc="Run X clients under Wayland"
+url="https://xorg.freedesktop.org"
+arch="all"
+license="MIT AND X11"
+depends="xkbcomp xkeyboard-config"
+makedepends="
+	font-util-dev
+	libx11-dev
+	libxau-dev
+	libxcb-dev
+	libxcvt-dev
+	libxfont2-dev
+	libxkbfile-dev
+	libxshmfence-dev
+	meson
+	openssl-dev
+	pixman-dev
+	qnx-libdrm-dev
+	wayland-dev
+	wayland-protocols
+	xorgproto
+	xtrans
+	"
+subpackages="$pkgname-doc"
+source="https://xorg.freedesktop.org/archive/individual/xserver/xwayland-${pkgver}.tar.xz
+	0001-qnx-compat.patch
+	linux_input.h
+	"
+sha512sums="
+7438a572651dc77c1fd749879abccdc9a245c7b75143668d5561a8e99d41063f042a8eb3f9b931a2a12be1fc3cb9d197eee6794d0702a19e56c20f55acb35a26  xwayland-24.1.9.tar.xz
+34967f3af3e9108b5b7fe4d12775b70c50aea582ac92ffbcee97fe5d6a3f98bba380a761719efd621f85544ae743f9b68baeefc52aa28076f774d3bd42f54d9b  0001-qnx-compat.patch
+7c56805a72798b726bf67680811ae4aaa28a251161b820c943a03b405e0a16d34d501e67e1f7888725e6dd20021254b8a69b60445d1bf0f016988d2744d11abb  linux_input.h
+"
+
+build() {
+	mkdir -p "$builddir"/linux_shim/linux
+	cp "$srcdir"/linux_input.h "$builddir"/linux_shim/linux/input.h
+
+	abuild-meson . output \
+		-Dc_args="-DSA_RESTART=0 -I/usr/include/libdrm -I$builddir/linux_shim" \
+		-Dc_link_args="-lsocket -leventfd -lsysv-ipc" \
+		-Dglamor=false \
+		-Dglx=false \
+		-Dxdmcp=false \
+		-Dxcsecurity=false \
+		-Dxvfb=false \
+		-Dinput_thread=false \
+		-Dlibunwind=false \
+		-Dsystemd_notify=false \
+		-Ddtrace=false \
+		-Dsecure-rpc=false \
+		-Dsha1=libcrypto
+	meson compile -C output
+}
+
+check() {
+	# xwayland tests require a live Wayland compositor and are not runnable
+	# at build time.
+	:
+}
+
+package() {
+	DESTDIR="$pkgdir" meson install --no-rebuild -C output
+}
