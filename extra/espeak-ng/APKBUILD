@@ -1,0 +1,50 @@
+# Maintainer: Narayana Murthy <nnarayanamurthy@qnx.com>
+pkgname=espeak-ng
+pkgver=1.52.0
+pkgrel=0
+pkgdesc="Multi-lingual software speech synthesizer"
+url="https://github.com/espeak-ng/espeak-ng"
+arch="all"
+license="BSD-2-Clause AND GPL-3.0-or-later AND Apache-2.0"
+depends="pcaudiolib"
+makedepends="autoconf automake libtool pkgconf pcaudiolib-dev gettext-dev"
+subpackages="$pkgname-dev $pkgname-doc $pkgname-vim::noarch"
+source="$pkgname-$pkgver.tar.gz::https://github.com/espeak-ng/espeak-ng/archive/refs/tags/$pkgver.tar.gz
+    001-fix-qnx-endian.patch"
+
+builddir="$srcdir/$pkgname-$pkgver"
+
+prepare() {
+    default_prepare
+    ./autogen.sh
+}
+
+build() {
+    ./configure \
+        --build=$CBUILD \
+        --host=$CHOST \
+        --prefix=/usr \
+        --sysconfdir=/etc \
+        --mandir=/usr/share/man \
+        --localstatedir=/var
+    make
+}
+
+check() {
+    make check
+}
+
+package() {
+    make DESTDIR="$pkgdir" install
+}
+
+vim() {
+    pkgdesc="$pkgdesc (vim syntax)"
+    install_if="$pkgname=$pkgver-r$pkgrel vim"
+    amove usr/share/vim
+}
+
+sha512sums="
+28793503f2be00505c3fe1dada8197a4e2d3af0d143e31ef883130fe2685d048ae9dee8efab637cdbe972461d95e210d2277b8e8fed4ae580d0cca8b505b0662  espeak-ng-1.52.0.tar.gz
+c35e593dce860d7250d5428e2cf6276cc34942b6605fbc8674ba3fab55ddf60539c847ffd425df5579b02112f4e778c381777f5f4704649f2f8b454ee6e310b4  001-fix-qnx-endian.patch
+"
