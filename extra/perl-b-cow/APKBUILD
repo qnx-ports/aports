@@ -6,7 +6,7 @@ pkgname=perl-b-cow
 #_pkgreal is used by apkbuild-cpan to find modules at MetaCpan
 _pkgreal=B-COW
 pkgver=0.007
-pkgrel=0
+pkgrel=1
 pkgdesc="B::COW additional B helpers to check COW status"
 url="https://metacpan.org/release/B-COW/"
 arch="all"
@@ -19,7 +19,7 @@ builddir="$srcdir/$_pkgreal-$pkgver"
 
 build() {
 	export CFLAGS=$(perl -MConfig -E 'say $Config{ccflags}')
-	PERL_MM_USE_DEFAULT=1 perl -I. Makefile.PL INSTALLDIRS=vendor
+	PERL_MM_USE_DEFAULT=1 perl -I. Makefile.PL INSTALLDIRS=vendor OPTIMIZE="-U_FORTIFY_SOURCE"
 	make
 }
 
