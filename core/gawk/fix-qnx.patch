@@ -1,5 +1,5 @@
---- gawk-5.3.2.orig/awk.h	2025-09-04 15:43:02.000000000 +0000
-+++ gawk-5.3.2/awk.h	2025-09-04 15:54:04.000000000 +0000
+--- a/awk.h	2025-09-04 15:43:02.000000000 +0000
++++ b/awk.h	2025-09-04 15:54:04.000000000 +0000
 @@ -473,6 +473,10 @@
  	long valref;
  } NODE;
@@ -11,8 +11,8 @@
  #define vname sub.nodep.name
  
  #define lnode	sub.nodep.l.lptr
---- gawk-5.3.2.orig/extension/inplace.c	2025-09-04 15:43:02.000000000 +0000
-+++ gawk-5.3.2/extension/inplace.c	2025-09-04 15:54:04.000000000 +0000
+--- a/extension/inplace.c	2025-09-04 15:43:02.000000000 +0000
++++ b/extension/inplace.c	2025-09-04 15:54:04.000000000 +0000
 @@ -27,6 +27,7 @@
  #include <config.h>
  #endif
@@ -21,3 +21,16 @@
  #ifndef _XOPEN_SOURCE
  # define _XOPEN_SOURCE 1
  #endif
+--- a/support/localeinfo.h	2025-03-09 11:13:49.000000000 +0000
++++ b/support/localeinfo.h	2026-10-16 21:39:24.000000000 +0000
+@@ -17,6 +17,9 @@
+ 
+ /* Written by Paul Eggert.  */
+ 
++#ifdef __QNX__
++#include <stdlib.h>
++#endif
+ #include <limits.h>
+ #include <wchar.h>
+ #if GAWK
+
