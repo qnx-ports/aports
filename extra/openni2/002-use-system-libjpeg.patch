@@ -1,0 +1,121 @@
+Link the system libjpeg instead of the bundled LibJPEG 6b
+
+--- a/Source/Core/Makefile
++++ b/Source/Core/Makefile
+@@ -2,20 +2,18 @@
+ 
+ BIN_DIR = ../../Bin
+ 
+ INC_DIRS = \
+ 	../../Include \
+ 	../../ThirdParty/PSCommon/XnLib/Include \
+-	../Drivers/OniFile/Formats \
+-	../../ThirdParty/LibJPEG
++	../Drivers/OniFile/Formats
+ 
+ SRC_FILES = \
+ 	*.cpp \
+ 	../Drivers/OniFile/Formats/XnCodec.cpp \
+-	../Drivers/OniFile/Formats/XnStreamCompression.cpp \
+-	../../ThirdParty/LibJPEG/*.c \
++	../Drivers/OniFile/Formats/XnStreamCompression.cpp
+ 
+ ifeq ("$(OSTYPE)","Darwin")
+ 	INC_DIRS += /opt/local/include
+ 	LIB_DIRS += /opt/local/lib
+ 	LDFLAGS += -framework CoreFoundation -framework IOKit
+ endif
+@@ -22,11 +20,11 @@
+ 
+ LIB_NAME = OpenNI2
+ 
+ LIB_DIRS = ../../ThirdParty/PSCommon/XnLib/Bin/$(PLATFORM)-$(CFG)
+-USED_LIBS = XnLib dl pthread
++USED_LIBS = XnLib dl pthread jpeg
+ ifneq ("$(OSTYPE)","Darwin")
+         USED_LIBS += rt  
+ endif
+ 
+ DEFINES += OPENNI2_EXPORT
+ 
+--- a/Source/Drivers/OniFile/Makefile
++++ b/Source/Drivers/OniFile/Makefile
+@@ -3,20 +3,18 @@
+ BIN_DIR = ../../../Bin
+ 
+ INC_DIRS = \
+ 	. \
+ 	../../../Include \
+ 	../../../ThirdParty/PSCommon/XnLib/Include \
+-	../../../ThirdParty/LibJPEG \
+ 	Formats
+ 
+ SRC_FILES = \
+ 	*.cpp \
+ 	Formats/*.cpp \
+-	XnLibExtensions/*.cpp \
+-	../../../ThirdParty/LibJPEG/*.c
++	XnLibExtensions/*.cpp
+ 
+ 
+ ifeq ("$(OSTYPE)","Darwin")
+ 	INC_DIRS += /opt/local/include
+ 	LIB_DIRS += /opt/local/lib
+ #	LDFLAGS += -framework CoreFoundation -framework IOKit
+@@ -23,12 +21,12 @@
+ endif
+ 
+ LIB_NAME = OniFile
+ 
+ LIB_DIRS = ../../../ThirdParty/PSCommon/XnLib/Bin/$(PLATFORM)-$(CFG)
+-USED_LIBS = XnLib pthread 
++USED_LIBS = XnLib pthread  jpeg
+ ifneq ("$(OSTYPE)","Darwin")
+         USED_LIBS += rt  
+ endif
+ 
+ CFLAGS += -Wall
+ 
+--- a/Source/Drivers/PS1080/Makefile
++++ b/Source/Drivers/PS1080/Makefile
+@@ -4,13 +4,12 @@
+ 
+ INC_DIRS = \
+ 	. \
+ 	Include \
+ 	../../../Include \
+ 	../../../ThirdParty/PSCommon/XnLib/Include \
+-	../../../ThirdParty/LibJPEG \
+ 	../../DepthUtils
+ 
+ SRC_FILES = \
+ 	Core/*.cpp	\
+ 	DDK/*.cpp 	\
+ 	DriverImpl/*.cpp\
+@@ -17,10 +16,9 @@
+ 	Formats/*.cpp	\
+ 	Include/*.cpp	\
+-	Sensor/*.cpp	\
+-	../../../ThirdParty/LibJPEG/*.c
++	Sensor/*.cpp
+ 
+ 
+ ifeq ("$(OSTYPE)","Darwin")
+ 	INC_DIRS += /opt/local/include
+ 	LIB_DIRS += /opt/local/lib
+ 	LDFLAGS += -framework CoreFoundation -framework IOKit
+@@ -27,13 +25,13 @@
+ endif
+ 
+ LIB_NAME = PS1080
+ 
+ LIB_DIRS += ../../../ThirdParty/PSCommon/XnLib/Bin/$(PLATFORM)-$(CFG)
+ LIB_DIRS += $(BIN_DIR)/$(PLATFORM)-$(CFG)
+-USED_LIBS = XnLib dl pthread DepthUtils
++USED_LIBS = XnLib dl pthread DepthUtils jpeg
+ ifneq ("$(OSTYPE)","Darwin")
+         USED_LIBS += rt usb-1.0
+ else
+ 	USED_LIBS += usb-1.0.0
+ endif
+ 
