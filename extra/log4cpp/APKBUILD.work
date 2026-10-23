@@ -1,0 +1,58 @@
+# Contributor: Hidde van der Heide <hvanderheide@nexuz.net>
+# Alpine-Maintainer: Roberto Oliveira <robertoguimaraes8@gmail.com>
+# Maintainer: Terence Ang <taang@qnx.com>
+pkgname=log4cpp
+pkgver=1.1.4
+pkgrel=0
+pkgdesc="Log library for C++"
+url="https://log4cpp.sourceforge.net/"
+arch="all"
+license="LGPL-2.1-or-later"
+subpackages="$pkgname-dev"
+depends="libc++"
+makedepends="make libtool diffutils libc++-dev glib-dev"
+source="https://downloads.sourceforge.net/$pkgname/$pkgname-$pkgver.tar.gz"
+builddir="$srcdir/$pkgname"
+
+prepare() {
+    default_prepare
+
+    update_config_guess
+    update_config_sub
+}
+
+build() {
+    if [ "$CARCH" = "aarch64" ]; then
+        platform="$CARCH-unknown-nto-qnx8.0.0"
+    elif [ "$CARCH" = "x86_64" ]; then
+        platform="$CARCH-pc-nto-qnx8.0.0"
+    else
+        echo "Unsupported architecture: $CARCH" >&2
+        exit 1
+    fi
+
+    ./configure \
+        --host="$platform" \
+        --build="$platform" \
+        --prefix=/usr \
+        --sysconfdir=/etc \
+        --mandir=/usr/share/man \
+        --localstatedir=/var \
+        --disable-dot \
+        --disable-static \
+        --disable-doxygen \
+        --without-idsa
+    make
+}
+
+check() {
+    make check
+}
+
+package() {
+    make DESTDIR="$pkgdir" install
+}
+
+sha512sums="
+0cdbd46ccd048d70bea3c35d22080dc5dd21fc3b9c415fe464847e60775954f57e9c8344506f0f94f16e90e8bdaa9cc6d84d3aa65191501e52ee8dfc639f0398  log4cpp-1.1.4.tar.gz
+"
