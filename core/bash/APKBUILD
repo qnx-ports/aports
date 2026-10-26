@@ -1,62 +1,60 @@
 pkgname=bash
 _basever=5.3
-_patchlevel=3
+_patchlevel=9
+_patchbase=${_basever/./}
 pkgver="$_basever.$_patchlevel"
-pkgrel=5
+pkgrel=0
 pkgdesc="The GNU Bourne Again shell"
 url="https://git.savannah.gnu.org/cgit/bash.git/"
 arch="all"
 license="GPL-3.0-or-later"
-options="!check"
 depends="ncurses readline qnx-io-sock libintl libiconv"
 makedepends="ncurses-dev readline-dev qnx-io-sock-dev gettext-dev libiconv-dev"
 depends_dev=$makedepends
-subpackages="${pkgname}-doc ${pkgname}-lang"
+subpackages="${pkgname}-doc"
 source="https://mirror.csclub.uwaterloo.ca/gnu/bash/bash-$_basever.tar.gz
+    bashrc
+    profile-bashrc.sh
     fix-qnx.patch
-    system.bashrc
-	dot.bashrc dot.bash_profile dot.bash_logout
 "
-provides="/bin/sh"
-provider_priority="1"
-builddir="$srcdir"/bash-"$_basever"
-
-# ===== BEGIN Alpine linux magic =====
 _i=1
 _pad=00
 while [ $_i -le $_patchlevel ]; do
 	[ $_i -ge 10 ] && _pad="0"
 	[ $_i -ge 100 ] && _pad=
-	source="$source https://mirror.csclub.uwaterloo.ca/gnu/bash/bash-$_basever-patches/bash${_basever/./}-$_pad$_i"
+	source="$source https://mirror.csclub.uwaterloo.ca/gnu/bash/bash-$_basever-patches/bash$_patchbase-$_pad$_i"
 	_i=$(( _i + 1))
 done
+provides="/bin/sh"
+provider_priority="1"
+builddir="$srcdir"/bash-"$_basever"
+
+export CFLAGS="$CFLAGS -DSYS_BASHRC='\"/etc/bash/bashrc\"'"
 
 prepare() {
-	# NOTE: This section is for applying the vendor patches, which are required to fix
-	# security holes.  `default_prepare` does *not* apply vendor patches in the format
-	# shipped with bash.  We also need to make sure vendor patches are applied before
-	# our own.
-	# If you disagree, please request an experimental rebuild with bash as /bin/sh,
-	# before removing this section.
-	for p in $source; do
-		case $p in
-		*/bash[0-9][0-9]-[0-9]*)
-			msg "$p (vendor)"
-			patch -p0 -i "$srcdir"/${p##*/}
-			;;
-		esac
-	done
-
-	default_prepare
-
-	# preventively set Version to please 'apk version --check'
-	sed -i "s/@PACKAGE_VERSION@/$pkgver/" "$builddir"/support/bash.pc.in
+    # NOTE: This section is for applying the vendor patches, which are required to fix
+    # security holes.  `default_prepare` does *not* apply vendor patches in the format
+    # shipped with bash.  We also need to make sure vendor patches are applied before
+    # our own.
+    # If you disagree, please request an experimental rebuild with bash as /bin/sh,
+    # before removing this section.
+    for p in $source; do
+        case $p in
+        */bash[0-9][0-9]-[0-9]*)
+            msg "$p (vendor)"
+            patch -p0 -i "$srcdir"/${p##*/}
+            ;;
+        esac
+    done
+    default_prepare
+    # preventively set Version to please 'apk version --check'
+    sed -i "s/@PACKAGE_VERSION@/$pkgver/" "$builddir"/support/bash.pc.in
 }
-# ===== END Alpine linux magic =====
-
 
 build() {
-    CFLAGS="$CFLAGS -O2 -Wl,-lregex,--stack,8388608 -Wno-implicit-function-declaration" \
+    CFLAGS="$CFLAGS -O2 -Wl,-lregex,-lsocket,--stack,8388608" \
+    LDFLAGS="$LDFLAGS -lregex -lsocket" \
+    LOCAL_LIBS="-lsocket -lregex" \
     ./configure \
         --build="$CBUILD" \
         --host="$CHOST" \
@@ -67,26 +65,31 @@ build() {
     make
 }
 
+check() {
+    make test
+}
+
 package() {
-    make DESTDIR="${pkgdir}" install
-    ln -s bash "$pkgdir"/usr/bin/sh
-    install -Dm644 "$srcdir"/system.bashrc "$pkgdir"/etc/bash.bashrc
-	
-	# user home folder skeleton
-	install -dm755 "$pkgdir"/etc/skel/
-	install -m644 "$srcdir"/dot.bashrc "$pkgdir"/etc/skel/.bashrc
- 	install -m644 "$srcdir"/dot.bash_profile "$pkgdir"/etc/skel/.bash_profile
- 	install -m644 "$srcdir"/dot.bash_logout "$pkgdir"/etc/skel/.bash_logout
+	mkdir -p "$pkgdir"/etc/bash
+	make DESTDIR="$pkgdir" install
+	ln -s bash "$pkgdir"/usr/bin/sh
+	install -Dm644  "$srcdir"/bashrc "$pkgdir"/etc/bash/bashrc
+	install -Dm644  "$srcdir"/profile-bashrc.sh "$pkgdir"/etc/profile.d/00-bashrc.sh
+	rm -rf "$pkgdir"/usr/share/locale
 }
 
 sha512sums="
 426702c8b0fb9e0c9956259973ce5b657890fd47f4f807a64febf20077bb48d0b91474ed6e843d2ef277186b46c5fffa79b808da9b48d4ec027d5e2de1b28ed8  bash-5.3.tar.gz
-25aa380b78541d6286c02f23bfc32d949bd07e1eb4961a1f7714234e87fdb9688963982dedfa842e9a954e9f98b179f08e930de423383d8b0116d469c1fca6a0  fix-qnx.patch
-086d2c9c3783cc6c1bcb51dc7fc2bd3393e4f866e59716e484211b1a2d1aad04e3dcb8f66cff1ab9e677b79610833c6a67725b39ebf6cc9f2aa8e65e3c27d086  system.bashrc
-4f350d44e6b39babc802abd116fbfaf78712f8620c204e499f60444dbc2411802b69e9403e6dc2ecc5b73ed9f2c75a5cc6e5d50779dc493c23e68c57bbb9cc22  dot.bashrc
-4f350d44e6b39babc802abd116fbfaf78712f8620c204e499f60444dbc2411802b69e9403e6dc2ecc5b73ed9f2c75a5cc6e5d50779dc493c23e68c57bbb9cc22  dot.bash_profile
-093135ca772446b1e8beb7f2e772d3314ed395efbee5e98ba5db4060351968c36384f56eb0f951acb3920ee31151d56129500b6fd60abc4ca930817839837521  dot.bash_logout
+a9ff38b7a11c7a4935726dddcdde320a0d9616f50bae390f149e23d47bdf07a4c6e09ade2eea2dd9fa8dc449f3d1992a327e19cd57af1b8aad77b39d681c7dff  bashrc
+9b44e2fc4a37fb97bdd75f1563a7b472c3f1260f2da5542f8f063b7647cf751006e70c683c573d0eea4c4bd64863b90997472f5fbc3f9c1ee775cd662b6eab31  profile-bashrc.sh
+acd4c54d994b3e3f22e3a59068daa7cb7721bd570e8aa6c649252d01b0a661023d5c0caa8f310cc7b9c09b160580fbc0ac732c7489ce2ba52cfad86d9f832142  fix-qnx.patch
 66d0987f1a8951974c3a707a1980ef391a1f2a2938f0fa46adb77fcdcef6a3ca49e67182b9640ece3e59bb289e5b4a17eb870aa2a525a03e829a7be158d020a6  bash53-001
 05caea1c1f5a3d27f2aa351c24f324f9d544ded89db4183ae2872e0283dde62dd6166ca4e780304398935b4aa3fb4db77ecf57acd0f0e295d279ffe40b772158  bash53-002
 3d4004653cb3f2cba984e67b8e7ae54c19351e176b62bb415f88fdd482ae04be063dacf6303c8343ab6c8bf4f2388026c1742ac603a5cd5c330db22a4b76f4cb  bash53-003
+d3c7c83ae0742f2a4e1bc96e8fdb3f05c8c0a7e631d3473922ac245f83194925ae443e761269fa6a519298b1123ee4008bcbcdaf9180dff0a0df7fbe5e029bbb  bash53-004
+e81b43b084c1e9d59acd174d0792a93053780bdef61e7f4072d90b425d99a3fb7d35ef4c0ab79c4fb24bb6b38a8d9e99aad2fceac6efddf723a2cd123b32f0ea  bash53-005
+f7e303405571635e20c26507c46f9ae0a61ea1328fa0492f2eba2095d398f799e62c1dbf0c07b440c290244f2c54186691ef4aaa2d65f2de101f9888386e2391  bash53-006
+5f9419b34c759b92a29f25d97e5da3f02603b3138afc11523c7bd304139db0cd02ff82a093cf78a338a7f9d88cb50a880fa6a105be83f8ca85ea8ff7d5c5d80b  bash53-007
+094b7dc2abe6fc41c62494c6b69640fbd8c6bd93e7cde0618504bb8589fc51fec2fb1686b2729c37e430d336d93ec174233d78f23c82026aca49a240a00477c1  bash53-008
+07f37cee118e510ae58ea408f9d97b942017e1378532d4e3cd5a4d7405994ddadaba5d3ddb4bbda6b375760967faa51add7f46914ba919a27c14e7036f64f3be  bash53-009
 "
