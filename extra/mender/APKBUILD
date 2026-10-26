@@ -1,0 +1,53 @@
+maintainer="Vratislav Podzimek <vratislav.podzimek@nothern.tech>"
+pkgname=mender
+pkgver=5.2.0
+pkgrel=0
+pkgdesc="Mender client"
+url="https://mender.io"
+arch="all"
+license="Apache-2.0"
+depends="
+    boost
+    libarchive
+    libc++
+    libcrypto3
+    libssl3
+    qnx-gcc-libs
+    qnx-io-sock
+    qnx-microkernel
+"
+makedepends="cmake make pkgconf boost-dev libarchive-dev openssl-dev"
+install="$pkgname.post-install"
+subpackages=""
+source="
+    https://github.com/mendersoftware/mender/releases/download/$pkgver/$pkgname-$pkgver.tar.gz
+    0001-single-junit-xml.patch
+"
+builddir="$srcdir/$pkgname-$pkgver"
+
+build() {
+    CXXFLAGS="-Wno-unused-command-line-argument" cmake . \
+      -DCMAKE_GENERATOR="Unix Makefiles" \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_INSTALL_PREFIX=/usr \
+      -DMENDER_VERSION="$pkgver" \
+      -DMENDER_USE_DBUS=OFF -DMENDER_EMBED_MENDER_AUTH=ON -DMENDER_USE_LMDB=OFF \
+      -DMENDER_TEST_SKIP_ASYNC_FIFO_OPENER_TESTS=ON -DMENDER_TEST_SKIP_NOFILE_BASED_TESTS=ON -DMENDER_TEST_RUN_SEQUENTIALLY=ON
+    make -j8
+}
+
+check() {
+    make check
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install . --prefix=/usr
+    DESTDIR="$pkgdir" cmake --install . --prefix=/ --component mender-conf
+    DESTDIR="$pkgdir" cmake --install . --prefix=/ --component mender-state-dir
+    DESTDIR="$pkgdir" cmake --install . --prefix=/ --component mender-device-type
+}
+
+sha512sums="
+46dfaefa68d9c4c98ed52b92fe98e405938a2c94b62d5b33ffde3e18590edb657da647385ac99fe398e860b0f597299798f86f075439f93f66808072b1e43b8e  mender-5.2.0.tar.gz
+5b895fa27a94414364304c12875cc3816bc25aaef10399ba06686d09b108551188d42f5c79170c9e7c5bf2446ed6300e99abaeb3981f04d01b6f49ae967be945  0001-single-junit-xml.patch
+"
