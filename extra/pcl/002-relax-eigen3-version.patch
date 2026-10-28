@@ -1,0 +1,13 @@
+Accept Eigen 5.x, the only eigen-dev version QNX packages
+
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -346,7 +346,7 @@
+ find_package(Threads REQUIRED)
+ 
+ # Eigen3 (required)
+-find_package(Eigen3 3.3 REQUIRED NO_MODULE)
++find_package(Eigen3 3.3...<6 REQUIRED NO_MODULE)
+ if(NOT EIGEN3_FOUND AND Eigen3_FOUND)
+     set(EIGEN3_FOUND ${Eigen3_FOUND})
+ endif()
