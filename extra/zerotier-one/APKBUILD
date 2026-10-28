@@ -10,16 +10,17 @@ license="MPL-2.0"
 depends="openssl
 	libc++
 	libunwind
-    qnx-io-sock
+	qnx-io-sock
 	"
 makedepends="openssl-dev
 	libc++-dev
 	qnx-io-sock-dev
 	"
+subpackages="$pkgname-openrc"
 source="$pkgname-$pkgver.tar.gz::https://github.com/zerotier/ZeroTierOne/archive/refs/tags/$pkgver.tar.gz
 	$pkgname.initd
-    0001-Add-QNX-Support.patch
-    0002-Add-QNX-OS-Support.patch
+	0001-Add-QNX-Support.patch
+	0002-Add-QNX-OS-Support.patch
 	"
 builddir="$srcdir"/ZeroTierOne-$pkgver
 
@@ -36,13 +37,8 @@ package() {
 		"$builddir/zerotier-one" \
 		"$pkgdir/usr/bin/zerotier-one"
 
-	install -Dm755 \
-		"$builddir/zerotier-cli" \
-		"$pkgdir/usr/bin/zerotier-cli"
-
-	install -Dm755 \
-		"$builddir/zerotier-idtool" \
-		"$pkgdir/usr/bin/zerotier-idtool"
+	ln -s zerotier-one "$pkgdir"/usr/bin/zerotier-cli
+	ln -s zerotier-one "$pkgdir"/usr/bin/zerotier-idtool
 }
 
 sha512sums="
