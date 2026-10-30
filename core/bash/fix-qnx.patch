@@ -12,7 +12,7 @@
  opennt*|interix*) LOCAL_CFLAGS="-DNO_MAIN_ENV_ARG -DBROKEN_DIRENT_D_INO -D_POSIX_SOURCE -D_ALL_SOURCE -DRECYCLES_PIDS" ;;
 --- bash-5.3.orig/examples/loadables/finfo.c	2025-10-30 20:25:54.000000000 +0000
 +++ bash-5.3/examples/loadables/finfo.c	2025-10-30 20:30:47.000000000 +0000
-@@ -274,7 +274,7 @@
+@@ -274,6 +274,6 @@
  	ma = major (st->st_rdev);
  	mi = minor (st->st_rdev);
  #if defined (makedev)
@@ -20,4 +20,38 @@
 +	d = makedev (0, ma, mi);
  #else
  	d = st->st_rdev & 0xFF;
- #endif
+--- bash-5.3.orig//variables.c
++++ bash-5.3/variables.c
+@@ -552,21 +552,6 @@ initialize_shell_variables (env, privmode)
+   temp_var = set_if_not ("PATH", DEFAULT_PATH_VALUE);
+   temp_var = set_if_not ("TERM", "dumb");
+ 
+-#if defined (__QNX__)
+-  /* set node id -- don't import it from the environment */
+-  {
+-    char node_name[22];
+-#  if defined (__QNXNTO__)
+-    netmgr_ndtostr(ND2S_LOCAL_STR, ND_LOCAL_NODE, node_name, sizeof(node_name));
+-#  else
+-    qnx_nidtostr (getnid (), node_name, sizeof (node_name));
+-#  endif
+-    temp_var = bind_variable ("NODE", node_name, 0);
+-    if (temp_var)
+-      set_auto_export (temp_var);
+-  }
+-#endif
+-
+   /* set up the prompts. */
+   if (interactive_shell)
+     {
+--- bash-5.3/configure.orig	2026-10-26 11:10:09.000000000 +0000
++++ bash-5.3/configure	2026-10-26 11:11:00.000000000 +0000
+@@ -23152,7 +23152,7 @@
+ 		esac ;;
+ netbsd*|openbsd*)	LOCAL_CFLAGS="-DDEV_FD_STAT_BROKEN" ;;
+ freebsd*|midnightbsd*)	LOCAL_CFLAGS='-DHEREDOC_PIPESIZE=4096' ;;
+-*qnx*)          LOCAL_LIBS="-lncurses -lregex" ;;
++*qnx*)          LOCAL_LIBS="-lncurses -lregex -lsocket" ;;
+ powerux*)	LOCAL_LIBS="-lgen" ;;
+ cygwin*|msys*)	LOCAL_CFLAGS=-DRECYCLES_PIDS ;;
+ opennt*|interix*) LOCAL_CFLAGS="-DNO_MAIN_ENV_ARG -DBROKEN_DIRENT_D_INO -D_POSIX_SOURCE -D_ALL_SOURCE -DRECYCLES_PIDS" ;;

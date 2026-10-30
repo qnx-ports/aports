@@ -1,10 +1,14 @@
-# If not running interactively, don't do anything
-[[ $- != *i* ]] && return
-
-alias ls='ls --color=auto'
-alias grep='grep --color=auto'
-PS1='[\u@\h \w]\$ '
-
-if [[ -r /system/share/bash-completion/bash_completion ]]; then
-  . /system/share/bash-completion/bash_completion
+if [[ $- != *i* ]] ; then
+	# Shell is non-interactive.  Be done now!
+	return
 fi
+
+# set fallback PS1; only if currently set to upstream bash default
+if [ "$PS1" = '\s-\v\$ ' ]; then
+	PS1='\h:\w\$ '
+fi
+
+for f in /etc/bash/*.sh; do
+	[ -r "$f" ] && . "$f"
+done
+unset f
