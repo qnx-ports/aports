@@ -1,6 +1,10 @@
+# Contributor: Leo <thinkabit.ukim@gmail.com>
+# Contributor: Rasmus Thomsen <oss@cogitri.dev>
+# Alpine-Maintainer: Simon Zeni <simon@bl4ckb0ne.ca>
+# Maintainer: Terence Ang <taang@qnx.com>
 pkgname=pango
 pkgver=1.56.4
-pkgrel=2
+pkgrel=3
 pkgdesc="library for layout and rendering of text"
 url="https://www.pango.org/"
 arch="all"
@@ -29,24 +33,21 @@ makedepends="
     qnx-libc++-dev
     "
 
-checkdepends=""
+checkdepends="font-dejavu font-cantarell"
 subpackages="$pkgname-dev $pkgname-tools"
 source="https://download.gnome.org/sources/pango/${pkgver%.*}/pango-$pkgver.tar.xz
     "
 
 build() {
-    CC=gcc \
-    CXX=g++ \
-    meson \
+    abuild-meson . build \
         --prefix=/usr \
-        -Db_lto=true \
+        -Db_lto=false \
         -Dintrospection=enabled \
         -Dfontconfig=enabled \
         -Ddocumentation=false \
         -Dman-pages=false \
         -Dfreetype=enabled \
-        -Dc_link_args=-Wl,-lm \
-        build
+        -Dc_link_args=-Wl,-lm
     meson compile -C build
 }
 
@@ -60,6 +61,7 @@ package() {
 
 tools() {
     pkgdesc="$pkgdesc (tools)"
+    depends="$depends $pkgname=$pkgver-r$pkgrel"
 
     amove usr/bin
 }
