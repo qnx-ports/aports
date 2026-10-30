@@ -1,8 +1,7 @@
 # Contributor: Holger Jaekel <holger.jaekel@gmx.de>
-# QNX Maintainer: Felix Xing <fxing@qnx.com>
-
+# Maintainer: Felix Xing <fxing@qnx.com>
 pkgname=libdeflate
-pkgver=1.24
+pkgver=1.26
 pkgrel=0
 pkgdesc="Library for fast, whole-buffer DEFLATE-based compression and decompression"
 url="https://github.com/ebiggers/libdeflate"
@@ -34,7 +33,7 @@ build() {
 }
 
 check() {
-	ctest --test-dir build -j 4
+	ctest --test-dir build -j "$nproc"
 }
 
 package() {
@@ -43,9 +42,10 @@ package() {
 
 utils() {
 	pkgdesc="Command line utilities for the DEFLATE library"
+	depends="$pkgname=$pkgver-r$pkgrel"
 	amove usr/bin
 }
 
 sha512sums="
-c20a772aeeac593c34e8a68be80b23cb116699141de269d94df072636b6c90572f541b3344d830325cf45b03e7a1303e0274d79ce96c360fd421d4eb05ae1f92  libdeflate-1.24.tar.gz
+06605eabce8635b82e03863c87b515696d08b8a1fc36b746b44b660989613d2ebd6ca1bb13dd0f88244846894dbf5a15169dd443c34dcda64e960fdbd08a8d3b  libdeflate-1.26.tar.gz
 "
