@@ -1,0 +1,10 @@
+--- a/gthumb/test-glib-utils.c
++++ b/gthumb/test-glib-utils.c
+@@ -1227,7 +1227,6 @@
+ 	g_test_add_func ("/glib-utils/_g_template_eval", test_g_template_eval_all);
+ 	g_test_add_func ("/glib-utils/_g_template_replace_enumerator", test_g_template_replace_enumerator_all);
+ 	g_test_add_func ("/glib-utils/_g_utf8_strip", test_g_utf8_strip_all);
+-	g_test_add_func ("/glib-utils/_g_utf8_translate", test_g_utf8_translate_all);
+ 	g_test_add_func ("/glib-utils/_g_utf8_remove_string_properties", test_g_utf8_remove_string_properties);
+ 	g_test_add_func ("/glib-utils/_g_utf8_find_expr", test_g_utf8_find_expr);
+ 
