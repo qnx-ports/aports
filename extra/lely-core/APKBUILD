@@ -1,7 +1,7 @@
-# Maintainer:Ramya santoshi <rtimmaraju@qnx.com>
+# Maintainer: Ramya santoshi <rtimmaraju@qnx.com>
 pkgname=lely-core
 pkgver=3.2.0
-pkgrel=0
+pkgrel=1
 pkgdesc="Lely core libraries (CANopen stack, IO, utilities)"
 url="https://gitlab.com/lely_industries/lely-core"
 arch="all"
@@ -14,7 +14,6 @@ makedepends="
     qnx-io-sock-dev
     libc++-dev"
 
-CPPFLAGS="$CPPFLAGS -D_POSIX_C_SOURCE=200809 "
 subpackages="$pkgname-dev"
 
 source="
@@ -30,24 +29,24 @@ prepare() {
 }
 
 build() {
-    export LIBS="-lsocket"
-    export CFLAGS="$CFLAGS -Wno-error -Wno-unused-command-line-argument -Wno-error=static-in-inline -Wno-deprecated-declarations -Wno-unused-function -Wno-error=missing-field-initializers"
+    export LIBS="$LIBS -lsocket"
+    export CPPFLAGS="$CPPFLAGS -D_POSIX_C_SOURCE=200809"
+    export CFLAGS="$CFLAGS -Wno-error -Wno-unused-command-line-argument -Wno-error=static-in-inline -Wno-deprecated-declarations -Wno-unused-function -Wno-error=missing-field-initializers -Wno-c2y-extensions"
     export CXXFLAGS="$CXXFLAGS -Wno-error -Wno-unused-command-line-argument -Wno-error=static-in-inline -Wno-deprecated-declarations -Wno-unused-function"
+
     ./configure \
         --prefix=/usr \
         --disable-static \
         --disable-python \
         --enable-ecss-compliance \
-        --disable-doc \
-        CFLAGS="$CFLAGS" \
-        CPPFLAGS="$CPPFLAGS" \
-        CXXFLAGS="$CXXFLAGS"
+        --disable-doc
     make
 }
 
 package() {
     make install DESTDIR="$pkgdir" -j1
 }
+
 #Tests are disabled during the build to maintain ECSS compliance.
 sha512sums="
 771a7e1db5a7e0ed98e392090eaf423545e057f3e0050ccbf1a2e5d1eb4f36c205664795fc9604c86ea4a9e6aa593192e26ac4f75e43101b1554e4318a8cf571  lely-core-v3.2.0.tar.gz
