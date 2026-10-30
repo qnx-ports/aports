@@ -4,23 +4,25 @@
 # Maintainer: Yongxin Dai <yodai@qnx.com>
 pkgname=gcr
 pkgver=3.41.2
-pkgrel=0
+pkgrel=1
 pkgdesc="library for bits of crypto UI and parsing"
 url="https://gitlab.gnome.org/GNOME/gcr/-/tree/gcr-3-41"
 arch="all"
 license="LGPL-2.0-or-later"
-depends="$pkgname-base=$pkgver-r$pkgrel"
-depends_dev="gtk3-dev p11-kit-dev"
-makedepends="
+depends="$pkgname-base=$pkgver-r$pkgrel gtk3 glib"
+depends_dev="
     glib-dev
-    gobject-introspection-dev
     gtk3-dev
+    p11-kit-dev
+    "
+makedepends="
+    $depends_dev
+    gobject-introspection-dev
     libgcrypt-dev
     libsecret-dev
     libxslt
     meson
     openssh
-    p11-kit-dev
     vala
     "
 subpackages="
@@ -43,7 +45,7 @@ build() {
         -Dgtk_doc=false \
         -Dc_args='-D_QNX_SOURCE' \
         -Dc_args='-lsocket' \
-        --libexecdir=/usr/libexec \
+        --libexecdir=/usr/lib \
         output
     meson compile ${JOBS:+-j ${JOBS}} -C output
 }
