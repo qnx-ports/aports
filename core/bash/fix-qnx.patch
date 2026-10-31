@@ -6,7 +6,7 @@
  freebsd*|midnightbsd*)	LOCAL_CFLAGS='-DHEREDOC_PIPESIZE=4096' ;;
 -*qnx[67]*)	LOCAL_LIBS="-lncurses" ;;
 -*qnx*)		LOCAL_CFLAGS="-Dqnx -F -3s" LOCAL_LDFLAGS="-3s" LOCAL_LIBS="-lunix -lncurses" ;;
-+*qnx*)          LOCAL_LIBS="-lncurses -lregex" ;;
++*qnx*)          LOCAL_LIBS="-lncurses -lregex -lsocket" ;;
  powerux*)	LOCAL_LIBS="-lgen" ;;
  cygwin*|msys*)	LOCAL_CFLAGS=-DRECYCLES_PIDS ;;
  opennt*|interix*) LOCAL_CFLAGS="-DNO_MAIN_ENV_ARG -DBROKEN_DIRENT_D_INO -D_POSIX_SOURCE -D_ALL_SOURCE -DRECYCLES_PIDS" ;;
@@ -44,14 +44,3 @@
    /* set up the prompts. */
    if (interactive_shell)
      {
---- bash-5.3/configure.orig	2026-10-26 11:10:09.000000000 +0000
-+++ bash-5.3/configure	2026-10-26 11:11:00.000000000 +0000
-@@ -23152,7 +23152,7 @@
- 		esac ;;
- netbsd*|openbsd*)	LOCAL_CFLAGS="-DDEV_FD_STAT_BROKEN" ;;
- freebsd*|midnightbsd*)	LOCAL_CFLAGS='-DHEREDOC_PIPESIZE=4096' ;;
--*qnx*)          LOCAL_LIBS="-lncurses -lregex" ;;
-+*qnx*)          LOCAL_LIBS="-lncurses -lregex -lsocket" ;;
- powerux*)	LOCAL_LIBS="-lgen" ;;
- cygwin*|msys*)	LOCAL_CFLAGS=-DRECYCLES_PIDS ;;
- opennt*|interix*) LOCAL_CFLAGS="-DNO_MAIN_ENV_ARG -DBROKEN_DIRENT_D_INO -D_POSIX_SOURCE -D_ALL_SOURCE -DRECYCLES_PIDS" ;;

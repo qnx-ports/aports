@@ -52,9 +52,7 @@ prepare() {
 }
 
 build() {
-    CFLAGS="$CFLAGS -O2 -Wl,-lregex,-lsocket,--stack,8388608" \
-    LDFLAGS="$LDFLAGS -lregex -lsocket" \
-    LOCAL_LIBS="-lsocket -lregex" \
+    CFLAGS="$CFLAGS -O2 -Wl,-lregex,-lsocket,--stack,8388608 -Wno-error=implicit-function-declaration" \
     ./configure \
         --build="$CBUILD" \
         --host="$CHOST" \
@@ -82,7 +80,7 @@ sha512sums="
 426702c8b0fb9e0c9956259973ce5b657890fd47f4f807a64febf20077bb48d0b91474ed6e843d2ef277186b46c5fffa79b808da9b48d4ec027d5e2de1b28ed8  bash-5.3.tar.gz
 a9ff38b7a11c7a4935726dddcdde320a0d9616f50bae390f149e23d47bdf07a4c6e09ade2eea2dd9fa8dc449f3d1992a327e19cd57af1b8aad77b39d681c7dff  bashrc
 9b44e2fc4a37fb97bdd75f1563a7b472c3f1260f2da5542f8f063b7647cf751006e70c683c573d0eea4c4bd64863b90997472f5fbc3f9c1ee775cd662b6eab31  profile-bashrc.sh
-acd4c54d994b3e3f22e3a59068daa7cb7721bd570e8aa6c649252d01b0a661023d5c0caa8f310cc7b9c09b160580fbc0ac732c7489ce2ba52cfad86d9f832142  fix-qnx.patch
+5bb4805e95e5cbd6c2f370ef7fc3664e40f69a41d84dfb106e9e9b86ead093b08c0f02212d4f5e98ec7556b5a9478b2b2b54ebbd240e41c7ab36210a6c7f9b73  fix-qnx.patch
 66d0987f1a8951974c3a707a1980ef391a1f2a2938f0fa46adb77fcdcef6a3ca49e67182b9640ece3e59bb289e5b4a17eb870aa2a525a03e829a7be158d020a6  bash53-001
 05caea1c1f5a3d27f2aa351c24f324f9d544ded89db4183ae2872e0283dde62dd6166ca4e780304398935b4aa3fb4db77ecf57acd0f0e295d279ffe40b772158  bash53-002
 3d4004653cb3f2cba984e67b8e7ae54c19351e176b62bb415f88fdd482ae04be063dacf6303c8343ab6c8bf4f2388026c1742ac603a5cd5c330db22a4b76f4cb  bash53-003
