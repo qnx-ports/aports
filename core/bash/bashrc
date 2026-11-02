@@ -5,7 +5,7 @@ fi
 
 # set fallback PS1; only if currently set to upstream bash default
 if [ "$PS1" = '\s-\v\$ ' ]; then
-	PS1='\h:\w\$ '
+	PS1='[\u@\h \w]\$ '
 fi
 
 for f in /etc/bash/*.sh; do
