@@ -52,6 +52,9 @@ prepare() {
 }
 
 build() {
+    # NOTE: -Wno-error=implicit-function-declaration bash does not provide any headers for its internal impl
+    # of fallbacks ex wcswidth and bcopy so we have to allow these to be undefined at compile time
+    # but its resolved a link time
     CFLAGS="$CFLAGS -O2 -Wl,-lregex,-lsocket,--stack,8388608 -Wno-error=implicit-function-declaration" \
     ./configure \
         --build="$CBUILD" \
