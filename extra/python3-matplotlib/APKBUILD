@@ -24,6 +24,7 @@ depends="
     python3-pillow
     libc++
     freetype
+    qhull
     "
 makedepends="
     freetype-dev
