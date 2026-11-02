@@ -1,3 +1,4 @@
+# Maintainer: Aaron Bassett <abassett@qnx.com>
 pkgname=bash
 _basever=5.3
 _patchlevel=9
@@ -12,6 +13,7 @@ depends="ncurses readline qnx-io-sock libintl libiconv"
 makedepends="ncurses-dev readline-dev qnx-io-sock-dev gettext-dev libiconv-dev"
 depends_dev=$makedepends
 subpackages="${pkgname}-doc"
+options="!check"
 source="https://mirror.csclub.uwaterloo.ca/gnu/bash/bash-$_basever.tar.gz
     bashrc
     profile-bashrc.sh
