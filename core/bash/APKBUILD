@@ -11,7 +11,6 @@ arch="all"
 license="GPL-3.0-or-later"
 depends="ncurses readline qnx-io-sock libintl libiconv"
 makedepends="ncurses-dev readline-dev qnx-io-sock-dev gettext-dev libiconv-dev"
-depends_dev=$makedepends
 subpackages="${pkgname}-doc"
 options="!check"
 source="https://mirror.csclub.uwaterloo.ca/gnu/bash/bash-$_basever.tar.gz
