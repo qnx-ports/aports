@@ -29,6 +29,7 @@ depends="libc++ fast-cdr foonathan_memory openssl foonathan_memory_vendor qnx-fs
 source="
     fast-dds-$pkgver.tar.gz::https://github.com/eProsima/Fast-DDS/archive/refs/tags/v$pkgver.tar.gz
     dds-types-test.tar.gz::https://github.com/eProsima/dds-types-test/archive/c245fe0fee4a0227e4b904fc7fc7248e2c03b1af.tar.gz
+    ssl.patch 
 "
 
 prepare() {
@@ -45,6 +46,8 @@ builddir="$srcdir/Fast-DDS-$pkgver"
 options="!check"
 
 build() {
+    export CFLAGS="${CFLAGS//-fstack-clash-protection/}"
+    export CXXFLAGS="${CXXFLAGS//-fstack-clash-protection/}"
     cmake -B build \
         -S "$builddir" \
         -G Ninja \
@@ -57,8 +60,8 @@ build() {
         -DFASTDDS_PERSISTENCE=OFF \
         -DEPROSIMA_BUILD_TESTS=ON \
         -DSECURITY=OFF \
-        -DCMAKE_CXX_FLAGS="-DSA_RESTART=0" \
-        -DCMAKE_CXX_FLAGS="-I$builddir/thirdparty/asio -I/usr/include" \
+        -DIS_THIRDPARTY_BOOST_OK=FALSE \
+        -DCMAKE_CXX_FLAGS="$CXXFLAGS -DSA_RESTART=0 -Wno-error=array-bounds -Wno-error=parentheses-equality" \
         -DCMAKE_EXE_LINKER_FLAGS="-L/usr/lib -lsocket -lfsnotify -lgtest" 
     cmake --build build
 }
@@ -77,7 +80,7 @@ package() {
 
 dev() {
     default_dev
-    amove usr/share/fastrtps/cmake
+    
 }
 
 tests() {
@@ -92,10 +95,7 @@ tools() {
 }
 
 sha512sums="
-751c6c751c30033aa19bcc7ce6b6ab84b44f78912e85aa288a92ba27c2ec7ce344b87a743f73bd61a31dd51ff28d79e8729083124c0c6ff103af01856b0bb639  fast-dds-2.14.4.tar.gz
-0178f3f49d7e1d47e8ff1648c58d53788b9137ba2f375fb3c0071e2fa674f76cf64edbe12c368020b9001abe6cb01f336e960af5129d58bea460b30b96106fb5  qnx.patch
-2b55723db797838dc14294b3e0e0bc3b4a2fe7cd75ea5654c7f8e5c345868dfbf219d99a389653be1c5baf6c585363a11e60d38ac037b06b445891788aa49a52  fast-dds-asiofix.diff
-b5398f4ba40b19ac0418d9eb9800a8561e2caa66435449387d2bfa1c1d34597ae54d23e042878949f5131a90b9144f93c33e539522a3aa6ec73aaf35eeaca1fd  fast-dds-disable-shm-tests.patch
-f8df39c5a5e89dcfe4bd37c7e757e44e3e94d9b79d7ab08d1804ad8980993a607070f7e12238ffe3286840cd08c0b3c8e3639d3a1177e5ff795994cbc42a8292  asio-1-29-0.tar.gz
-f08f2ba2eaaeba548c5be0cfb9b903857ed7d1c0c8bebc9ac076a0a7c8e7d81606159d96994a36587c19b9e271aa5dfae1a16d60a17a1faaaaa6ca0df41ed0a6  asio_fix.diff
+f9cba9b881b5b34ad496e2123dd1f3303936eab2a0b985207f470e6b5a91a99e8a0d96fa5596bc2ff4babc348e2f2f91a90e612fa9b7c1de2424e036b8d2366a  fast-dds-3.6.2.tar.gz
+60f941814c5c29cdc7e30ad8d4b37e9f32a4a83eb80059e1451bd5d047c1bbca08f5e1efd6fa93b763052b50772c5e6d46c7fca51e82ceb2ede0f4555dd5ddb6  dds-types-test.tar.gz
+f0ef316479d43311ca818103fc6568a48a0b45346a92ffc22e99e99f2e93a0eb59bad0cf5ed39a528bc10cb64425b0d5683ced2f305d40e1923852d4cefed2f1  ssl.patch
 "
