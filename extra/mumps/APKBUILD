@@ -1,0 +1,68 @@
+# Maintainer: Terence Ang <taang@qnx.com>
+pkgname=mumps
+pkgver=5.9.0
+pkgrel=0
+pkgdesc="MUltifrontal Massively Parallel sparse direct Solver"
+url="https://mumps-solver.org/"
+arch="all"
+license="CeCILL-C"
+depends="
+    openblas
+    openmp
+"
+makedepends="
+    openblas-dev
+    openmp-dev
+    flang22
+"
+subpackages="$pkgname-dev"
+source="
+    https://deb.debian.org/debian/pool/main/m/mumps/mumps_$pkgver.orig.tar.gz
+    Makefile.inc.patch
+"
+builddir="$srcdir/MUMPS_$pkgver"
+
+build() {
+    make -j"$nproc" allshared
+}
+
+check() {
+    export LD_LIBRARY_PATH="${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}$PWD/lib"
+
+    cd examples
+    tests="c_example c_example_save_restore dsimpletest dsimpletest_save_restore"
+    inputs="input_simpletest_cmplx input_simpletest_real"
+
+    for test in $tests; do
+        for input in $inputs; do
+            printf "%-30s %-30s " "$test" "$input"
+
+            if ./"$test" < ./"$input"; then
+                echo "PASSED: $PWD/$test < $PWD/$input"
+            else
+                echo "FAILED: $PWD/$test < $PWD/$input"
+                return 1
+            fi
+        done
+    done
+}
+
+package() {
+    install -d "$pkgdir/usr/lib"
+    install -d "$pkgdir/usr/include/mumps"
+    install -d "$pkgdir/usr/include/mumps/libseq"
+    install -d "$pkgdir/usr/include/mumps/PORD"
+
+    install -m755 lib/*.so "$pkgdir/usr/lib"
+    install -m755 libseq/*.so "$pkgdir/usr/lib"
+ 
+    install -m644 include/*.h "$pkgdir/usr/include/mumps"
+    install -m644 libseq/*.h "$pkgdir/usr/include/mumps/libseq"
+    install -m644 PORD/include/*.h "$pkgdir/usr/include/mumps/PORD"
+}
+
+
+sha512sums="
+0f90a4976ff066ce8872087ad5377690fa0907533425a6285dcf8855b78c0a66b4f0e8488dffb9433e35666570de5de1d056b72f0d701a10fea58d5287d89dde  mumps_5.9.0.orig.tar.gz
+4bffbdcca88cb4dad42d0555974de07505f0e88af96167afefdadb8293bb8bc8355bf1fae505df6370fe44eefb05518b5c4b1248bbe26b91bc2463d5d23d7c82  Makefile.inc.patch
+"

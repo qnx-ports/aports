@@ -1,0 +1,58 @@
+--- /dev/null	2026-10-19 14:35:07.927419748 -0400
++++ b/Makefile.inc	2026-11-02 13:18:30.533733548 -0500
+@@ -0,0 +1,55 @@
++LSCOTCHDIR = /usr/lib
++ISCOTCH   =
++
++LSCOTCH   =
++
++LPORDDIR = $(topdir)/PORD/lib/
++IPORD    = -I$(topdir)/PORD/include/
++LPORD    = -L$(LPORDDIR) -lpord$(PLAT)
++
++LMETISDIR = /usr/lib
++IMETIS    =
++
++LMETIS    =
++
++ORDERINGSF = -Dpord
++ORDERINGSC  = $(ORDERINGSF)
++
++LORDERINGS = $(LPORD)
++IORDERINGSF =
++IORDERINGSC = $(IPORD)
++
++PLAT    =
++LIBEXT_SHARED  = .so
++SONAME = -soname
++SHARED_OPT = -shared
++FPIC_OPT = -fPIC
++LIBEXT  = .a
++OUTC    = -o
++OUTF    = -o
++RM = /bin/rm -f
++CC = cc
++FC = /usr/lib/llvm22/bin/flang-22
++FL = /usr/lib/llvm22/bin/flang-22
++AR = ar vr
++RANLIB = ranlib
++LAPACK = -lopenblas
++
++
++
++INCSEQ = -I$(topdir)/libseq
++LIBSEQ  = $(LAPACK) -L$(topdir)/libseq -lmpiseq$(PLAT)
++
++LIBBLAS = -lopenblas
++LIBOTHERS =
++
++CDEFS   = -DAdd_
++
++OPTF    = ${FFLAGS}
++OPTL    =
++OPTC    = ${CFLAGS}
++
++INCS = $(INCSEQ) -I/usr/include
++LIBS = $(LIBSEQ)
++LIBSEQNEEDED = libseqneeded
++
