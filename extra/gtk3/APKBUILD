@@ -40,6 +40,14 @@ makedepends="
     gettext-dev
     libc++
     clang
+    fontconfig-dev
+    libx11-dev
+    libxcursor-dev
+    libxext-dev
+    libxfixes-dev
+    libxi-dev
+    libxrandr-dev
+    libxrender-dev
     "
 depends="
     gobject-introspection
@@ -58,6 +66,14 @@ depends="
     at-spi2-core
     at-spi2-core-libs
     libxkbcommon
+    fontconfig
+    libx11
+    libxcursor
+    libxext
+    libxfixes
+    libxi
+    libxrandr
+    libxrender
     "
 subpackages="
     $pkgname-dbg
@@ -72,6 +88,7 @@ source="
     qnx-fix.patch
     qnx-fix-uri-opening.patch
     qnx-fix-maximize.patch
+    qnx-fix-x11-backend.patch
     "
 builddir="$srcdir/gtk-$pkgver"
 
@@ -88,7 +105,8 @@ build() {
         -Ddemos=true \
         -Dinstalled_tests=true \
         -Dwayland_backend=true \
-        -Dx11_backend=false \
+        -Dx11_backend=true \
+        -Dxinerama=no \
         -Ddebug=true \
         -Ddefault_library=both \
         -Dc_link_args="-Wl,-lm,-lsocket,-lgcc_s"\
@@ -135,4 +153,5 @@ sha512sums="
 16a38bc5a85a0f1a7dfca4c465cdf9477b6ef988bbe0a4eac5d214bfb4d82e5ad031d144a43ff47f82a9f0c9a0ea6d380daed9cc9d6bc6507f81871f182bea03  qnx-fix.patch
 7adc6a4adef720b0c42457874bc721f75bcf598b1a3aa4ee015e245cc4c9cacb62498eb171d2ab489ea297e7be3836202b57b25049f7d18bc6b198ec727b167f  qnx-fix-uri-opening.patch
 9769a906ac8bb810fad32936c165657bd4120300c091c7a1f47cd1e049e76a2aa262fad1d0b17aebf79bca4b302eddd0ab65f12a6b6f5c90b2a961fb140f6d94  qnx-fix-maximize.patch
+2d12b534c173bb70dc098a1cdb1f4a48dddc38fe526017203c00b8c1ef83c3ddc937371ff7adc122730ba3f8b84ac34e3fd3aea288cc7368f0efd8d47146a9d0  qnx-fix-x11-backend.patch
 "
