@@ -23,6 +23,9 @@ makedepends="
     libpng-dev
     zlib-ng-dev
     libsysv-ipc-shim-dev
+    libx11-dev
+    libxrender-dev
+    libxext-dev
 "
 depends="
     fontconfig
@@ -31,6 +34,9 @@ depends="
     glib
 	zlib-ng
     libsysv-ipc-shim
+    libx11
+    libxrender
+    libxext
 "
 
 subpackages="
@@ -44,7 +50,7 @@ build() {
     # abuild-meson defaults lto to false, due to a bug in ldqnx. (CLT-10182)
     # TODO: enable lto.
     abuild-meson \
-        -Dc_args=-DHAVE_CTIME_R \
+        -Dc_args="-DHAVE_CTIME_R -I/usr/include/shims" \
         -Dc_link_args=-Wl,-lm,-lsysv-ipc \
         -Dtests=disabled \
         -Dzlib=enabled \
@@ -52,6 +58,8 @@ build() {
         -Dfreetype=enabled \
         -Dglib=enabled \
         -Dpng=enabled \
+        -Dxlib=enabled \
+        -Dxcb=disabled \
         -Ddefault_library=both \
         . build
                 
