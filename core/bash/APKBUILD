@@ -4,7 +4,7 @@ _basever=5.3
 _patchlevel=9
 _patchbase=${_basever/./}
 pkgver="$_basever.$_patchlevel"
-pkgrel=0
+pkgrel=1
 pkgdesc="The GNU Bourne Again shell"
 url="https://git.savannah.gnu.org/cgit/bash.git/"
 arch="all"
@@ -26,8 +26,6 @@ while [ $_i -le $_patchlevel ]; do
 	source="$source https://mirror.csclub.uwaterloo.ca/gnu/bash/bash-$_basever-patches/bash$_patchbase-$_pad$_i"
 	_i=$(( _i + 1))
 done
-provides="/bin/sh"
-provider_priority="1"
 builddir="$srcdir"/bash-"$_basever"
 
 export CFLAGS="$CFLAGS -DSYS_BASHRC='\"/etc/bash/bashrc\"'"
@@ -72,6 +70,8 @@ check() {
 }
 
 package() {
+  provides="/bin/sh"
+  provider_priority="1"
 	mkdir -p "$pkgdir"/etc/bash
 	make DESTDIR="$pkgdir" install
 	ln -s bash "$pkgdir"/usr/bin/sh
