@@ -50,14 +50,14 @@ check() {
 package() {
     install -d "$pkgdir/usr/lib"
     install -d "$pkgdir/usr/include/mumps"
-    install -d "$pkgdir/usr/include/mumps/libseq"
+    install -d "$pkgdir/usr/include/mumps/mumps_seq"
     install -d "$pkgdir/usr/include/mumps/PORD"
 
     install -m755 lib/*.so "$pkgdir/usr/lib"
     install -m755 libseq/*.so "$pkgdir/usr/lib"
  
     install -m644 include/*.h "$pkgdir/usr/include/mumps"
-    install -m644 libseq/*.h "$pkgdir/usr/include/mumps/libseq"
+    install -m644 libseq/*.h "$pkgdir/usr/include/mumps/mumps_seq"
     install -m644 PORD/include/*.h "$pkgdir/usr/include/mumps/PORD"
 }
 
