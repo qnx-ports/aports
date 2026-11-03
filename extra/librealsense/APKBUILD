@@ -16,24 +16,18 @@ makedepends="
     catch2
     nlohmann-json
     fast-cdr-dev
+    glfw-dev
 "
 depends="qnx-fs-core libc++ libusb qnx-fs-gpt fast-cdr"
 subpackages="$pkgname-dev"
 source="
 	$pkgname-$pkgver.tar.gz::https://github.com/IntelRealSense/librealsense/archive/refs/tags/v$pkgver.tar.gz
-	librealsense.patch
-    qnx.patch 
-    dependencies.patch
-    librealsense_qnx1.patch
+	001_qnx_compatibility.patch
+    002_qnx_disable_avx.patch
+    003_dependencies.patch
+    004_disable_fast-cdr.patch
 "
 builddir="$srcdir/librealsense-$pkgver"
-
-prepare() {
-	patch -p1 < ../librealsense.patch
-    patch -p1 < ../qnx.patch
-    patch -p1 < ../dependencies.patch
-    patch -p1 < ../librealsense_qnx1.patch
-}
 
 build() {
 	CFLAGS=$(echo "$CFLAGS" | sed 's/-fstack-clash-protection//g')
@@ -72,8 +66,8 @@ package() {
 
 sha512sums="
 bd9a14a96b0b826b18dc3850cfaa82ea10e3e0c23f211fb04d1ab116d37a10789ef624737573b633fd8a881ad3f9daa66accf2bd370df82ab5eafee66b71bd66  librealsense-2.58.1.tar.gz
-c565539dc67164790897c0dc3ac1142e9606a2b4d018def2889c86266f8696d1605c3546f3d99292db3eaa2aab9042a26f179f1733d77e06465304310ad05f57  librealsense.patch
-dca85556cf35505afdabd27b80b1ec34e874ce09a2348056296bd220b01ed2e532f75c48d4566485c0a28aba2f7ddc0c6166cc778a88559d2530c70aab33c081  qnx.patch
-b7cdd596906bf5c56f4b4eb48695003f892956c7da25989f1b766688b9f8e55c2f675318928093545155d28995c11f2be7d6bb997507b803319c242004d9cb5a  dependencies.patch
-e91fef14a6f2fc6df54c115ea826d4694ce6c8f5f24625310362b223f4fddef6c22bbf4fb09becdfec822241322f4c51b676145aa26c29533e88426a654806c2  librealsense_qnx1.patch
+b9a34cb2a5581c1b42d7d5a9f9ffa167f70a975277ce781086dc21918c2dd14a00db3d0e0e4b6aee56ee3e5d99af8b69b2713a233b3cb68f77813faeecd4be3f  001_qnx_compatibility.patch
+339a7c29aaed2655b2348b8c4c6500e901cbf2d77e8cb069b2ce326bece4c93a364675245f277fe707f591ec15814a95bfb1097cb9de91104fc6e5cce43e3ee6  002_qnx_disable_avx.patch
+8fcd536e631ef83f5544259b1a327ef348b8c4aa9e7ca9d2fe1dbe0bd8019ce78b4cc97ce1a651868369fe872cf6c513f40c8f88f2d2d47feb8d58039cad037b  003_dependencies.patch
+57d2fd6be26094fa6c3393e753f1826ea591dc4e7120a88abc22c0b0b445ff42eb190543ced2f56d5bd530b11f71ac4137c0a0e8ddbc3ec1e67438f55c59654f  004_disable_fast-cdr.patch
 "
