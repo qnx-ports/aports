@@ -2,7 +2,8 @@
 # Apline-Maintainer: Achill Gilgenast <achill@achill.org>
 # Maintainer: Deep Chordia <dchordia@blackberry.com>
 pkgname=aws-c-io
-pkgver=0.26.1
+_patch_rev=0
+pkgver=0.26.1_p$_patch_rev
 pkgrel=1
 pkgdesc="Module for the AWS SDK for C handling all IO and TLS work for application protocols"
 url="https://github.com/awslabs/aws-c-io"
@@ -29,8 +30,8 @@ makedepends="
   ninja
   "
 subpackages="$pkgname-dev"
-source="$pkgname-$pkgver.tar.gz::https://github.com/qnx-ports/aws-c-io/archive/refs/tags/qnx-v$pkgver-r$pkgrel.tar.gz"
-builddir="$srcdir/$pkgname-qnx-v$pkgver-r$pkgrel"
+source="$pkgname-$pkgver.tar.gz::https://github.com/qnx-ports/aws-c-io/archive/refs/tags/qnx-v$pkgver.tar.gz"
+builddir="$srcdir/$pkgname-qnx-v$pkgver"
 
 build() {
   cmake -B build -G Ninja \
@@ -76,5 +77,5 @@ package() {
 }
 
 sha512sums="
-0c877316d0bb0c4b0b3b0810c426c2775c7511df975a4079c2e3fbc6f3bd429381ea63a63ab1b9ecbfa441212004912cbe3f9091b5c521042ce769704cbb3edb  aws-c-io-0.26.1.tar.gz
+4b842ec77472a0a1cd9a36ffc6858042f69b2a16e10357072944b8580c08e4b55e222a043881ae1257d54370b236ccf4d95b903f30c68cdb401a13c188158fb4  aws-c-io-0.26.1_p0.tar.gz
 "
