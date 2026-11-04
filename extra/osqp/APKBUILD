@@ -3,6 +3,7 @@ pkgname=osqp
 pkgver=1.0.0
 pkgrel=0
 _qdldl_ver=0.1.8
+_catch2_v2_ver=2.13.6
 pkgdesc="Optimization solver for Quadratic Programs (QPs)"
 url="https://github.com/osqp/osqp"
 arch="all"
@@ -10,6 +11,7 @@ license="Apache-2.0"
 source="
 	$pkgname-$pkgver.tar.gz::https://github.com/osqp/osqp/archive/refs/tags/v$pkgver.tar.gz
 	qdldl-$_qdldl_ver.tar.gz::https://github.com/osqp/qdldl/archive/refs/tags/v$_qdldl_ver.tar.gz
+	catch2-$_catch2_v2_ver.tar.gz::https://github.com/catchorg/Catch2/archive/refs/tags/v$_catch2_v2_ver.tar.gz
 	0001-CMakeLists.patch
 "
 depends="libc++"
@@ -30,6 +32,7 @@ build() {
 		-DCMAKE_INSTALL_PREFIX=/usr \
 		-DCMAKE_INSTALL_LIBDIR=lib \
 		-DFETCHCONTENT_SOURCE_DIR_QDLDL="$srcdir/qdldl-$_qdldl_ver" \
+		-DFETCHCONTENT_SOURCE_DIR_CATCH2="$srcdir/Catch2-$_catch2_v2_ver" \
 		-DOSQP_BUILD_UNITTESTS=ON
 	cmake --build build
 }
