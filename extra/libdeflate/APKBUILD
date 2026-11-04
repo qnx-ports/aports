@@ -33,7 +33,7 @@ build() {
 }
 
 check() {
-	ctest --test-dir build -j "$nproc"
+	ctest --test-dir build -j 4
 }
 
 package() {
