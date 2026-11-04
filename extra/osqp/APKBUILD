@@ -36,7 +36,7 @@ check() {
 }
 
 package() {
-	DESTDIR="$pkgdir" cmake3.5 --install build
+	DESTDIR="$pkgdir" cmake --install build
 }
 
 dev() {
