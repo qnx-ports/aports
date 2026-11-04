@@ -1,4 +1,5 @@
 # Maintainer: Narayana Murthy Naidu <nnarayanamurthy@qnx.com>
+
 pkgname=urdfdom_headers
 pkgver=3.0.1
 pkgrel=0
@@ -6,22 +7,31 @@ pkgdesc="Headers for URDF parsers"
 url="https://github.com/ros/urdfdom_headers"
 arch="noarch"
 license="BSD-3-Clause"
-makedepends="cmake pkgconfig"
-subpackages="$pkgname-dev"
-source="$pkgname-$pkgver.tar.gz::https://github.com/ros/$pkgname/archive/refs/tags/$pkgver.tar.gz
-    qnx-strtodouble.patch
-    "
-builddir="$srcdir/$pkgname-$pkgver"
 options="!check" # Upstream does not provide a test suite
+
+makedepends="
+	cmake
+	libc++-dev
+	pkgconfig
+	"
+
+subpackages="$pkgname-dev"
+
+source="
+	$pkgname-$pkgver.tar.gz::https://github.com/ros/$pkgname/archive/refs/tags/$pkgver.tar.gz
+	qnx-strtodouble.patch
+	"
+builddir="$srcdir/$pkgname-$pkgver"
+
 build() {
-    cmake -B build -S . \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DCMAKE_INSTALL_PREFIX=/usr \
-        -DCMAKE_INSTALL_LIBDIR=lib
+	cmake -S . -B build \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DCMAKE_INSTALL_LIBDIR=lib
 }
 
 package() {
-    DESTDIR="$pkgdir" cmake --install build
+	DESTDIR="$pkgdir" cmake --install build
 }
 
 sha512sums="
