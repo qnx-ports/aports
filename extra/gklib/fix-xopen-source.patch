@@ -1,0 +1,11 @@
+--- a/string.c
++++ b/string.c
+@@ -14,7 +14,7 @@
+ /************************************************************************/
+ 
+ /* the following is for strptime() */
+-#define _XOPEN_SOURCE
++#define _XOPEN_SOURCE 600
+ #include <time.h>
+ #undef _XOPEN_SOURCE
+ 
