@@ -1,0 +1,17 @@
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -97,12 +97,12 @@
+   LIBRARY DESTINATION lib
+   ARCHIVE DESTINATION lib
+   RUNTIME DESTINATION lib)
+-install(EXPORT qpOASES_eConfig DESTINATION cmake)
++install(EXPORT qpOASES_eConfig DESTINATION lib/cmake/qpoases_e)
+ # set_target_properties(
+ #     qpOASES_e
+ #     PROPERTIES
+ #     SOVERSION ${PACKAGE_SO_VERSION})
+-export(EXPORT qpOASES_eConfig FILE ${PROJECT_BINARY_DIR}/qpOASES_eConfig.cmake)
++export(EXPORT qpOASES_eConfig FILE lib/cmake/qpoases_e/qpOASES_eConfig.cmake)
+ 
+ # headers
+ install(DIRECTORY include/qpOASES_e
