@@ -1,0 +1,112 @@
+diff --git a/hw/xwayland/xwayland-dmabuf.h b/hw/xwayland/xwayland-dmabuf.h
+index ca0dcd7..7efe771 100644
+--- a/hw/xwayland/xwayland-dmabuf.h
++++ b/hw/xwayland/xwayland-dmabuf.h
+@@ -30,7 +30,11 @@
+ 
+ #include <X11/X.h>
+ #include <dix.h>
++#ifndef __QNX__
+ #include <xf86drm.h>
++#else
++#include <libdrm/xf86drm.h>
++#endif
+ 
+ #include <stdio.h>
+ #include <unistd.h>
+diff --git a/hw/xwayland/xwayland-drm-lease.c b/hw/xwayland/xwayland-drm-lease.c
+index 224ad4c..24091dd 100644
+--- a/hw/xwayland/xwayland-drm-lease.c
++++ b/hw/xwayland/xwayland-drm-lease.c
+@@ -27,7 +27,11 @@
+ #include <xwayland-config.h>
+ 
+ #ifdef WITH_LIBDRM
++#ifndef __QNX__
+ #include <xf86drm.h>
++#else
++#include <libdrm/xf86drm.h>
++#endif
+ #include <xf86drmMode.h>
+ #endif
+ 
+diff --git a/hw/xwayland/xwayland-glamor-gbm.c b/hw/xwayland/xwayland-glamor-gbm.c
+index 05668b8..6872e13 100644
+--- a/hw/xwayland/xwayland-glamor-gbm.c
++++ b/hw/xwayland/xwayland-glamor-gbm.c
+@@ -37,7 +37,11 @@
+ #include <sys/eventfd.h>
+ #endif /* DRI3 */
+ #include <sys/stat.h>
++#ifndef __QNX__
+ #include <xf86drm.h>
++#else
++#include <libdrm/xf86drm.h>
++#endif
+ #include <drm_fourcc.h>
+ #if defined(__linux__)
+ #include <linux/dma-buf.h>
+diff --git a/hw/xwayland/xwayland-glamor-gbm.h b/hw/xwayland/xwayland-glamor-gbm.h
+index b346a0b..8cf6d0c 100644
+--- a/hw/xwayland/xwayland-glamor-gbm.h
++++ b/hw/xwayland/xwayland-glamor-gbm.h
+@@ -32,7 +32,11 @@
+ 
+ #include <sys/types.h>
+ 
++#ifndef __QNX__
+ #include <xf86drm.h>
++#else
++#include <libdrm/xf86drm.h>
++#endif
+ 
+ #include "xwayland-types.h"
+ 
+diff --git a/hw/xwayland/xwayland-glamor.h b/hw/xwayland/xwayland-glamor.h
+index ef312a8..e7da1ef 100644
+--- a/hw/xwayland/xwayland-glamor.h
++++ b/hw/xwayland/xwayland-glamor.h
+@@ -31,7 +31,11 @@
+ #include <sys/types.h>
+ 
+ #include <wayland-client.h>
++#ifndef __QNX__
+ #include <xf86drm.h>
++#else
++#include <libdrm/xf86drm.h>
++#endif
+ 
+ #include "xwayland-types.h"
+ #include "xwayland-glamor-gbm.h"
+diff --git a/hw/xwayland/xwayland-window.h b/hw/xwayland/xwayland-window.h
+index ac3ce50..ba80b10 100644
+--- a/hw/xwayland/xwayland-window.h
++++ b/hw/xwayland/xwayland-window.h
+@@ -38,7 +38,11 @@
+ #include <propertyst.h>
+ #include <validate.h>
+ #include <wayland-util.h>
++#ifndef __QNX__
+ #include <xf86drm.h>
++#else
++#include <libdrm/xf86drm.h>
++#endif
+ 
+ #include "xwayland-types.h"
+ #include "xwayland-dmabuf.h"
+diff --git a/os/osinit.c b/os/osinit.c
+index 94274f6..2bf190a 100644
+--- a/os/osinit.c
++++ b/os/osinit.c
+@@ -63,6 +63,10 @@ SOFTWARE.
+ #include <execinfo.h>
+ #endif
+ 
++#ifdef __QNX__
++#include <unix.h>
++#endif
++
+ #include "misc.h"
+ 
+ #include "dixstruct.h"
+
