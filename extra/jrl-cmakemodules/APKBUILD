@@ -1,0 +1,40 @@
+# Maintainer: Narayana Murthy Naidu <nnarayanamurthy@qnx.com>
+pkgname=jrl-cmakemodules
+pkgver=2.3.0
+pkgrel=0
+pkgdesc="CMake utility toolbox"
+url="https://github.com/jrl-umi3218/jrl-cmakemodules"
+arch="noarch"
+license="BSD-3-Clause"
+depends="cmake"
+makedepends="ninja"
+checkdepends="
+	boost-dev
+	python3-pytest
+	"
+
+source="$pkgname-$pkgver.tar.gz::https://github.com/jrl-umi3218/jrl-cmakemodules/archive/refs/tags/v$pkgver.tar.gz"
+builddir="$srcdir/$pkgname-$pkgver"
+
+build() {
+	cmake -S . -B build -G Ninja \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DJRL_CMAKEMODULES_BUILD_TESTS=ON
+
+	cmake --build build
+}
+
+check() {
+	ctest --test-dir build \
+		--output-on-failure -j1 \
+		-E 'Findmatio|Findsimde|FindCHOLMOD|pb-library|pb-consumer'
+}
+
+package() {
+	DESTDIR="$pkgdir" cmake --install build
+}
+
+sha512sums="
+7344f275e1aad16d40ed5b84a497c1937dc24377a1a0af0911d9b357bc390accd8144639754a6cdfcc05eeabba61af6b1e737d479210143ff83280daf740b4ab  jrl-cmakemodules-2.3.0.tar.gz
+"
