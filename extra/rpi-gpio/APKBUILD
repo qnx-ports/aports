@@ -1,0 +1,66 @@
+# Maintainer: jscaffidi <jscaffidi@qnx.com>
+pkgname=rpi-gpio
+pkgver=0.1
+_commit="880d66fe20a3111e32a86eb8339e79bc43abbf36"
+pkgrel=0
+pkgdesc="GPIO utilities for RPI4/5"
+arch="aarch64"
+license="LicenseRef-QDL-Non-Commercial"
+depends="qnx-secpol python3"
+makedepends="
+    cairo
+    cairo-dev
+    cmake
+    libc++-dev
+    pixman-dev
+    python3-dev
+    qnx-dma
+    qnx-i2c
+    qnx-libslog2-dev
+    qnx-screen
+    qnx-screen-dev
+    qnx-secpol-dev
+    qnx-security-dev
+    qnx-slogger2-dev
+    qnx-smmu-dev
+    qnx-spi
+"
+options="!check"
+url="https://gitlab.com/qnx/projects/rpi-gpio"
+subpackages="$pkgname-dbg $pkgname-dev $pkgname-gpioctrl python3-$pkgname:py3"
+source="https://gitlab.com/qnx/projects/rpi-gpio/-/archive/$_commit/rpi-gpio-$_commit.tar.gz"
+builddir="$srcdir/rpi-gpio-$_commit"
+
+prepare() {
+    default_prepare
+}
+
+build() {
+    cmake . -B build \
+	    -DCMAKE_INSTALL_PREFIX=/usr
+    ninja -C build
+}
+
+package() {
+    DESTDIR="$pkgdir" ninja -C build install
+    mv "$pkgdir/usr/sbin/rpi_gpio" "$pkgdir/usr/bin/rpi_gpio"
+    rmdir "$pkgdir/usr/sbin/"
+    # yes you read that correctly
+    mv "$pkgdir/usr/usr/lib" "$pkgdir/usr/lib"
+    rmdir "$pkgdir/usr/usr"
+}
+
+gpioctrl() {
+    pkgdesc="GUI tool for managing gpio"
+    depends="$depends qnx-screen cairo rpi-gpio"
+    amove usr/share/gpioctrl
+    amove usr/bin/gpioctrl
+}
+
+py3(){
+    amove usr/lib/python3*
+}
+
+sha512sums="
+998f68df3eb5af7b330233e165b936083853815394660077165094ebb60501f2ff37fc913f25cd6b3e45b1c459101f72d3cc2c9d63fb614f0c664d96c3f789d2  rpi-gpio-880d66fe20a3111e32a86eb8339e79bc43abbf36.tar.gz
+"
