@@ -1,0 +1,137 @@
+# Maintainer: Deep Chordia <dchordia@blackberry.com>
+pkgname=pytorch
+pkgver=2.3.1
+pkgrel=0
+pkgdesc="Tensors and Dynamic neural networks in Python with strong GPU acceleration"
+url="https://pytorch.org/"
+arch="all"
+license="BSD-3-Clause"
+depends="
+    libc++
+    cpuinfo
+    pthreadpool
+    gflags
+    openblas
+    opencv
+    "
+depends_dev="
+    libc++-dev
+    cpuinfo-dev
+    pthreadpool-dev
+    gflags-dev
+    openblas-dev
+    opencv-dev
+    "
+makedepends="
+    $depends_dev
+    cmake
+    ninja
+    python3-yaml
+    python3-typing-extensions
+    python3-six
+    "
+subpackages="
+    $pkgname-dev
+    $pkgname-tests:tests
+    "
+source="
+    $pkgname-$pkgver.tar.gz::https://github.com/pytorch/pytorch/releases/download/v$pkgver/pytorch-v$pkgver.tar.gz
+    0001-XNNPACK-qnx-build_patch
+    0002-protobuf-qnx-build_patch
+    0003-kineto-qnx-build_patch
+    0004-fbgemm-qnx-build_patch
+    0005-foxi-qnx-build_patch
+    0006-add-qnx-build.patch
+"
+builddir="$srcdir/$pkgname-v$pkgver"
+
+prepare() {
+    (cd $builddir/third_party/XNNPACK && patch ${patch_args:--p1} -i "$srcdir"/0001-XNNPACK-qnx-build_patch)
+    (cd $builddir/third_party/protobuf && patch ${patch_args:--p1} -i "$srcdir"/0002-protobuf-qnx-build_patch)
+    (cd $builddir/third_party/kineto && patch ${patch_args:--p1} -i "$srcdir"/0003-kineto-qnx-build_patch)
+    (cd $builddir/third_party/fbgemm && patch ${patch_args:--p1} -i "$srcdir"/0004-fbgemm-qnx-build_patch)
+    (cd $builddir/third_party/foxi && patch ${patch_args:--p1} -i "$srcdir"/0005-foxi-qnx-build_patch)
+    default_prepare
+}
+
+build() {
+
+    _pytorch_build_args=(
+        "-DUSE_ROCM=OFF"
+        "-DUSE_CUDA=OFF"
+        "-DUSE_MAGMA=OFF"
+        "-DUSE_METAL=OFF"
+        "-DUSE_ITT=OFF"
+        "-DUSE_DISTRIBUTED=OFF"
+        "-DUSE_MKLDNN=OFF"
+        "-DUSE_OPENMP=ON"
+        "-DUSE_NNPACK=OFF"
+        "-DUSE_QNNPACK=OFF"
+        "-DUSE_SYSTEM_XNNPACK=OFF"
+        "-DUSE_GFLAGS=ON"
+        "-DUSE_OPENCV=ON"
+        "-DUSE_BLAS=ON"
+        "-DUSE_SYSTEM_CPUINFO=ON"
+        "-DUSE_SYSTEM_PTHREADPOOL=ON"
+        "-DBUILD_MOBILE_TEST=OFF"
+        "-DBUILD_BINARY=OFF"
+        "-DTRACING_BASED=OFF"
+        "-DBUILD_PYTHON=OFF"
+        "-DBUILD_TEST=ON"
+        "-DXNNPACK_ENABLE_ASSEMBLY=ON"
+        "-DBUILD_CUSTOM_PROTOBUF=ON"
+        "-DBUILD_CAFFE2=ON"
+    )
+
+    export CXXFLAGS="$CXXFLAGS \
+        -Wno-error=unused-command-line-argument -Wno-unused-command-line-argument \
+        -Wno-error=nontrivial-memcall -Wno-nontrivial-memcall \
+        -Wno-error=vla-cxx-extension -Wno-vla-cxx-extension \
+        -Wno-error=character-conversion -Wno-character-conversion\
+        -Wno-error=missing-field-initializers -Wno-missing-field-initializers\
+        -Wno-error=thread-safety-analysis -Wno-thread-safety-analysis\
+        -Wno-error=unknown-warning-option -Wno-unknown-warning-option \
+        -Wno-error=c2y-extensions -Wno-c2y-extensions \
+        -DEIGEN_DONT_VECTORIZE"
+
+    cmake -B build -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DCMAKE_INSTALL_DATADIR=/usr/lib \
+        -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+        -DQNX=1 \
+        "${_pytorch_build_args[@]}"
+    cmake --build build --verbose
+}
+
+check() {
+    _test_exclude="vec_test_all_types_AVX512|vec_test_all_types_AVX2|module_test|plan_executor_test|"
+    _test_exclude+="inline_container_test|bound_shape_inference_test|math_kernel_test|native_test|cpuid_test"
+    ctest --test-dir build -E $_test_exclude -j1
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install build
+
+    rm "$pkgdir"/usr/bin/protoc*
+    rm -r "$pkgdir"/usr/include/pybind11
+}
+
+tests() {
+    pkgdesc="Test suite for $pkgname"
+    depends="$pkgname=$pkgver-r$pkgrel"
+
+    amove usr/bin/test_*
+    amove usr/bin/tutorial_tensorexpr
+    amove usr/test/*
+}
+
+sha512sums="
+fe132251b2bae87b70ba3d95dc32f6a4545970d11893118b0ebe6ca129732e516ef4d6cc4f380b3db9bb2277d1db8ce78a401c40149bb1dfbab76eab9e3992c4  pytorch-2.3.1.tar.gz
+32cd33419083d16d5c865c3921b8d441894e087ab29846f8a42eb3a007c69c2aa104e48ea40e97e3c7bb2cbb686d17336fc4ecf2407cc5eb5e97398704ce558a  0001-XNNPACK-qnx-build_patch
+dd46d20bf0e9827d42c1f1553e82988e56a497c19576835835a6fb2b2995201427fef4eb2e1fbcac01e5054b8ffadc2c3ba76e5ae594b21687fda9bba4a15cfb  0002-protobuf-qnx-build_patch
+4d8567b3e6b9b949ef29013b98942766a64680b4f037ec96a1f29c0defd1b08aac5a3a30e55229c757c0e0e0d55407d02939d7e4525bdd96326d8d4f8d42ecbb  0003-kineto-qnx-build_patch
+69eb4eb9dd214496fff3d5a4f65645b49f9ce5e1cd4b54cf752e65938324cacb6b04901621d218ad62461187f3159ccda2617b9037a6fe66ebefb08454f13b65  0004-fbgemm-qnx-build_patch
+c0e535ce57d926225406fa8ecc2c8902572c1d1ffb35ce8e5a8e9acf4a8580698c6d27eae05ed3be1df5d9b69ed1b254f320a945db5468945748e4da257cffe3  0005-foxi-qnx-build_patch
+9d1df092bc542642ed5b261b7857a1cb2d6624b6d90ceedd1ed8aefa29fed2c8d6d676b4241832f3a7cc15748bd024a70bcc9e801b0af9055c057e24370b993c  0006-add-qnx-build.patch
+"
