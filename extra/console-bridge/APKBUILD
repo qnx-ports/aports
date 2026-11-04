@@ -6,10 +6,13 @@ pkgdesc="Lightweight logging bridge for C++ applications"
 url="https://github.com/ros/console_bridge"
 arch="all"
 license="BSD-3-Clause"
-
+depends="libc++"
 makedepends="
     cmake
     libc++-dev
+"
+checkdepends="
+	python3
 "
 subpackages="$pkgname-dev"
 
