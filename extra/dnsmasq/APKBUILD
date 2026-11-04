@@ -4,6 +4,7 @@
 pkgname=dnsmasq
 pkgver=2.92
 pkgrel=0
+_patch=0
 pkgdesc="A lightweight DNS, DHCP, RA, TFTP and PXE server"
 url="https://www.thekelleys.org.uk/dnsmasq/"
 arch="all"
@@ -29,7 +30,7 @@ subpackages="
 	$pkgname-openrc
 	$pkgname-common::noarch
 	"
-source="https://www.thekelleys.org.uk/dnsmasq/dnsmasq-$pkgver.tar.xz
+source="https://github.com/qnx-ports/dnsmasq/archive/refs/tags/qnx-v${pkgver}_p$_patch.tar.gz
 	0000-underflow.patch
     0001-dnsmasq.conf.patch
     0002-qnx-dnsmasq.patch
@@ -37,6 +38,8 @@ source="https://www.thekelleys.org.uk/dnsmasq/dnsmasq-$pkgver.tar.xz
 	$pkgname.initd
 	$pkgname.confd
 	"
+
+builddir="$srcdir/$pkgname-qnx-v${pkgver}_p$_patch"
 
 build() {
 	make LIBS="$LIBS -lsocket" COPTS="-DHAVE_DNSSEC" all
@@ -106,7 +109,7 @@ openrc() {
 }
 
 sha512sums="
-14a4638f4819c88c1214f38ca66622ce618b800dcc0d271d4eec6fd97639611f2317b711f6342c62b1f132acc7c2dec657fbf26c004d0d55ef10786944ad0ad1  dnsmasq-2.92.tar.xz
+0e07fc9ad1359084c8e5090a173410e4637fcad1a72ed2854fb0e1a787d4c2d97fdceb648abe8fecba6dd21a674ba377504add6a05ce1a6470bb0b7d4e779f27  qnx-v2.92_p0.tar.gz
 3d2d7bc1199bc15348838ab86a842229c2ae70b46a05d907d0d64d893d5f8a2584e2ba4f80aeb24a7df5e0155bafaa1e99e144ae7965e2f1d5835b50d2e98140  0000-underflow.patch
 41679e0e889607896dcf7fdeb179b9b7a79095c9f86aebda131ac09c12e3ef2a94cece0018ab33ea08d3e6f6bbae44379e9d6fb8987fae29e68ecad952ccdd45  0001-dnsmasq.conf.patch
 8f098323a09493cd3395b5313fed792e261ef00727a35325a68ee521005736e092069cdf58078a940df1024838d0746ef30b98eb92c184d4117281dc70ce8bb4  0002-qnx-dnsmasq.patch
