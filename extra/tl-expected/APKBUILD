@@ -24,7 +24,7 @@ build() {
 }
 
 check() {
-	"$builddir"/build/tl-expected-tests
+	"$builddir"/build/tl-expected-tests --success
 }
 
 package() {
