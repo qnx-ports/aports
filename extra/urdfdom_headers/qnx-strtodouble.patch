@@ -1,0 +1,51 @@
+diff --git a/include/urdf_model/utils.hpp b/include/urdf_model/utils.hpp
+index 52982e1..83ba9d6 100644
+--- a/include/urdf_model/utils.hpp
++++ b/include/urdf_model/utils.hpp
+@@ -38,6 +38,13 @@
+ #define URDF_INTERFACE_UTILS_HPP
+ 
+ #include <locale>
++#include <locale>
++#if defined(__QNXNTO__) && __cplusplus >= 201703L
++#include <charconv>
++#include <cmath>
++#include <cstring>
++#include <system_error>
++#endif
+ #include <sstream>
+ #include <stdexcept>
+ #include <string>
+@@ -72,6 +79,23 @@ void split_string(std::vector<std::string> &result,
+ // thrown.
+ static inline double strToDouble(const char *in)
+ {
++#if defined(__QNXNTO__) && __cplusplus >= 201703L
++  // QNX libc strtod() (used by std::stringstream) is not correctly rounded,
++  // e.g. "0.3" does not parse to the double nearest 0.3. std::from_chars is
++  // exact and locale-independent. Keep the stringstream semantics: leading
++  // whitespace and '+' accepted, trailing characters and inf/nan rejected.
++  const char *first = in;
++  while (*first == ' ' || (*first >= '\t' && *first <= '\r')) ++first;
++  if (*first == '+' && first[1] != '-') ++first;
++  const char *last = first + std::strlen(first);
++
++  double out = 0.0;
++  const std::from_chars_result res = std::from_chars(first, last, out);
++  if (res.ec != std::errc() || res.ptr != last || !std::isfinite(out)) {
++    throw std::runtime_error("Failed converting string to double");
++  }
++  return out;
++#else
+   std::stringstream ss;
+   ss.imbue(std::locale::classic());
+ 
+@@ -85,6 +109,7 @@ static inline double strToDouble(const char *in)
+   }
+ 
+   return out;
++#endif
+ }
+ 
+ }
+ 
