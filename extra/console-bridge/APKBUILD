@@ -1,0 +1,40 @@
+# Maintainer: Narayana Murthy Naidu <nnarayanamurthy@qnx.com>
+pkgname=console-bridge
+pkgver=1.0.2
+pkgrel=0
+pkgdesc="Lightweight logging bridge for C++ applications"
+url="https://github.com/ros/console_bridge"
+arch="all"
+license="BSD-3-Clause"
+
+makedepends="
+    cmake
+    libc++-dev
+"
+subpackages="$pkgname-dev"
+
+source="$pkgname-$pkgver.tar.gz::https://github.com/ros/console_bridge/archive/refs/tags/$pkgver.tar.gz"
+builddir="$srcdir/console_bridge-$pkgver"
+
+build() {
+    cmake -B build -S . \
+        -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DCMAKE_INSTALL_LIBDIR=lib \
+        -DBUILD_TESTING=ON
+
+    cmake --build build
+}
+
+check() {
+    ctest --test-dir build --output-on-failure
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install build
+}
+
+sha512sums="
+ed427da8e59f9629f8d70e0a14415f88177c06fbaf7334bee56135dde91d19a1b54f5c9c668e0fd68314ab8dfd61446a174b9f528304decc5d4626a7c98882cb  console-bridge-1.0.2.tar.gz
+"
