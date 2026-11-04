@@ -1,0 +1,114 @@
+cmake_minimum_required(VERSION 3.16)
+project(riegeli_qnx_subset CXX)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+include(GNUInstallDirs)
+
+set(RIEGELI_SRC ${CMAKE_CURRENT_SOURCE_DIR})
+
+find_package(absl CONFIG REQUIRED)
+
+find_library(ZSTD_LIBRARY NAMES zstd)
+find_path(ZSTD_INCLUDE_DIR NAMES zstd.h)
+if(NOT ZSTD_LIBRARY OR NOT ZSTD_INCLUDE_DIR)
+    message(FATAL_ERROR "zstd not found (ZSTD_LIBRARY=${ZSTD_LIBRARY} ZSTD_INCLUDE_DIR=${ZSTD_INCLUDE_DIR})")
+endif()
+
+find_library(ZLIB_LIBRARY NAMES z)
+find_path(ZLIB_INCLUDE_DIR NAMES zlib.h)
+if(NOT ZLIB_LIBRARY OR NOT ZLIB_INCLUDE_DIR)
+    message(FATAL_ERROR "zlib not found (ZLIB_LIBRARY=${ZLIB_LIBRARY} ZLIB_INCLUDE_DIR=${ZLIB_INCLUDE_DIR})")
+endif()
+
+# Scoped subset: only what tensorstore's OCDBT format actually needs from riegeli
+# (riegeli/base + bytes/digests/varint/zstd, minus records/chunk_encoding/brotli/
+# lz4/snappy/tensorflow/gcs which OCDBT never touches). Bundled and statically
+# linked into tensorstore only -- not published as its own apk package, since
+# riegeli isn't packaged by any distro (checked) and this scoped subset would be
+# misleading under the plain "riegeli" name. See project_tensorstore_qnx.md.
+file(GLOB RIEGELI_BASE_SRCS ${RIEGELI_SRC}/riegeli/base/*.cc)
+
+# Named "riegeli" (not "riegeli_qnx_subset") so it installs as libriegeli.a,
+# matching the Findriegeli.cmake module written for this project (no
+# official one exists in tensorstore's tools/cmake/, and tensorstore's own
+# workspace.bzl for riegeli declares no cmake_target_mapping either -- see
+# the small workspace.bzl patch that maps riegeli's ~14 referenced
+# fine-grained bazel targets to this single riegeli::riegeli CMake target).
+add_library(riegeli STATIC
+    ${RIEGELI_BASE_SRCS}
+    ${RIEGELI_SRC}/riegeli/bytes/reader.cc
+    ${RIEGELI_SRC}/riegeli/bytes/writer.cc
+    ${RIEGELI_SRC}/riegeli/bytes/backward_writer.cc
+    ${RIEGELI_SRC}/riegeli/bytes/pullable_reader.cc
+    ${RIEGELI_SRC}/riegeli/bytes/limiting_reader.cc
+    ${RIEGELI_SRC}/riegeli/bytes/cord_reader.cc
+    ${RIEGELI_SRC}/riegeli/bytes/cord_writer.cc
+    ${RIEGELI_SRC}/riegeli/bytes/buffered_reader.cc
+    ${RIEGELI_SRC}/riegeli/bytes/buffered_writer.cc
+    ${RIEGELI_SRC}/riegeli/bytes/null_writer.cc
+    ${RIEGELI_SRC}/riegeli/bytes/buffer_options.cc
+    ${RIEGELI_SRC}/riegeli/digests/digester.cc
+    ${RIEGELI_SRC}/riegeli/digests/digesting_reader.cc
+    ${RIEGELI_SRC}/riegeli/digests/digesting_writer.cc
+    ${RIEGELI_SRC}/riegeli/varint/varint_reading.cc
+    ${RIEGELI_SRC}/riegeli/zstd/zstd_reader.cc
+    ${RIEGELI_SRC}/riegeli/zstd/zstd_writer.cc
+    ${RIEGELI_SRC}/riegeli/zstd/zstd_dictionary.cc
+    # Needed by tensorstore's zarr3 gzip codec and OCDBT's distributed
+    # subsystem (see project_tensorstore_qnx.md).
+    ${RIEGELI_SRC}/riegeli/zlib/zlib_reader.cc
+    ${RIEGELI_SRC}/riegeli/zlib/zlib_writer.cc
+    ${RIEGELI_SRC}/riegeli/bytes/wrapping_writer.cc
+    ${RIEGELI_SRC}/riegeli/bytes/string_reader.cc
+    ${RIEGELI_SRC}/riegeli/bytes/read_all.cc
+    ${RIEGELI_SRC}/riegeli/bytes/string_writer.cc
+    ${RIEGELI_SRC}/riegeli/bytes/copy_all.cc
+)
+
+target_include_directories(riegeli
+    PUBLIC
+        $<BUILD_INTERFACE:${RIEGELI_SRC}>
+        $<INSTALL_INTERFACE:include>
+        ${ZSTD_INCLUDE_DIR}
+        ${ZLIB_INCLUDE_DIR}
+)
+
+target_link_libraries(riegeli PUBLIC
+    absl::base
+    absl::core_headers
+    absl::nullability
+    absl::status
+    absl::statusor
+    absl::strings
+    absl::cord
+    absl::synchronization
+    absl::time
+    absl::crc32c
+    absl::flat_hash_map
+    absl::flat_hash_set
+    absl::inlined_vector
+    absl::node_hash_map
+    absl::node_hash_set
+    absl::span
+    absl::int128
+    absl::bits
+    absl::log
+    absl::absl_log
+    absl::type_traits
+    absl::utility
+    absl::meta
+    ${ZSTD_LIBRARY}
+    ${ZLIB_LIBRARY}
+)
+
+install(TARGETS riegeli
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+# Install the full riegeli/ header tree (base/bytes/digests/endian/varint/
+# zstd all have their own headers referenced via "riegeli/xxx/yyy.h").
+install(DIRECTORY ${RIEGELI_SRC}/riegeli
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    FILES_MATCHING PATTERN "*.h"
+)
