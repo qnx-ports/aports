@@ -1,0 +1,115 @@
+diff --color -U 6 -N -r before/common/shm.c after/common/shm.c
+--- before/common/shm.c	2026-04-06 11:05:26.499635134 -0400
++++ after/common/shm.c	2026-04-07 15:39:23.631279868 -0400
+@@ -48,12 +48,15 @@
+ #include <dirent.h>
+ #include <sys/mman.h>
+ #include <sys/types.h>
+ #include <sys/stat.h>
+ #include <sys/shm.h>
+ #include <sys/sem.h>
++#ifdef __QNX__
++#include <semaphore.h>
++#endif
+ #include <stdlib.h>
+ #include "promiscuous.h"
+ 
+ #endif
+ 
+ #include "shm.h"
+@@ -145,15 +148,19 @@
+ 
+ #define JACK_SEMAPHORE_KEY 0x282929
+ #ifndef USE_POSIX_SHM
+ #define JACK_SHM_REGISTRY_KEY JACK_SEMAPHORE_KEY
+ #endif
+ 
++#ifdef __QNX__
++static sem_t *sem = NULL;
++#else
+ static int semid = -1;
++#endif
+ 
+-#ifdef WIN32
++#if defined(WIN32)
+ 
+ #include <psapi.h>
+ #include <lmcons.h>
+ 
+ static BOOL check_process_running(DWORD process_id)
+ {
+@@ -180,12 +187,56 @@
+ static int
+ semaphore_init () {return 0;}
+ 
+ static  int
+ semaphore_add (int value) {return 0;}
+ 
++#elif defined(__QNX__)
++/* all semaphore errors are fatal -- issue message, but do not return */
++static void
++semaphore_error (char *msg)
++{
++	jack_error ("JACK semaphore error: %s (%s)",
++		    msg, strerror (errno));
++}
++
++static int
++semaphore_init ()
++{
++	int flags = O_CREAT;
++    mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
++
++	/* Get semaphore ID associated with this key. */
++    char buffer[PATH_MAX];
++    snprintf(buffer, PATH_MAX, "/jack-%d", JACK_SEMAPHORE_KEY);
++    /* Set an initial value of 1. */
++	if ((sem = sem_open(buffer, flags, mode, 1)) == SEM_FAILED) {
++        semaphore_error("sem_open");
++        return -1;
++	}
++
++    return 0;
++}
++
++static inline int
++semaphore_add (int value)
++{
++    if (value > 0) {
++        if (sem_post(sem) == -1) {
++            semaphore_error("sem_post");
++            return -1;
++        }
++    } else {
++        if (sem_wait(sem) == -1) {
++            semaphore_error("sem_wait");
++            return -1;
++        }
++	}
++
++    return 0;
++}
+ #else
+ /* all semaphore errors are fatal -- issue message, but do not return */
+ static void
+ semaphore_error (char *msg)
+ {
+ 	jack_error ("JACK semaphore error: %s (%s)",
+@@ -249,13 +300,17 @@
+ 
+ #endif
+ 
+ static int
+ jack_shm_lock_registry (void)
+ {
++#ifdef __QNX__
++    if (sem == NULL) {
++#else
+ 	if (semid == -1) {
++#endif
+         if (semaphore_init () < 0)
+             return -1;
+     }
+ 
+ 	return semaphore_add (-1);
+ }

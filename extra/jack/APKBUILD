@@ -1,0 +1,83 @@
+# Alpine-Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=jack
+pkgver=1.9.22
+pkgrel=0
+pkgdesc="The Jack Audio Connection Kit"
+url="https://jackaudio.org/"
+arch="all"
+license="GPL-2.0-or-later"
+depends="qnx-alsa qnx-io-sock libsysv-ipc-shim opus dbus libc++"
+depends_dev="$pkgname=$pkgver-r$pkgrel"
+makedepends="
+    qnx-alsa-dev
+    qnx-io-sock-dev
+    dbus-dev
+    expat-dev
+    libsamplerate-static
+    libsamplerate-dev
+    libsndfile-dev
+    libsysv-ipc-shim-dev
+    ncurses-dev
+    opus-dev
+    python3
+    readline-dev
+    libc++-dev
+    "
+subpackages="$pkgname-dev $pkgname-doc $pkgname-dbus"
+source="https://github.com/jackaudio/jack2/archive/v$pkgver/jack2-v$pkgver.tar.gz
+    qnx-IS_QNX.patch
+    qnx-named-sem.patch
+    qnx-SA_RESTART.patch
+    fix-execinfo.patch
+    increase-api-version.patch
+    importlib.patch
+    "
+builddir="$srcdir/jack2-$pkgver"
+#options="!check" # Check depends on an existing jack installation.
+
+build() {
+    export CPPFLAGS="$CPPFLAGS -I/usr/include/shims -D_QNX_SOURCE -Qunused-arguments"
+    export LDFLAGS="$LDFLAGS -lsocket"
+
+    ./waf configure \
+        --prefix=/usr \
+        --mandir=/usr/share/man/man1 \
+        --libdir=/usr/lib \
+        --dbus \
+        --alsa \
+        --classic \
+        "$(want_check && echo --tests || echo --no-tests)"
+
+    ./waf build -v
+}
+
+check() {
+    export JACK_CLIENT_DEBUG=on
+    ./build/tests/jack_test
+    ./build/tests/jack_cpu
+    ./build/tests/jack_iodelay
+    ./build/tests/jack_multiple_metro
+}
+
+package() {
+    ./waf --destdir="$pkgdir" install
+}
+
+dbus() {
+    pkgdesc="Jack D-Bus launcher"
+    depends="dbus libexpat opus"
+
+    amove usr/bin/jackdbus
+    amove usr/share/dbus*
+}
+
+sha512sums="
+d93cb2bcc57b72b6815eed143de1092d14fe22542ae9a1f8480d9ed5f44b59c50f81279d18bdd84ff6276ddd71ca1aa64a1e46d61199a5eda0d873a356194ab4  jack2-v1.9.22.tar.gz
+32f1e41fe62c20319792c3d3ce938396efd55b45223d65b2890f7daa178531fe0ea0f0c380ee189d1ec0b45b4573519de6640e2079cf2af0a3f086e8451d6f30  qnx-IS_QNX.patch
+494e9ddb543770f77930b925d2d2846669cac1df24df9696c79535a863b54b6fcd1fa8919978d26a86e0e7b9fddf8a121c0dd44d1c4e1f25a57d2d497ffac949  qnx-named-sem.patch
+c5c6bea33041d06a40193eb1881a8ee49367cb6737bfd7c3659ed8ad5239fcf395e68181d483ca3d33c926d9799af115ba49774486c184cd4b4d64acd0f713bd  qnx-SA_RESTART.patch
+b5abec7e67485d1c13f399b5961539177dd35d21c5dd95e0aa767adb0f5b1e588e9ca2f9b29cc4d66fc039311ff7eacc4cf21f6700ef0a2c8de99b63cb00f84d  fix-execinfo.patch
+1ee0159ea0f75f964baa167fe13031fe82e04b31a1b14122c12161d103e1a3205061fc019bcd978f47eed6efc8ea6ee96188c0eb795e3d83f34481e193086fbe  increase-api-version.patch
+94fac61b17c3d4eef2bd29a86f6bdc042c0b8e770fc11abef95fe2ede3b0f3582e3a9ea9583e66ddd38ba8c77e04c6f2a13ae83224a8f3fe19eac994de37b800  importlib.patch
+"
