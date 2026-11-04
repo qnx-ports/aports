@@ -2,12 +2,14 @@
 pkgname=osqp
 pkgver=1.0.0
 pkgrel=0
+_qdldl_ver=0.1.8
 pkgdesc="Optimization solver for Quadratic Programs (QPs)"
 url="https://github.com/osqp/osqp"
 arch="all"
 license="Apache-2.0"
 source="
 	$pkgname-$pkgver.tar.gz::https://github.com/osqp/osqp/archive/refs/tags/v$pkgver.tar.gz
+	qdldl-$_qdldl_ver.tar.gz::https://github.com/osqp/qdldl/archive/refs/tags/v$_qdldl_ver.tar.gz
 	0001-CMakeLists.patch
 "
 depends="libc++"
@@ -27,6 +29,7 @@ build() {
 		-DCMAKE_BUILD_TYPE=Release \
 		-DCMAKE_INSTALL_PREFIX=/usr \
 		-DCMAKE_INSTALL_LIBDIR=lib \
+		-DFETCHCONTENT_SOURCE_DIR_QDLDL="$srcdir/qdldl-$_qdldl_ver" \
 		-DOSQP_BUILD_UNITTESTS=ON
 	cmake --build build
 }
@@ -46,5 +49,6 @@ dev() {
 
 sha512sums="
 00ead2c476aca935202c2a02e5a0309efee6db65ec4e7c56f3597324a2f224a16502a34e7552cd5600c085d327c308317894718f9ac825ec669895ac19a45c41  osqp-1.0.0.tar.gz
+e339b4cedc9c18c154ec30b699de086383e01da5f7a5ab5e8214074622ac878b186d3b25e3f60546c6f8eb0cd381bcf37f20411878d68fedebad5a32ecb68e92  qdldl-0.1.8.tar.gz
 eaabb2383b168a0ca3fbffa8d824973199a21b48287b3adc168c8108bad728e1ce3c68af5205a87257984ec7b9a8521390d27edf4bdf71f29e83dee0ce17c4fd  0001-CMakeLists.patch
 "
