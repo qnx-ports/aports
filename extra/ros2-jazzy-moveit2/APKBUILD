@@ -44,7 +44,7 @@ depends="
         octomap
         fcl
         bullet
-        osqp
+        osqp=0.6.3-r0
         ruckig
         qhull
 "
@@ -75,7 +75,7 @@ makedepends="
         octomap-dev
         fcl-dev
         bullet-dev
-        osqp-dev
+        osqp-dev=0.6.3-r0
         ruckig-dev
         qhull-dev
         tl-expected
