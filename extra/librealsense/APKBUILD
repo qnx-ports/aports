@@ -17,7 +17,9 @@ makedepends="
     nlohmann-json
     fast-cdr-dev
     glfw-dev
+	python3-pybind11-dev
 "
+options="net"
 depends="qnx-fs-core libc++ libusb qnx-fs-gpt fast-cdr"
 subpackages="$pkgname-dev"
 source="
@@ -26,6 +28,7 @@ source="
     002_qnx_disable_avx.patch
     003_dependencies.patch
     004_disable_fast-cdr.patch
+	005_pybind11.patch
 "
 builddir="$srcdir/librealsense-$pkgver"
 
@@ -70,4 +73,5 @@ b9a34cb2a5581c1b42d7d5a9f9ffa167f70a975277ce781086dc21918c2dd14a00db3d0e0e4b6aee
 339a7c29aaed2655b2348b8c4c6500e901cbf2d77e8cb069b2ce326bece4c93a364675245f277fe707f591ec15814a95bfb1097cb9de91104fc6e5cce43e3ee6  002_qnx_disable_avx.patch
 8fcd536e631ef83f5544259b1a327ef348b8c4aa9e7ca9d2fe1dbe0bd8019ce78b4cc97ce1a651868369fe872cf6c513f40c8f88f2d2d47feb8d58039cad037b  003_dependencies.patch
 57d2fd6be26094fa6c3393e753f1826ea591dc4e7120a88abc22c0b0b445ff42eb190543ced2f56d5bd530b11f71ac4137c0a0e8ddbc3ec1e67438f55c59654f  004_disable_fast-cdr.patch
+77f3acdc29aa0bfe6aec5c19534acf7fe06e667e46013fc8c68d70ce2a5bfeb49caece574943760b31e245dcabd663b21d227ec41b34b51a97449a5310169ed4  005_pybind11.patch
 "
