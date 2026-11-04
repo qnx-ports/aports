@@ -3,7 +3,7 @@
 # Maintainer: Elliott Mazzuca <emazzuca@qnx.com>
 pkgname=protobuf
 pkgver=31.1
-pkgrel=1
+pkgrel=2
 pkgdesc="Library for extensible, efficient structure packing"
 url="https://github.com/protocolbuffers/protobuf"
 arch="all" # binary splits are arch-specific; top-level metapackage overrides to noarch in package()

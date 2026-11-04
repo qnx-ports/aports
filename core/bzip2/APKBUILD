@@ -2,7 +2,7 @@
 # Mantainer: Aaron Bassett <abassett@qnx.com>
 pkgname=bzip2
 pkgver=1.0.8
-pkgrel=8
+pkgrel=9
 pkgdesc="A high-quality data compression program"
 url="https://sourceware.org/bzip2/"
 arch="all"

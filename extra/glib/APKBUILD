@@ -1,7 +1,7 @@
 pkgname=glib
 pkgver=2.88.1
 _gi_version=1.86.0
-pkgrel=0
+pkgrel=1
 pkgdesc="Low-level core library that forms the basis for projects such as GTK+ and GNOME."
 arch="all"
 license="LGPL-2.1-or-later"

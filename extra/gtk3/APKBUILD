@@ -1,6 +1,6 @@
 pkgname=gtk3
 pkgver=3.24.52
-pkgrel=0
+pkgrel=1
 pkgdesc="The GTK+ Toolkit (v3)"
 url="https://www.gtk.org/"
 arch="all"
@@ -76,10 +76,10 @@ source="
 builddir="$srcdir/gtk-$pkgver"
 
 build() {
-    CC=clang \
-    CXX="clang++" \
-    CFLAGS="$CFLAGS -O2 -Qunused-arguments" \
-    CXXFLAGS="$CXXFLAGS -O2 -Qunused-arguments" \
+    export CC=clang
+    export CXX="clang++"
+    export CFLAGS="$CFLAGS -O0 -Qunused-arguments -Wno-incompatible-pointer-types" # not the correct but it solves the issue
+    export CXXFLAGS="$CXXFLAGS -O0 -Qunused-arguments"
     abuild-meson \
         -Db_lto=false \
         -Dintrospection=true \

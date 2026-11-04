@@ -3,7 +3,7 @@
 
 pkgname=lcm
 pkgver=1.5.2
-pkgrel=0
+pkgrel=1
 pkgdesc="Lightweight Communications and Marshalling"
 url="https://github.com/lcm-proj/lcm"
 arch="all"

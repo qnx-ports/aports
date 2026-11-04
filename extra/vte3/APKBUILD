@@ -3,7 +3,7 @@
 # Maintainer: Aaron Bassett <abassett@qnx.com>
 pkgname=vte3
 pkgver=0.82.2
-pkgrel=1
+pkgrel=2
 pkgdesc="Virtual Terminal Emulator library"
 url="https://gitlab.gnome.org/GNOME/vte"
 arch="all"
