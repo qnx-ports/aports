@@ -53,6 +53,7 @@ package() {
 gpioctrl() {
     pkgdesc="GUI tool for managing gpio"
     depends="$depends qnx-screen cairo rpi-gpio"
+    amove usr/share/gpioctrl
     amove usr/bin/gpioctrl
 }
 
