@@ -1,0 +1,35 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 3e9747575..bbed39d4b 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -58,9 +58,11 @@ option(SONAME                  "Set the (SO)VERSION of the target"
+ option(DEPRECATE_HARD          "Do not include deprecated functions in the library"    OFF)
+ 
+ # Compilation options
+-# Default to c99 on Android Studio for compatibility; c90 everywhere else
++# Default to c99 on Android Studio and QNX for compatibility; c90 everywhere else
+ if("${CMAKE_SYSTEM_NAME}" STREQUAL "Android")
+    set(CMAKE_C_STANDARD        "99" CACHE STRING "The C standard to compile against")
++elseif("${CMAKE_SYSTEM_NAME}" STREQUAL "QNX")
++   set(CMAKE_C_STANDARD        "99" CACHE STRING "The C standard to compile against")
+ else()
+    set(CMAKE_C_STANDARD        "90" CACHE STRING "The C standard to compile against")
+ endif()
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index f76bbecc1..3bad13417 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -137,6 +137,11 @@ if(CMAKE_SYSTEM_NAME MATCHES "Haiku")
+ 	list(APPEND LIBGIT2_PC_LIBS "-lgnu -lnetwork")
+ endif()
+ 
++if(CMAKE_SYSTEM_NAME MATCHES "QNX")
++	list(APPEND LIBGIT2_SYSTEM_LIBS socket)
++	list(APPEND LIBGIT2_PC_LIBS "-lsocket")
++endif()
++
+ if(AMIGA)
+ 	add_definitions(-DNO_ADDRINFO -DNO_READDIR_R -DNO_MMAP)
+ endif()
+
+
