@@ -1,0 +1,106 @@
+# Maintainer: Deep Chordia <dchordia@qnx.com>
+pkgname=azure-iot-sdk-c
+pkgver=2025.03
+_pkgver=LTS_03_2025
+pkgrel=0
+pkgdesc="A C99 SDK for connecting devices to Microsoft Azure IoT services"
+url="https://github.com/Azure/azure-iot-sdk-c"
+arch="all"
+license="MIT"
+options="!check"
+depends="libcurl"
+depends_dev="libc++-dev curl-dev"
+makedepends="
+    $depends_dev
+    cmake
+    ninja
+"
+subpackages="$pkgname-dev"
+_azure_c_shared_utility_commit="772a4f8bc338140b4a0f404cf9c344283c5c937f"
+_azure_c_testrunnerswitcher_commit="8734bd6c53c88dd6c0cea8e87d70b9964726484a"
+_azure_ctest_commit="4aa84c45236ecda21983fb682f542f17d0b21e19"
+_azure_macro_utils_c_commit="5926caf4e42e98e730e6d03395788205649a3ada"
+_parson_commit="60c37844d7a1c97547812cac3423d458c73e60f9"
+_uhttp_commit="01dc7139d3da3141aa2017dff927db1dbbe86e49"
+_umock_c_commit="504193e65d1c2f6eb50c15357167600a296df7ff"
+_RIOT_commit="f6bebff2f5a68f5bc18d23ed164800db33b7d2a4"
+_utpm_commit="d250abe1d33cb38437d540bf77c80f014f60e472"
+_uamqp_commit="6bb9accbbc036ed5ef1df7467760762c99a7094b"
+_umqtt_commit="d08d530fc3ae3f60d3f750fab6629a5b7839f754"
+source="$pkgname-$_pkgver.tar.gz::https://github.com/Azure/azure-iot-sdk-c/archive/$_pkgver.tar.gz
+        $pkgname-$_pkgver-azure_c_shared_utility.tar.gz::https://github.com/Azure/azure-c-shared-utility/archive/$_azure_c_shared_utility_commit.tar.gz
+        $pkgname-$_pkgver-azure_umqtt_c.tar.gz::https://github.com/Azure/azure-umqtt-c/archive/$_umqtt_commit.tar.gz
+        $pkgname-$_pkgver-azure_uamqp_c.tar.gz::https://github.com/Azure/azure-uamqp-c/archive/$_uamqp_commit.tar.gz
+        $pkgname-$_pkgver-parson.tar.gz::https://github.com/kgabis/parson/archive/$_parson_commit.tar.gz
+        $pkgname-$_pkgver-uhttp.tar.gz::https://github.com/Azure/azure-uhttp-c/archive/$_uhttp_commit.tar.gz
+        $pkgname-$_pkgver-riot.tar.gz::https://github.com/Microsoft/RIoT/archive/$_RIOT_commit.tar.gz
+        $pkgname-$_pkgver-utpm.tar.gz::https://github.com/Azure/azure-utpm-c/archive/$_utpm_commit.tar.gz
+        $pkgname-$_pkgver-macro_utils_c.tar.gz::https://github.com/Azure/macro-utils-c/archive/$_azure_macro_utils_c_commit.tar.gz
+        $pkgname-$_pkgver-umock_c.tar.gz::https://github.com/Azure/umock-c/archive/$_umock_c_commit.tar.gz
+        $pkgname-$_pkgver-c_testrunnerswitcher.tar.gz::https://github.com/Azure/c-testrunnerswitcher/archive/$_azure_c_testrunnerswitcher_commit.tar.gz
+        $pkgname-$_pkgver-ctest.tar.gz::https://github.com/Azure/azure-ctest/archive/$_azure_ctest_commit.tar.gz
+        0001-c-utility-qnx_patch
+        0002-azure-iot-qnx.patch
+        "
+builddir="$srcdir/$pkgname-$_pkgver"
+
+prepare() {
+  (cd "$srcdir"/azure-c-shared-utility-$_azure_c_shared_utility_commit && patch ${patch_args:--p1} -i "$srcdir"/0001-c-utility-qnx_patch)
+
+  mv "$srcdir"/azure-c-shared-utility-$_azure_c_shared_utility_commit/* "$builddir"/c-utility
+  mv "$srcdir"/azure-umqtt-c-$_umqtt_commit/* "$builddir"/umqtt/
+  mv "$srcdir"/azure-uamqp-c-$_uamqp_commit/* "$builddir"/uamqp/
+  mv "$srcdir"/parson-$_parson_commit/* "$builddir"/deps/parson/
+  mv "$srcdir"/azure-uhttp-c-$_uhttp_commit/* "$builddir"/deps/uhttp/
+  mv "$srcdir"/RIoT-$_RIOT_commit/* "$builddir"/provisioning_client/deps/RIoT/
+  mv "$srcdir"/azure-utpm-c-$_utpm_commit/* "$builddir"/provisioning_client/deps/utpm/
+  mv "$srcdir"/macro-utils-c-$_azure_macro_utils_c_commit/* "$builddir"/deps/azure-macro-utils-c/
+  mv "$srcdir"/umock-c-$_umock_c_commit/* "$builddir"/deps/umock-c/
+  mv "$srcdir"/c-testrunnerswitcher-$_azure_c_testrunnerswitcher_commit/* "$builddir"/deps/azure-c-testrunnerswitcher/
+  mv "$srcdir"/ctest-$_azure_ctest_commit/* "$builddir"/deps/azure-ctest/
+
+  default_prepare
+}
+
+build() {
+  CFLAGS="-Wno-unused-command-line-argument" \
+  CXXFLAGS="-Wno-unused-command-line-argument" \
+  LDFLAGS="-lz" \
+  cmake -B build -G Ninja \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+    -DCMAKE_INSTALL_PREFIX=/usr \
+    -DCMAKE_INSTALL_DATADIR=/usr/lib \
+    -DBUILD_SHARED_LIBS=ON \
+    -DBUILD_TESTING=ON \
+    -Duse_default_uuid=ON \
+    -Dskip_samples=ON \
+    -Drun_unittests=ON \
+    -DQNX=1
+  cmake --build build -j2
+}
+
+check() {
+  ctest --test-dir build
+}
+
+package() {
+  DESTDIR="$pkgdir" cmake --install build
+}
+
+sha512sums="
+3ae73b605c267d0cd44cf3c2454a00b38619b4205b4aca7f5cb8f0df2bb8b52f2ce9096ba484a97ce5cd9d9a34b7d51c678d604e445b2c7d337fe3ab3ee892ba  azure-iot-sdk-c-LTS_03_2025.tar.gz
+cd81698e58ad14b17ca87ce2ff80fd48f5bf4b6dded9d311f9ce0822b90f0f874d99210a019e00aa9a2e1c48914a4c2934f4d935638af68d2f88c5bdb26669dd  azure-iot-sdk-c-LTS_03_2025-azure_c_shared_utility.tar.gz
+b486bd04fc5669e16ec8d097efcdc98fb783634321fd76e607f2b1e67bac32a8f2a80634208a3ca55db56933562d1db1d779d9435f5ef397e44c2288f25f44ee  azure-iot-sdk-c-LTS_03_2025-azure_umqtt_c.tar.gz
+99ed5fef76a0e0b2482862f46715431f98381923670be42edc8d4f7e066c0dcb9f397be73f96eccbbd697ae98f2604cb7b6f603f7c1d358ada50dc68349331ef  azure-iot-sdk-c-LTS_03_2025-azure_uamqp_c.tar.gz
+24868166771161c29e40847d3e2ff90437568d65d52d0fe629ad322db534099bdcd500d711a21242070cfe89d2bacf3c7f59c605588755711b04920d3a45b2d3  azure-iot-sdk-c-LTS_03_2025-parson.tar.gz
+16ba75ced10efcea14073eb21d6dd46d1f00997b588aac64c1bcfd14c5176513a677d1adaa3c2ae6890f6d3576473ac9bc80eb32df551bd5cdf9345ed7e910be  azure-iot-sdk-c-LTS_03_2025-uhttp.tar.gz
+5d07bc934ab8d64c2bc930636fe135e677cac6bd6ae85ca6028eb4a28ef5776d6326bdd1f654646597a169f7da8e36318ea36496523052a826686aa1d959c967  azure-iot-sdk-c-LTS_03_2025-riot.tar.gz
+4b99f13075a0bc3a3f3c44829aedcce3bd1ae14d400a5e306e6d0a56453a79b3c4092483df3acc6bdc43feed10959ce4372243afc28670fd733dc3a7c67e092f  azure-iot-sdk-c-LTS_03_2025-utpm.tar.gz
+8f9fd02012202db6cff5b647edbc8332a2c03963e80182a630af6a884f23df96b8e24d60e5412bfc2a0a7f43240a54f9597040aa28a9d3e1566755e1d52aac62  azure-iot-sdk-c-LTS_03_2025-macro_utils_c.tar.gz
+68d5d986314dbd46d20de2a9b9454154c11675c25d1b5a5b1cfecdd0c0945d9dc68d0348ec1dbb00b5d1a6a1f0356121ba561d7c8fffb97ab37864edade5a85b  azure-iot-sdk-c-LTS_03_2025-umock_c.tar.gz
+0b2d630228d65bf63be8c41ca998de24011165b3dc879a86df6372a253c1bfd9e928672fb0817ca8c036274ed05ef2ee58ec4b7102d3c5bf6222cac452da07d0  azure-iot-sdk-c-LTS_03_2025-c_testrunnerswitcher.tar.gz
+0bf0ccbb7c63e62beb62b690a9d4d173518bada9987cf7c569c27ab9d843f1f5ca844001a542d617b402637bd16969f22c50361421c39cbfce73d662b9f423bb  azure-iot-sdk-c-LTS_03_2025-ctest.tar.gz
+dd170c89ec7b7ac99ac616e2fd97d7ca305c57ff110c240ad9a4c59094032c29379c4aecb0e3d85a49604b2c933d5374e4c8c92f8770918c42d2cb036c0de3e2  0001-c-utility-qnx_patch
+2358c917266f4e6cee55f4a73e3389357d91694a3d47331e7c83d7412b39fb2016bdc9ee0931a571649a3c1496e831760418eb4db304fdedadf4004dcdafe7ba  0002-azure-iot-qnx.patch
+"
