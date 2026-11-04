@@ -21,7 +21,6 @@ subpackages="
 	$pkgname-static
 	$pkgname-dev
 "
-options="net"
 
 build() {
 	cmake -B build -G Ninja \
