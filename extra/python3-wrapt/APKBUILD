@@ -1,0 +1,31 @@
+# Maintainer: Deep Chordia <dchordia@blackberry.com>
+pkgname=python3-wrapt
+pkgver=2.2.1
+pkgrel=0
+pkgdesc="Python module for decorators, wrappers and monkey patching"
+url="https://github.com/GrahamDumpleton/wrapt"
+arch="all"
+license="BSD-2-Clause"
+depends="python3"
+makedepends="python3-dev python3-gpep517 python3-setuptools python3-wheel"
+checkdepends="python3-pytest"
+source="https://files.pythonhosted.org/packages/source/w/wrapt/wrapt-$pkgver.tar.gz"
+builddir="$srcdir/wrapt-$pkgver"
+
+build() {
+	CFLAGS="$CFLAGS -fPIC" CC=clang gpep517 build-wheel --wheel-dir .dist --output-fd 3 3>&1 >&2
+}
+
+check() {
+	python3 -m venv --clear --without-pip --system-site-packages .testenv
+	.testenv/bin/python3 -m installer .dist/*.whl
+	.testenv/bin/python3 -m pytest tests/ --junitxml="$startdir/junit-$pkgname.xml"
+}
+
+package() {
+	python3 -m installer -d "$pkgdir" .dist/*.whl
+}
+
+sha512sums="
+fb7952f8931b28dcfe7c10d545657af9f369f60b96defbeb0bcda0fc2b17068fbeb38fc5395d1908091c2ebf392467b42285dfc28355b8fe92d8865515590915  wrapt-2.2.1.tar.gz
+"
