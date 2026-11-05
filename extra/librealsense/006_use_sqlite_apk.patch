@@ -1,0 +1,87 @@
+diff --git a/CMake/external_sqlite3.cmake b/CMake/external_sqlite3.cmake
+index 4cd2bbba5..6fde06581 100644
+--- a/CMake/external_sqlite3.cmake
++++ b/CMake/external_sqlite3.cmake
+@@ -1,35 +1,57 @@
+ # Fetch and build SQLite3 for rosbag2 storage support
+ 
+-set(SQLITE3_VERSION "3.49.1")
+-set(SQLITE3_DOWNLOAD_URL "https://sqlite.org/2025/sqlite-amalgamation-3490100.zip")
++if(CMAKE_SYSTEM_NAME STREQUAL "QNX")
+ 
+-if(POLICY CMP0135) # suppress warning for cmake 3.24+
+-    cmake_policy(SET CMP0135 NEW)
+-endif()
++    message(STATUS "QNX: Using system-installed SQLite3")
+ 
+-if(NOT TARGET sqlite3)
+-    include(ExternalProject)
+-    ExternalProject_Add(sqlite3
+-        URL ${SQLITE3_DOWNLOAD_URL}
+-        CONFIGURE_COMMAND ""
+-        BUILD_COMMAND ""
+-        INSTALL_COMMAND ""
+-    )
+-endif()
++    find_package(SQLite3 REQUIRED)
++
++    # Preserve the target name expected by realsense-file.
++    if(NOT TARGET sqlite3_lib)
++        add_library(sqlite3_lib INTERFACE)
++        target_link_libraries(sqlite3_lib INTERFACE SQLite::SQLite3)
++    endif()
++
++    set(HEADER_DIR_SQLITE3 "")
++    
++else()
++
++    set(SQLITE3_VERSION "3.49.1")
++    set(SQLITE3_DOWNLOAD_URL
++        "https://sqlite.org/2025/sqlite-amalgamation-3490100.zip")
++
++    if(POLICY CMP0135)
++        cmake_policy(SET CMP0135 NEW)
++    endif()
++
++    if(NOT TARGET sqlite3)
++        include(ExternalProject)
++        ExternalProject_Add(sqlite3
++            URL ${SQLITE3_DOWNLOAD_URL}
++            CONFIGURE_COMMAND ""
++            BUILD_COMMAND ""
++            INSTALL_COMMAND ""
++        )
++    endif()
++
++    ExternalProject_Get_Property(sqlite3 SOURCE_DIR)
++    set(sqlite3_SOURCE_DIR ${SOURCE_DIR})
++    set(HEADER_DIR_SQLITE3 ${sqlite3_SOURCE_DIR})
++    set(SQLITE3_SOURCES "${sqlite3_SOURCE_DIR}/sqlite3.c")
+ 
+-ExternalProject_Get_Property(sqlite3 SOURCE_DIR)
+-set(sqlite3_SOURCE_DIR ${SOURCE_DIR})
+-set(HEADER_DIR_SQLITE3 ${sqlite3_SOURCE_DIR})
+-set(SQLITE3_SOURCES "${sqlite3_SOURCE_DIR}/sqlite3.c")
++    add_library(sqlite3_lib STATIC ${SQLITE3_SOURCES})
++    set_source_files_properties(${SQLITE3_SOURCES}
++        PROPERTIES GENERATED TRUE)
+ 
+-add_library(sqlite3_lib STATIC ${SQLITE3_SOURCES})
+-set_source_files_properties(${SQLITE3_SOURCES} PROPERTIES GENERATED TRUE)
++    add_dependencies(sqlite3_lib sqlite3)
+ 
+-add_dependencies(sqlite3_lib sqlite3)
++    target_include_directories(sqlite3_lib
++        PUBLIC $<BUILD_INTERFACE:${sqlite3_SOURCE_DIR}>)
+ 
+-target_include_directories(sqlite3_lib PUBLIC $<BUILD_INTERFACE:${sqlite3_SOURCE_DIR}>)
++    if(UNIX)
++        find_package(Threads REQUIRED)
++        target_link_libraries(sqlite3_lib
++            PRIVATE Threads::Threads ${CMAKE_DL_LIBS})
++    endif()
+ 
+-if(UNIX)
+-    find_package(Threads REQUIRED)
+-    target_link_libraries(sqlite3_lib PRIVATE Threads::Threads ${CMAKE_DL_LIBS})
+ endif()
