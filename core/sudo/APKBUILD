@@ -4,21 +4,22 @@
 pkgname="sudo"
 pkgver="1.9.17_p2"
 _realver=${pkgver/_/}
-pkgrel=5
+_pkgrel=5
+pkgrel=6
 pkgdesc="Give certain users the ability to run some commands as root"
 url="https://www.sudo.ws"
 arch="all"
 license="LicenseRef-ISC"
-depends="qnx-security qnx-io-sock openssl"
+depends="qnx-security qnx-io-sock libssl3 libcrypto3"
 makedepends="qnx-security-dev qnx-io-sock-dev ncurses-dev openssl-dev"
 checkdepends="diffutils"
 subpackages="$pkgname-doc $pkgname-dev"
 source="
-    https://github.com/qnx-ports/sudo/archive/refs/tags/qnx-v$_realver-r$pkgrel.tar.gz
+    https://github.com/qnx-ports/sudo/archive/refs/tags/qnx-v$_realver-r$_pkgrel.tar.gz
     sudo.pam
 "
 options="suid"
-builddir="$srcdir/$pkgname-qnx-v$_realver-r$pkgrel"
+builddir="$srcdir/$pkgname-qnx-v$_realver-r$_pkgrel"
 
 build() {
     cd $builddir
@@ -31,16 +32,19 @@ build() {
         --sbindir=/usr/bin \
         --libexecdir=/usr/lib \
         --mandir=/usr/share/man \
-        --with-rundir=/var/run/sudo \
+        --with-rundir=/run/sudo \
         --with-vardir=/var/lib/sudo \
+        --with-logdir=/var/log \
+        --with-iologdir=/var/log/sudo-io \
+        --with-logpath=/var/log/sudo.log \
+        --with-relaydir=/var/log/sudo_logsrvd \
         --with-passprompt="[sudo] password for %p: " \
-	--disable-shared \
-	--disable-shared-libutil \
+	      --disable-shared \
+	      --disable-shared-libutil \
         --with-env-editor \
         --with-pam \
         --with-logfac=auth \
         --with-secure-path-value=/usr/bin \
-	--with-editor=/usr/bin/vim \
         --with-all-insults
     make
 }
