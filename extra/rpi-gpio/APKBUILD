@@ -2,7 +2,7 @@
 pkgname=rpi-gpio
 pkgver=0.1
 _commit="880d66fe20a3111e32a86eb8339e79bc43abbf36"
-pkgrel=0
+pkgrel=1
 pkgdesc="GPIO utilities for RPI4/5"
 arch="aarch64"
 license="LicenseRef-QDL-Non-Commercial"
