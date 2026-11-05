@@ -1,0 +1,36 @@
+# Alpine-Contributor: lauren n. liberda <lauren@selfisekai.rocks>
+# Alpine-Maintainer: lauren n. liberda <lauren@selfisekai.rocks>
+# Maintainer: Deep Chordia <dchordia@qnx.com>
+pkgname=python3-pathvalidate
+pkgver=3.3.1
+pkgrel=0
+pkgdesc="A Python library to sanitize/validate a string such as filenames/file-paths/etc"
+url="https://pathvalidate.readthedocs.io/en/latest/"
+arch="noarch"
+license="MIT"
+depends="python3"
+makedepends="
+    python3-gpep517
+    python3-setuptools
+    python3-wheel
+    python3-setuptools_scm
+    "
+options="!check" # tests require unpackaged unmaintained dependencies, alpine also omits testing
+source="$pkgname-$pkgver.tar.gz::https://github.com/thombashi/pathvalidate/archive/refs/tags/v$pkgver.tar.gz"
+builddir="$srcdir/pathvalidate-$pkgver"
+
+build() {
+    export SETUPTOOLS_SCM_PRETEND_VERSION=$pkgver
+    gpep517 build-wheel \
+		--wheel-dir .dist \
+		--output-fd 3 3>&1 >&2
+}
+
+package() {
+    python3 -m installer -d "$pkgdir" \
+		.dist/*.whl
+}
+
+sha512sums="
+02bd6bc439f42df3dc6004d1d0883d4e85ac7d761cddb61552576acf49db29ac3994a76a460ddd068eebd89279ae3f14d6703f90f4266ea7443be257ddc48b4e  python3-pathvalidate-3.3.1.tar.gz
+"
