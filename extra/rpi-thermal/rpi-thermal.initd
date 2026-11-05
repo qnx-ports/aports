@@ -1,0 +1,13 @@
+#!/usr/bin/openrc-run
+# vi: ft=sh sw=4 et
+
+description="QNX RPI5 gpio"
+command="/usr/bin/rpi_gpio"
+command_background="true"
+priority=21
+pidfile="/var/run/rpi_gpio.pid"
+
+start() {
+    default_start
+    ewaitfile 30 /dev/gpio
+}
