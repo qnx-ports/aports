@@ -1,16 +1,18 @@
 pkgname=rpi-thermal
 pkgver=0.1
 _commit="4ba4fdc40c683acbbdf4409dc251aed1d52cfe89"
-pkgrel=0
+pkgrel=1
 pkgdesc="Thermal resource manager for Raspberry Pi 4 and 5."
 arch=aarch64
 license="LicenseRef-QDL-Non-Commercial"
 depends="qnx-secpol rpi-mailbox"
 makedepends="qnx-io-sock-dev qnx-secpol-dev clang rpi-mailbox-dev qnx-bsp-i2c-dev"
 options="!check"
-url=https://gitlab.com/qnx/projects/rpi-mailbox
-subpackages="$pkgname-dbg"
-source="https://gitlab.com/qnx/projects/rpi-thermal/-/archive/$_commit/rpi-thermal-$_commit.tar.gz"
+url="https://gitlab.com/qnx/projects/rpi-mailbox"
+subpackages="$pkgname-dbg $pkgname-openrc"
+source="https://gitlab.com/qnx/projects/rpi-thermal/-/archive/$_commit/rpi-thermal-$_commit.tar.gz
+  rpi-thermal.initd
+"
 builddir="$srcdir/rpi-thermal-$_commit"
 
 prepare() {
@@ -26,8 +28,10 @@ package() {
     install -m 0755 -d "$pkgdir"/usr/bin
 
     cp "$builddir"/rpi_thermal "$pkgdir"/usr/bin
+    install -Dm755 "$srcdir"/rpi-thermal.initd "$pkgdir"/etc/init.d/rpi-thermal
 }
 
 sha512sums="
 c4e6663f630d87ee857f83dc63fdf8d7df37d5e214df3cce9c0f3ffd77ff65c1b636d5afdc2db5ce36145bc84e82dd655ad465e5e6fac1ecd790df4324d1c1c6  rpi-thermal-4ba4fdc40c683acbbdf4409dc251aed1d52cfe89.tar.gz
+4f4a81e18f5d3c07072be61a48180aeac7df06d1b309ac9e9264423718b38d669754a2e1ea5745b34ead63224f9d7391746489b87778b2ae5604670f063045bf  rpi-thermal.initd
 "
