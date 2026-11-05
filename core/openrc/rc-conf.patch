@@ -1,0 +1,27 @@
+--- a/etc/rc.conf
++++ b/etc/rc.conf
+@@ -53,7 +53,11 @@
+ # /var/log/rc.log
+ # NOTE: Linux systems require the devfs service to be started before
+ # logging can take place and as such cannot log the sysinit runlevel.
+-#rc_logger="NO"
++#
++# QNX: Not to be enabled until devc-pty is updated to reset control characters after
++# use. This sets special control characters on the pty, which never gets reset,
++# thus making the pty unsable
++rc_logger="NO"
+ 
+ # Through rc_log_path you can specify a custom log file.
+ # The default value is: /var/log/rc.log
+@@ -65,7 +69,10 @@
+ 
+ # By default we filter the environment for our running scripts. To allow other
+ # variables through, add them here. Use a * to allow all variables through.
+-#rc_env_allow="VAR1 VAR2"
++#
++# QNX: Enable PCI vars because they are needed for programs using pci, ex:
++# io-sock. These are unfortunately not forwarded by default. 
++rc_env_allow="PCI_CAP_MODULE_DIR PCI_SLOG_MODULE PCI_BKWD_COMPAT_MODULE"
+ 
+ # By default we assume that all daemons will start correctly.
+ # However, some do not - a classic example is that they fork and return 0 AND
