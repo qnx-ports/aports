@@ -19,9 +19,11 @@ makedepends="
     glfw-dev
 	python3-pybind11-dev
 	ca-certificates
+	sqlite-dev
+	lz4-dev
 "
 options="net"
-depends="qnx-fs-core libc++ libusb qnx-fs-gpt fast-cdr"
+depends="qnx-fs-core libc++ libusb qnx-fs-gpt fast-cdr sqlite-libs lz4"
 subpackages="$pkgname-dev"
 source="
 	$pkgname-$pkgver.tar.gz::https://github.com/IntelRealSense/librealsense/archive/refs/tags/v$pkgver.tar.gz
@@ -30,6 +32,8 @@ source="
     003_dependencies.patch
     004_disable_fast-cdr.patch
 	005_pybind11.patch
+	006_use_sqlite_apk.patch
+	0007_lz4_apk.patch
 "
 builddir="$srcdir/librealsense-$pkgver"
 
@@ -43,6 +47,7 @@ build() {
 		-DBUILD_SHARED_LIBS=ON \
 		-DBUILD_UNIT_TESTS=true \
 		-DBUILD_EXAMPLES=OFF \
+		-DUSE_EXTERNAL_LZ4=ON \
 		-DBUILD_GRAPHICAL_EXAMPLES=OFF \
 		-DBUILD_TOOLS=OFF \
 		-DCMAKE_C_FLAGS="$CFLAGS -DPLATFORM_POSIX" \
@@ -75,4 +80,6 @@ b9a34cb2a5581c1b42d7d5a9f9ffa167f70a975277ce781086dc21918c2dd14a00db3d0e0e4b6aee
 8fcd536e631ef83f5544259b1a327ef348b8c4aa9e7ca9d2fe1dbe0bd8019ce78b4cc97ce1a651868369fe872cf6c513f40c8f88f2d2d47feb8d58039cad037b  003_dependencies.patch
 57d2fd6be26094fa6c3393e753f1826ea591dc4e7120a88abc22c0b0b445ff42eb190543ced2f56d5bd530b11f71ac4137c0a0e8ddbc3ec1e67438f55c59654f  004_disable_fast-cdr.patch
 77f3acdc29aa0bfe6aec5c19534acf7fe06e667e46013fc8c68d70ce2a5bfeb49caece574943760b31e245dcabd663b21d227ec41b34b51a97449a5310169ed4  005_pybind11.patch
+b64cebd1588a525ed38a420e8d8c9bbf94197159a4eb827831c87fa60550e962661d3df50118a752b3f3242b6817d066312ebd734d3255b6f6c42023fe033bbb  006_use_sqlite_apk.patch
+1765ec8f164f71a2672e18c9f9081d510d58ea33518ba2f200000ccbe2dfdc26dfac469c7acb2d50da1fb05a05ec0e13f4a59fc9e2195a2d179eed418785ae0c  0007_lz4_apk.patch
 "

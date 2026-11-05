@@ -1,0 +1,25 @@
+diff --git a/third-party/realsense-file/CMakeLists.txt b/third-party/realsense-file/CMakeLists.txt
+index 6abff3740..4a4443481 100644
+--- a/third-party/realsense-file/CMakeLists.txt
++++ b/third-party/realsense-file/CMakeLists.txt
+@@ -16,7 +16,19 @@ FILE(GLOB_RECURSE AllSources
+         )
+ 
+ if(USE_EXTERNAL_LZ4)
+-    find_package(lz4 REQUIRED)
++    if(CMAKE_SYSTEM_NAME STREQUAL "QNX")
++        find_path(LZ4_INCLUDE_DIR NAMES lz4.h REQUIRED)
++        find_library(LZ4_LIBRARY NAMES lz4 REQUIRED)
++
++        add_library(lz4::lz4 UNKNOWN IMPORTED)
++        set_target_properties(lz4::lz4 PROPERTIES
++            IMPORTED_LOCATION "${LZ4_LIBRARY}"
++            INTERFACE_INCLUDE_DIRECTORIES "${LZ4_INCLUDE_DIR}"
++        )
++    else()
++        find_package(lz4 REQUIRED)
++    endif()
++
+     add_library(rs_lz4 INTERFACE)
+     target_link_libraries(rs_lz4 INTERFACE lz4::lz4)
+ else()
