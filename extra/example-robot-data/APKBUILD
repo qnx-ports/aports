@@ -12,7 +12,9 @@ makedepends="
 	ninja
 	pkgconfig
 	jrl-cmakemodules
+    doxygen
 	"
+subpackages="$pkgname-doc"
 source="$pkgname-$pkgver.tar.gz::https://github.com/Gepetto/example-robot-data/archive/v$pkgver.tar.gz"
 builddir="$srcdir/$pkgname-$pkgver"
 
