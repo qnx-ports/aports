@@ -1,3 +1,4 @@
+# Maintainer: jscaffidi <jscaffidi@qnx.com>
 pkgname=rpi-mailbox
 pkgver=0.1
 _commit="dd9ed5928da2553f43350136244b38ba3857f95d"
@@ -9,7 +10,7 @@ depends="qnx-secpol"
 makedepends="qnx-security-dev qnx-io-sock-dev qnx-secpol-dev clang"
 options="!check"
 url="https://gitlab.com/qnx/projects/rpi-mailbox"
-subpackages="$pkgname-dbg $pkgname-dev"
+subpackages="$pkgname-dbg $pkgname-dev $pkgname-openrc"
 source="https://gitlab.com/qnx/projects/rpi-mailbox/-/archive/$_commit/rpi-mailbox-$_commit.tar.gz
     rpi-mailbox.initd
 "
