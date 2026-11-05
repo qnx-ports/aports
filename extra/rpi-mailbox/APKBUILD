@@ -1,3 +1,4 @@
+# Maintainer: jscaffidi <jscaffidi@qnx.com>
 pkgname=rpi-mailbox
 pkgver=0.1
 _commit="dd9ed5928da2553f43350136244b38ba3857f95d"
