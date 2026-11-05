@@ -1,0 +1,16 @@
+diff --git a/src/config.h b/src/config.h
+index 0994f95..789bc6c 100644
+--- a/src/config.h
++++ b/src/config.h
+@@ -286,6 +286,11 @@ HAVE_SOCKADDR_SA_LEN
+ #endif
+ #define HAVE_SOCKADDR_SA_LEN
+ 
++#elif defined(__QNX__)
++#define HAVE_BSD_NETWORK
++#define bzero __builtin_bzero
++#define HAVE_GETOPT_LONG
++
+ #elif defined(__APPLE__)
+ #define HAVE_BSD_NETWORK
+ #define HAVE_GETOPT_LONG
