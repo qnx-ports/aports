@@ -27,8 +27,10 @@ makedepends="
 "
 options="!check"
 url="https://gitlab.com/qnx/projects/rpi-gpio"
-subpackages="$pkgname-dbg $pkgname-dev $pkgname-gpioctrl python3-$pkgname:py3"
-source="https://gitlab.com/qnx/projects/rpi-gpio/-/archive/$_commit/rpi-gpio-$_commit.tar.gz"
+subpackages="$pkgname-dbg $pkgname-dev $pkgname-gpioctrl $pkgname-openrc python3-$pkgname:py3"
+source="https://gitlab.com/qnx/projects/rpi-gpio/-/archive/$_commit/rpi-gpio-$_commit.tar.gz
+   rpi-gpio.initd
+"
 builddir="$srcdir/rpi-gpio-$_commit"
 
 prepare() {
@@ -48,6 +50,9 @@ package() {
     # yes you read that correctly
     mv "$pkgdir/usr/usr/lib" "$pkgdir/usr/lib"
     rmdir "$pkgdir/usr/usr"
+
+    install -Dm755 "$srcdir"/rpi-gpio.initd "$pkgdir"/etc/init.d/rpi-gpio
+
 }
 
 gpioctrl() {
