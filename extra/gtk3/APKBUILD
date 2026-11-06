@@ -47,8 +47,8 @@ makedepends="
     libxi-dev
     libxrandr-dev
     libxrender-dev
-    dbus
     "
+checkdepends="dbus"
 depends="
     gobject-introspection
     shared-mime-info
