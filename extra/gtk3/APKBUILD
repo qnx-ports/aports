@@ -117,17 +117,19 @@ build() {
 }
 
 check() {
-    # GDK_BACKEND=offscreen lets widget/CSS/layout tests run without a
-    # live compositor.  dbus-run-session provides a temporary session bus
-    # for tests that call GIO/GSettings.  Skip a11y (needs at-spi2 running)
-    # and reftests (pixel-exact comparison, fails with offscreen backend).
-    # Allow failures so test results are always captured rather than aborting.
-    GDK_BACKEND=offscreen \
+    # GTK3 has no standalone headless GDK backend (GDK_BACKEND=offscreen is
+    # GTK4-only). Tests that call gtk_init() require a live X11 or Wayland
+    # display; without one they abort with "cannot open display" (SIGTRAP).
+    # Pure data-structure tests (bitmask, flattenedarray, rbtree, color,
+    # pixbuf-data, tools) do not call gtk_init() and pass in headless builds.
+    # dbus-run-session provides a temporary session bus for GIO/GSettings.
+    # Skip a11y (needs at-spi2 daemon) and reftest (pixel-exact, needs display).
+    # Allow failures: headless systems will have ~50 expected display failures.
     GSETTINGS_BACKEND=memory \
     dbus-run-session \
     meson test -C build --no-rebuild \
         --no-suite a11y \
-        --no-suite reftests \
+        --no-suite reftest \
         --timeout-multiplier 3 \
         2>&1 || true
     # meson 1.5+ writes testlog.junit.xml automatically alongside testlog.txt
