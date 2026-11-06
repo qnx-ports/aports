@@ -1,0 +1,11 @@
+--- a/src/QProblem.c
++++ b/src/QProblem.c
+@@ -469,7 +469,7 @@
+ 	OptionsCPY( &(FROM->options),&(TO->options) );
+ 	QProblem_setPrintLevel( TO,TO->options.printLevel );
+ 
+-	ConstraintsCPY( &(FROM->constraints),&(TO->constraints) );
++	ConstraintsCPY( FROM->constraints,TO->constraints );
+ 
+ 	DenseMatrixCPY(FROM->A, TO->A);
+ 

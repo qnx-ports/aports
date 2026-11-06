@@ -1,0 +1,43 @@
+# Maintainer: Terence Ang <taang@qnx.com>
+pkgname=qpoases-e
+pkgver=3.1_git20250918
+_commit="125e94fa638f00350608871fc165789b1d1762f1"
+pkgrel=0
+pkgdesc="Unofficial fork of qpOASES (C version) with acados changes"
+url="https://github.com/acados/qpOASES"
+arch="all"
+license="LGPL-2.1-only"
+makedepends="cmake"
+subpackages="$pkgname-dev"
+source="
+    $pkgname-$_commit.tar.gz::https://github.com/acados/qpOASES/archive/$_commit.tar.gz
+    001-CMakelists_txt.patch
+    002-QProblems_c.patch
+"
+builddir="$srcdir/qpOASES-$_commit"
+
+build() {
+    cmake -B build -S . \
+	-DBUILD_SHARED_LIBS=ON \
+        -DCMAKE_INSTALL_PREFIX=/usr
+
+    cmake --build build -j"$npoc"
+
+    make -C examples
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install build
+}
+
+check() {
+    ./bin/example1
+    ./bin/example1b
+    ./bin/exampleLP
+}
+
+sha512sums="
+98b62011114fe7594145cb297feeed5a90514f7b3d28fe8d482445248019f84e050ff3251e647d00e54d9dd5198c777b8d7195b185af53200f83d8641ea9a661  qpoases-e-125e94fa638f00350608871fc165789b1d1762f1.tar.gz
+77eee7fb7127f9664c40b7c2159a386e1cdd05a64c421b091dfb1aecf803326b66e83301b696b12218004bce982d53f60b055c9b13de8297b10062a8badea4fd  001-CMakelists_txt.patch
+0383a2bc2a034f6ce0fe5d8b37f2a524632f31fe83570bf467066e3a1affe30c2446bc6c453423603ca82d7a1195a7426869637604c2074350ae35ad43e75af2  002-QProblems_c.patch
+"
