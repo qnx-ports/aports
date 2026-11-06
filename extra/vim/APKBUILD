@@ -16,7 +16,8 @@ subpackages="
     xxd
     gvim
     "
-source="$pkgname-$pkgver.tar.gz::https://github.com/vim/vim/archive/refs/tags/v$pkgver.tar.gz"
+source="$pkgname-$pkgver.tar.gz::https://github.com/vim/vim/archive/refs/tags/v$pkgver.tar.gz
+    res2junit.py"
 
 prepare() {
     # Read vimrc from /etc/vim
@@ -75,25 +76,7 @@ check() {
     # Convert per-file .res results to JUnit XML.
     # make creates a .res file for every test file that completes (pass or
     # skip); absence means the test file itself crashed or timed out.
-    python3 - "$PWD" "$srcdir/junit.xml" <<-'PYEOF'
-	import sys, glob, os, xml.etree.ElementTree as ET
-	testdir, outfile = sys.argv[1], sys.argv[2]
-	suite = ET.Element("testsuite", name="vim")
-	passed = failed = 0
-	for f in sorted(glob.glob(os.path.join(testdir, "test_*.vim"))):
-	    name = os.path.basename(f).removesuffix(".vim")
-	    tc = ET.SubElement(suite, "testcase", name=name, classname="vim")
-	    if not os.path.exists(os.path.join(testdir, name + ".res")):
-	        ET.SubElement(tc, "failure", message="no .res file — test did not complete")
-	        failed += 1
-	    else:
-	        passed += 1
-	suite.set("tests", str(passed + failed))
-	suite.set("failures", str(failed))
-	tree = ET.ElementTree(suite)
-	ET.indent(tree, space="  ")
-	tree.write(outfile, encoding="unicode", xml_declaration=True)
-	PYEOF
+    python3 "$srcdir/res2junit.py" "$PWD" "$srcdir/junit.xml"
 }
 
 package() {
@@ -157,4 +140,5 @@ xxd() {
 
 sha512sums="
 afd3ff55f0786e10a16ab02a44455953553b87cbdd9acf7b46fea50afee9530582b58bd5257586e78e890cd0c517328c102069f1ccbb4795152ce7ff5ee88f6a  vim-9.2.1001.tar.gz
+0600f3714e97254498b389931db3a863c4cc7b3b6803aa1d3d3bcef08ec8949281141f8e495f208e0c2f54216338bb237bea0b6ba176b3eb340f27020059b7af  res2junit.py
 "
