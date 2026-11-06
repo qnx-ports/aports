@@ -1,10 +1,11 @@
 # Alpine-Contributor: Michael Mason <ms13sp@gmail.com>
 # Alpine-Contributor: Sören Tempel <soeren+alpine@soeren-tempel.net>
 # Alpine-Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+# Contributoer: jscaffidi <jscaffidi@qnx.com>
 # Maintainer: Aaron Bassett <abassett@qnx.com>
 pkgname=dhcpcd
-pkgver=10.2.4
-pkgrel=5
+pkgver=10.2.4_p1
+pkgrel=0
 pkgdesc="RFC2131 compliant DHCP client"
 url="https://roy.marples.name/projects/dhcpcd"
 arch="all"
@@ -13,14 +14,12 @@ depends="qnx-io-sock"
 makedepends="qnx-io-sock-dev"
 install="$pkgname.post-install"
 subpackages="$pkgname-doc $pkgname-openrc"
-source="https://github.com/NetworkConfiguration/dhcpcd/releases/download/v$pkgver/dhcpcd-$pkgver.tar.xz
+source="https://github.com/qnx-ports/dhcpcd/archive/refs/tags/qnx-v$pkgver.tar.gz
     dhcpcd.initd
-    fix_qnx.patch
-    qnx-priv-fix.patch
 	"
+builddir="$srcdir/$pkgname-qnx-v$pkgver"
 
 build() {
-	echo $HOST $BUILD
 	CFLAGS="$CFLAGS -DBSD" \
 	./configure \
 		--sbindir=/usr/bin \
@@ -53,8 +52,6 @@ package() {
 
 
 sha512sums="
-e6c0caccd590b8c90efe8c60743b6ca4b6cd0c2c170abd8ea940be48f1b75f6767ccbd17eac42a4f1eba8349197dbdfc923696765baab79d49916c8e674f30c8  dhcpcd-10.2.4.tar.xz
-efce12e66435c280807959b82560e3e3bb69be16b42d99b1fa2ee11dffa640382f8339f4e069f7e7e4d3a86aa3403f0ac0f99448831c2dc66abfb8b321bf1f40  dhcpcd.initd
-de4905b9b9fa3f638f1c2e646fb3c7673105e42413adc93588d17382ff54f7bc135c3c6f7dd7ccbd6d17af796ac4d69033878129fed12048744afbda168793b2  fix_qnx.patch
-10c468f75ca57534ba65435179246fa0865dc2e948a91489a19a439386f09ba5b6e407bbcae7dd87f5c9422b065480d417dd856ec79e98715b77f656841398ed  qnx-priv-fix.patch
+ecc88942a70c97e0c7d0143f112f8db3e83c687d2095b7ff72222b68f773f175279c1c56571ddb8e6a618b761650dd659b5a192eea06bc2de05744eabd6b66be  qnx-v10.2.4_p1.tar.gz
+4fd109be11c1175a294deabfc8629501e8bb1c2790099d24281d1b47d8eb648d0070f3bb987a64990195aeef9ab5505d37c79285c0e6dd51dd1c95689b1b6c0b  dhcpcd.initd
 "
