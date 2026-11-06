@@ -24,8 +24,10 @@ makedepends="
     libc++-dev
     qnx-fs-gpt-dev
     asio-dev
+    gtest-dev
 "   
 depends="libc++ fast-cdr foonathan_memory openssl foonathan_memory_vendor qnx-fs-notify  qnx-fs-gpt"
+options="!check"
 source="
     fast-dds-$pkgver.tar.gz::https://github.com/eProsima/Fast-DDS/archive/refs/tags/v$pkgver.tar.gz
     dds-types-test.tar.gz::https://github.com/eProsima/dds-types-test/archive/c245fe0fee4a0227e4b904fc7fc7248e2c03b1af.tar.gz
@@ -43,7 +45,6 @@ prepare() {
 }
 
 builddir="$srcdir/Fast-DDS-$pkgver"
-options="!check"
 
 build() {
     export CFLAGS="${CFLAGS//-fstack-clash-protection/}"
@@ -54,7 +55,6 @@ build() {
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_INSTALL_PREFIX=/usr \
         -DBUILD_SHARED_LIBS=ON \
-        -DBUILD_TESTING=ON \
         -DQNX=TRUE \
         -DFASTDDS_USE_FILE_WATCH=OFF \
         -DFASTDDS_PERSISTENCE=OFF \
@@ -62,10 +62,9 @@ build() {
         -DSECURITY=OFF \
         -DIS_THIRDPARTY_BOOST_OK=FALSE \
         -DCMAKE_CXX_FLAGS="$CXXFLAGS -DSA_RESTART=0 -Wno-error=array-bounds -Wno-error=parentheses-equality" \
-        -DCMAKE_EXE_LINKER_FLAGS="-L/usr/lib -lsocket -lfsnotify -lgtest" 
+        -DCMAKE_EXE_LINKER_FLAGS="-L/usr/lib -lsocket -lfsnotify " 
     cmake --build build
 }
-
 
 check() {
     cd "$builddir/build"
