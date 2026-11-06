@@ -20,7 +20,6 @@ source="https://github.com/qnx-ports/dhcpcd/archive/refs/tags/qnx-v$pkgver.tar.g
 builddir="$srcdir/$pkgname-qnx-v$pkgver"
 
 build() {
-	echo $HOST $BUILD
 	CFLAGS="$CFLAGS -DBSD" \
 	./configure \
 		--sbindir=/usr/bin \
