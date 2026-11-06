@@ -3,12 +3,12 @@
 # Maintainer: Ethan Leir <eleir@qnx.com>
 pkgname=python3-pillow
 pkgver=12.1.1
-pkgrel=0
+pkgrel=1
 pkgdesc="Python Imaging Library"
 url="https://python-pillow.org/"
 arch="all"
 license="MIT-CMU"
-depends="python3 qnx-io-sock"
+depends="python3 qnx-io-sock freetype lcms2 libjpeg-turbo libpng libwebpmux libwebpdemux libxcb openjpeg tiff"
 makedepends="
     freetype-dev
     fribidi-dev
