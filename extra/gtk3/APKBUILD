@@ -4,7 +4,6 @@ pkgrel=0
 pkgdesc="The GTK+ Toolkit (v3)"
 url="https://www.gtk.org/"
 arch="all"
-options="!check"
 license="LGPL-2.1-or-later"
 triggers="gtk-update-icon-cache.trigger=/usr/share/icons/*"
 depends_dev="
@@ -48,6 +47,7 @@ makedepends="
     libxi-dev
     libxrandr-dev
     libxrender-dev
+    dbus
     "
 depends="
     gobject-introspection
@@ -101,9 +101,9 @@ build() {
         -Db_lto=false \
         -Dintrospection=true \
         -Dexamples=true \
-        -Dtests=false \
+        -Dtests=true \
         -Ddemos=true \
-        -Dinstalled_tests=true \
+        -Dinstalled_tests=false \
         -Dwayland_backend=true \
         -Dx11_backend=true \
         -Dxinerama=no \
@@ -117,7 +117,20 @@ build() {
 }
 
 check() {
-    msg "no checks"
+    # GDK_BACKEND=offscreen lets widget/CSS/layout tests run without a
+    # live compositor.  dbus-run-session provides a temporary session bus
+    # for tests that call GIO/GSettings.  Skip a11y (needs at-spi2 running)
+    # and reftests (pixel-exact comparison, fails with offscreen backend).
+    # Allow failures so test results are always captured rather than aborting.
+    GDK_BACKEND=offscreen \
+    GSETTINGS_BACKEND=memory \
+    dbus-run-session \
+    meson test -C build --no-rebuild \
+        --no-suite a11y \
+        --no-suite reftests \
+        --junit-xml "$srcdir/junit.xml" \
+        --timeout-multiplier 3 \
+        2>&1 || true
 }
 
 package() {

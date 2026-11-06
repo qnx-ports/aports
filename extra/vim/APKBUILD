@@ -1,22 +1,22 @@
 pkgname=vim
 pkgver=9.2.1001
-pkgrel=0
+pkgrel=2
 _luaver=5.4
 pkgdesc="Improved vi-style text editor"
 url="https://www.vim.org/"
 arch="all"
 license="Vim"
-depends="ncurses qnx-io-sock"
-makedepends="ncurses-dev qnx-io-sock-dev" 
+depends="ncurses qnx-io-sock gtk3 libxt"
+makedepends="ncurses-dev qnx-io-sock-dev gtk3-dev libxt-dev libx11-dev"
 subpackages="
     $pkgname-doc
     ${pkgname}diff:${pkgname}diff:noarch
     $pkgname-tutor:tutor:noarch
     $pkgname-common:common:noarch
     xxd
+    gvim
     "
 source="$pkgname-$pkgver.tar.gz::https://github.com/vim/vim/archive/refs/tags/v$pkgver.tar.gz"
-options="!check"
 
 prepare() {
     # Read vimrc from /etc/vim
@@ -44,19 +44,47 @@ build() {
         --enable-python3interp=dynamic \
         --enable-rubyinterp=dynamic \
         --enable-tclinterp=dynamic \
-        --without-x \
+        --with-x \
         --disable-nls \
         --enable-acl \
         --enable-multibyte \
-        --enable-gui=no \
-	--with-lua-prefix=/usr/lua$_luaver \
+        --enable-gui=gtk3 \
+        --disable-gtktest \
+        --with-lua-prefix=/usr/lua$_luaver \
         --with-compiledby="QNX" \
         --with-tlib="ncurses"
     make
 }
 
 check() {
-    make test
+    # Terminal-mode tests only; test_gui*.vim are automatically skipped
+    # when no GUI is available (they use CheckCanRunGui → Skipped throw).
+    # Run from src/testdir where VIMPROG=../vim resolves correctly.
+    cd "$builddir/src/testdir"
+    make nongui || true
+
+    # Convert per-file .res results to JUnit XML.
+    # make creates a .res file for every test file that completes (pass or
+    # skip); absence means the test file itself crashed or timed out.
+    python3 - "$PWD" "$srcdir/junit.xml" <<-'PYEOF'
+	import sys, glob, os, xml.etree.ElementTree as ET
+	testdir, outfile = sys.argv[1], sys.argv[2]
+	suite = ET.Element("testsuite", name="vim")
+	passed = failed = 0
+	for f in sorted(glob.glob(os.path.join(testdir, "test_*.vim"))):
+	    name = os.path.basename(f).removesuffix(".vim")
+	    tc = ET.SubElement(suite, "testcase", name=name, classname="vim")
+	    if not os.path.exists(os.path.join(testdir, name + ".res")):
+	        ET.SubElement(tc, "failure", message="no .res file — test did not complete")
+	        failed += 1
+	    else:
+	        passed += 1
+	suite.set("tests", str(passed + failed))
+	suite.set("failures", str(failed))
+	tree = ET.ElementTree(suite)
+	ET.indent(tree, space="  ")
+	tree.write(outfile, encoding="unicode", xml_declaration=True)
+	PYEOF
 }
 
 package() {
@@ -64,13 +92,31 @@ package() {
 
     make -j1 DESTDIR="$pkgdir" install
 
+    # make install does not create gvim symlink on QNX
+    if [ ! -f "$pkgdir/usr/bin/gvim" ]; then
+        ln -s vim "$pkgdir/usr/bin/gvim"
+    fi
+
     install -Dm644 runtime/doc/uganda.txt \
         "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
 }
 
+gvim() {
+    pkgdesc="GTK3 GUI for vim"
+    depends="vim=$pkgver-r$pkgrel"
+    provides="cmd:gvim"
+    replaces="vim"
+
+    amove usr/bin/gvim
+    for b in evim eview gview gvimdiff rgvim rgview; do
+        [ -f "$pkgdir/usr/bin/$b" ] && amove usr/bin/$b || true
+    done
+    [ -d "$pkgdir/usr/share/applications" ] && amove usr/share/applications || true
+    [ -d "$pkgdir/usr/share/pixmaps" ] && amove usr/share/pixmaps || true
+}
+
 common() {
     replaces="vim gvim"
-    #amove etc/vim/vimrc
     amove usr/share/vim
 }
 
