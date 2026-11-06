@@ -1,0 +1,100 @@
+diff --git a/tests/test_paths.py b/tests/test_paths.py
+index cf5892f..b4b7aae 100644
+--- a/tests/test_paths.py
++++ b/tests/test_paths.py
+@@ -43,6 +43,7 @@ pjoin = os.path.join
+ macos = pytest.mark.skipif(sys.platform != "darwin", reason="only run on macos")
+ windows = pytest.mark.skipif(sys.platform != "win32", reason="only run on windows")
+ linux = pytest.mark.skipif(sys.platform != "linux", reason="only run on linux")
++qnx = pytest.mark.skipif(not sys.platform.startswith("qnx"), reason="only run on qnx")
+ 
+ xdg_env = {
+     "XDG_CONFIG_HOME": "/tmp/xdg/config",
+@@ -135,6 +136,13 @@ def test_config_dir_linux():
+     assert config == realpath("~/.config/jupyter")
+ 
+ 
++@qnx
++@use_platformdirs
++def test_config_dir_qnx():
++    config = jupyter_config_dir()
++    assert config == realpath("~/.config/jupyter")
++
++
+ def test_config_env_legacy():
+     with config_env:
+         config = jupyter_config_dir()
+@@ -200,6 +208,17 @@ def test_data_dir_linux_legacy():
+         assert data == pjoin(xdg_env["XDG_DATA_HOME"], "jupyter")
+ 
+ 
++@qnx
++def test_data_dir_qnx_legacy():
++    with no_xdg:
++        data = jupyter_data_dir()
++        assert data == realpath("~/.local/share/jupyter")
++
++    with xdg:
++        data = jupyter_data_dir()
++        assert data == pjoin(xdg_env["XDG_DATA_HOME"], "jupyter")
++
++
+ @linux
+ @use_platformdirs
+ def test_data_dir_linux():
+@@ -212,6 +231,18 @@ def test_data_dir_linux():
+         assert data == pjoin(xdg_env["XDG_DATA_HOME"], "jupyter")
+ 
+ 
++@qnx
++@use_platformdirs
++def test_data_dir_qnx():
++    with no_xdg:
++        data = jupyter_data_dir()
++        assert data == realpath("~/.local/share/jupyter")
++
++    with xdg:
++        data = jupyter_data_dir()
++        assert data == pjoin(xdg_env["XDG_DATA_HOME"], "jupyter")
++
++
+ def test_runtime_dir_env_legacy():
+     rtd_env = "runtime-dir"
+     with patch.dict("os.environ", {"JUPYTER_RUNTIME_DIR": rtd_env}):
+@@ -267,6 +298,17 @@ def test_runtime_dir_linux_legacy():
+         assert runtime == pjoin(xdg_env["XDG_DATA_HOME"], "jupyter", "runtime")
+ 
+ 
++@qnx
++def test_runtime_dir_qnx_legacy():
++    with no_xdg:
++        runtime = jupyter_runtime_dir()
++        assert runtime == realpath("~/.local/share/jupyter/runtime")
++
++    with xdg:
++        runtime = jupyter_runtime_dir()
++        assert runtime == pjoin(xdg_env["XDG_DATA_HOME"], "jupyter", "runtime")
++
++
+ @linux
+ @use_platformdirs
+ def test_runtime_dir_linux():
+@@ -279,6 +321,18 @@ def test_runtime_dir_linux():
+         assert runtime == pjoin(xdg_env["XDG_DATA_HOME"], "jupyter", "runtime")
+ 
+ 
++@qnx
++@use_platformdirs
++def test_runtime_dir_qnx():
++    with no_xdg:
++        runtime = jupyter_runtime_dir()
++        assert runtime == realpath("~/.local/share/jupyter/runtime")
++
++    with xdg:
++        runtime = jupyter_runtime_dir()
++        assert runtime == pjoin(xdg_env["XDG_DATA_HOME"], "jupyter", "runtime")
++
++
+ def test_jupyter_path():
+     system_path = ["system", "path"]
+     with patch.object(paths, "SYSTEM_JUPYTER_PATH", system_path):
