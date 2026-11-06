@@ -1,0 +1,4 @@
+#!/bin/sh
+
+echo "Follow the instructions from /usr/share/doc/mender/README_setup.md to set up Mender Client"
+exit 0
