@@ -1,0 +1,20 @@
+--- a/cmake/FindFortranLibs.cmake
++++ b/cmake/FindFortranLibs.cmake
+@@ -11,11 +11,16 @@
+     list(APPEND CMAKE_FIND_LIBRARY_SUFFIXES ".dll")
+ endif()
+ 
+-find_library(FORTRAN_LIBRARY NAMES libgfortran.so libgfortran.dylib gfortran
++find_library(FORTRAN_LIBRARY NAMES libgfortran.so libgfortran.dylib gfortran flang_rt.runtime
+     HINTS
+         /usr/lib/gcc/x86_64-linux-gnu/*
+         /usr/local/lib/gcc/*
+         /usr/lib/gcc/arm-linux-gnueabihf/* # for Raspbian
++
++        # LLVM Flang - QNX
++        /usr/lib/llvm22/lib/clang/22/lib/x86_64-pc-qnx
++        /usr/lib/llvm22/lib
++
+         ${CMAKE_FIND_ROOT_PATH}
+         $ENV{PATH}
+     CMAKE_FIND_ROOT_PATH_BOTH)

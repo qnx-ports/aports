@@ -1,0 +1,11 @@
+--- a/examples/acados_python/chain_mass/utils.py
++++ b/examples/acados_python/chain_mass/utils.py
+@@ -61,7 +61,7 @@
+     # misuse IPOPT as nonlinear equation solver
+     nlp = {'x': ca.vertcat(*w), 'f': 0, 'g': ca.vertcat(*g)}
+ 
+-    solver = ca.nlpsol('solver', 'ipopt', nlp)
++    solver = ca.nlpsol('solver', 'ipopt', nlp, {'ipopt.linear_solver': 'mumps', 'ipopt.print_level': 5, 'print_time': True})
+     sol = solver(x0=w0,lbg=0,ubg=0)
+ 
+     wrest = sol['x'].full()

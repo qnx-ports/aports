@@ -1,0 +1,87 @@
+--- a/external/CMakeLists.txt
++++ b/external/CMakeLists.txt
+@@ -32,10 +32,14 @@
+     set(HPIPM_BLASFEO_PATH ${BLASFEO_SRC_DIR} CACHE STRING "Set CPU architecture target" FORCE)
+ endif()
+ set(HPIPM_BLASFEO_LIB OFF CACHE BOOL "Turn off BLASFEO from HPIPM" FORCE)
+-set(HPIPM_HEADERS_INSTALLATION_DIRECTORY "include/hpipm/include" CACHE STRING "")
+-set(TARGET ${HPIPM_TARGET} CACHE STRING "Set CPU architecture target" FORCE)
+-set(HPIPM_TESTING OFF CACHE BOOL "Tests disabled" FORCE)
+-add_subdirectory(hpipm)
++if(ACADOS_WITH_SYSTEM_HPIPM)
++    find_package(hpipm REQUIRED)
++else()
++    set(HPIPM_HEADERS_INSTALLATION_DIRECTORY "include/hpipm/include" CACHE STRING "")
++    set(TARGET ${HPIPM_TARGET} CACHE STRING "Set CPU architecture target" FORCE)
++    set(HPIPM_TESTING OFF CACHE BOOL "Tests disabled" FORCE)
++    add_subdirectory(hpipm)
++endif()
+ 
+ if(ACADOS_WITH_HPMPC)
+ 	# TODO: The following definition should go ASAP!
+@@ -50,11 +54,19 @@
+ endif()
+ 
+ if(ACADOS_WITH_QPDUNES)
+-    add_subdirectory(qpdunes)
++    if(ACADOS_WITH_SYSTEM_QPDUNES)
++        find_package(qpdunes REQUIRED)
++    else()
++        add_subdirectory(qpdunes)
++    endif()
+ endif()
+ 
+ if(ACADOS_WITH_QPOASES)
+-    add_subdirectory(qpoases)
++    if(ACADOS_WITH_SYSTEM_QPOASES)
++        find_package(qpOASES_e REQUIRED)
++    else()
++        add_subdirectory(qpoases)
++    endif()
+ endif()
+ 
+ if(ACADOS_WITH_DAQP)
+@@ -64,9 +76,13 @@
+ endif()
+ 
+ if(ACADOS_WITH_OSQP)
+-    set(OSQP_ENABLE_PROFILING OFF CACHE BOOL "Turn off profiling in OSQP")
+-    set(OSQP_ENABLE_INTERRUPT OFF CACHE BOOL "Turn off user interrupt in OSQP")
+-    add_subdirectory(osqp)
++    if(ACADOS_WITH_SYSTEM_OSQP)
++        find_package(osqp REQUIRED)
++    else()
++        set(OSQP_ENABLE_PROFILING OFF CACHE BOOL "Turn off profiling in OSQP")
++        set(OSQP_ENABLE_INTERRUPT OFF CACHE BOOL "Turn off user interrupt in OSQP")
++        add_subdirectory(osqp)
++    endif()
+ endif()
+ 
+ 
+--- a/acados/CMakeLists.txt
++++ b/acados/CMakeLists.txt
+@@ -162,7 +162,7 @@
+     FILES_MATCHING PATTERN "*.h"
+     PATTERN "simplified" EXCLUDE)
+ 
+-install(EXPORT acadosTargets DESTINATION cmake)
++install(EXPORT acadosTargets DESTINATION lib/cmake/acados)
+ 
+ configure_package_config_file(${PROJECT_SOURCE_DIR}/cmake/acadosConfig.cmake.in
+                               ${CMAKE_CURRENT_BINARY_DIR}/cmake/acadosConfig.cmake
+@@ -177,13 +177,13 @@
+                                         ACADOS_WITH_OOQP)
+ 
+ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/cmake/acadosConfig.cmake
+-        DESTINATION cmake)
++        DESTINATION lib/cmake/acados)
+ 
+ install(
+   FILES ${PROJECT_SOURCE_DIR}/cmake/FindEigen3.cmake
+         ${PROJECT_SOURCE_DIR}/cmake/FindFortranLibs.cmake
+         ${PROJECT_SOURCE_DIR}/cmake/FindOpenBLAS.cmake
+-  DESTINATION cmake)
++  DESTINATION lib/cmake/acados)
+ 
+ # set_target_properties(acados
+ #     PROPERTIES SOVERSION ${PACKAGE_SO_VERSION})
