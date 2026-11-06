@@ -1,0 +1,48 @@
+pkgname=libadwaita
+pkgver=1.4.8
+pkgrel=0
+pkgdesc="Building blocks for modern GNOME applications"
+url="https://gitlab.gnome.org/GNOME/libadwaita"
+arch="all"
+license="LGPL-2.1-or-later"
+depends="adwaita-fonts"
+makedepends="
+    fribidi-dev
+    glib-dev
+    gobject-introspection-dev
+    gtk4-dev
+    meson
+    ninja
+    sassc
+    "
+subpackages="$pkgname-dev $pkgname-lang"
+source="https://download.gnome.org/sources/libadwaita/${pkgver%.*}/libadwaita-$pkgver.tar.xz
+    qnx-remove-appstream.patch"
+options="!check"
+
+prepare() {
+    default_prepare
+}
+
+build() {
+    CC=clang \
+    CXX=clang++ \
+    CFLAGS="$CFLAGS -Qunused-arguments" \
+    abuild-meson \
+        -Dintrospection=enabled \
+        -Dvapi=false \
+        -Dtests=false \
+        -Dexamples=false \
+        -Dgtk_doc=false \
+    . output
+    meson compile -C output
+}
+
+package() {
+    DESTDIR="$pkgdir" meson install --no-rebuild -C output
+}
+
+sha512sums="
+6705291a50b1698a570af13f59fd063240e6f1509550f0aa0e8e14e9a167aa1c237566623806d76ea879eb4c1fe286690609b6a2f687e07dac3685800faceff2  libadwaita-1.4.8.tar.xz
+232d92b718bc05c0ee66301226ed78ab4431b5a4b8ddd821a3171a91e76d2ce0baa6d7a75de0c3335bdbac70b424ec28e19737ec2b14c57bd06b90f33f602ca2  qnx-remove-appstream.patch
+"
