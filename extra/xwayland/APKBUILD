@@ -58,9 +58,19 @@ build() {
 }
 
 check() {
-	# xwayland tests require a live Wayland compositor and are not runnable
-	# at build time.
-	:
+	# XWayland tests fall into three suites:
+	# - xvfb: requires Xvfb (disabled: -Dxvfb=false in this build)
+	# - xwayland: requires a live Wayland compositor + XWayland running
+	# - default (bigreq, damage, sync): X11 protocol tests needing $DISPLAY
+	# None are executable at build time (testing XWayland requires a running
+	# X server, which is XWayland itself).  Run meson test with the
+	# compositor-dependent suites excluded so the remaining tests are
+	# attempted and a JUnit XML artifact is always produced for CI.
+	meson test -C output --no-rebuild \
+		--no-suite xvfb \
+		--no-suite xwayland \
+		--junit-xml "$srcdir/junit.xml" \
+		2>&1 || true
 }
 
 package() {
