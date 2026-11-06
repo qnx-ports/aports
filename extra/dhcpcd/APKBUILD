@@ -4,19 +4,19 @@
 # Maintainer: Aaron Bassett <abassett@qnx.com>
 pkgname=dhcpcd
 pkgver=10.2.4
-pkgrel=4
+pkgrel=5
 pkgdesc="RFC2131 compliant DHCP client"
 url="https://roy.marples.name/projects/dhcpcd"
 arch="all"
 license="BSD-2-Clause"
 depends="qnx-io-sock"
 makedepends="qnx-io-sock-dev"
-#install="$pkgname.pre-install"
+install="$pkgname.post-install"
 subpackages="$pkgname-doc $pkgname-openrc"
 source="https://github.com/NetworkConfiguration/dhcpcd/releases/download/v$pkgver/dhcpcd-$pkgver.tar.xz
-	dhcpcd.initd
-        fix_qnx.patch
-	qnx-priv-fix.patch
+    dhcpcd.initd
+    fix_qnx.patch
+    qnx-priv-fix.patch
 	"
 
 build() {
@@ -54,7 +54,7 @@ package() {
 
 sha512sums="
 e6c0caccd590b8c90efe8c60743b6ca4b6cd0c2c170abd8ea940be48f1b75f6767ccbd17eac42a4f1eba8349197dbdfc923696765baab79d49916c8e674f30c8  dhcpcd-10.2.4.tar.xz
-8cbeeffd3299e45832684e18782717363b0f75515f02549ac5c515c97b9902dbeeb341d7f419fc3d4951d5caa2be4eba4a4533ff5646b53dc488dea462e29c55  dhcpcd.initd
+efce12e66435c280807959b82560e3e3bb69be16b42d99b1fa2ee11dffa640382f8339f4e069f7e7e4d3a86aa3403f0ac0f99448831c2dc66abfb8b321bf1f40  dhcpcd.initd
 de4905b9b9fa3f638f1c2e646fb3c7673105e42413adc93588d17382ff54f7bc135c3c6f7dd7ccbd6d17af796ac4d69033878129fed12048744afbda168793b2  fix_qnx.patch
 10c468f75ca57534ba65435179246fa0865dc2e948a91489a19a439386f09ba5b6e407bbcae7dd87f5c9422b065480d417dd856ec79e98715b77f656841398ed  qnx-priv-fix.patch
 "
