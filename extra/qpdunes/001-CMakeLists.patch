@@ -1,0 +1,11 @@
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -406,7 +406,7 @@
+ 	INCLUDES DESTINATION include
+ )
+ 
+-install(EXPORT qpdunesConfig DESTINATION cmake)
++install(EXPORT qpdunesConfig DESTINATION lib/cmake/qpdunes)
+ 
+ ################################################################################
+ #
