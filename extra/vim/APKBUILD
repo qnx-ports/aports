@@ -60,8 +60,17 @@ check() {
     # Terminal-mode tests only; test_gui*.vim are automatically skipped
     # when no GUI is available (they use CheckCanRunGui → Skipped throw).
     # Run from src/testdir where VIMPROG=../vim resolves correctly.
+    # -k keeps make going past individual test crashes so all 317 test files
+    # attempt to run; without it make stops at the first Vim crash, leaving
+    # ~50 test files silently unexecuted.
+    # Expected QNX-specific failures (~90-100 of 317):
+    #   - test_signals: SIGUSR1/SIGWINCH handling differs on QNX
+    #   - test_terminal, test_terminal3, test_channel: job/pty control
+    #   - test_reltime, test_search: timer precision (1-4x slower on QNX)
+    #   - test_autocmd, test_mapping, test_normal, etc.: feedkeys() / input
+    #     simulation interacts with QNX terminal handling
     cd "$builddir/src/testdir"
-    make nongui || true
+    make -k nongui || true
 
     # Convert per-file .res results to JUnit XML.
     # make creates a .res file for every test file that completes (pass or
