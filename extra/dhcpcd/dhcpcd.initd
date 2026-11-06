@@ -10,3 +10,8 @@ depend() {
     need io-sock
     provide net
 }
+
+start_pre() {
+    # so openrc can look for the pidfile without complaining
+    checkpath -d /run/dhcpcd
+}
