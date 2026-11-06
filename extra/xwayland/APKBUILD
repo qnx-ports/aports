@@ -69,8 +69,14 @@ check() {
 	meson test -C output --no-rebuild \
 		--no-suite xvfb \
 		--no-suite xwayland \
-		--junit-xml "$srcdir/junit.xml" \
 		2>&1 || true
+	# meson 1.5+ writes testlog.junit.xml automatically when tests run.
+	# If none ran (all tests need a live compositor), emit a stub so CI
+	# always receives a valid JUnit artifact.
+	if ! cp output/meson-logs/testlog.junit.xml "$srcdir/junit.xml" 2>/dev/null; then
+		printf '<?xml version="1.0"?>\n<testsuites><testsuite name="xwayland" tests="0" failures="0"><system-out>No build-time tests: all XWayland tests require a live compositor</system-out></testsuite></testsuites>\n' \
+			> "$srcdir/junit.xml"
+	fi
 }
 
 package() {
