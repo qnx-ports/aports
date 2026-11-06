@@ -1,0 +1,96 @@
+# Maintainer: Terence Ang <taang@qnx.com>
+pkgname=hpipm
+pkgver=0.1.4_git20261030
+_commit="a8a0e0df038e9e06bf23539626c7a9dd7ea52ef8"
+pkgrel=0
+pkgdesc="High-performance interior-point-method QP and QCQP solvers"
+url="https://github.com/giaf/hpipm"
+arch="all"
+license="BSD-2-Clause"
+depends="blasfeo"
+depends_dev="blasfeo-dev"
+makedepends="
+    $depends_dev
+    cmake
+"
+subpackages="$pkgname-dev"
+source="$pkgname-$_commit.tar.gz::https://github.com/giaf/hpipm/archive/$_commit.tar.gz"
+builddir="$srcdir/$pkgname-$_commit"
+
+prepare() {
+   default_prepare
+   sed -i 's|hpipmConfig DESTINATION cmake|hpipmConfig DESTINATION lib/cmake/hpipm|g' CMakeLists.txt
+}
+
+build() {
+    cmake -B build -S . \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+        -DBUILD_SHARED_LIBS=ON \
+        -DHPIPM_TESTING=ON \
+        -DTARGET=GENERIC \
+        -DBLASFEO_PATH=/usr
+
+    cmake --build build -j"$nproc"
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install build
+}
+
+something() {
+    mv "$pkgdir"/usr/include/ "$pkgdir"/usr/include.tmp
+    mkdir -p "$pkgdir/usr/include/hpipm"
+    mv "$pkgdir"/usr/include.tmp "$pkgdir"/usr/include/hpipm
+    mv "$pkgdir"/usr/include/hpipm/include.tmp "$pkgdir"/usr/include/hpipm/include
+
+    header_list=$(find "$pkgdir"/usr/include/hpipm/include -type f)
+    cd "$pkgdir"/usr/include
+    for i in $header_list; do
+       file_name=$(basename $i)
+       ln -sf /usr/include/hpipm/include/$file_name $file_name
+    done
+}
+
+dev() {
+    default_dev
+    depends="
+        $depends
+        $pkgname=$pkgver-r$pkgrel
+    "
+}
+
+check() {
+    cd build
+    tests="
+        d_cond
+        d_dense_qp
+        d_ocp_qp
+        d_part_cond
+        d_tree_ocp_qp
+    "
+    passed=""
+    failed=""
+    for i in $tests; do
+        echo "Testing $i"
+
+        if ./test_problems/"$i"; then
+	    passed="$passed $i"
+        else
+	  failed="$failed $i"
+	fi
+    done
+
+    for i in $passed; do
+        echo "PASSED: $i"
+    done
+
+    for i in $failed; do
+        echo "FAILED: $i"
+    done
+}
+
+
+sha512sums="
+dffc1fac3590821bb4d2a5fda93f7f05a703db6e90c86e2089ef2f35f394420c3af06226efd2a4726156b8c2a72fadad26e773fb80cfad47526a442a1fb4caac  hpipm-a8a0e0df038e9e06bf23539626c7a9dd7ea52ef8.tar.gz
+"
