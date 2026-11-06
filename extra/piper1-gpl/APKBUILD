@@ -1,0 +1,82 @@
+# Maintainer: Deep Chordia <dchordia@qnx.com>
+pkgname=piper1-gpl
+pkgver=1.8.0_p0
+pkgrel=0
+_espeakng_commit="212928b394a96e8fd2096616bfd54e17845c48f6"
+pkgdesc="Fast and local neural text-to-speech engine"
+url="https://github.com/OHF-Voice/piper1-gpl/tree/main/docs"
+arch="all"
+license="GPL-3.0-or-later"
+depends="
+    libc++
+    onnxruntime
+    "
+depends_dev="
+    libc++-dev
+    onnxruntime-dev
+    "
+makedepends="
+    $depends_dev
+    cmake
+    ninja
+    python3-dev
+    python3-gpep517
+    python3-setuptools
+    python3-wheel
+    python3-scikit-build
+    python3-installer
+    "
+subpackages="$pkgname-dev python3-piper-tts:_python3"
+source="
+    piper1-gpl-$pkgver.tar.gz::https://github.com/qnx-ports/piper1-gpl/archive/refs/tags/qnx-v$pkgver.tar.gz
+    espeak-ng-$_espeakng_commit.tar.gz::https://github.com/espeak-ng/espeak-ng/archive/$_espeakng_commit.tar.gz
+    0001-espeak-ng_patch
+"
+builddir="$srcdir/$pkgname-qnx-v$pkgver"
+options="!check" # tests require downloading ~200MB of models
+
+prepare() {
+    default_prepare
+    (cd "$srcdir"/espeak-ng-$_espeakng_commit && patch ${patch_args:--p1} -i "$srcdir/0001-espeak-ng_patch")
+    ln -sf "$srcdir"/espeak-ng-$_espeakng_commit "$builddir"/espeak-ng
+    ln -sf "$srcdir"/espeak-ng-$_espeakng_commit "$builddir"/libpiper/espeak-ng
+}
+
+build() {
+    cmake -B build-cpp -S libpiper -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DCMAKE_INSTALL_LIBDIR=lib \
+        -DPIPER_BUILD_TESTS=OFF \
+        -DQNX=1
+    cmake --build build-cpp
+
+    CMAKE_ARGS="-DQNX=1" gpep517 build-wheel \
+        --wheel-dir .dist \
+        --output-fd 3 3>&1 >&2
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install build-cpp
+
+    mkdir -p "$pkgdir"/usr/share/piper
+    mv "$pkgdir"/usr/share/espeak-ng-data "$pkgdir"/usr/share/piper/
+}
+
+_python3() {
+    pkgdesc="Python CLI and runtime library for Piper TTS"
+    depends="
+        python3
+        python3-onnxruntime
+        python3-pathvalidate
+        "
+
+    python3 -m installer -d "$subpkgdir" \
+        "$builddir"/.dist/*.whl
+}
+
+sha512sums="
+ceb7942dcf697b258a98bf04530456e3420b0002c3dd7111e3b0aa99a988295877ba275e9c59e3bb5a1e562f40f15e4e6541fda9dd37861bfcffec5ccb4b33d3  piper1-gpl-1.8.0_p0.tar.gz
+1dbdb49441437989811b7bd1177c9c5d5baff229f7214e31e38c40bac7c86d3b94cb10ed5b387e0b81a20b26b4666a91bd62cfad3dcd505343573ffe3fd68b09  espeak-ng-212928b394a96e8fd2096616bfd54e17845c48f6.tar.gz
+0076e03e8ff14d45979f8a1cb2048ddee6cedd2a1a605647b3ee123bbedf0785cd3a1bdc4b09b3da5ea8aebd5cacfbfb832a761e123f50258a28e2b6b723c1c8  0001-espeak-ng_patch
+"

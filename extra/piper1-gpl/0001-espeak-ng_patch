@@ -1,0 +1,31 @@
+diff --git a/src/include/compat/endian.h b/src/include/compat/endian.h
+index c0e988e2..6cf73b9f 100644
+--- a/src/include/compat/endian.h
++++ b/src/include/compat/endian.h
+@@ -122,6 +122,26 @@
+ #   define htole64(x) LE_64(x)
+ #   define be64toh(x) BE_64(x)
+ #   define le64toh(x) LE_64(x)
++#elif defined(__QNX__)
++#   include <gulliver.h>
++#   define be16toh(x) ENDIAN_BE16(x)
++#   define le16toh(x) ENDIAN_LE16(x)
++#   define htobe16(x) ENDIAN_BE16(x)
++#   define htole16(x) ENDIAN_LE16(x)
++
++#   define be32toh(x) ENDIAN_BE32(x)
++#   define le32toh(x) ENDIAN_LE32(x)
++#   define htobe32(x) ENDIAN_BE32(x)
++#   define htole32(x) ENDIAN_LE32(x)
++
++#   define be64toh(x) ENDIAN_BE64(x)
++#   define le64toh(x) ENDIAN_LE64(x)
++#   define htobe64(x) ENDIAN_BE64(x)
++#   define htole64(x) ENDIAN_LE64(x)
++
++#   define __BYTE_ORDER    _BYTE_ORDER
++#   define __BIG_ENDIAN    _BIG_ENDIAN
++#   define __LITTLE_ENDIAN _LITTLE_ENDIAN
+ #else
+ #	error platform not supported
+ #endif
