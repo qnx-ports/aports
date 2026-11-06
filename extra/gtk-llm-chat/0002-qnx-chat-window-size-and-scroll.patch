@@ -1,0 +1,56 @@
+From: QNX ports team
+Subject: [PATCH] chat_window: wider default size and scroll timing fixes
+
+Three issues on QNX / labwc:
+
+1. Default window width 420px clips the send button; set 700x600 so the
+   toolbar renders correctly.  Minimum size raised to 550x400 so the
+   window cannot be resized below the toolbar width.
+
+2. The 50ms scroll-on-map callback fires before GTK/Cairo finishes
+   layout on QNX.  Add a 300ms backup timeout so auto-scroll catches up.
+
+3. adj.set_value() in the scroll-after closure captured a stale `upper`
+   value at closure creation time.  Re-read adj.get_upper() at call time.
+
+4. Explicit scroll-to-bottom at the end of _on_llm_finished so the last
+   token of a streaming response is always visible.
+
+--- a/gtk_llm_chat/chat_window.py
++++ b/gtk_llm_chat/chat_window.py
+@@ -106,8 +106,8 @@ class ChatWindow(Adw.ApplicationWindow):
+         self.add_controller(key_controller)
+
+         # Fijar tamaño por defecto y mínimo para evitar problemas de layout/segfault
+-        self.set_default_size(420, 550)
+-        self.set_size_request(400, 300)  # tamaño mínimo seguro
++        self.set_default_size(700, 600)
++        self.set_size_request(550, 400)  # tamaño mínimo seguro
+
+         # Mantener referencia al último mensaje enviado
+         self.last_message = None
+@@ -529,6 +529,7 @@ class ChatWindow(Adw.ApplicationWindow):
+                 self._scroll_to_bottom(True) # Force scroll
+                 return GLib.SOURCE_REMOVE # Run only once
+             GLib.timeout_add(50, do_scroll) # Delay of 50ms
++            GLib.timeout_add(300, do_scroll)   # backup for cairo/Wayland
+             # Return False because we are using connect_after
+             return False
+
+@@ -681,6 +682,8 @@ class ChatWindow(Adw.ApplicationWindow):
+                             del app._window_by_cid[key]
+                     app._window_by_cid[conversation_id] = self
+
++        GLib.timeout_add(50, self._scroll_to_bottom)
++
+     def _on_llm_response(self, llm_client, response):
+         """Maneja la señal de respuesta del LLM"""
+         if not self.current_message_widget:
+@@ -722,7 +725,7 @@ class ChatWindow(Adw.ApplicationWindow):
+
+         if bottom_distance < threshold:
+             def scroll_after():
+-                adj.set_value(upper - page_size)
++                adj.set_value(adj.get_upper() - adj.get_page_size())
+                 return False
+             GLib.timeout_add(50, scroll_after)

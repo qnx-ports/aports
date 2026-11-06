@@ -1,0 +1,21 @@
+From: QNX ports team
+Subject: [PATCH] welcome: use Adw.Window instead of Adw.ApplicationWindow
+
+Adw.ApplicationWindow calls g_application_add_window() which can crash
+during GApplication startup on QNX.  Use Adw.Window and drop the
+application= kwarg from super().__init__() so the window is not
+auto-registered with GApplication.
+
+--- a/gtk_llm_chat/welcome.py
++++ b/gtk_llm_chat/welcome.py
+@@ -11,9 +11,9 @@ from .chat_application import _
+
+
+-class WelcomeWindow(Adw.ApplicationWindow):
++class WelcomeWindow(Adw.Window):
+     def __init__(self, app, on_welcome_finished=None):
+-        super().__init__(application=app)
++        super().__init__()
+         self._on_welcome_finished = on_welcome_finished
+         self.set_default_size(900, 700)
+         self.set_size_request(700, 500)  # Tamaño mínimo razonable para evitar colapsos
