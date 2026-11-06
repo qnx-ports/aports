@@ -128,9 +128,10 @@ check() {
     meson test -C build --no-rebuild \
         --no-suite a11y \
         --no-suite reftests \
-        --junit-xml "$srcdir/junit.xml" \
         --timeout-multiplier 3 \
         2>&1 || true
+    # meson 1.5+ writes testlog.junit.xml automatically alongside testlog.txt
+    cp build/meson-logs/testlog.junit.xml "$srcdir/junit.xml" 2>/dev/null || true
 }
 
 package() {
