@@ -1,7 +1,7 @@
 # Maintainer: Leo Shen <yishen@qnx.com>
 pkgname=openrc
-pkgver=0.63.1_p2
-pkgrel=1
+pkgver=0.63.1_p3
+pkgrel=0
 pkgdesc="OpenRC manages the services, startup and shutdown of a host"
 url="https://github.com/OpenRC/openrc"
 vcs_url="$url"
@@ -33,6 +33,6 @@ package() {
 }
 
 sha512sums="
-7081ac8f9161606cdfd2cf4f8a5bcaf29550f7f0b1e8d22830a946ca367d4152df34272baefdb4cf9317171e2e77daf3ca25aa9b99a71037710777fcdecb6367  openrc-0.63.1_p2.tar.gz
+bf8bcd30cc64f1f3c04d2a442746692b231d2faa149e959d01b449477ccd9c33c697a5725831b7b5f37d14dd6513e04a05b1840a05f8238b337adc19d4cb93da  openrc-0.63.1_p3.tar.gz
 ec83126e9637a37fe62cb5df1ec8e0ae7dbf219c99f944e7f4c133992ceb83af7e823dc8db4f21c00c0069d6a5b0d1b623369011104052837026891cbdfd594e  rc-conf.patch
 "
