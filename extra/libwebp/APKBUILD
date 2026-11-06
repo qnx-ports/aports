@@ -1,13 +1,13 @@
 pkgname=libwebp
 pkgver=1.6.0
-pkgrel=0
+pkgrel=1
 pkgdesc="Libraries for working with WebP images"
 url="https://developers.google.com/speed/webp"
 arch="all"
 license="BSD-3-Clause"
 depends_dev="libjpeg-turbo-dev"
 makedepends="$depends_dev giflib-dev libpng-dev"
-depends="libsharpyuv"
+depends="libsharpyuv=$pkgver-r$pkgrel"
 subpackages="
     $pkgname-static
     $pkgname-dev
@@ -50,6 +50,8 @@ tools() {
 
 _lib() {
     pkgdesc="$pkgdesc ($subpkgname library)"
+    # Only libwebpmux and libwebpdemux need this dependency
+    depends="$pkgname=$pkgver-r$pkgrel"
     amove usr/lib/$subpkgname.so.*
 }
 
