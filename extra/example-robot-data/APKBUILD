@@ -1,0 +1,36 @@
+# Maintainer: Narayana Murthy Naidu <nnarayanamurthy@qnx.com>
+pkgname=example-robot-data
+pkgver=5.0.0
+pkgrel=0
+pkgdesc="Robot URDFs for benchmarking, unit tests and examples"
+url="https://github.com/Gepetto/example-robot-data"
+arch="noarch"
+license="BSD-3-Clause"
+options="!check" # only python interface is tested, which is not built in this package, to build and test python interface, eigenpy and pinocchio-python should be installed.
+makedepends="
+	cmake
+	ninja
+	pkgconfig
+	jrl-cmakemodules
+    doxygen
+	"
+subpackages="$pkgname-doc"
+source="$pkgname-$pkgver.tar.gz::https://github.com/Gepetto/example-robot-data/archive/v$pkgver.tar.gz"
+builddir="$srcdir/$pkgname-$pkgver"
+
+build() {
+	cmake -S . -B build -G Ninja \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DBUILD_PYTHON_INTERFACE=OFF
+
+	cmake --build build
+}
+
+package() {
+	DESTDIR="$pkgdir" cmake --install build
+}
+
+sha512sums="
+a9b522414bba9717e73964c60fd1f9410b7365b138695cf3c6e3fa89b4ff48df4321dcb197f5f14cfaea9459ed6bffb7e5f38dfa2af2ce50f04300278e1cf7ad  example-robot-data-5.0.0.tar.gz
+"
