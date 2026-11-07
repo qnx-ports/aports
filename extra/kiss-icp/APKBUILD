@@ -1,0 +1,50 @@
+# Maintainer: NarayanaMurthy <nnarayanamurthy@qnx.com>
+pkgname=kiss-icp
+pkgver=1.3.0
+pkgrel=0
+pkgdesc="LiDAR odometry pipeline"
+url="https://github.com/PRBonn/kiss-icp"
+arch="all"
+license="MIT"
+makedepends="
+	cmake
+	eigen-dev
+	onetbb-dev
+"
+source="$pkgname-$pkgver.tar.gz::https://github.com/PRBonn/$pkgname/archive/refs/tags/v$pkgver.tar.gz"
+builddir="$srcdir/$pkgname-$pkgver/cpp/kiss_icp"
+options="!check" # upstream C++ library has no test suite
+
+build() {
+	export CFLAGS="${CFLAGS/-fstack-clash-protection/} -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0"
+	export CXXFLAGS="${CXXFLAGS/-fstack-clash-protection/} -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0"
+
+	cmake -B build -S . \
+		-G Ninja \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DCMAKE_INSTALL_LIBDIR=lib
+
+	cmake --build build
+}
+
+package() {
+	# Static libraries
+	install -Dm644 \
+		build/core/libkiss_icp_core.a \
+		build/metrics/libkiss_icp_metrics.a \
+		build/pipeline/libkiss_icp_pipeline.a \
+		-t "$pkgdir/usr/lib/"
+
+	# Public KISS-ICP headers
+	for dir in core metrics pipeline; do
+		find "$dir" -type f -name '*.hpp' | while read -r f; do
+			install -Dm644 "$f" \
+				"$pkgdir/usr/include/kiss_icp/$f"
+		done
+	done
+}
+
+sha512sums="
+b39b426e6dc45f5e22b393e77ab82945581527813d2abc024d292b8380763596069a8c96f78ee8e4fecff05a89e6fb94f12edb1155c07f769532a1c33a5784ee  kiss-icp-1.3.0.tar.gz
+"
