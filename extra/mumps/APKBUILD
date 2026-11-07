@@ -18,9 +18,15 @@ makedepends="
 subpackages="$pkgname-dev"
 source="
     https://deb.debian.org/debian/pool/main/m/mumps/mumps_$pkgver.orig.tar.gz
-    Makefile.inc.patch
+    Makefile.inc
 "
 builddir="$srcdir/MUMPS_$pkgver"
+
+prepare() {
+    default_prepare
+
+    cp "$srcdir"/Makefile.inc "$builddir"
+}
 
 build() {
     make -j"$nproc" allshared
@@ -64,5 +70,5 @@ package() {
 
 sha512sums="
 0f90a4976ff066ce8872087ad5377690fa0907533425a6285dcf8855b78c0a66b4f0e8488dffb9433e35666570de5de1d056b72f0d701a10fea58d5287d89dde  mumps_5.9.0.orig.tar.gz
-4bffbdcca88cb4dad42d0555974de07505f0e88af96167afefdadb8293bb8bc8355bf1fae505df6370fe44eefb05518b5c4b1248bbe26b91bc2463d5d23d7c82  Makefile.inc.patch
+e6a8068697727381e157a06f1f5b65beaab72b79c31ffce68f2da3e09ae41aebecc18b5b4dfb3be435d9b52543b15c62d9286c8cdc1d7ab92a35d24f08a3c661  Makefile.inc
 "
