@@ -1,0 +1,58 @@
+--- a/interfaces/acados_template/acados_template/utils.py
++++ b/interfaces/acados_template/acados_template/utils.py
+@@ -8,6 +8,7 @@
+ from typing import Union, Optional
+ import json
+ import os
++import shlex
+ import shutil
+ import sys
+ import hashlib
+@@ -285,6 +286,11 @@
+ 
+ 
+ def get_tera(tera_version: Optional[str] = None, force_download = None) -> str:
++    # Use available t_renderer instead of building it from scratch
++    tera_path = shutil.which("t_renderer")
++    if tera_path:
++        return tera_path
++
+     if force_download is not None:
+         warnings.warn("get_tera: force_download is deprecated in 0.5.6. Do not pass the option. Now, this function checks if it is available, otherwise attempts downloading or raises an error.", DeprecationWarning, stacklevel=2)
+ 
+@@ -586,12 +592,29 @@
+ 
+ 
+ def verbose_system_call(cmd, verbose=True, shell=False):
+-    return call(
+-        cmd,
+-        stdout=None if verbose else DEVNULL,
+-        stderr=None if verbose else STDOUT,
+-        shell=shell
+-    )
++    # QNX: fork() of a large Python process fails with ENOMEM,
++    # so use posix_spawn, which doesn't duplicate the address space.
++    if os.uname().sysname == "QNX":
++        if shell:
++            argv = ["/bin/sh", "-c", cmd if isinstance(cmd, str) else shlex.join(cmd)]
++        else:
++            argv = shlex.split(cmd) if isinstance(cmd, str) else list(cmd)
++        actions = []
++        if not verbose:
++            actions = [
++                (os.POSIX_SPAWN_OPEN, 1, os.devnull, os.O_WRONLY, 0o666),
++                (os.POSIX_SPAWN_DUP2, 1, 2),
++            ]
++        pid = os.posix_spawnp(argv[0], argv, os.environ, file_actions=actions)
++        return os.waitstatus_to_exitcode(os.waitpid(pid, 0)[1]) 
++    else:
++        return call(
++            cmd,
++            stdout=None if verbose else DEVNULL,
++            stderr=None if verbose else STDOUT,
++            shell=shell
++        )
++
+ 
+ def status_to_str(status):
+     status_dict = {

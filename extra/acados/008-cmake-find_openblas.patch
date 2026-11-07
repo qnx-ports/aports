@@ -1,0 +1,30 @@
+--- a/cmake/FindOpenBLAS.cmake
++++ b/cmake/FindOpenBLAS.cmake
+@@ -41,7 +41,7 @@
+     "$ENV{PATH}"
+ )
+ 
+-FIND_PATH(OpenBLAS_INCLUDE_DIR NAMES cblas.h PATHS  "$ENV{OpenBLAS_HOME}/include/OpenBLAS")
++FIND_PATH(OpenBLAS_INCLUDE_DIR NAMES cblas.h PATHS ${Open_BLAS_INCLUDE_SEARCH_PATHS})
+ FIND_LIBRARY(OpenBLAS_LIB NAMES openblas PATHS ${Open_BLAS_LIB_SEARCH_PATHS})
+ 
+ SET(OpenBLAS_FOUND ON)
+@@ -51,6 +51,7 @@
+     get_filename_component(OpenBLAS_HOME ${OpenBLAS_HOME} DIRECTORY)
+     FIND_PATH(OpenBLAS_INCLUDE_DIR NAMES cblas.h
+         PATHS
++            ${Open_BLAS_INCLUDE_SEARCH_PATHS}
+             ${OpenBLAS_HOME}/include/OpenBLAS
+             ${OpenBLAS_HOME}/include/)
+ ENDIF()
+@@ -69,8 +70,8 @@
+ 
+ IF (OpenBLAS_FOUND)
+   IF (NOT OpenBLAS_FIND_QUIETLY)
+-    # MESSAGE(STATUS "Found OpenBLAS libraries: ${OpenBLAS_LIB}")
+-    # MESSAGE(STATUS "Found OpenBLAS include: ${OpenBLAS_INCLUDE_DIR}")
++    MESSAGE(STATUS "Found OpenBLAS libraries: ${OpenBLAS_LIB}")
++    MESSAGE(STATUS "Found OpenBLAS include: ${OpenBLAS_INCLUDE_DIR}")
+   ENDIF (NOT OpenBLAS_FIND_QUIETLY)
+ ELSE (OpenBLAS_FOUND)
+   IF (OpenBLAS_FIND_REQUIRED)
