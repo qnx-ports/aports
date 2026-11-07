@@ -1,0 +1,100 @@
+# Maintainer: Ramya santoshi <rtimmaraju@qnx.com>
+pkgname=fast-dds
+pkgver=3.6.2
+pkgrel=0
+pkgdesc="eProsima Fast DDS with bundled foonathan"
+url="https://github.com/eProsima/Fast-DDS"
+arch="all"
+license="Apache-2.0"
+subpackages="$pkgname-dev  $pkgname-tests $pkgname-tools"
+makedepends="
+    build-base
+    cmake
+    ninja
+    fast-cdr-dev
+    foonathan_memory
+    foonathan_memory-dev
+    foonathan_memory_vendor
+    openssl-dev
+    qnx-fs-notify-dev
+    tinyxml2-dev
+    qnx-fs-core-dev
+    gtest-dev
+    qnx-io-sock-dev
+    libc++-dev
+    qnx-fs-gpt-dev
+    asio-dev
+    gtest-dev
+"   
+depends="libc++ fast-cdr foonathan_memory openssl foonathan_memory_vendor qnx-fs-notify  qnx-fs-gpt"
+options="!check"
+source="
+    fast-dds-$pkgver.tar.gz::https://github.com/eProsima/Fast-DDS/archive/refs/tags/v$pkgver.tar.gz
+    dds-types-test.tar.gz::https://github.com/eProsima/dds-types-test/archive/c245fe0fee4a0227e4b904fc7fc7248e2c03b1af.tar.gz
+    ssl.patch 
+"
+
+prepare() {
+    default_prepare
+
+    mkdir -p "$builddir/thirdparty/dds-types-test"
+
+    tar -xzf "$srcdir/dds-types-test.tar.gz" \
+        --strip-components=1 \
+        -C "$builddir/thirdparty/dds-types-test"
+}
+
+builddir="$srcdir/Fast-DDS-$pkgver"
+
+build() {
+    export CFLAGS="${CFLAGS//-fstack-clash-protection/}"
+    export CXXFLAGS="${CXXFLAGS//-fstack-clash-protection/}"
+    cmake -B build \
+        -S "$builddir" \
+        -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DBUILD_SHARED_LIBS=ON \
+        -DQNX=TRUE \
+        -DFASTDDS_USE_FILE_WATCH=OFF \
+        -DFASTDDS_PERSISTENCE=OFF \
+        -DEPROSIMA_BUILD_TESTS=ON \
+        -DSECURITY=OFF \
+        -DIS_THIRDPARTY_BOOST_OK=FALSE \
+        -DCMAKE_CXX_FLAGS="$CXXFLAGS -DSA_RESTART=0 -Wno-error=array-bounds -Wno-error=parentheses-equality" \
+        -DCMAKE_EXE_LINKER_FLAGS="-L/usr/lib -lsocket -lfsnotify " 
+    cmake --build build
+}
+
+check() {
+    cd "$builddir/build"
+    export LD_LIBRARY_PATH=/usr/lib:$LD_LIBRARY_PATH
+    ctest --output-on-failure -j1 --timeout 30 || true
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install build
+}
+
+
+dev() {
+    default_dev
+    
+}
+
+tests() {
+    amove usr/bin/Fast-DDS_test
+}
+
+tools() {
+    amove usr/bin/fastdds
+    amove usr/bin/fast-discovery-server*
+    amove usr/bin/ros-discovery
+    amove usr/tools
+}
+
+sha512sums="
+f9cba9b881b5b34ad496e2123dd1f3303936eab2a0b985207f470e6b5a91a99e8a0d96fa5596bc2ff4babc348e2f2f91a90e612fa9b7c1de2424e036b8d2366a  fast-dds-3.6.2.tar.gz
+60f941814c5c29cdc7e30ad8d4b37e9f32a4a83eb80059e1451bd5d047c1bbca08f5e1efd6fa93b763052b50772c5e6d46c7fca51e82ceb2ede0f4555dd5ddb6  dds-types-test.tar.gz
+f0ef316479d43311ca818103fc6568a48a0b45346a92ffc22e99e99f2e93a0eb59bad0cf5ed39a528bc10cb64425b0d5683ced2f305d40e1923852d4cefed2f1  ssl.patch
+"
