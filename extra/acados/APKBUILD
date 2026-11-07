@@ -15,6 +15,7 @@ depends="
     openmp
     osqp
     qpdunes
+    daqp
 "
 depends_dev="
     blasfeo-dev
@@ -26,6 +27,8 @@ depends_dev="
     qpdunes-dev
     eigen-dev
     libc++-dev
+    daqp-static
+    daqp-dev
 "
 makedepends="
     $depends_dev
@@ -83,6 +86,7 @@ prepare() {
     # blasfeo, qpdunes-dev, osqp, hpipm are created/updated in separate APKs
     ln -sf /usr/include external/blasfeo/include
     ln -sf /usr/include external/qpdunes/include
+    ln -sf /usr/include/daqp external/daqp/include
 
     mkdir -p external/osqp/include
     ln -sf /usr/include/osqp external/osqp/include/public
@@ -119,11 +123,13 @@ build() {
         -DACADOS_WITH_SYSTEM_QPOASES=ON \
         -DACADOS_WITH_SYSTEM_OSQP=ON \
         -DACADOS_WITH_SYSTEM_QPDUNES=ON \
+        -DACADOS_WITH_SYSTEM_DAQP=ON \
         -Dhpipm_DIR=/usr \
         -DACADOS_WITH_OPENMP=ON \
         -DACADOS_WITH_QPOASES=ON \
         -DACADOS_WITH_OSQP=ON \
         -DACADOS_WITH_QPDUNES=ON \
+        -DACADOS_WITH_DAQP=ON \
         -DACADOS_UNIT_TESTS=ON \
         -DCMAKE_CXX_STANDARD=14 \
         -DCMAKE_INSTALL_PREFIX=/usr
