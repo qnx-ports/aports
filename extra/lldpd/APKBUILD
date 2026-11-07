@@ -1,0 +1,77 @@
+# Alpine-Contributor: Francesco Colista <fcolista@alpinelinux.org>
+# Alpine-Maintainer: Francesco Colista <fcolista@alpinelinux.org>
+# Maintainer: Marcin Sochacki <msochacki@qnx.com>
+pkgname=lldpd
+pkgver=1.0.22
+pkgrel=0
+pkgdesc="Implementation of IEEE 802.1ab"
+url="https://lldpd.github.io/"
+arch="all"
+license="ISC"
+depends="libevent readline"
+makedepends="autoconf automake libtool
+	libevent-dev libxml2-dev jansson-dev
+	perl-dev readline-dev"
+checkdepends="check check-dev"
+install="$pkgname.post-install"
+subpackages="
+	$pkgname-dev
+	$pkgname-doc
+	$pkgname-bash-completion
+	$pkgname-zsh-completion
+	"
+pkgusers="lldpd"
+pkggroups="lldpd"
+source="$pkgname-qnx-${pkgver}_p0.tar.gz::https://github.com/qnx-ports/lldpd/archive/refs/tags/qnx-${pkgver}_p0.tar.gz
+	lldpd.initd
+	"
+builddir="$srcdir/$pkgname-qnx-${pkgver}_p0"
+
+prepare() {
+	default_prepare
+	echo $pkgver > .dist-version
+	"$builddir"/autogen.sh
+}
+
+build() {
+	export LDFLAGS="$LDFLAGS -lsocket -lregex"
+	# QNX's userspace <signal.h> has SA_RESTART commented out ("not supported
+	# yet"), so src/daemon/priv.c's two privileged-monitor sigaction structs
+	# (SIGALRM/SIGTERM/SIGHUP/SIGINT/SIGQUIT and SIGCHLD) fail to compile
+	# with "use of undeclared identifier 'SA_RESTART'" unless something
+	# defines it. Forcing it to 0 here (rather than patching priv.c) is safe
+	# for those two handlers specifically: that process's own blocking I/O
+	# (may_read/must_read/must_write in privsep_io.c) already retries
+	# explicitly on EINTR/EAGAIN in a while loop, independent of SA_RESTART.
+	export CPPFLAGS="$CPPFLAGS -DSA_RESTART=0"
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--sbindir=/usr/bin \
+		--prefix=/usr \
+		--localstatedir=/var \
+		--sysconfdir=/etc \
+		--enable-static=no \
+		--enable-min-macro \
+		--with-privsep-user=lldpd \
+		--with-privsep-group=lldpd \
+		--with-privsep-chroot=/var/empty \
+		--with-lldpd-ctl-socket=/var/run/$pkgname/$pkgname.socket \
+		--with-lldpd-pid-file=/var/run/$pkgname/$pkgname.pid
+	make
+}
+
+check() {
+	make check
+}
+
+package() {
+	install -d "$pkgdir"/var/empty
+	install -Dm755 "$srcdir"/$pkgname.initd "$pkgdir/etc/init.d/$pkgname"
+	install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+	make DESTDIR="$pkgdir" install
+}
+sha512sums="
+7d0cbc169aa8f725b5d79b62840c23721cb35a352a9330695e4d99b34a2ce85aaa21b2c707b6da6e6ebe116de06f8f73bc5f104fe92f00fd002b2337f2fe0ba7  lldpd-qnx-1.0.22_p0.tar.gz
+a2940e284f418cd4cf87225397878d2cda20a27a74100a3475f4d3e41ec0bf67a5629ded066f4f57e2f5e9749f6e570a7710f6f27d3ca21b95b39c2055f286c4  lldpd.initd
+"
