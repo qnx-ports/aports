@@ -3,17 +3,18 @@
 # Maintainer: Ethan Leir <eleir@qnx.com>
 pkgname=benchmark
 pkgver=1.9.4
-pkgrel=0
+pkgrel=1
 pkgdesc="microbenchmark support library"
 url="https://github.com/google/benchmark"
 arch="all"
 license="Apache-2.0"
 depends="libc++"
-makedepends="cmake gtest-dev libc++-dev ninja"
+makedepends="cmake gtest-dev libc++-dev ninja llvm"
 subpackages="$pkgname-dev $pkgname-doc"
-source="$pkgname-$pkgver.tar.gz::https://github.com/google/benchmark/archive/v$pkgver.tar.gz"
+source="$pkgname-$pkgver.tar.gz::https://github.com/google/benchmark/archive/refs/tags/v$pkgver.tar.gz"
 
 build() {
+    CXXFLAGS="$CXXFLAGS -Wno-c2y-extensions" \
     cmake -B build \
         -G Ninja \
         -DCMAKE_INSTALL_PREFIX=/usr \
