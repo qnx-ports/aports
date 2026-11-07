@@ -1,6 +1,9 @@
+# Contributor: Sören Tempel <soeren+alpinelinux@soeren-tempel.net>
+# Alpine-Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+# Maintainer: Terence Ang <taang@qnx.com>
 pkgname=harfbuzz
 pkgver=11.3.3
-pkgrel=1
+pkgrel=2
 pkgdesc="Text shaping library"
 url="https://harfbuzz.github.io/"
 arch="all"
@@ -23,7 +26,7 @@ makedepends="
     clang
     libc++-dev
     "
-checkdepends="python3"
+checkdepends="python3 cairo"
 depends="freetype glib graphite"
 subpackages="
     $pkgname-static
@@ -43,7 +46,7 @@ build() {
     CXXFLAGS="$CXXFLAGS -O2 -Qunused-arguments" \
     CPPFLAGS="$CPPFLAGS -O2 -Qunused-arguments" \
     LDFLAGS="-llocale" \
-    meson \
+    meson setup \
         --default-library=both \
         --prefix=/usr \
         -Dglib=enabled \
@@ -61,6 +64,10 @@ build() {
 }
 
 check() {
+    # Some test outcomes are "FAIL" or "ERROR" and were documented as follows:
+    # 28/215 src - harfbuzz:check-symbols                                 FAIL             0.28s   exit status 1
+    # 29/215 src - harfbuzz:check-libstdc++                               FAIL             0.22s   exit status 1
+    # 65/215 api - harfbuzz:test-paint                                    ERROR            0.11s   killed by signal 6 SIGABRT
     LD_LIBRARY_PATH="$builddir/output/src":$LD_LIBRARY_PATH \
     meson test --print-errorlogs -C output || msg "Some tests fail due to linking against libc++"
 }
@@ -71,7 +78,10 @@ package() {
 
 icu() {
     pkgdesc="Harfbuzz ICU support library"
-    depends="icu-libs"
+    depends="
+        $pkgname=$pkgver-r$pkgrel
+        icu-libs
+    "
     replaces="harfbuzz"
 
     amove usr/lib/lib*icu.so.*
@@ -79,23 +89,33 @@ icu() {
 
 gobject() {
     pkgdesc="Harfbuzz gobject library"
+    depends="$pkgname=$pkgver-r$pkgrel"
     amove usr/lib/lib*gobject.so.*
 }
 
 cairo() {
     pkgdesc="Harfbuzz cairo library"
-    depends="cairo"
+    depends="
+        $pkgname=$pkgver-r$pkgrel
+        cairo
+    "
     amove usr/lib/lib*cairo.so.*
 }
 
 subset() {
     pkgdesc="Harfbuzz subset library"
+    depends="$pkgname=$pkgver-r$pkgrel"
     amove usr/lib/lib*subset.so.*
 }
 
 utils() {
     pkgdesc="$pkgdesc (utilities)"
-    depends="$pkgname-gobject"
+    depends="
+        $pkgname=$pkgver-r$pkgrel
+        $pkgname-cairo=$pkgver-r$pkgrel
+        $pkgname-gobject=$pkgver-r$pkgrel
+        $pkgname-subset=$pkgver-r$pkgrel
+    "
     amove usr/bin
 }
 
