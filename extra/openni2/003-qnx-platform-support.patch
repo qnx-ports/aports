@@ -1,0 +1,166 @@
+Treat QNX as the generic Linux platform and drop Linux-only facilities
+
+--- a/Include/OniPlatform.h
++++ b/Include/OniPlatform.h
+@@ -34,13 +34,13 @@
+ #			error OpenNI Platform Abstraction Layer - Win32 - Microsoft Visual Studio version below 2003 (7.0) are not supported!
+ #		endif
+ #	endif
+ #	include "Win32/OniPlatformWin32.h"
+ #elif defined (ANDROID) && defined (__arm__)
+ #	include "Android-Arm/OniPlatformAndroid-Arm.h"
+-#elif (__linux__ && (i386 || __x86_64__))
++#elif (__linux__ && (i386 || __x86_64__)) || defined(__QNX__)
+ #	include "Linux-x86/OniPlatformLinux-x86.h"
+ #elif (__linux__ && __arm__)
+ #	include "Linux-Arm/OniPlatformLinux-Arm.h"
+ #elif _ARC
+ #	include "ARC/OniPlaformARC.h"
+ #elif (__APPLE__)
+--- a/Source/Drivers/PS1080/Sensor/XnDeviceSensorInit.cpp
++++ b/Source/Drivers/PS1080/Sensor/XnDeviceSensorInit.cpp
+@@ -38,13 +38,13 @@
+ {
+ 	XnStatus nRetVal = XN_STATUS_OK;
+ 	
+ 	nRetVal = XnDeviceSensorAllocateBuffers(pDevicePrivateData);
+ 	XN_IS_STATUS_OK(nRetVal);
+ 
+-#if XN_PLATFORM == XN_PLATFORM_ANDROID_ARM
++#if XN_PLATFORM == XN_PLATFORM_ANDROID_ARM || defined(__QNX__)
+ 	nRetVal = xnOSCreateMutex(&pDevicePrivateData->hExecuteMutex);
+ 	XN_IS_STATUS_OK(nRetVal);
+ #else
+ 	XnChar strMutexName[XN_FILE_MAX_PATH];
+ 	XnUInt32 nCharsWritten = 0;
+ 	nRetVal = xnOSStrFormat(strMutexName, XN_FILE_MAX_PATH, &nCharsWritten, "%s%s", XN_HOST_PROTOCOL_MUTEX_NAME_PREFIX, pDevicePrivateData->pSensor->GetUSBPath());
+--- a/Source/Drivers/PSLink/LinkProtoLib/XnLinkControlEndpoint.cpp
++++ b/Source/Drivers/PSLink/LinkProtoLib/XnLinkControlEndpoint.cpp
+@@ -49,13 +49,13 @@
+ 		m_nMaxOutMsgSize = nMaxOutMsgSize;
+ 		nRetVal = pConnectionFactory->GetControlConnection(m_pConnection);
+ 		XN_IS_STATUS_OK_LOG_ERROR("Create control connection", nRetVal);
+ 		//TODO: Once we have service discovery, ask the device what's the max packet size.
+ 		//In any way, we DON'T want to ask m_pConnection what its packet size is, cuz that's the low level packet size.
+ 
+-#if XN_PLATFORM == XN_PLATFORM_ANDROID_ARM
++#if XN_PLATFORM == XN_PLATFORM_ANDROID_ARM || defined(__QNX__)
+ 	nRetVal = xnOSCreateMutex(&m_hMutex);
+ 	XN_IS_STATUS_OK(nRetVal);
+ #else
+ 		nRetVal = xnOSCreateNamedMutex(&m_hMutex, MUTEX_NAME);
+ 		XN_IS_STATUS_OK_LOG_ERROR("Create named mutext", nRetVal);
+ #endif
+--- a/ThirdParty/PSCommon/XnLib/Include/Linux-x86/XnPlatformLinux-x86.h
++++ b/ThirdParty/PSCommon/XnLib/Include/Linux-x86/XnPlatformLinux-x86.h
+@@ -188,8 +188,13 @@
+ #define XN_PRAGMA_START_DISABLED_WARNING_SECTION(warnings)
+ #define XN_PRAGMA_STOP_DISABLED_WARNING_SECTION
+ 
+ /** Declares a global shared library export function. */ 
+ #define XN_API_EXPORT_INIT()
+ 
++#ifdef __QNX__
++#define XN_PLATFORM_LINUX_NO_GLIBC
++#define XN_PLATFORM_LINUX_NO_SYSV
++#endif
++
+ #endif //_XN_PLATFORM_LINUX_X86_H_
+ 
+--- a/ThirdParty/PSCommon/XnLib/Include/XnPlatform.h
++++ b/ThirdParty/PSCommon/XnLib/Include/XnPlatform.h
+@@ -46,13 +46,13 @@
+ #error OpenNI Platform Abstraction Layer - Win32 - Microsoft Visual Studio version below 2003 (7.0) are not supported!
+ #endif
+ #endif
+ #include "Win32/XnPlatformWin32.h"
+ #elif defined (ANDROID) && defined (__arm__)
+ #include "Android-Arm/XnPlatformAndroid-Arm.h"
+-#elif (__linux__ && (i386 || __x86_64__))
++#elif (__linux__ && (i386 || __x86_64__)) || defined(__QNX__)
+ #include "Linux-x86/XnPlatformLinux-x86.h"
+ #elif (__linux__ && __arm__)
+ #include "Linux-Arm/XnPlatformLinux-Arm.h"
+ #elif _ARC
+ #include "ARC/XnPlaformARC.h"
+ #elif (__APPLE__)
+--- a/ThirdParty/PSCommon/XnLib/Source/Linux/XnLinuxProcesses.cpp
++++ b/ThirdParty/PSCommon/XnLib/Source/Linux/XnLinuxProcesses.cpp
+@@ -23,13 +23,13 @@
+ //---------------------------------------------------------------------------
+ #include <XnOS.h>
+ #include <errno.h>
+ #if (XN_PLATFORM == XN_PLATFORM_MACOSX || XN_PLATFORM == XN_PLATFORM_ANDROID_ARM)
+ 	#include <sys/wait.h>
+ #else
+-	#include <wait.h>
++	#include <sys/wait.h>
+ #endif
+ #include <XnLog.h>
+ 
+ //---------------------------------------------------------------------------
+ // Code
+ //---------------------------------------------------------------------------
+--- a/ThirdParty/PSCommon/XnLib/Source/Linux/XnLinuxThreads.cpp
++++ b/ThirdParty/PSCommon/XnLib/Source/Linux/XnLinuxThreads.cpp
+@@ -117,13 +117,13 @@
+ 			return XN_STATUS_OS_THREAD_TERMINATION_FAILED;
+ 		}
+ 		
+ 		// join via the OS
+ 		void* pReturnValue;
+ #ifndef XN_PLATFORM_HAS_NO_TIMED_OPS
+-		rc = pthread_timedjoin_np(*ThreadHandle, &pReturnValue, &time);
++		rc = pthread_timedjoin(*ThreadHandle, &pReturnValue, &time);
+ #else
+ 		rc = pthread_join(*ThreadHandle, &pReturnValue);
+ #endif
+ 	}
+ 
+ 	// check for failures
+@@ -151,13 +151,13 @@
+ 	
+ 	if (nPriority == XN_PRIORITY_CRITICAL)
+ 	{
+ 		memset(&param, 0, sizeof(param));
+ 	
+ #ifndef XN_PLATFORM_HAS_NO_SCHED_PARAM
+-		param.__sched_priority = 5;
++		param.sched_priority = 5;
+ #endif
+ 		nPolicy = SCHED_RR;
+ 		
+ #if XN_PLATFORM == XN_PLATFORM_ANDROID_ARM
+ 		//Note: It's only going to work if it runs as root! (but if not it fails anyway...)		
+ 		param.sched_priority = sched_get_priority_max(nPolicy) - 1;
+--- a/ThirdParty/PSCommon/XnLib/Source/Linux/XnLinuxUSB.cpp
++++ b/ThirdParty/PSCommon/XnLib/Source/Linux/XnLinuxUSB.cpp
+@@ -19,12 +19,13 @@
+ *                                                                            *
+ *****************************************************************************/
+ //---------------------------------------------------------------------------
+ // Includes
+ //---------------------------------------------------------------------------
+ #include <XnUSB.h>
++#include <sys/time.h>
+ 
+ #if (XN_PLATFORM == XN_PLATFORM_ANDROID_ARM)
+ #include <libusb.h>
+ #else
+ #include <libusb-1.0/libusb.h>
+ #endif
+@@ -33,13 +34,13 @@
+ #include "../XnUSBInternal.h"
+ #include <XnOS.h>
+ #include <XnLog.h>
+ #include <XnOSCpp.h>
+ #include <XnList.h>
+ 
+-#if (XN_PLATFORM == XN_PLATFORM_LINUX_X86 || XN_PLATFORM == XN_PLATFORM_LINUX_ARM)
++#if (XN_PLATFORM == XN_PLATFORM_LINUX_X86 || XN_PLATFORM == XN_PLATFORM_LINUX_ARM) && !defined(__QNX__)
+ #include <libudev.h>
+ #define XN_USE_UDEV
+ #endif
+ 
+ //---------------------------------------------------------------------------
+ // Types

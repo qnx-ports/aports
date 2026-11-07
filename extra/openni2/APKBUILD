@@ -1,0 +1,110 @@
+# Maintainer: Marcin Sochacki <msochacki@qnx.com>
+pkgname=openni2
+pkgver=2.2.0.33
+pkgrel=0
+pkgdesc="OpenNI2 framework for depth sensors (PrimeSense/Structure)"
+url="https://github.com/structureio/OpenNI2"
+arch="aarch64 x86_64"
+license="Apache-2.0"
+depends="libc++ libjpeg-turbo libusb"
+depends_dev="libusb-dev libjpeg-turbo-dev"
+makedepends="$depends_dev"
+subpackages="$pkgname-dev $pkgname-tools $pkgname-samples"
+options="!check" # upstream ships no test suite
+source="$pkgname-$pkgver.tar.gz::https://github.com/structureio/OpenNI2/archive/refs/tags/v2.2.0-debian.tar.gz
+	001-qnx-build-system.patch
+	002-use-system-libjpeg.patch
+	003-qnx-platform-support.patch
+	"
+builddir="$srcdir/OpenNI2-2.2.0-debian"
+
+# The upstream platform name is derived from "uname -m", which is "x86pc" or the
+# board name on QNX, so the build is told the architecture explicitly.
+case "$CARCH" in
+x86_64) _plat=x64 ;;
+aarch64) _plat=Arm64 ;;
+esac
+
+# -Wno-register: Bayer.cpp uses "register", which clang rejects in its C++17 default.
+# GLUT/GL viewers (NiViewer and the viewer samples) and the Java wrappers are not
+# built: QNX has no GLUT or desktop GL, and the Java wrapper needs a JDK.
+build() {
+	export CFLAGS="$CFLAGS -Qunused-arguments -Wno-register"
+
+	make MACHINE="$CARCH" \
+		ThirdParty/PSCommon/XnLib/Source \
+		Source/Core \
+		Source/DepthUtils \
+		Source/Drivers/DummyDevice \
+		Source/Drivers/OniFile \
+		Source/Drivers/PS1080 \
+		Source/Drivers/PSLink \
+		Source/Drivers/PS1080/PS1080Console \
+		Source/Drivers/PSLink/PSLinkConsole \
+		Samples/SimpleRead \
+		Samples/EventBasedRead \
+		Samples/MultipleStreamRead \
+		Samples/MWClosestPoint \
+		Samples/MWClosestPointApp
+}
+
+package() {
+	local out="Bin/$_plat-Release"
+
+	# OpenNI2 finds OpenNI.ini and OpenNI2/Drivers next to libOpenNI2.so.
+	install -Dm755 "$out"/libOpenNI2.so -t "$pkgdir"/usr/lib
+	install -Dm755 "$out"/OpenNI2/Drivers/*.so -t "$pkgdir"/usr/lib/OpenNI2/Drivers
+	install -Dm644 Config/OpenNI.ini -t "$pkgdir"/usr/lib
+	install -Dm644 Config/OpenNI2/Drivers/*.ini -t "$pkgdir"/usr/lib/OpenNI2/Drivers
+
+	install -d "$pkgdir"/usr/include/openni2
+	cp -r Include/. "$pkgdir"/usr/include/openni2/
+	rm -rf "$pkgdir"/usr/include/openni2/Android-Arm "$pkgdir"/usr/include/openni2/MacOSX \
+		"$pkgdir"/usr/include/openni2/Win32
+	install -d "$pkgdir"/usr/lib/pkgconfig
+	cat > "$pkgdir"/usr/lib/pkgconfig/libopenni2.pc <<-EOF
+		prefix=/usr
+		libdir=\${prefix}/lib
+		includedir=\${prefix}/include/openni2
+
+		Name: OpenNI2
+		Description: $pkgdesc
+		Version: $pkgver
+		Cflags: -I\${includedir}
+		Libs: -L\${libdir} -lOpenNI2
+	EOF
+
+	install -Dm755 "$out"/PS1080Console "$out"/PSLinkConsole -t "$pkgdir"/usr/bin
+
+	# Generic names, kept off PATH. libMWClosestPoint.so is the sample middleware.
+	install -Dm755 "$out"/SimpleRead "$out"/EventBasedRead \
+		"$out"/MultipleStreamRead "$out"/MWClosestPointApp \
+		-t "$pkgdir"/usr/lib/OpenNI2/Samples
+	install -Dm755 "$out"/libMWClosestPoint.so -t "$pkgdir"/usr/lib
+}
+
+# libOpenNI2.so has no soname upstream and is needed at run time, so it stays
+# in the main package instead of moving to -dev.
+dev() {
+	pkgdesc="$pkgdesc (development files)"
+	depends="$pkgname=$pkgver-r$pkgrel"
+	amove usr/include usr/lib/pkgconfig
+}
+
+tools() {
+	pkgdesc="$pkgdesc (sensor console tools)"
+	depends="$pkgname=$pkgver-r$pkgrel"
+	amove usr/bin
+}
+
+samples() {
+	pkgdesc="$pkgdesc (sample programs)"
+	depends="$pkgname=$pkgver-r$pkgrel"
+	amove usr/lib/OpenNI2/Samples usr/lib/libMWClosestPoint.so
+}
+sha512sums="
+1354e6032a324a80df3a0137e0e09ba9ba0e570f6f5dc91626453ed17cd739793a9cbcbcb36826beb4f36e63cd889c2e9a07ddc973fe98dfa4b1e2941b9c455d  openni2-2.2.0.33.tar.gz
+31cb06b7116b7899875a41c1747dc9e2ad1804e9159e52c4201e9a703c7073f4a1ad920c3a92ab958eb223e8add0fcb6ee2909c20792bc459f8d132cbb04c0e0  001-qnx-build-system.patch
+df101be128ee2f9c90d674707fe95e9a51da4468fc1b8b285a5abcd9a14ffa10c9fa54e1d11eb259aba20984ad4d4a8dad2d9c3ea584e90b3e03b37c8cf10a26  002-use-system-libjpeg.patch
+5d12a83a7df1c4950a4269f3db3812e648fcbfac834262f2dbd1d0291d12ef4cafd88d153deb8e58209a8b5e776057c964493279323199aefb6c55ae6b3210bf  003-qnx-platform-support.patch
+"
