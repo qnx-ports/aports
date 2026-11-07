@@ -1,13 +1,13 @@
-# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
-# QNX Maintainer: Felix Xing <fxing@qnx.com>
+# Alpine-Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+# Maintainer: Felix Xing <fxing@qnx.com>
 pkgname=thunar
 pkgver=4.21.2
-pkgrel=1
+pkgrel=2
 pkgdesc="File manager for Xfce"
 url="https://docs.xfce.org/xfce/thunar/start"
 arch="all"
-license="GPL-2.0-or-later LGPL-2.0-only"
-depends="desktop-file-utils exo libintl gtk3 libxfce4ui"
+license="GPL-2.0-or-later AND LGPL-2.0-only"
+depends="desktop-file-utils exo libintl gtk3 libxfce4ui xfce4-panel"
 depends_dev="exo-dev gettext-dev xfce4-dev-tools"
 makedepends="
     $depends_dev
