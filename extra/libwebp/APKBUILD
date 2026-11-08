@@ -46,13 +46,27 @@ package() {
 
 tools() {
     pkgdesc="The WebP command line tools"
+    depends="
+        ${pkgname}mux=$pkgver-r$pkgrel
+        ${pkgname}demux=$pkgver-r$pkgrel
+        libpng
+        libjpeg-turbo
+        giflib
+    "
     amove usr/bin
 }
 
 _lib() {
     pkgdesc="$pkgdesc ($subpkgname library)"
-    # Only libwebpmux and libwebpdemux need this dependency
-    depends="$pkgname=$pkgver-r$pkgrel"
+    case "$subpkgname" in
+        "${pkgname}mux" | "${pkgname}demux")
+            depends="$pkgname=$pkgver-r$pkgrel"
+            ;;
+        libsharpyuv | "${pkgname}decoder")
+            ;;
+
+    esac
+
     amove usr/lib/$subpkgname.so.*
 }
 
