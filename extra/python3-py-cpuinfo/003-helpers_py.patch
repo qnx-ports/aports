@@ -1,0 +1,11 @@
+--- a/tests/helpers.py
++++ b/tests/helpers.py
+@@ -93,6 +93,8 @@
+ 		os_type = 'MacOS'
+ 	elif 'linux' in uname:
+ 		os_type = 'Linux'
++	elif 'qnx' in uname:
++		os_type = 'QNX'
+ 	elif 'solaris' in uname or 'sunos' in uname:
+ 		os_type = 'Solaris'
+ 	elif 'windows' in uname:

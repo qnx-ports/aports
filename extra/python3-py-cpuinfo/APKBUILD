@@ -1,0 +1,43 @@
+# Alpine-Contributor: Fabian Affolter <fabian@affolter-engineering.ch>
+# Alpine-Maintainer: Fabian Affolter <fabian@affolter-engineering.ch>
+# Maintainer: Terence Ang <taang@qnx.com>
+pkgname=python3-py-cpuinfo
+_pkgname=py-cpuinfo
+pkgver=9.0.0
+pkgrel=0
+pkgdesc="Pure-Python module for getting CPU info"
+url="https://github.com/workhorsy/py-cpuinfo"
+arch="noarch"
+license="MIT"
+depends="python3"
+makedepends="python3-gpep517 python3-setuptools python3-wheel"
+checkdepends="python3-pytest"
+source="https://files.pythonhosted.org/packages/source/${_pkgname:0:1}/$_pkgname/$_pkgname-$pkgver.tar.gz
+	001-cpu_info_py.patch
+	002-test_actual_py.patch
+	003-helpers_py.patch
+	"
+builddir="$srcdir"/$_pkgname-$pkgver
+
+build() {
+	gpep517 build-wheel \
+		--wheel-dir .dist \
+		--output-fd 3 3>&1 >&2
+}
+
+check() {
+	python3 -m unittest -v
+}
+
+package() {
+	python3 -m installer -d "$pkgdir" \
+		.dist/py_cpu*.whl
+}
+
+
+sha512sums="
+c7711137d60ad52bcbef8738a70fb48ceaa69e1e1632d135d0ee95c282b02df6170c3dd88a1e14b3e9a386d3286a15ca9722fcfb596107da022161a7cf84509a  py-cpuinfo-9.0.0.tar.gz
+68752fdf917e35a4c390180ace453932a1644315c49facaf5b23737186fedda379c52ac8233a2161e4d6811f8df3118a61824a0b8eb7433d20ff39bf038d6a08  001-cpu_info_py.patch
+e5c852c23767734fcd68884c3680a5695bc907ebf2e9188c00930a2bb7550890b9c26dbfb4101b9a2da777fc4107523695f1dc70f634c49ce5be3707f5a3eddc  002-test_actual_py.patch
+96164a3f4704f63ab1c7680b4b9de322c3a55c0260fbccf11555b53737c95fedf588c89d3b267192d755d8c307b19778b29f5d8aaa492349be3a6193ef8be541  003-helpers_py.patch
+"
