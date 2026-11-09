@@ -1,0 +1,33 @@
+# Alpine-Maintainer: Bart Ribbers <bribbers@disroot.org>
+# Maintainer: Felix Lionardo <flionardo@qnx.com>
+pkgname=python3-pyqt-builder
+pkgver=1.19.1
+pkgrel=0
+pkgdesc="The PEP 517 compliant PyQt build system"
+url="https://www.riverbankcomputing.com/software/pyqt-builder/"
+arch="noarch"
+license="custom:sip"
+makedepends="
+	python3-gpep517
+	python3-setuptools
+	python3-wheel
+	"
+source="https://pypi.python.org/packages/source/P/PyQt-builder/pyqt_builder-$pkgver.tar.gz"
+options="!check" # No tests
+builddir="$srcdir/pyqt_builder-$pkgver"
+
+build() {
+	gpep517 build-wheel \
+		--wheel-dir .dist \
+		--output-fd 3 3>&1 >&2
+}
+
+package() {
+	python3 -m installer -d "$pkgdir" \
+		.dist/*.whl
+}
+
+sha512sums="
+2308c51f93c37b1d13f312e4f2475d26b22d374ef284925fead9eab4aa89b994770431aca45170ac2154b4813fff151798f113f56d4cbf6c6e544fb463104a6d  pyqt_builder-1.19.1.tar.gz
+"
+
