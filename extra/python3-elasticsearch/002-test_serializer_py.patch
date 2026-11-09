@@ -1,0 +1,15 @@
+--- a/test_elasticsearch/test_serializer.py
++++ b/test_elasticsearch/test_serializer.py
+@@ -81,11 +81,10 @@
+     def test_serializes_numpy_floats(self):
+         ser = JSONSerializer()
+         for np_type in (
+-            np.float_,
+             np.float32,
+             np.float64,
+         ):
+-            self.assertRegexpMatches(
++            self.assertRegex(
+                 ser.dumps({"d": np_type(1.2)}), r'^\{"d":1\.2[\d]*}$'
+             )
+ 
