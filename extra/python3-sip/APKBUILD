@@ -1,0 +1,37 @@
+# Alpine-Contributor: Francesco Colista <fcolista@alpinelinux.org>
+# Alpine-Maintainer: Francesco Colista <fcolista@alpinelinux.org>
+# Maintainer: Felix Lionardo <flionardo@qnx.com>
+pkgname=python3-sip
+pkgver=6.15.0
+pkgrel=0
+pkgdesc="A tool that makes it easy to create Python bindings for C and C++ libraries"
+options="!check" # No testsuite
+url="https://www.riverbankcomputing.com/software/sip/"
+arch="all"
+license="custom:sip"
+depends="
+	python3-packaging
+	python3-ply
+	python3-setuptools
+	python3-toml
+	"
+makedepends="python3-dev python3-gpep517 python3-wheel"
+source="https://pypi.python.org/packages/source/s/sip/sip-$pkgver.tar.gz"
+builddir="$srcdir/sip-$pkgver"
+
+
+build() {
+	gpep517 build-wheel \
+		--wheel-dir .dist \
+		--output-fd 3 3>&1 >&2
+}
+
+package() {
+	python3 -m installer -d "$pkgdir" \
+		.dist/sip-*.whl
+}
+
+
+sha512sums="
+d8bc5dc574b0b02c72227f188d3cff64785e794cce5941101269332de3359c2ed50ef1f002e70004050aa477c66803affe2e9a26b12c652722dc774c5fd64ee3  sip-6.15.0.tar.gz
+"
