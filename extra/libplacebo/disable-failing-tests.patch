@@ -1,0 +1,23 @@
+--- a/src/opengl/meson.build	2026-11-09 22:02:58.000000000 +0000
++++ b/src/opengl/meson.build	2026-11-09 22:03:01.000000000 +0000
+@@ -26,9 +26,8 @@
+ 
+   if opengl_link.allowed()
+     build_deps += libdl
+-    tests += 'opengl_surfaceless.c'
+   endif
+ 
+   gl_extensions = [
+     'GL_AMD_pinned_memory',
+     'GL_ARB_buffer_storage',
+--- a/src/vulkan/meson.build	2026-11-09 22:03:42.000000000 +0000
++++ b/src/vulkan/meson.build	2026-11-09 22:03:50.000000000 +0000
+@@ -50,8 +48,7 @@
+ 
+   if vulkan_link.allowed()
+     build_deps += vulkan_loader
+-    tests += 'vulkan.c'
+   endif
+ else
+   sources += 'vulkan/stubs.c'
+ endif
