@@ -8,7 +8,7 @@ pkgdesc="A tool that makes it easy to create Python bindings for C and C++ libra
 options="!check" # No testsuite
 url="https://www.riverbankcomputing.com/software/sip/"
 arch="all"
-license="custom:sip"
+license="BSD-2-Clause"
 depends="
 	python3-packaging
 	python3-ply
