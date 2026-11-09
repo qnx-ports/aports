@@ -1,0 +1,35 @@
+# Alpine-Contributor: Fabian Affolter <fabian@affolter-engineering.ch>
+# Alpine-Maintainer: Patrycja Rosa <alpine@ptrcnull.me>
+# Maintainer: Terence Ang <taang@qnx.com>
+pkgname=python3-mock
+_pkgname=mock
+pkgver=5.2.0
+pkgrel=0
+pkgdesc="Python3 Mocking and Patching Library for Testing"
+url="https://github.com/testing-cabal/mock"
+arch="noarch"
+license="BSD-2-Clause"
+makedepends="python3-gpep517 python3-setuptools python3-wheel python3-pbr"
+source="https://files.pythonhosted.org/packages/source/m/mock/mock-$pkgver.tar.gz"
+builddir="$srcdir/$_pkgname-$pkgver"
+checkdepends="python3-pytest"
+
+build() {
+	gpep517 build-wheel --wheel-dir .dist --output-fd 3 3>&1 >&2
+}
+
+check() {
+	python3 -m venv --clear --without-pip --system-site-packages .testenv
+	.testenv/bin/python3 -m installer .dist/*.whl
+	# The skipped test checks internal Python unittest behavior and fails
+	.testenv/bin/python3 -m pytest -k "not test_bool_not_called"
+}
+
+package() {
+	python3 -m installer -d "$pkgdir" .dist/*.whl
+}
+
+
+sha512sums="
+edf856486e5f8889d676be1eb2c60cd791f4f25057b6b94b54555904133371b3753709b2ab37d032dbbfed7e7106d05c1c24a2c274f378802025495f4352ac12  mock-5.2.0.tar.gz
+"
