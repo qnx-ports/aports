@@ -1,0 +1,25 @@
+We don't have proper locale support, so we have to do the naive approach of
+disabling it
+--- a/player/main.c	2026-11-09 20:25:15.000000000 +0000
++++ a/player/main.c	2026-11-09 20:26:02.000000000 +0000
+@@ -255,13 +255,13 @@
+ 
+ struct MPContext *mp_create(void)
+ {
+-    if (!check_locale()) {
+-        // Normally, we never print anything (except if the "terminal" option
+-        // is enabled), so this is an exception.
+-        fprintf(stderr, "Non-C locale detected. This is not supported.\n"
+-                        "Call 'setlocale(LC_NUMERIC, \"C\");' in your code.\n");
+-        return NULL;
+-    }
++    // if (!check_locale()) {
++    //     // Normally, we never print anything (except if the "terminal" option
++    //     // is enabled), so this is an exception.
++    //     fprintf(stderr, "Non-C locale detected. This is not supported.\n"
++    //                     "Call 'setlocale(LC_NUMERIC, \"C\");' in your code.\n");
++    //     return NULL;
++    // }
+ 
+     char *enable_talloc = getenv("MPV_LEAK_REPORT");
+     if (enable_talloc && strcmp(enable_talloc, "1") == 0)

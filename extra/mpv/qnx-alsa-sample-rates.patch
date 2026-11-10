@@ -1,0 +1,21 @@
+Our audio driver currently only plays a subset of sample rates, so enable those
+--- b/audio/out/ao_alsa.c	2026-11-09 18:29:30.000000000 +0000
++++ b/audio/out/ao_alsa.c	2026-11-09 18:29:32.000000000 +0000
+@@ -527,6 +527,7 @@
+     case 44100:     return IEC958_AES3_CON_FS_44100;
+     case 48000:     return IEC958_AES3_CON_FS_48000;
+     case 32000:     return IEC958_AES3_CON_FS_32000;
++#ifndef __QNX__
+     case 22050:     return IEC958_AES3_CON_FS_22050;
+     case 24000:     return IEC958_AES3_CON_FS_24000;
+     case 88200:     return IEC958_AES3_CON_FS_88200;
+@@ -535,6 +536,9 @@
+     case 176400:    return IEC958_AES3_CON_FS_176400;
+     case 192000:    return IEC958_AES3_CON_FS_192000;
+     default:        return IEC958_AES3_CON_FS_NOTID;
++#else
++    default:        return 0;
++#endif
+     }
+ }
+ 
