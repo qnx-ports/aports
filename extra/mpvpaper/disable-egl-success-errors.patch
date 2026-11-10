@@ -1,0 +1,30 @@
+Our eglMakeCurrent is returning EGL_SUCCESS as errors, which is tripping up the error checking. 
+--- a/src/main.c	2026-11-09 21:04:20.000000000 +0000
++++ b/src/main.c	2026-11-09 21:04:59.000000000 +0000
+@@ -172,7 +172,7 @@
+         {MPV_RENDER_PARAM_INVALID, NULL},
+     };
+ 
+-    if (!eglMakeCurrent(egl_display, output->egl_surface, output->egl_surface, egl_context))
++    if (!eglMakeCurrent(egl_display, output->egl_surface, output->egl_surface, egl_context) && eglGetError() != EGL_SUCCESS)
+         cflp_error("Failed to make output surface current %s", eglGetErrorString(eglGetError()));
+ 
+     glViewport(0, 0, output->width * output->scale, output->height * output->scale);
+@@ -683,7 +683,7 @@
+         exit_mpvpaper(EXIT_FAILURE);
+     }
+ 
+-    if (!eglMakeCurrent(egl_display, EGL_NO_SURFACE, EGL_NO_SURFACE, egl_context)) {
++    if (!eglMakeCurrent(egl_display, EGL_NO_SURFACE, EGL_NO_SURFACE, egl_context) && eglGetError() != EGL_SUCCESS) {
+         cflp_error("Failed to make context current %s", eglGetErrorString(eglGetError()));
+         exit_mpvpaper(EXIT_FAILURE);
+     }
+@@ -881,7 +881,7 @@
+             return;
+         }
+ 
+-        if (!eglMakeCurrent(egl_display, output->egl_surface, output->egl_surface, egl_context))
++        if (!eglMakeCurrent(egl_display, output->egl_surface, output->egl_surface, egl_context) && eglGetError() != EGL_SUCCESS)
+             cflp_error("Failed to make output surface current %s", eglGetErrorString(eglGetError()));
+         eglSwapInterval(egl_display, 0);
+ 

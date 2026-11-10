@@ -1,0 +1,38 @@
+# Alpine-Maintainer: Hoang Nguyen <folliekazetani@protonmail.com>
+# Maintainer: jscaffidi <jscaffidi@qnx.com>
+pkgname=mpvpaper
+pkgver=1.9
+pkgrel=0
+pkgdesc="Video wallpaper setter for wlroots based compositors using mpv"
+url="https://github.com/GhostNaN/mpvpaper"
+arch="all"
+license="GPL-3.0-or-later"
+options="!check" # no test suite
+makedepends="
+	meson
+	ninja
+	mpv-dev
+	wayland-dev
+	wayland-protocols
+	qnx-screen-dev
+	"
+subpackages="$pkgname-doc"
+source="$pkgname-$pkgver.tar.gz::https://github.com/GhostNaN/mpvpaper/archive/refs/tags/$pkgver.tar.gz
+  disable-egl-success-errors.patch
+"
+
+build() {
+    LDFLAGS="$LDFLAGS -leventfd" \
+	abuild-meson . output
+	meson compile -C output
+}
+
+package() {
+	DESTDIR="$pkgdir" meson install --no-rebuild -C output
+	install -Dm644 mpvpaper.man "$pkgdir"/usr/share/man/man1/mpvpaper.1
+}
+
+sha512sums="
+5043ef8e25695af330508fbee595d5832b09250dbd6a7f4af08dd75808416e5c4a2fb7d1ddafdc71ed5f1c18734fde8629bd926d756dea4a59cb05ba805ac4a2  mpvpaper-1.9.tar.gz
+d2ef8999c22c5bc83b933fd186d946b14eee5c5b49d50ee6bc234551cca02c8b9cf378b67f192c81d6713b49cecfedb9e9d1bb32f081c67c18dd0c009d1446bd  disable-egl-success-errors.patch
+"
