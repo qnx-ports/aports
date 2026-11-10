@@ -10,7 +10,7 @@ makedepends="cmake make libc++-dev zlib-dev qnx-io-sock-dev qnx-libjson-dev  qnx
 depends="libc++ qnx-io-sock qnx-libjson qnx-slogger2 gtest"
 source="dlt-daemon-${pkgver}.tar.gz::https://github.com/qnx-ports/dlt-daemon/archive/refs/heads/qnx-v3.0.0.tar.gz
         dlt-daemon-3.0-qnx-clang.patch 
-        test.patch"
+        dlt-gnu-version.patch"
 builddir="$srcdir/dlt-daemon-qnx-v3.0.0"
 subpackages="$pkgname-dev"
 
@@ -53,7 +53,7 @@ package() {
 }
 
 sha512sums="
-be22d031bf644a40859ba49cf93f9f0137f43070d1b643ad513fa85919bf7b1ce3cfe9d16b891e00c53d6d7893644b29465392f2e701bacd5c4e6cc5a8417db9  dlt-daemon-3.0.0.tar.gz
+17e708362d4d5bf532e8130bb9fbc815e6c0b3cb6e744d32e864899a05963fe66cfe538b656d1bd49929a8dd617acdca7680031c7f5cfd7aa1b2e086e5d4452d  dlt-daemon-3.0.0.tar.gz
 1c1bd297398e50cd5e32c45f615b32cbab96c23569ade401eb120f047bff33ceed111d4f4b9b89ebfd8a56593df304d8a6faadf5181d92fce99219a91b618ae9  dlt-daemon-3.0-qnx-clang.patch
-4ebf6256b6c503cbcd1f9af95de2512108176260a1e706875987f3314491f41ad434b59930a1d76a5957070b95432d95948d561fd9bcee6794570c4e56b83a70  test.patch
+e3544b17b907883c3b552ace62b815e73d91e6ef17d360bb4716eee5b9ffb8a2081c129adf76ea08a24148fc8f00d6c3b0c75d91ac1db5eccfa20cd229705a52  dlt-gnu-version.patch
 "
