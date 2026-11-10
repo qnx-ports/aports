@@ -31,6 +31,7 @@ depends="
     qnx-screen
 "
 depends_dev="
+    egl-headers
 	ffmpeg-dev
 	libarchive-dev
 	libass-dev
@@ -41,6 +42,7 @@ depends_dev="
 	libxrandr-dev
     libplacebo-dev
     libunwind-dev
+    linux-headers-input-codes
 	shaderc-dev
 	wayland-dev
 	wayland-protocols
@@ -49,6 +51,7 @@ depends_dev="
     luajit-dev
     qnx-libdrm-dev
     qnx-alsa-dev
+    qnx-screen-dev
 "
 makedepends="
     $depends_dev
@@ -62,6 +65,7 @@ subpackages="
 	$pkgname-dev
 	$pkgname-bash-completion
 	$pkgname-zsh-completion
+	$pkgname-fish-completion
 	$pkgname-lua-scripts:lua_scripts:noarch
 	umpv::noarch
 	"
