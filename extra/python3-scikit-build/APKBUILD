@@ -1,6 +1,6 @@
 # Alpine-Contributor: Brian Vuyk <bvuyk@sama.com>
 # Alpine-Maintainer: Brian Vuyk <bvuyk@sama.com>
-# Maintianer: Deep Chordia <dchordia@qnx.com>
+# Maintainer: Deep Chordia <dchordia@qnx.com>
 pkgname=python3-scikit-build
 _pkgver=0.19.1_p0
 pkgver="${_pkgver%_p*}"
