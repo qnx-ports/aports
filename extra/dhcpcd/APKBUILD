@@ -1,7 +1,7 @@
 # Alpine-Contributor: Michael Mason <ms13sp@gmail.com>
 # Alpine-Contributor: Sören Tempel <soeren+alpine@soeren-tempel.net>
 # Alpine-Maintainer: Natanael Copa <ncopa@alpinelinux.org>
-# Contributoer: jscaffidi <jscaffidi@qnx.com>
+# Contributor: jscaffidi <jscaffidi@qnx.com>
 # Maintainer: Aaron Bassett <abassett@qnx.com>
 pkgname=dhcpcd
 pkgver=10.2.4_p1
