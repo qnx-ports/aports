@@ -1,0 +1,74 @@
+# Maintainer: Narayana Murthy Naidu <nnarayanamurthy@qnx.com>
+pkgname=sherpa-onnx
+pkgver=2.0.1
+pkgrel=0
+pkgdesc="Offline speech recognition and audio processing using ONNX Runtime"
+url="https://github.com/k2-fsa/sherpa-onnx"
+arch="all"
+license="Apache-2.0"
+
+depends="
+	libc++
+	onnxruntime
+	qnx-gcc-libs
+	qnx-microkernel
+	"
+
+makedepends="
+	cmake
+	libc++-dev
+	ninja
+	onnxruntime-dev
+	"
+
+subpackages="$pkgname-dev"
+
+source="
+	$pkgname-$pkgver.tar.gz::https://github.com/k2-fsa/sherpa-onnx/archive/refs/tags/v$pkgver.tar.gz
+	qnx-setlinebuf.patch
+	"
+builddir="$srcdir/$pkgname-$pkgver"
+
+build() {
+	export CFLAGS="${CFLAGS/-fstack-clash-protection/}"
+	export CXXFLAGS="${CXXFLAGS/-fstack-clash-protection/}"
+
+	cmake -S . -B build -G Ninja \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DCMAKE_INSTALL_LIBDIR=lib \
+		-DCMAKE_SKIP_INSTALL_RPATH=ON \
+		-DCMAKE_CXX_STANDARD=17 \
+		-DCMAKE_CXX_STANDARD_REQUIRED=ON \
+		-DBUILD_SHARED_LIBS=ON \
+		-DSHERPA_ONNX_USE_PRE_INSTALLED_ONNXRUNTIME_IF_AVAILABLE=ON \
+		-DSHERPA_ONNX_LINK_LIBSTDCPP_STATICALLY=OFF \
+		-DSHERPA_ONNX_ENABLE_C_API=ON \
+		-DSHERPA_ONNX_ENABLE_BINARY=OFF \
+		-DSHERPA_ONNX_BUILD_C_API_EXAMPLES=OFF \
+		-DSHERPA_ONNX_ENABLE_PYTHON=OFF \
+		-DSHERPA_ONNX_ENABLE_JNI=OFF \
+		-DSHERPA_ONNX_ENABLE_PORTAUDIO=OFF \
+		-DSHERPA_ONNX_ENABLE_WEBSOCKET=OFF \
+		-DSHERPA_ONNX_ENABLE_TTS=OFF \
+		-DSHERPA_ONNX_ENABLE_SPEAKER_DIARIZATION=OFF \
+		-DSHERPA_ONNX_ENABLE_GPU=OFF \
+		-DSHERPA_ONNX_ENABLE_TESTS=ON \
+		-DSHERPA_ONNX_ENABLE_CHECK=OFF
+
+	cmake --build build -j2
+}
+
+check() {
+	ctest --test-dir build \
+		--output-on-failure -j1
+}
+
+package() {
+	DESTDIR="$pkgdir" cmake --install build
+}
+
+sha512sums="
+71f0edb0e962f8be357adb82bd3018100a0a09a490229aaf90d22435154c9aa1bbcb5391b5b12ee48ea00fe5b359cd6d14439cc3a27bba478c3544062cadc466  sherpa-onnx-2.0.1.tar.gz
+c8a0eb1a83611257864238e4ec9dfecdfa8c8ff0e059b332542fa0953c1eac2878e8639034ff019494b4d4c3edc34fe5cef3420703eaf661c8a8dda379c75a18  qnx-setlinebuf.patch
+"
