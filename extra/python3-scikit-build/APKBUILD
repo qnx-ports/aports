@@ -2,8 +2,8 @@
 # Alpine-Maintainer: Brian Vuyk <bvuyk@sama.com>
 # Maintainer: Deep Chordia <dchordia@qnx.com>
 pkgname=python3-scikit-build
-_pkgver=0.19.1_p0
-pkgver="${_pkgver%_p*}"
+pkgver=0.19.1_p0
+_pkgver="${pkgver%_p*}"
 pkgrel=0
 pkgdesc="Improved build system generator for CPython C/C++/Fortran/Cython extensions"
 url="https://pypi.org/project/scikit-build/"
@@ -21,12 +21,12 @@ makedepends="
 	python3-hatch-fancy-pypi-readme
 	python3-hatch-vcs
 	"
-source="https://github.com/qnx-ports/scikit-build/archive/refs/tags/qnx-$_pkgver.tar.gz"
-builddir="$srcdir/scikit-build-qnx-$_pkgver"
+source="https://github.com/qnx-ports/scikit-build/archive/refs/tags/qnx-$pkgver.tar.gz"
+builddir="$srcdir/scikit-build-qnx-$pkgver"
 options="!check" # tests break from python3.12+ (due to distutils)
 
 build() {
-	export SETUPTOOLS_SCM_PRETEND_VERSION=$pkgver
+	export SETUPTOOLS_SCM_PRETEND_VERSION=$_pkgver
 	gpep517 build-wheel \
 		--wheel-dir .dist \
 		--output-fd 3 3>&1 >&2
