@@ -1,0 +1,13 @@
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -239,3 +239,10 @@
+ opt-level = 3
+ [profile.dev.package.msi]
+ opt-level = 3
++
++[profile.release]
++lto = false
++
++[patch.crates-io]
++libc = { path = "/usr/local/lib/rustlib/src/rust/library/vendor/libc-0.2.189" }
++
