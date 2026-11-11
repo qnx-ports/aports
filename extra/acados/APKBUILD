@@ -265,9 +265,9 @@ check() {
         lib_dir="${ext_example%%/*}"
         cd "$acados_python_root/$lib_dir"
         if python3 "$acados_python_root/$ext_example"; then
-            passed="$passed $ext_example"
+            passed="${passed:+$passed }$ext_example"
         else
-            failed="$failed $ext_example"
+            failed="${failed:+$failed }$ext_example"
         fi
     done
 
@@ -294,9 +294,9 @@ check() {
     cd "$builddir"
     for example in $min_example_list; do
         if python3 "$acados_python_root"/"$example"; then
-            passed="$passed $example"
+            passed="${passed:+$passed }$example"
         else
-            failed="$failed $example"
+            failed="${failed:+$failed }$example"
         fi
     done
 
