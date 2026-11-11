@@ -89,7 +89,7 @@ utils() {
 
 tests() {
 	pkgdesc="$pkgname Tests"
-	depends="$pkgname-dev=$pkgver-r$pkgrel"
+	depends="$pkgname=$pkgver-r$pkgrel"
 	amove usr/bin/test_linsol
 }
 
