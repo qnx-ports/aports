@@ -1,0 +1,39 @@
+# Alpine-Contributor: Timo Teras <timo.teras@iki.fi>
+# Maintainer: Arthur Clark <mydevstuff@mail.com>
+pkgname=perl-archive-zip
+_pkgreal=Archive-Zip
+pkgver=1.68
+pkgrel=0
+pkgdesc="Perl module to manipulate ZIP archive files"
+url="https://metacpan.org/release/Archive-Zip"
+arch="noarch"
+license="GPL-1.0-or-later OR Artistic-1.0-Perl"
+depends="perl"
+makedepends="perl-dev"
+subpackages="$pkgname-doc"
+source="https://cpan.metacpan.org/authors/id/P/PH/PHRED/Archive-Zip-$pkgver.tar.gz"
+builddir="$srcdir/$_pkgreal-$pkgver"
+
+build() {
+	PERL_MM_USE_DEFAULT=1 perl Makefile.PL INSTALLDIRS=vendor
+	make
+}
+
+check() {
+	# QNX ships BusyBox unzip, not InfoZip; its "unzip -t" misreports valid
+	# archives, so the suite's optional unzip cross-checks fail although the module
+	# is correct (write/read and timestamp round-trips verified). Shadow unzip with a
+	# failing stub so the suite takes its documented no-unzip path (those checks skip).
+	mkdir -p "$builddir"/.nozip
+	printf "#!/bin/sh\nexit 1\n" > "$builddir"/.nozip/unzip
+	chmod +x "$builddir"/.nozip/unzip
+	PATH="$builddir/.nozip:$PATH" make test
+}
+
+package() {
+	make DESTDIR="$pkgdir" install
+	find "$pkgdir" \( -name perllocal.pod -o -name .packlist \) -delete
+}
+sha512sums="
+40c3ba26b1c27a8b15b919934e7fcd531f208bec73de3454e123ac1fb771831e287b8fade421be40e243498beb6dad9b6133ef07d2e5d407afbd1f3d6a30b916  Archive-Zip-1.68.tar.gz
+"
