@@ -1,0 +1,70 @@
+# Maintainer: Terence Ang <taang@qnx.com>
+pkgname=daqp
+pkgver=0.10.0
+pkgrel=0
+pkgdesc="A dual active-set algorithm for convex quadratic programming"
+url="https://github.com/darnstrom/daqp"
+arch="all"
+license="MIT"
+makedepends="
+    cmake
+    ninja
+    python3-pip
+    python3-dev
+    cython
+    libc++-dev
+"
+subpackages="
+    python3-$pkgname:py3
+    $pkgname-static
+    $pkgname-dev
+"
+source="$pkgname-$pkgver.tar.gz::https://github.com/darnstrom/daqp/archive/refs/tags/v$pkgver.tar.gz"
+
+prepare() {
+    default_prepare
+    sed -i 's|Config DESTINATION cmake|Config DESTINATION lib/cmake/daqp|g' CMakeLists.txt
+}
+
+build() {
+    export CFLAGS="$CFLAGS -fPIC"
+    cmake -B build -S . -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DCMAKE_INSTALL_LIBDIR=lib \
+        -DPROFILING=OFF \
+        -DFASTER_MATH=OFF \
+        -DNATIVE_OPTIMIZATION=OFF \
+        -DSOFT_WEIGHTS=ON \
+        -DTEST=OFF \
+        -DBENCHMARK=OFF \
+        -DEIGEN=OFF \
+        -DPYTHON=ON \
+        -DJULIA=OFF \
+        -DMATLAB=OFF
+
+    cmake --build build
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install build
+
+    cd "$builddir/interfaces/daqp-python"
+
+    python3 -m pip install \
+        --no-deps \
+        --no-build-isolation \
+        --root="$pkgdir" \
+        --prefix=/usr \
+        .
+}
+
+py3() {
+    pkgdesc="Python bindings for DAQP"
+
+    amove usr/lib/python*/site-packages
+}
+
+sha512sums="
+c6a648cff2d669d95e00fee192955be6b141baafa3c1230fd37d151f64baf53a0c2f4866ef08c870996475dae546c710986def51d53cbf0a484f9f0849d8f4b1  daqp-0.10.0.tar.gz
+"
