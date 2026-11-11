@@ -26,6 +26,7 @@ prepare() {
 }
 
 build() {
+    export CFLAGS="$CFLAGS -fPIC"
     cmake -B build -S . -G Ninja \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_INSTALL_PREFIX=/usr \
