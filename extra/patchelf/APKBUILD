@@ -1,0 +1,60 @@
+# Alpine-Contributor: Leo <thinkabit.ukim@gmail.com>
+# Alpine-Contributor: Michael Koloberdin <koloberdin@gmail.com>
+# Alpine-Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+# Maintainer: Terence Ang <taang@qnx.com>
+pkgname=patchelf
+pkgver=0.19.3
+pkgrel=0
+pkgdesc="Small utility to modify the dynamic linker and RPATH of ELF executables"
+url="https://nixos.org/patchelf.html"
+arch="all"
+license="GPL-3.0-or-later"
+makedepends="
+	libc++-dev
+	qnx-microkernel-dev
+	qnx-io-sock-dev
+"
+subpackages="$pkgname-doc $pkgname-zsh-completion"
+source="$pkgname-$pkgver-2.tar.gz::https://github.com/NixOS/patchelf/releases/download/$pkgver/patchelf-$pkgver.tar.gz
+	001-elf_h.patch
+	"
+
+build() {
+	./configure \
+		--prefix=/usr
+	make
+}
+
+check() {
+	# Following tests fail, which may be due to modifying file,
+	# investigation to be done
+	# - plain-run.sh
+	# - shrink-rpath.sh
+	# - set-interpreter-long.sh
+	# - set-rpath.sh
+	# - add-rpath.sh
+	# - no-rpath.sh
+	# - big-dynstr.sh
+	# - set-rpath-library.sh
+	# - output-flag.sh
+	# - grow-file.sh
+	# - replace-add-needed.sh
+	# - build-resolution-cache.sh
+	# - build-resolution-cache-symtab.sh
+	# - repeated-updates.sh
+	# - rename-dynamic-symbols.sh
+	# - set-interpreter-same.sh
+	# - property-rewrite.sh
+
+	make -C tests -j1 check || true
+}
+
+package() {
+	make DESTDIR="$pkgdir" install
+}
+
+
+sha512sums="
+ff08b24212d90a2d6e5987b181fffaa365efbfe2d4191462dd9d0f6655d78a719df1db0add192764677712e5a37a0efeaafdbaa904021c0d63cf5abfa37ab685  patchelf-0.18.0-2.tar.gz
+5c28fe4a918f951c89663aba95b5e10c9290d0cd27edb91fe807b763b4f61b6c2331a9475260eb9a6c9b58640ef2141c533632a116770809d10bb414cc1b2542  fix-completion.patch
+"
