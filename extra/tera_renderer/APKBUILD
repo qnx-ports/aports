@@ -5,7 +5,7 @@ pkgrel=0
 pkgdesc="Tera-based renderer for acados templated code"
 url="https://github.com/acados/tera_renderer"
 arch="all"
-license="MIT"
+license="NOASSERTION"
 source="
     $pkgname-$pkgver.tar.gz::https://github.com/acados/tera_renderer/archive/refs/tags/v$pkgver.tar.gz
     001-cargo-toml.patch
