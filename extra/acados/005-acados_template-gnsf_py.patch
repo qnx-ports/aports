@@ -1,0 +1,29 @@
+--- a/interfaces/acados_template/acados_template/gnsf.py
++++ b/interfaces/acados_template/acados_template/gnsf.py
+@@ -876,7 +876,7 @@
+                 # jacobian value
+                 jac_fii_xi_fun = ca.Function("jac_fii_xi_fun", [x[1]], [jac_fii_xi])
+                 # x[1] as input just to have a scalar input and call the function as follows:
+-                gnsf["A"][ii, ix] = jac_fii_xi_fun(0).full()
++                gnsf["A"][ii, ix] = jac_fii_xi_fun(0).full().item()
+             else:
+                 gnsf["A"][ii, ix] = 0
+                 if print_info:
+@@ -910,7 +910,7 @@
+             if jac_fii_ui.is_constant():  # i.e. hessian is structural zero:
+                 # jacobian value
+                 jac_fii_ui_fun = ca.Function("jac_fii_ui_fun", [x[1]], [jac_fii_ui])
+-                gnsf["B"][ii, iu] = jac_fii_ui_fun(0).full()
++                gnsf["B"][ii, iu] = jac_fii_ui_fun(0).full().item()
+             else:
+                 gnsf["B"][ii, iu] = 0
+                 if print_info:
+@@ -945,7 +945,7 @@
+             if jac_fii_ki.is_constant():
+                 # jacobian value
+                 jac_fii_ki_fun = ca.Function("jac_fii_ki_fun", [x[1]], [jac_fii_ki])
+-                gnsf["E"][ii, ik] = -jac_fii_ki_fun(0).full()
++                gnsf["E"][ii, ik] = -jac_fii_ki_fun(0).full().item()
+             else:
+                 gnsf["E"][ii, ik] = 0
+                 if print_info:

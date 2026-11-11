@@ -1,0 +1,339 @@
+# Maintainer: Terence Ang <taang@qnx.com>
+pkgname=acados
+pkgver=0.6.0_git20261029
+_commit="51db6db146217e6624d7575f34e0421f28bc76a0"
+_catch1_commit="f3da715b4a4d075ea2f03b5908b360c64bff8cb0"
+pkgrel=0
+pkgdesc="Fast and embedded solvers for nonlinear optimal control and nonlinear model predictive control"
+url="https://github.com/acados/acados"
+arch="all"
+license="BSD-2-Clause"
+depends="
+    blasfeo
+    hpipm
+    qpoases-e
+    openmp
+    osqp
+    qpdunes
+    daqp
+"
+depends_dev="
+    blasfeo-dev
+    hpipm-dev
+    qpoases-e-dev
+    openmp-dev
+    osqp-static
+    osqp-dev
+    qpdunes-dev
+    eigen-dev
+    libc++-dev
+    daqp-static
+    daqp-dev
+"
+makedepends="
+    $depends_dev
+    qnx-microkernel-dev
+    cmake
+    python3-gpep517
+    python3-casadi
+    python3-setuptools
+    python3-numpy-dev
+    python3-dev
+    cython
+"
+depends_py3_acados_template="
+    python3-pip
+    python3-deprecated
+    python3-scipy
+    python3-matplotlib
+    python3-casadi
+    tera_renderer
+"
+depends_py3_examples="
+    qnx-microkernel-dev
+    casadi-dev
+    opencv-dev
+"
+checkdepends="
+    $depends_py3_acados_template
+    $depends_py3_examples
+    python3-jinja2
+"
+subpackages="
+    python3-$pkgname-template:py3
+    $pkgname-examples:examples
+    $pkgname-dev
+"
+source="
+    $pkgname-$_commit.tar.gz::https://github.com/acados/acados/archive/$_commit.tar.gz
+    catch2-$_catch1_commit.tar.gz::https://github.com/catchorg/Catch2/archive/$_catch1_commit.tar.gz
+    001-CMakeLists_txt.patch
+    002-test_chain_cpp.patch
+    003-acados_template-utils_py.patch
+    004-setup_py.patch
+    005-acados_template-gnsf_py.patch
+    006-chain_mass-utils_py.patch
+    007-cmake-find_eigen3.patch
+    008-cmake-find_openblas.patch
+    009-cmake-find_fortran.patch
+"
+builddir="$srcdir/$pkgname-$_commit"
+
+prepare() {
+    default_prepare
+
+    # Original sources use .gitmodules to clone
+    # blasfeo, qpdunes-dev, osqp, hpipm are created/updated in separate APKs
+    ln -sfn /usr/include external/blasfeo/include
+    ln -sfn /usr/include external/qpdunes/include
+    ln -sfn /usr/include/daqp external/daqp/include
+
+    mkdir -p external/osqp/include
+    ln -sfn /usr/include/osqp external/osqp/include/public
+
+    # acados headers specify the path of headers in this format
+    # say, "#include <hpipm/include/hpipm_d_ocp_qp_red.h>"
+    # instead of "#include <hpipm_d_ocp_qp_red.h>"
+    # We create symlinks to faciliate the building instead
+    mkdir -p external/hpipm/include
+    hpipm_h_list=$(find /usr/include -type f -name 'hpipm_*h')
+    for header_path in $hpipm_h_list; do
+    header=${header_path##*/}
+        ln -sfn /usr/include/"$header" external/hpipm/include/"$header"
+    done
+
+    # An older version of catch is required for unittest.
+    # It is NOT packaged separately to avoid confusion with catch2
+    rm -fr external/catch
+    ln -sfn "$srcdir"/Catch2-$_catch1_commit external/catch
+
+    gitignore_list=$(find -type f -name .gitignore)
+    for i in $gitignore_list; do
+       rm $i
+    done
+}
+
+build() {
+    CFLAGS="$CFLAGS -I/usr/include/qpdunes" \
+    CXXFLAGS="$CXXFLAGS -I/usr/include/qpdunes" \
+    cmake -B build -S . \
+        -DCMAKE_EXE_LINKER_FLAGS="-Wl,-z,stack-size=8388608" \
+        -DACADOS_WITH_SYSTEM_BLASFEO=ON \
+        -DACADOS_WITH_SYSTEM_HPIPM=ON \
+        -DACADOS_WITH_SYSTEM_QPOASES=ON \
+        -DACADOS_WITH_SYSTEM_OSQP=ON \
+        -DACADOS_WITH_SYSTEM_QPDUNES=ON \
+        -DACADOS_WITH_SYSTEM_DAQP=ON \
+        -Dhpipm_DIR=/usr \
+        -DACADOS_WITH_OPENMP=ON \
+        -DACADOS_WITH_QPOASES=ON \
+        -DACADOS_WITH_OSQP=ON \
+        -DACADOS_WITH_QPDUNES=ON \
+        -DACADOS_WITH_DAQP=ON \
+        -DACADOS_UNIT_TESTS=ON \
+        -DCMAKE_CXX_STANDARD=14 \
+        -DCMAKE_INSTALL_PREFIX=/usr
+
+    cmake --build build
+
+    cd interfaces/acados_template
+    gpep517 build-wheel \
+        --wheel-dir .dist \
+        --output-fd 3 3>&1 >&2
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install build
+
+    # acados-examples will expand to /usr/share/acados
+    # When using the example packages, it must be editable as there will be codegen
+    # cp -a /usr/share/acados /some/path/
+
+    # Set ACADOS_SOURCE_DIR so that lib/ include/ are searchable when using python examples
+    # export ACADOS_SOURCE_DIR="/usr"
+    # Some examples need extra modules and need to set PYTHONPATH
+    # export PYTHONPATH="/some/path/acados/examples/acados_python/pendulum_on_cart/common"
+    # cd /some/path/acados
+    # python3 <examples>/<example>.py
+    # Details at https://docs.acados.org/python_interface/index.html
+
+    # $ACADOS_SOURCE_DIR/include
+    # Acados headers are prepared in -dev
+    # we create symlinks to map the headers as acados/*.h will need this path
+    # /usr/include/hpipm/include/hpipm_*.h -> /usr/include/hpipm_*.h
+    mkdir -p "$pkgdir"/usr/include/hpipm/include
+    for f in /usr/include/hpipm_*.h; do
+        ln -sf $f "$pkgdir/usr/include/hpipm/include/"
+    done
+
+    # $ACADOS_SOURCE_DIR/lib
+    cp -pr lib/link_libs.json "$pkgdir"/usr/lib
+
+    # Prepare the examples/ for the acados-examples package
+    # examples/acados_matlab_octave/ will not be packaged
+    mkdir -p "$pkgdir"/usr/share/acados/examples
+    cp -a examples/acados_python "$pkgdir"/usr/share/acados/examples
+    cp -a examples/c "$pkgdir"/usr/share/acados/examples
+    cp -a examples/c_ext_dep_off "$pkgdir"/usr/share/acados/examples
+    cp -p examples/CMakeLists.txt "$pkgdir"/usr/share/acados/examples
+
+    # interfaces/acados_template will be packaged in python3
+    # interfaces/acados_c/*.c are used to built into libacados.so and not packaged
+    # interfaces/acados_c/*.h will be in acados-dev
+    # interfaces/acados_matlab_octave are not supported and not packaged
+    cd interfaces/acados_template
+    gpep517 install-wheel --destdir "$pkgdir" .dist/*.whl
+}
+
+dev() {
+    default_dev
+    depends="
+        $depends
+        $pkgname=$pkgver-r$pkgrel
+    "
+    amove usr/lib/link_libs.json
+}
+
+py3() {
+    pkgdesc="Python interface (acados_template) for acados"
+    depends="
+        $pkgname=$pkgver-r$pkgrel
+        $depends_py3_acados_template
+    "
+
+    amove usr/lib/python3*/site-packages
+}
+
+examples() {
+    pkgdesc="$pkgname examples"
+    depends="
+        $pkgname-dev=$pkgver-r$pkgrel
+        python3-$pkgname-template=$pkgver-r$pkgrel
+        $depends_dev
+        $depends_py3_examples
+        cmake
+    "
+
+    amove usr/share/acados
+}
+
+check() {
+    # This will come to two part
+    # 1. unit tests for acados
+    # 2. run minimal examples for python acados_template
+
+    # This runs the unit tests
+    "$builddir"/build/test/unit_tests
+
+    # Below examples can run successfully
+    export py_version=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+    export ACADOS_SOURCE_DIR="$builddir"
+    export acados_python_root="$ACADOS_SOURCE_DIR/examples/acados_python"
+    export LD_LIBRARY_PATH="$ACADOS_SOURCE_DIR/lib:${LD_LIBRARY_PATH:-}"
+
+    export PYTHONPATH="$ACADOS_SOURCE_DIR/interfaces/acados_template:${PYTHONPATH:+:$PYTHONPATH}"
+    export PYTHONPATH="$ACADOS_SOURCE_DIR/examples/acados_python/pendulum_on_cart/common:$PYTHONPATH"
+    export PYTHONPATH="/usr/lib/python$py_version/site-packages:$PYTHONPATH"
+
+    # Below is for convenience to create the paths at $ACADOS_SOURCE_DIR
+    # acados lib/ include/ interface/
+    ln -sf "$builddir"/build/acados/libacados.so "$builddir"/lib/libacados.so
+
+    # Create symlinks to include headers to build the examples
+    mkdir -p "$builddir"/include
+    ln -sf "$builddir"/interfaces/acados_c "$builddir"/include/acados_c
+    ln -sf "$builddir"/acados "$builddir"/include/acados
+    ln -sf "$builddir"/external/blasfeo "$builddir"/include/blasfeo
+    ln -sf "$builddir"/external/hpipm "$builddir"/include/hpipm
+
+    # Following examples shall generate codes and run. They shall pass
+
+    passed=""
+    failed=""
+
+    # Run example with external model
+    cd "$acados_python_root"/external_model/test_external_lib
+    cmake -B build -S . -DCMAKE_SKIP_RPATH=TRUE
+    cmake --build build
+
+    export LD_LIBRARY_PATH="$acados_python_root/external_model/test_external_lib/build:$LD_LIBRARY_PATH"
+    ext_example_list="
+        external_model/minimal_example_external_ode.py
+        generic_impl_dyn/minimal_example_ocp_generic_impl_dyn.py
+    "
+    for ext_example in $ext_example_list; do
+        lib_dir="${ext_example%%/*}"
+        cd "$acados_python_root/$lib_dir"
+        if python3 "$acados_python_root/$ext_example"; then
+            passed="${passed:+$passed }$ext_example"
+        else
+            failed="${failed:+$failed }$ext_example"
+        fi
+    done
+
+    min_example_list="
+        chain_mass/minimal_example_sim.py
+        evaluation/minimal_example_evaluation.py
+        getting_started/minimal_example_closed_loop.py
+        getting_started/minimal_example_ocp.py
+        getting_started/minimal_example_sim.py
+        mocp_transition_example/minimal_transition_example.py
+        pendulum_on_cart/mhe/minimal_example_mhe.py
+        pendulum_on_cart/mhe/minimal_example_mhe_with_noisy_param.py
+        pendulum_on_cart/mhe/minimal_example_mhe_with_param.py
+        pendulum_on_cart/ocp/minimal_example_batch_ocp_solver.py
+        pendulum_on_cart/ocp/minimal_example_ocp_cmake.py
+        pendulum_on_cart/ocp/minimal_example_ocp_reuse_code.py
+        pendulum_on_cart/ros2/example_ros_minimal_ocp.py
+        pendulum_on_cart/ros2/example_ros_minimal_sim.py
+        pendulum_on_cart/sim/minimal_example_batch_sim_solver.py
+        pendulum_on_cart/sim/minimal_example_sim_cmake.py
+        zoRO_example/pendulum_on_cart/minimal_example_zoro.py
+    "
+
+    cd "$builddir"
+    for example in $min_example_list; do
+        if python3 "$acados_python_root"/"$example"; then
+            passed="${passed:+$passed }$example"
+        else
+            failed="${failed:+$failed }$example"
+        fi
+    done
+
+    for i in $passed; do
+        echo "PASSED: $i"
+    done
+
+    for i in $failed; do
+        echo "FAILED: $i"
+    done
+
+    # Housekeeping to avoid accidental packaged up
+    rm -fr "$acados_python_root"/external_model/test_external_lib/build
+    rm -fr "$acados_python_root"/external_model/codegen_ocp_external_ode_*
+    rm -fr "$acados_python_root"/generic_impl_dyn/codegen_ocp_pendulum_*
+    rm -fr "$acados_python_root"/pendulum_on_cart/ros2/generated_ocp
+    rm -fr "$acados_python_root"/pendulum_on_cart/ros2/generated_sim
+    rm -fr "$acados_python_root"/pendulum_on_cart/ros2/generated
+
+    pycache_dir=$(find "$acados_python_root" -type d -name __pycache__)
+    for i in $pycache_dir;
+        do rm -fr $i;
+    done
+
+    if [ -n "$failed" ]; then return 1; fi
+}
+
+sha512sums="
+fbf664b3df2498139df718dec5cbe407f8c3c76b45e332258972da2f2520873549429e8d954da489435c566eb468444872b586e8e9ecd33e01f253c790b556c3  acados-51db6db146217e6624d7575f34e0421f28bc76a0.tar.gz
+18cb5fc508b96e1e5415959be35d57ae9af0cde404fcc1f0948b2d2cbfd4d692f85e40167816a9cac234fd57b919eba2836228d5fbee09c17d229291fcb7fbbc  catch2-f3da715b4a4d075ea2f03b5908b360c64bff8cb0.tar.gz
+b805e822ac22b850727704392411c6d1075578d5bef699a5b6192cd38dd8e2ae0008662a846458759af8cc78570bcefaeee9191b29357df08c5653ec2fb2942e  001-CMakeLists_txt.patch
+ffb261978abff683a0ee03bc6ba5a9a3c756c8f43443a76ce9895014a5def42e28b08975a79c1f34d516654d3492af33a030a2a3c5f5de5fb3b614e49976fb64  002-test_chain_cpp.patch
+5432e4cf1e779fd92406c90ebea5170aa8a3a87c9d7d57368c993edd112eeb18bfa2f9ab59d20a5f0ff989deb6ac2523d552e4a9a2c2b3fc4f4259fd40030d61  003-acados_template-utils_py.patch
+b6cf17e185d7bfe16b795cebe92a960f914bd7e86ebbed1d914347d9916e7b625bcffb93a067817e473afc71bdfac7502d8a3cf317402e64d5bf66109a7e5d44  004-setup_py.patch
+55c410512934f5a4dfe5daf7aff10e9bef0e04ee6ac15ab52484216c555111fb5462b81d3346c3e78f8238b5ef9ed8650d6cf7e437fbe16471ce4aef91cef8bc  005-acados_template-gnsf_py.patch
+49015684d690dfc21b1e28865c840a0c155b03f35a3ed44151c46d75aba29f326fda286fcc80522872e519909dd13ea33d90a2752600e56edd6199dd1f126fce  006-chain_mass-utils_py.patch
+95f6bae15c34d1c7f197731b246c7c401a16964201105f70b338f5b9b10e430f72700c11dafc9c6ae44123de8713adfa2e1f1f092c77ddfe776d6072d94bd7d8  007-cmake-find_eigen3.patch
+29a33bc4c9c61ce3071ab74c3dc3dcbf6e79e78b2ff4913bc0cf8cc697dbb301a56f52ff7cc68402ef040d784a51cabc827bbfbcfa684d18528d22cea0f2db72  008-cmake-find_openblas.patch
+c992ac4895afea53e74bee7ce37f3fe0fbb96842ae2e4e1f684c9d4f65c967391e76ffbd739e10cb1883374f7907cd5ca09db0cbbd8a18770b14daa8e4ff7bae  009-cmake-find_fortran.patch
+"
