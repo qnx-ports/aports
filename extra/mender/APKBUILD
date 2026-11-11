@@ -24,7 +24,7 @@ source="
 builddir="$srcdir/$pkgname-$pkgver"
 
 build() {
-    CXXFLAGS="-Wno-unused-command-line-argument" cmake . \
+    CXXFLAGS="-Wno-unused-command-line-argument -DSA_RESTART=0" cmake . \
       -DCMAKE_GENERATOR="Unix Makefiles" \
       -DCMAKE_BUILD_TYPE=Release \
       -DCMAKE_INSTALL_PREFIX=/usr \
