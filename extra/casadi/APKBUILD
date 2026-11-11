@@ -32,8 +32,6 @@ makedepends="
     mumps-dev
     tinyxml2-dev
     openmp-dev
-    opencl-headers
-    qnx-opencl
 "
 checkdepends="
     python3-looseversion
@@ -91,7 +89,11 @@ utils() {
 
 tests() {
     pkgdesc="$pkgname Tests"
-    depends="$pkgname-dev=$pkgver-r$pkgrel"
+    depends="
+        $pkgname-dev=$pkgver-r$pkgrel
+        opencl-headers
+        qnx-opencl
+    "
     amove usr/bin/test_linsol
 }
 
