@@ -1,6 +1,6 @@
 --- a/cmake/FindFortranLibs.cmake
 +++ b/cmake/FindFortranLibs.cmake
-@@ -11,11 +11,16 @@
+@@ -11,11 +11,17 @@
      list(APPEND CMAKE_FIND_LIBRARY_SUFFIXES ".dll")
  endif()
  
@@ -13,6 +13,7 @@
 +
 +        # LLVM Flang - QNX
 +        /usr/lib/llvm22/lib/clang/22/lib/x86_64-pc-qnx
++        /usr/lib/llvm22/lib/clang/22/lib/aarch64-unknown-qnx
 +        /usr/lib/llvm22/lib
 +
          ${CMAKE_FIND_ROOT_PATH}
