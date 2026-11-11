@@ -8,6 +8,7 @@ arch="all"
 license="MIT"
 makedepends="
     cmake
+    ninja
     python3-pip
     python3-dev
     cython
