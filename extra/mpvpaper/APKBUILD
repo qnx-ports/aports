@@ -8,6 +8,7 @@ url="https://github.com/GhostNaN/mpvpaper"
 arch="all"
 license="GPL-3.0-or-later"
 options="!check" # no test suite
+depends="mpv qnx-fd-notify"
 makedepends="
 	meson
 	ninja
@@ -15,10 +16,12 @@ makedepends="
 	wayland-dev
 	wayland-protocols
 	qnx-screen-dev
+    qnx-fd-notify-dev
 	"
-subpackages="$pkgname-doc"
+subpackages="$pkgname-doc $pkgname-dbg"
 source="$pkgname-$pkgver.tar.gz::https://github.com/GhostNaN/mpvpaper/archive/refs/tags/$pkgver.tar.gz
   disable-egl-success-errors.patch
+  pidof-shim.patch
 "
 
 build() {
@@ -35,4 +38,5 @@ package() {
 sha512sums="
 5043ef8e25695af330508fbee595d5832b09250dbd6a7f4af08dd75808416e5c4a2fb7d1ddafdc71ed5f1c18734fde8629bd926d756dea4a59cb05ba805ac4a2  mpvpaper-1.9.tar.gz
 d2ef8999c22c5bc83b933fd186d946b14eee5c5b49d50ee6bc234551cca02c8b9cf378b67f192c81d6713b49cecfedb9e9d1bb32f081c67c18dd0c009d1446bd  disable-egl-success-errors.patch
+7176d588ab3f704dde9bba5e9ff8bae0c234d4900ef700b6bfd2bc8babf545c383ae560cdadfa2f9d1fbb3c4dda48d0b907ddda6a97a856e49c0d1b105a78560  pidof-shim.patch
 "
