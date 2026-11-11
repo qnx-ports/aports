@@ -134,7 +134,7 @@ build() {
         -DCMAKE_CXX_STANDARD=14 \
         -DCMAKE_INSTALL_PREFIX=/usr
 
-    cmake --build build -j"$npoc"
+    cmake --build build
 
     cd interfaces/acados_template
     gpep517 build-wheel \
