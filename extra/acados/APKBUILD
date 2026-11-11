@@ -320,6 +320,8 @@ check() {
     for i in $pycache_dir;
         do rm -fr $i;
     done
+
+    if [ -n "$failed" ]; then return 1; fi
 }
 
 sha512sums="
