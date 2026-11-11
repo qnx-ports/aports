@@ -89,17 +89,17 @@ utils() {
 
 tests() {
 	pkgdesc="$pkgname Tests"
-	depends="
-		$pkgname-dev=$pkgver-r$pkgrel
-		opencl-headers
-		qnx-opencl
-	"
+	depends="$pkgname-dev=$pkgver-r$pkgrel"
 	amove usr/bin/test_linsol
 }
 
 examples() {
 	pkgdesc="$pkgname Examples"
-	depends="$pkgname=$pkgver-r$pkgrel"
+	depends="
+		$pkgname=$pkgver-r$pkgrel
+		opencl-headers
+		qnx-opencl
+    "
 	amove usr/bin/*
 	amove usr/bin/.cpp_examples_manifest
 }
