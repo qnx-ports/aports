@@ -33,7 +33,7 @@ makedepends="
     python3-glad
     qnx-vulkan
 	"
-subpackages="$pkgname-dev"
+subpackages="$pkgname-dev $pkgname-dbg"
 source="https://code.videolan.org/videolan/libplacebo/-/archive/v$_pkgver/libplacebo-v$_pkgver.tar.gz
   disable-failing-tests.patch
 "
