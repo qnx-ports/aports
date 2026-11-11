@@ -20,6 +20,7 @@ subpackages=""
 source="
     https://github.com/mendersoftware/mender/releases/download/$pkgver/$pkgname-$pkgver.tar.gz
     0001-single-junit-xml.patch
+    0002-allow-skipping-network-based-test.patch
 "
 builddir="$srcdir/$pkgname-$pkgver"
 
@@ -31,7 +32,8 @@ build() {
       -DMENDER_VERSION="$pkgver" \
       -DMENDER_DOWNLOAD_GTEST=OFF \
       -DMENDER_USE_DBUS=OFF -DMENDER_EMBED_MENDER_AUTH=ON -DMENDER_USE_LMDB=OFF \
-      -DMENDER_TEST_SKIP_ASYNC_FIFO_OPENER_TESTS=ON -DMENDER_TEST_SKIP_NOFILE_BASED_TESTS=ON -DMENDER_TEST_RUN_SEQUENTIALLY=ON
+      -DMENDER_TEST_SKIP_ASYNC_FIFO_OPENER_TESTS=ON -DMENDER_TEST_SKIP_NOFILE_BASED_TESTS=ON -DMENDER_TEST_SKIP_NETWORK_BASED_TESTS=ON \
+      -DMENDER_TEST_RUN_SEQUENTIALLY=ON
     make
 }
 
@@ -49,4 +51,5 @@ package() {
 sha512sums="
 46dfaefa68d9c4c98ed52b92fe98e405938a2c94b62d5b33ffde3e18590edb657da647385ac99fe398e860b0f597299798f86f075439f93f66808072b1e43b8e  mender-5.2.0.tar.gz
 5b895fa27a94414364304c12875cc3816bc25aaef10399ba06686d09b108551188d42f5c79170c9e7c5bf2446ed6300e99abaeb3981f04d01b6f49ae967be945  0001-single-junit-xml.patch
+340793995c035a7e8fc0e7253b818fc59c59a0c9477b53dd8926c5d271145e6e5f800686d614da0fb7fc2c673167c2aabec5a5c27af9e9f0ed419a3d594733e3  0002-allow-skipping-network-based-test.patch
 "
