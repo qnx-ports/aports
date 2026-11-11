@@ -22,22 +22,6 @@ source="https://github.com/urllib3/urllib3/releases/download/$pkgver/urllib3-$pk
 builddir="$srcdir/$_pkgname-$pkgver"
 options="!check"
 
-# secfixes:
-#   2.8.0-r0:
-#     - CVE-2026-97687
-#     - CVE-2026-97688
-#     - CVE-2026-97689
-#   2.6.3-r0:
-#     - CVE-2026-21441
-#   1.26.18-r0:
-#     - CVE-2023-45803
-#   1.26.17-r0:
-#     - CVE-2023-43804
-#   1.25.9-r0:
-#     - CVE-2020-26137
-#   1.26.4-r0:
-#     - CVE-2021-28363
-
 export SETUPTOOLS_SCM_PRETEND_VERSION="$pkgver"
 
 build() {
