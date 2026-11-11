@@ -84,12 +84,12 @@ prepare() {
 
     # Original sources use .gitmodules to clone
     # blasfeo, qpdunes-dev, osqp, hpipm are created/updated in separate APKs
-    ln -sf /usr/include external/blasfeo/include
-    ln -sf /usr/include external/qpdunes/include
-    ln -sf /usr/include/daqp external/daqp/include
+    ln -sfn /usr/include external/blasfeo/include
+    ln -sfn /usr/include external/qpdunes/include
+    ln -sfn /usr/include/daqp external/daqp/include
 
     mkdir -p external/osqp/include
-    ln -sf /usr/include/osqp external/osqp/include/public
+    ln -sfn /usr/include/osqp external/osqp/include/public
 
     # acados headers specify the path of headers in this format
     # say, "#include <hpipm/include/hpipm_d_ocp_qp_red.h>"
@@ -99,13 +99,13 @@ prepare() {
     hpipm_h_list=$(find /usr/include -type f -name 'hpipm_*h')
     for header_path in $hpipm_h_list; do
     header=${header_path##*/}
-        ln -sf /usr/include/"$header" external/hpipm/include/"$header"
+        ln -sfn /usr/include/"$header" external/hpipm/include/"$header"
     done
 
     # An older version of catch is required for unittest.
     # It is NOT packaged separately to avoid confusion with catch2
     rm -fr external/catch
-    ln -sf "$srcdir"/Catch2-$_catch1_commit external/catch
+    ln -sfn "$srcdir"/Catch2-$_catch1_commit external/catch
 
     gitignore_list=$(find -type f -name .gitignore)
     for i in $gitignore_list; do
