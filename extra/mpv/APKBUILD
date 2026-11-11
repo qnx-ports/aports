@@ -1,0 +1,160 @@
+# Alpine-Contributor: Sören Tempel <soeren+alpine@soeren-tempel.net>
+# Alpine-Contributor: Łukasz Jendrysik <scadu@yandex.com>
+# Alpine-Contributor: Jakub Skrzypnik <j.skrzypnik@openmailbox.org>
+# Alpine-Maintainer: Alex McGrath <amk@amk.ie>
+# Maintainer: jscaffidi <jscaffidi@qnx.com>
+pkgname=mpv
+pkgver=0.41.0
+pkgrel=0
+pkgdesc="Video player based on MPlayer/mplayer2"
+url="https://mpv.io/"
+license="GPL-2.0-or-later"
+arch="all"
+depends="
+	ffmpeg
+	libarchive
+	libass
+	libcaca
+	libdisplay-info
+	libxext
+	libxkbcommon
+	libxrandr
+    libplacebo
+    libunwind
+	shaderc
+	wayland
+	zimg
+	zlib
+    luajit
+    lua-libs
+    qnx-libdrm
+    qnx-alsa
+    qnx-screen
+"
+depends_dev="
+    egl-headers
+	ffmpeg-dev
+	libarchive-dev
+	libass-dev
+	libcaca-dev
+	libdisplay-info-dev
+	libxext-dev
+	libxkbcommon-dev
+	libxrandr-dev
+    libplacebo-dev
+    libunwind-dev
+    linux-headers-input-codes
+	shaderc-dev
+	wayland-dev
+	wayland-protocols
+	zimg-dev
+	zlib-dev
+    luajit-dev
+    qnx-libdrm-dev
+    qnx-alsa-dev
+    qnx-screen-dev
+"
+makedepends="
+    $depends_dev
+	meson
+	python3-docutils
+	"
+subpackages="
+	$pkgname-dbg
+	$pkgname-doc
+	$pkgname-libs
+	$pkgname-dev
+	$pkgname-bash-completion
+	$pkgname-zsh-completion
+	$pkgname-fish-completion
+	$pkgname-lua-scripts:lua_scripts:noarch
+	umpv::noarch
+	"
+source="https://github.com/mpv-player/mpv/archive/v$pkgver/mpv-v$pkgver.tar.gz
+  disable-locale.patch
+  qnx-alsa-sample-rates.patch
+  meson-libcaca-version.patch
+"
+
+prepare() {
+	default_prepare
+
+	echo "$pkgver" > VERSION
+}
+
+build() {
+	CFLAGS="$CFLAGS -O2 -DSA_RESTART=0 -Wno-incompatible-pointer-types" \
+	CXXFLAGS="$CXXFLAGS -O2" \
+    LDFLAGS="$LDFLAGS -lsocket -llocale -lunwind" \
+	abuild-meson \
+		-Dalsa=enabled \
+		-Db_lto=false \
+		-Dbuild-date=false \
+		-Dcaca=enabled \
+		-Dcdda=disabled \
+        `# unfortunately needs vt.h despite us having drm` \
+		-Ddrm=disabled \
+		-Ddvdnav=disabled \
+		-Degl-drm=disabled \
+		-Degl=enabled \
+		-Degl-wayland=enabled \
+		-Degl-x11=disabled \
+		-Dgbm=disabled \
+		-Dgl=enabled \
+		-Djack=disabled \
+		-Dlibmpv=true \
+		-Dpulse=disabled \
+		-Dsixel=disabled \
+		-Dsndio=disabled \
+		-Dtests="$(want_check && echo true || echo false)" \
+		-Duchardet=disabled \
+		-Dvdpau=disabled \
+        `# missing VK_KHR_surface extension in shipped mesa` \
+		-Dvulkan=disabled \
+		-Dx11=disabled \
+		. output
+
+	meson compile -C output
+}
+
+check() {
+	meson test --print-errorlogs -C output
+}
+
+package() {
+	DESTDIR="$pkgdir" meson install --no-rebuild -C output
+
+	install -Dm644 "$builddir"/DOCS/*.rst "$builddir"/DOCS/*.md \
+		-t "$pkgdir"/usr/share/doc/$pkgname/
+
+	# Move example configuration files to subdirectory
+	mkdir -p "$pkgdir"/usr/share/doc/mpv/examples
+	mv "$pkgdir"/usr/share/doc/mpv/*.conf \
+		"$pkgdir"/usr/share/doc/mpv/examples/
+}
+
+umpv() {
+	pkgdesc="$pkgdesc - script to add new videos to existing playlist instead of starting a new instance"
+	depends="$pkgname=$pkgver-r$pkgrel python3"
+	install_if="$pkgname=$pkgver-r$pkgrel python3"
+
+	install -Dm755 "$builddir"/TOOLS/umpv -t "$subpkgdir"/usr/bin
+}
+
+lua_scripts() {
+	pkgdesc="$pkgdesc (lua scripts)"
+	depends="$pkgname=$pkgver-r$pkgrel"
+	install_if="$pkgname=$pkgver-r$pkgrel"
+
+	cd "$builddir"/TOOLS/lua/
+	find . -exec install -Dm 644 {} -t "$subpkgdir/usr/share/mpv/lua/" \;
+}
+
+
+
+sha512sums="
+d8806ef04455aeb65d45c5956b4589d7a9728f869b74b9bcd8c9ab08475c28538334399ddc7fc2aee6a31fd178fe4b87ec755cd99ffa6e29ab4b6b61757b9320  mpv-v0.41.0.tar.gz
+97c87f3d1f53d517661d9e7ef2b5522667baf02e324027c35605051ef6ee470c17a534b8aac5cb1f2e98fe91102e2222e703f56201d8021d007030c4cd716c3a  disable-locale.patch
+6fc7eb9f4415a703b4c5600ee1ae9488093fff95781072f559159e1ac93a2c157c6670062386bfa60b70314a53c90a634aee3a39ef2c7a92afa6f99dbbdcbca0  qnx-alsa-sample-rates.patch
+4ff107b15c7d124a22547f73b10fa7cbaf247be27717474d875fa5db9652ae3b19b6801a069b066eb9566e66a4882257e09b9424f9fe95a477bd2deffa72c890  meson-libcaca-version.patch
+"
