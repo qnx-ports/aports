@@ -1,0 +1,174 @@
+# Alpine-Contributor: omni <omni+alpine@hack.org>
+# Alpine-Maintainer: messense <messense@icloud.com>
+# Maintainer: Terence Ang <taang@qnx.com>
+pkgname=maturin
+pkgver=1.14.1
+pkgrel=0
+pkgdesc="Build and publish crates with pyo3, rust-cpython and cffi bindings"
+url="https://github.com/PyO3/maturin"
+arch="all"
+license="Apache-2.0 OR MIT"
+makedepends="
+	bzip2-dev
+	cargo
+	rust
+	dbus-dev
+	openssl-dev
+	python3-gpep517
+	python3-setuptools
+	python3-setuptools-rust
+	python3-wheel
+	qnx-io-sock-dev
+	"
+checkdepends="
+	cargo-nextest
+	libffi-dev
+	patchelf
+	python3-cffi
+	python3-virtualenv
+	python3-dev
+	"
+subpackages="
+	python3-$pkgname:py3:noarch
+	$pkgname-bash-completion
+	$pkgname-fish-completion
+	$pkgname-zsh-completion
+	"
+source="$pkgname-$pkgver.tar.gz::https://github.com/PyO3/maturin/archive/refs/tags/v$pkgver.tar.gz
+	001-mod_rs.patch
+	002-platform_tag_rs.patch
+	003-ring_rs.patch
+	005-rustix_rs.patch
+	004-getrandom_rs.patch
+	006-filetime_rs.patch
+	007-target_lexicon_rs.patch
+	008-memmap2_rs.patch
+	009-platform_info_rs.patch
+	010-errno_rs.patch
+	011-cargo_toml.patch
+	config.toml
+	"
+options="!check net"
+
+prepare() {
+	cargo update -p rustix --precise 1.1.5
+	cargo update -p libc --precise 0.2.189
+
+	mkdir -p .cargo
+	cp "$srcdir"/config.toml .cargo
+
+	patch -p1 -i "$srcdir"/011-cargo_toml.patch
+
+	cargo vendor vendor
+
+	patch -p1 -i "$srcdir"/001-mod_rs.patch
+	patch -p1 -i "$srcdir"/002-platform_tag_rs.patch
+	patch -p1 -i "$srcdir"/005-rustix_rs.patch
+	patch -p1 -i "$srcdir"/004-getrandom_rs.patch
+	patch -p1 -i "$srcdir"/003-ring_rs.patch
+	patch -p1 -i "$srcdir"/006-filetime_rs.patch
+	patch -p1 -i "$srcdir"/007-target_lexicon_rs.patch
+	patch -p1 -i "$srcdir"/008-memmap2_rs.patch
+	patch -p1 -i "$srcdir"/009-platform_info_rs.patch
+	patch -p1 -i "$srcdir"/010-errno_rs.patch
+
+	# Update the checksum of each .cargo-checksum.json
+	list="
+	    vendor/rustix
+	    vendor/getrandom
+	    vendor/getrandom-0.2.17
+	    vendor/ring
+	    vendor/filetime
+	    vendor/target-lexicon
+	    vendor/memmap2
+	    vendor/platform-info
+	    vendor/errno
+	"
+
+	for root in $list; do
+	    ROOT="$root" python3 - <<'PY'
+import hashlib
+import json
+import os
+from pathlib import Path
+
+root = Path(os.environ["ROOT"])
+checksum_file = root / ".cargo-checksum.json"
+
+data = json.loads(checksum_file.read_text())
+
+for file in data["files"]:
+    path = root / file
+    if path.is_file():
+        data["files"][file] = hashlib.sha256(path.read_bytes()).hexdigest()
+
+checksum_file.write_text(json.dumps(data, separators=(",", ":")) + "\n")
+print(f"Updated: {root}")
+PY
+	done
+
+	cargo fetch
+}
+
+build() {
+	export _features="--features=native-tls,password-storage,rustls,cli-completion,scaffolding,upload,sbom"
+
+	export OPENSSL_NO_VENDOR=1
+	export MATURIN_SETUP_ARGS="
+		--no-default-features
+		$_features
+	"
+	export CARGO_PROFILE_RELEASE_LTO=false
+	export RUSTFLAGS="-L native=/usr/lib"
+
+	gpep517 build-wheel \
+		--wheel-dir .dist \
+		--output-fd 3 3>&1 >&2
+
+	./target/release/maturin completions bash > $pkgname.bash
+	./target/release/maturin completions fish > $pkgname.fish
+	./target/release/maturin completions zsh > $pkgname.zsh
+}
+
+check() {
+	export OPENSSL_NO_VENDOR=1
+
+	cargo nextest run \
+	  --frozen \
+	  --no-default-features "$_features" \
+	  --no-fail-fast \
+	  -E "$_test_filter"
+}
+
+package() {
+	install -Dm644 $pkgname.bash "$pkgdir"/usr/share/bash-completion/completions/$pkgname
+	install -Dm644 $pkgname.fish "$pkgdir"/usr/share/fish/vendor_completions.d/$pkgname.fish
+	install -Dm644 $pkgname.zsh "$pkgdir"/usr/share/zsh/site-functions/_$pkgname
+
+	python3 -m installer -d "$pkgdir" \
+		.dist/maturin*.whl
+}
+
+py3() {
+	pkgdesc="$pkgdesc (python module)"
+	depends="$pkgname=$pkgver-r$pkgrel"
+
+	amove usr/lib/python3*
+}
+
+
+sha512sums="
+db2fd5fa98edafad85e42bd9a5eae45525a706b550604d49a62431211dc14a83841a851ce5a53bfd298ce4a14546efc62e8ef4349946e40d5f688ee16f6b2962  maturin-1.14.1.tar.gz
+6f1cd40493d5683e1c8a04af80517770cf57e8971114696934202040da43926af83ced40bbee5eb29e8d3fbd692fe68e9601ac648f6a280847eb6ec979064e02  001-mod_rs.patch
+a16bdd487bfd55ac661ce25692276748d97a17b4702a6c4d6ca599e2169931054a34f15e949d49fd531e1c8a2683db606cb98088da4e0df32d2e80e872820c0c  002-platform_tag_rs.patch
+75f84c984d6d2d6356682a83d89e1a01109987c9d8721a5f73347e0727f99971760950b768304b14eee4b2cc153e736e883ec939fc5ccf66c213f3b16045f7bb  003-ring_rs.patch
+81c6be91e6fc6f680edae8088b10808914f5f4c6efd279793a11d14646c2f16b68715b997cba14b13e8f4b1db8353a42783b7bae846813c1fa6b1b25ba0debd9  005-rustix_rs.patch
+df24b3cd9a7e568b6b5ef56eeb45e9b1837e00afe79b03ad0d3ed11081427a5d95e7e7864680cfd6bccdf85cf6d46428561914fc0620e029faf5206f11b491c9  004-getrandom_rs.patch
+4cded4b506ab44c90d05ef91ff38dacf1f56f7b85471b77c137a6c44c997c1201cad48ee80f70e7a73a6890a7c33e8afe399760d0854256a808b71e753adda57  006-filetime_rs.patch
+75f4e1888ba01892a4a151c4f8fd9edcd7c54e6dce3ed5b931504276e510e210a9c0e8c88cc8231975b547f6b757fe14aae043ccad256f11cfa40eb06c5e5bca  007-target_lexicon_rs.patch
+998d6c5020156b0bc6b33fb700e6b7a19c83a2f0af725dbbb1322baf9ad492406d81563a818d0e779e62291fabd3789b6c9dc992e07c51009451d2b3c9cf01ac  008-memmap2_rs.patch
+38c2e3a7061cd8de517a70f1b20e9092094f34e53210e61eb7aebc24b879675d3079d17958f4fdff631353a620455e45c2d2ba22f9d2b6e7aebfeffc8aacb54c  009-platform_info_rs.patch
+cdfc72bac9724b4e4df4da3c9895751957d9c7696d439670b9be733a23dc40560e5b098be7670fb4bb68748137b0e78d977a85e51f6593fe306e1f6e4ebce2d8  010-errno_rs.patch
+520526ad0c2b54523efc880bb8eaee173f9b6b403b7335aa9df0dbb89dfd1b2f86272bb3773326c5a9bf24ba13a77fee5fb9d963a1d81744e52d4895c1f3789e  011-cargo_toml.patch
+8d542abd3b4a2ad323554c4d9c8fdd9e178e09af085bf35e4adbd325805af688f0bb6add30fa34ca7b62866bb07412a798c113b41fd6f93cb187abc0795c8379  config.toml
+"

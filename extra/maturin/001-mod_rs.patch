@@ -1,0 +1,63 @@
+--- a/src/target/mod.rs
++++ b/src/target/mod.rs
+@@ -36,6 +36,7 @@
+     Windows,
+     Macos,
+     Ios,
++    Qnx,
+     FreeBsd,
+     NetBsd,
+     OpenBsd,
+@@ -58,6 +59,7 @@
+             Os::Windows => write!(f, "Windows"),
+             Os::Macos => write!(f, "macOS"),
+             Os::Ios => write!(f, "iOS"),
++            Os::Qnx => write!(f, "qnx"),
+             Os::FreeBsd => write!(f, "FreeBSD"),
+             Os::NetBsd => write!(f, "NetBSD"),
+             Os::OpenBsd => write!(f, "OpenBSD"),
+@@ -197,6 +199,7 @@
+         Os::Windows => &[Arch::X86, Arch::X86_64, Arch::Aarch64],
+         Os::Macos => &[Arch::Aarch64, Arch::X86_64],
+         Os::Ios => &[Arch::Aarch64, Arch::X86_64],
++        Os::Qnx => &[Arch::Aarch64, Arch::X86_64],
+         Os::FreeBsd | Os::NetBsd => &[
+             Arch::Aarch64,
+             Arch::Armv6L,
+@@ -299,6 +302,7 @@
+             OperatingSystem::MacOSX(_) | OperatingSystem::Darwin(_) => Os::Macos,
+             OperatingSystem::IOS(_) => Os::Ios,
+             OperatingSystem::Netbsd => Os::NetBsd,
++            OperatingSystem::Qnx => Os::Qnx,
+             OperatingSystem::Freebsd => Os::FreeBsd,
+             OperatingSystem::Openbsd => Os::OpenBsd,
+             OperatingSystem::Dragonfly => Os::Dragonfly,
+@@ -479,6 +483,7 @@
+             Os::Linux => "linux",
+             Os::Macos => "darwin",
+             Os::Ios => "ios",
++            Os::Qnx => "qnx",
+             Os::FreeBsd => "freebsd",
+             Os::NetBsd => "netbsd",
+             Os::OpenBsd => "openbsd",
+@@ -577,6 +582,7 @@
+             Os::Linux
+             | Os::Macos
+             | Os::Ios
++            | Os::Qnx
+             | Os::FreeBsd
+             | Os::NetBsd
+             | Os::OpenBsd
+@@ -615,6 +621,12 @@
+     #[inline]
+     pub fn is_linux(&self) -> bool {
+         self.os == Os::Linux
++    }
++
++    /// Returns true if the current platform is qnx
++    #[inline]
++    pub fn is_qnx(&self) -> bool {
++        self.os == Os::Qnx
+     }
+ 
+     /// Returns true if the current platform is freebsd
