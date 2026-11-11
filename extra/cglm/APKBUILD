@@ -1,0 +1,29 @@
+# Alpine-Maintainer: Simon Zeni <simon@bl4ckb0ne.ca>
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=cglm
+pkgver=0.9.6
+pkgrel=0
+pkgdesc="Highly Optimized Graphics Math (glm) for C"
+url="http://cglm.readthedocs.io"
+arch="all"
+license="MIT"
+makedepends="meson"
+subpackages="$pkgname-dev"
+source="$pkgname-$pkgver.tar.gz::https://github.com/recp/cglm/archive/refs/tags/v$pkgver.tar.gz"
+
+build() {
+    abuild-meson . build -Dbuild_tests=true
+    meson compile -C build
+}
+
+check() {
+    meson test --print-errorlogs -C build
+}
+
+package() {
+    DESTDIR="$pkgdir" meson install --no-rebuild -C build
+}
+
+sha512sums="
+5493b9c19a9aae556e579f41687d8e7184aa0b03d4c5358975521102fe8dbb456493f858512564b2c30093bbd2ea801f0280592a54cc5454045fcac762e71eaf  cglm-0.9.6.tar.gz
+"
