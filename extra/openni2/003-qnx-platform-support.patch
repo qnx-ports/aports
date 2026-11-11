@@ -86,18 +86,22 @@ Treat QNX as the generic Linux platform and drop Linux-only facilities
  #elif (__APPLE__)
 --- a/ThirdParty/PSCommon/XnLib/Source/Linux/XnLinuxProcesses.cpp
 +++ b/ThirdParty/PSCommon/XnLib/Source/Linux/XnLinuxProcesses.cpp
-@@ -23,13 +23,13 @@
+@@ -20,13 +20,13 @@
+ *****************************************************************************/
+ //---------------------------------------------------------------------------
+ // Includes
  //---------------------------------------------------------------------------
  #include <XnOS.h>
  #include <errno.h>
- #if (XN_PLATFORM == XN_PLATFORM_MACOSX || XN_PLATFORM == XN_PLATFORM_ANDROID_ARM)
+-#if (XN_PLATFORM == XN_PLATFORM_MACOSX || XN_PLATFORM == XN_PLATFORM_ANDROID_ARM)
++#if (XN_PLATFORM == XN_PLATFORM_MACOSX || XN_PLATFORM == XN_PLATFORM_ANDROID_ARM || defined(__QNX__))
  	#include <sys/wait.h>
  #else
--	#include <wait.h>
-+	#include <sys/wait.h>
+ 	#include <wait.h>
  #endif
  #include <XnLog.h>
- 
+
+
  //---------------------------------------------------------------------------
  // Code
  //---------------------------------------------------------------------------

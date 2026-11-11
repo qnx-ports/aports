@@ -69,7 +69,7 @@ Link the system libjpeg instead of the bundled LibJPEG 6b
  
  LIB_DIRS = ../../../ThirdParty/PSCommon/XnLib/Bin/$(PLATFORM)-$(CFG)
 -USED_LIBS = XnLib pthread 
-+USED_LIBS = XnLib pthread  jpeg
++USED_LIBS = XnLib pthread jpeg
  ifneq ("$(OSTYPE)","Darwin")
          USED_LIBS += rt  
  endif

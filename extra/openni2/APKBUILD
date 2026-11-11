@@ -7,7 +7,7 @@ url="https://github.com/structureio/OpenNI2"
 arch="aarch64 x86_64"
 license="Apache-2.0"
 depends="libc++ libjpeg-turbo libusb"
-depends_dev="libusb-dev libjpeg-turbo-dev"
+depends_dev="libusb-dev libjpeg-turbo-dev qnx-io-sock-dev libc++-dev"
 makedepends="$depends_dev"
 subpackages="$pkgname-dev $pkgname-tools $pkgname-samples"
 options="!check" # upstream ships no test suite
@@ -59,8 +59,9 @@ package() {
 
 	install -d "$pkgdir"/usr/include/openni2
 	cp -r Include/. "$pkgdir"/usr/include/openni2/
+	# QNX uses the Linux-x86 platform header on both architectures (see 003).
 	rm -rf "$pkgdir"/usr/include/openni2/Android-Arm "$pkgdir"/usr/include/openni2/MacOSX \
-		"$pkgdir"/usr/include/openni2/Win32
+		"$pkgdir"/usr/include/openni2/Win32 "$pkgdir"/usr/include/openni2/Linux-Arm
 	install -d "$pkgdir"/usr/lib/pkgconfig
 	cat > "$pkgdir"/usr/lib/pkgconfig/libopenni2.pc <<-EOF
 		prefix=/usr
@@ -105,6 +106,6 @@ samples() {
 sha512sums="
 1354e6032a324a80df3a0137e0e09ba9ba0e570f6f5dc91626453ed17cd739793a9cbcbcb36826beb4f36e63cd889c2e9a07ddc973fe98dfa4b1e2941b9c455d  openni2-2.2.0.33.tar.gz
 31cb06b7116b7899875a41c1747dc9e2ad1804e9159e52c4201e9a703c7073f4a1ad920c3a92ab958eb223e8add0fcb6ee2909c20792bc459f8d132cbb04c0e0  001-qnx-build-system.patch
-df101be128ee2f9c90d674707fe95e9a51da4468fc1b8b285a5abcd9a14ffa10c9fa54e1d11eb259aba20984ad4d4a8dad2d9c3ea584e90b3e03b37c8cf10a26  002-use-system-libjpeg.patch
-5d12a83a7df1c4950a4269f3db3812e648fcbfac834262f2dbd1d0291d12ef4cafd88d153deb8e58209a8b5e776057c964493279323199aefb6c55ae6b3210bf  003-qnx-platform-support.patch
+e07ff468bd7fca04397ed6760e9db272ab96119bbefd81fbf2119443b937f811ea651b1100d64d783f1c91b767d3b0832670343d543376e9fb29224d3ec440ec  002-use-system-libjpeg.patch
+0b49e1ed41ca5e34ad49f95b74588a95f80082e752bfe23f8370454156c0ae7ac48d568b612ddbc9878ed2be4480b8aab56e92f404064841f1c98a395627e724  003-qnx-platform-support.patch
 "
