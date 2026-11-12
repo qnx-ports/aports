@@ -1,0 +1,42 @@
+# Alpine-Contributor: Brian Vuyk <bvuyk@sama.com>
+# Alpine-Maintainer: Brian Vuyk <bvuyk@sama.com>
+# Maintainer: Deep Chordia <dchordia@qnx.com>
+pkgname=python3-scikit-build
+pkgver=0.19.1_p0
+_pkgver="${pkgver%_p*}"
+pkgrel=0
+pkgdesc="Improved build system generator for CPython C/C++/Fortran/Cython extensions"
+url="https://pypi.org/project/scikit-build/"
+arch="noarch"
+license="MIT"
+depends="
+	python3
+	python3-packaging
+	python3-setuptools
+	python3-wheel
+	"
+makedepends="
+	python3-gpep517
+	python3-hatchling
+	python3-hatch-fancy-pypi-readme
+	python3-hatch-vcs
+	"
+source="https://github.com/qnx-ports/scikit-build/archive/refs/tags/qnx-$pkgver.tar.gz"
+builddir="$srcdir/scikit-build-qnx-$pkgver"
+options="!check" # tests break from python3.12+ (due to distutils)
+
+build() {
+	export SETUPTOOLS_SCM_PRETEND_VERSION=$_pkgver
+	gpep517 build-wheel \
+		--wheel-dir .dist \
+		--output-fd 3 3>&1 >&2
+}
+
+package() {
+	python3 -m installer -d "$pkgdir" \
+		.dist/*.whl
+}
+
+sha512sums="
+212c9c5dd1a41cf2b2b99cbc8899b3291030e660de8c5a28dbd2063531a505765502049bf95cce58874432a42948d15f344fbefe9c45db6f3345f7edaea14993  qnx-0.19.1_p0.tar.gz
+"
