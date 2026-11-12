@@ -1,0 +1,35 @@
+# Alpine-Contributor: Robert Sacks <robert@sacks.email>
+# Alpine-Maintainer: Robert Sacks <robert@sacks.email>
+# Maintainer: Terence Ang <taang@qnx.com>
+pkgname=python3-freezegun
+_pyname=freezegun
+pkgver=1.5.5
+pkgrel=0
+pkgdesc="Let your Python tests travel through time"
+url="https://github.com/spulec/freezegun"
+arch="noarch"
+license="Apache-2.0"
+depends="python3 python3-dateutil"
+makedepends="python3-gpep517 python3-setuptools python3-wheel"
+checkdepends="python3-pytest python3-pytest-cov"
+source="https://files.pythonhosted.org/packages/source/f/freezegun/freezegun-$pkgver.tar.gz"
+builddir="$srcdir/$_pyname-$pkgver"
+
+build() {
+	gpep517 build-wheel \
+		--wheel-dir .dist \
+		--output-fd 3 3>&1 >&2
+}
+
+check() {
+	pytest
+}
+
+package() {
+	python3 -m installer -d "$pkgdir" \
+		.dist/freezegun-*.whl
+}
+
+sha512sums="
+6c36604f2b314bd004fb3d1365998ec2e9ae2703117e15fbc14639a389e4713d3082d4b30507695588579982f22c237722e16362b1cdf848c22bd8834dbbdd92  freezegun-1.5.5.tar.gz
+"
