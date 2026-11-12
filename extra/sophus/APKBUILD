@@ -1,0 +1,62 @@
+# Maintainer: Marcin Sochacki <msochacki@qnx.com>
+pkgname=sophus
+pkgver=1.24.6
+pkgrel=0
+pkgdesc="C++ implementation of Lie groups (SO2, SE2, SO3, SE3, Sim3) using Eigen"
+url="https://github.com/strasdat/Sophus"
+# header-only library
+arch="noarch"
+license="MIT"
+depends_dev="eigen-dev"
+makedepends="
+	cmake
+	eigen-dev
+	ninja
+	"
+checkdepends="ceres-solver-dev"
+subpackages="$pkgname-dev"
+source="$pkgname-$pkgver.tar.gz::https://github.com/strasdat/Sophus/archive/refs/tags/$pkgver.tar.gz
+	001-eigen5-version-range.patch
+	"
+builddir="$srcdir/Sophus-$pkgver"
+# Limit build and test parallelism to 2 jobs to reduce memory consumption:
+# compiling the Eigen/Ceres template code in parallel used most of the RAM of
+# an 8 GB target (free memory fell to about 350 MB at 4 jobs on a Raspberry Pi).
+# abuild derives these variables from JOBS before it reads the APKBUILD, so all
+# four have to be set here.
+JOBS=2
+MAKEFLAGS=-j2
+CMAKE_BUILD_PARALLEL_LEVEL=2
+CTEST_PARALLEL_LEVEL=2
+
+build() {
+	cmake -B build -G Ninja \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DBUILD_SOPHUS_TESTS=ON \
+		-DBUILD_PYTHON_BINDINGS=OFF
+	cmake --build build
+}
+
+# OpenBLAS (pulled in through Ceres, which every test links) maps 128 MB per
+# thread and defaults to 32 threads on QNX, about 4 GB per test process, which
+# exhausts RAM on an 8 GB target when tests run in parallel. Limit it to 2.
+check() {
+	export OPENBLAS_NUM_THREADS=2
+	ctest --test-dir build --output-on-failure
+}
+
+package() {
+	DESTDIR="$pkgdir" cmake --install build
+}
+
+# header-only: the base package has no files; headers and the CMake config
+# (installed under usr/share/sophus/cmake) both belong in -dev
+dev() {
+	default_dev
+	amove usr/share/sophus
+}
+sha512sums="
+cbc01e92c8361937194bed320ac84a7cfd8b71ecc3a842d3d3c9796ff52a08d13aa0b4f30184c4c7ddc223da0141a80176382c8b25a328e53fa00c4627511ec3  sophus-1.24.6.tar.gz
+b38e39dd6eee38e6fb4a89f1afa23544b0bb9b68ac43d39768e1c86cc766abfd7ace63982324149a15eb99299f458e0b028a0a5f8ba074b6d51ec9da2c33a1af  001-eigen5-version-range.patch
+"
