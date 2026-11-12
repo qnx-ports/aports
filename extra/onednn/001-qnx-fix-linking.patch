@@ -1,0 +1,15 @@
+diff --git a/cmake/SDL.cmake b/cmake/SDL.cmake
+index fd3e0f27a4..928f33ddbc 100644
+--- a/cmake/SDL.cmake
++++ b/cmake/SDL.cmake
+@@ -61,7 +61,7 @@ if(UNIX)
+     sdl_unix_common_ccxx_flags(ONEDNN_SDL_COMPILER_FLAGS)
+     sdl_unix_src_ccxx_flags(CMAKE_SRC_CCXX_FLAGS)
+     sdl_unix_example_ccxx_flags(CMAKE_EXAMPLE_CCXX_FLAGS)
+-    if(UPPERCASE_CMAKE_BUILD_TYPE STREQUAL "RELEASE")
++    if(UPPERCASE_CMAKE_BUILD_TYPE STREQUAL "RELEASE" AND NOT QNX)
+         append(ONEDNN_SDL_COMPILER_FLAGS "-D_FORTIFY_SOURCE=2")
+     endif()
+     if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+
+ 
