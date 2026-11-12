@@ -2,7 +2,7 @@
 # Alpine-Maintainer: Francesco Colista <fcolista@alpinelinux.org>
 # Maintainer: Marcin Sochacki <msochacki@qnx.com>
 pkgname=lldpd
-pkgver=1.0.22
+pkgver=1.0.22_p0
 pkgrel=0
 pkgdesc="Implementation of IEEE 802.1ab"
 url="https://lldpd.github.io/"
@@ -22,10 +22,10 @@ subpackages="
 	"
 pkgusers="lldpd"
 pkggroups="lldpd"
-source="$pkgname-qnx-${pkgver}_p0.tar.gz::https://github.com/qnx-ports/lldpd/archive/refs/tags/qnx-${pkgver}_p0.tar.gz
+source="$pkgname-qnx-${pkgver}.tar.gz::https://github.com/qnx-ports/lldpd/archive/refs/tags/qnx-${pkgver}.tar.gz
 	lldpd.initd
 	"
-builddir="$srcdir/$pkgname-qnx-${pkgver}_p0"
+builddir="$srcdir/$pkgname-qnx-${pkgver}"
 
 prepare() {
 	default_prepare
