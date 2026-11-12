@@ -1,0 +1,45 @@
+# Maintainer: Ramya santoshi <rtimmaraju@qnx.com>
+pkgname=rtosbench
+pkgver=0.0.1_git20240506
+_pkgver=29d04a6f2131c38526dc8f55ba0495b358e30339
+pkgrel=0
+pkgdesc="Benchmark suite for real-time operating system services"
+url="https://github.com/gchamp20/RTOSBench"
+arch="all"
+license="BSD-3-Clause"
+options="!check"
+source="https://github.com/gchamp20/RTOSBench/archive/$_pkgver.tar.gz
+        rtosbench-qnx.patch"
+builddir="$srcdir/RTOSBench-$_pkgver"
+
+build() {
+	make \
+		mq \
+		mq_workload \
+		mq_processing \
+		mutex \
+		mutex_pip \
+		mutex_workload \
+		mutex_processing \
+		round_robin \
+		sem \
+		sem_processing \
+		sem_prio \
+		sem_workload \
+		jitter
+		
+		echo "MAKE_EXIT=$?"
+}
+
+package() {
+	install -d "$pkgdir/usr/bin/rtosbench"
+
+	# Install the generated benchmark executables.
+	find example/qnx -type f -perm -111 \
+	-exec install -m 755 {} "$pkgdir/usr/bin/rtosbench/" \;
+}
+
+sha512sums="
+2a33ad0466f82b0a764d3c0ced732d41ad0be18cee5945d174ecc3cbf5eb7f5b8fc26de29b4a0b934c0d96c34a4a0885eb88b0b30197ed0c009b8535069d0547  29d04a6f2131c38526dc8f55ba0495b358e30339.tar.gz
+c4cdf9e11534be8bcf486dac668767e15d3d2e933deb2bed02a9acb5a47af532fef599873bff20090b5665f8d3e064f43acc5da99a3c00852124763a822a93bb  rtosbench-qnx.patch
+"
