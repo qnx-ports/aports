@@ -1,7 +1,7 @@
 # Maintainer: jscaffidi <jscaffidi@qnx.com>
 pkgname=ros2-jazzy-control
 pkgver=20260128
-pkgrel=0
+pkgrel=1
 pkgdesc="ROS 2 controller packages"
 url="https://docs.ros.org/en/jazzy/index.html"
 arch="all"
@@ -33,9 +33,10 @@ source="
 "
 
 builddir="$srcdir/ros2-control"
-depends="ros2-jazzy python3-filelock python3-numpy fmt"
-makedepends="
-        ros2-jazzy
+# no such thing as a ros-dev, so if you compile against the ros headers, odds
+# are you'll need all the ros makedepends as well
+# Absolutely horrifying
+depends="ros2-jazzy
         boost-dev
         asio-dev
         tinyxml2-dev
@@ -50,11 +51,14 @@ makedepends="
         python3-numpy-dev
         python3-jinja2
         python3-typeguard
-        cmake
-        ninja
         fmt-dev
         curl-dev
         tl-expected
+"
+makedepends="
+        cmake
+        ninja
+        lld-22
 "
 
 unpack() {
@@ -88,13 +92,17 @@ build() {
                 --cmake-args \
                         -G Ninja \
                         -DBUILD_TESTING=OFF \
+                        -DCMAKE_INSTALL_PREFIX="/opt/ros/jazzy" \
+                        -DAMENT_PREFIX_PATH="/opt/ros/jazzy" \
+                        -DCMAKE_PREFIX_PATH="/opt/ros/jazzy" \
                         -DCMAKE_BUILD_TYPE=Release \
-                        -DCMAKE_C_FLAGS="-Qunused-arguments -DSA_RESTART=0 -ggdb --no-warnings" \
-                        -DCMAKE_CXX_FLAGS="-Qunused-arguments -DSA_RESTART=0 -ggdb --no-warnings" \
+                        -DCMAKE_C_FLAGS="-Qunused-arguments -DSA_RESTART=0 -ggdb --no-warnings -fuse-ld=lld-22" \
+                        -DCMAKE_CXX_FLAGS="-Qunused-arguments -DSA_RESTART=0 -ggdb --no-warnings -fuse-ld=lld-22" \
                         -DCMAKE_EXE_LINKER_FLAGS="-lsocket -lfsnotify -lc++ -lc++abi -Wl,-E" \
                         -DCMAKE_SHARED_LINKER_FLAGS="-lsocket -lfsnotify -lc++ -lc++abi -Wl,-E" \
                         -DTRACETOOLS_TRACEPOINTS_EXCLUDED=ON \
                         -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+                        -Wno-unused-cli \
                         --packages-skip kinematics_interface_pinocchio generate_parameter_module_example
 }
 
