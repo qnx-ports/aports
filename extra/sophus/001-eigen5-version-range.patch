@@ -1,0 +1,21 @@
+Accept Eigen 5 when looking for Eigen3
+
+---
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -46,13 +46,14 @@
+ endif()
+ 
+ # Find public dependencies if targets are not yet defined. (Targets might be for
+ # example defined by a parent project including Sophus via `add_subdirectory`.)
+ 
+ if(NOT TARGET Eigen3::Eigen)
+-  find_package(Eigen3 3.4.0 REQUIRED)
++  # Eigen 5 only accepts requests of the same major version, so allow 3.4 up to 5.x
++  find_package(Eigen3 3.4.0...<6 REQUIRED)
+ endif()
+ 
+ # Define interface library target
+ add_library(sophus INTERFACE)
+ add_library(Sophus::Sophus ALIAS sophus)
+ 
