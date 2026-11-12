@@ -58,7 +58,7 @@ depends="ros2-jazzy
 makedepends="
         cmake
         ninja
-        lld-22
+        lld22
 "
 
 unpack() {
