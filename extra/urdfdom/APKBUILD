@@ -1,0 +1,57 @@
+# Maintainer: Narayana Murthy Naidu <nnarayanamurthy@qnx.com>
+pkgname=urdfdom
+pkgver=6.0.2
+pkgrel=0
+pkgdesc="URDF parser library"
+url="https://github.com/ros/urdfdom"
+arch="all"
+license="BSD-3-Clause"
+
+depends="
+	libc++
+	console-bridge
+	tinyxml2
+	urdfdom_headers
+	"
+makedepends="
+	cmake
+	ninja
+	libc++-dev
+	console-bridge-dev
+	tinyxml2-dev
+	urdfdom_headers-dev
+	"
+depends_dev="
+	console-bridge-dev
+	tinyxml2-dev
+	urdfdom_headers-dev
+	"
+subpackages="$pkgname-dev"
+
+source="$pkgname-$pkgver.tar.gz::https://github.com/ros/$pkgname/archive/refs/tags/$pkgver.tar.gz"
+builddir="$srcdir/$pkgname-$pkgver"
+
+build() {
+	cmake -B build -S . -G Ninja \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DCMAKE_INSTALL_LIBDIR=lib \
+		-DBUILD_SHARED_LIBS=ON \
+		-DBUILD_TESTING=ON \
+		-DHAS_VISIBILITY=OFF
+
+	cmake --build build
+}
+
+check() {
+	ctest --test-dir build \
+		--output-on-failure -j1
+}
+
+package() {
+	DESTDIR="$pkgdir" cmake --install build
+}
+
+sha512sums="
+9c135016b92d4adca91b9a88a88f508c43712b292ad3360e1d8670dc82a71d0fa104945100c08b85baca85e66d21cc7c40dff23014c0b191ed095f7e387d987d  urdfdom-6.0.2.tar.gz
+"
