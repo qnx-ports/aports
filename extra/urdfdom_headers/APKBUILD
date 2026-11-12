@@ -1,6 +1,6 @@
 # Maintainer: Narayana Murthy Naidu <nnarayanamurthy@qnx.com>
 
-pkgname=urdfdom_headers
+pkgname=urdfdom-headers
 pkgver=3.0.1
 pkgrel=0
 pkgdesc="Headers for URDF parsers"
@@ -12,22 +12,19 @@ options="!check" # Upstream does not provide a test suite
 makedepends="
 	cmake
 	libc++-dev
-	pkgconfig
 	"
-
-subpackages="$pkgname-dev"
-
 source="
-	$pkgname-$pkgver.tar.gz::https://github.com/ros/$pkgname/archive/refs/tags/$pkgver.tar.gz
+	$pkgname-$pkgver.tar.gz::https://github.com/ros/urdfdom_headers/archive/refs/tags/$pkgver.tar.gz
 	qnx-strtodouble.patch
 	"
-builddir="$srcdir/$pkgname-$pkgver"
+builddir="$srcdir/urdfdom_headers-$pkgver"
 
 build() {
 	cmake -S . -B build \
 		-DCMAKE_BUILD_TYPE=Release \
 		-DCMAKE_INSTALL_PREFIX=/usr \
-		-DCMAKE_INSTALL_LIBDIR=lib
+		-DCMAKE_INSTALL_LIBDIR=lib \
+		-DCMAKE_INSTALL_DATAROOTDIR=share
 }
 
 package() {
@@ -35,6 +32,6 @@ package() {
 }
 
 sha512sums="
-185bf3d18d8162930784d121d52d8ae97c3b44d2e06219ce59f493dedcca2ede986ae84c3e68c98e3920f3030950090d5ad06fcb845356987e78e128131ee2e7  urdfdom_headers-3.0.1.tar.gz
-6583f5c73a7bdbae7755f555d1123e4c4659b668587c789a730fa1c172d755369eb9d38395a56a55bbfb57cc8a9ce4db5df32b21d48d047980ac25d2c78433d6  qnx-strtodouble.patch
+185bf3d18d8162930784d121d52d8ae97c3b44d2e06219ce59f493dedcca2ede986ae84c3e68c98e3920f3030950090d5ad06fcb845356987e78e128131ee2e7  urdfdom-headers-3.0.1.tar.gz
+2532d33470f54726a0c4c1b3440ffccc9c06f829dc441b5c85735c154589c010a674cf2da58cd6b3ee4d3c5f9c82298e016946a6c92189c838d7211cf9063e84  qnx-strtodouble.patch
 "

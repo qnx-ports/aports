@@ -1,12 +1,36 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index ecb43db..5da1a57 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -32,6 +32,8 @@ install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+ 
+ if(WIN32 AND NOT CYGWIN)
+   set(CMAKE_CONFIG_INSTALL_DIR CMake)
++elseif(CMAKE_SYSTEM_NAME STREQUAL "QNX")
++  set(CMAKE_CONFIG_INSTALL_DIR ${CMAKE_INSTALL_DATAROOTDIR}/cmake/)
+ else()
+   set(CMAKE_CONFIG_INSTALL_DIR ${CMAKE_INSTALL_LIBDIR}/${PROJECT_NAME}/cmake)
+ endif()
+@@ -60,7 +62,11 @@ install(FILES
+ set(PACKAGE_DESC "Unified Robot Description Format")
+ set(pkg_conf_file "urdfdom_headers.pc")
+ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/pkgconfig/${pkg_conf_file}.in" "${CMAKE_BINARY_DIR}/${pkg_conf_file}" @ONLY)
++if(CMAKE_SYSTEM_NAME STREQUAL "QNX")
++install(FILES "${CMAKE_BINARY_DIR}/${pkg_conf_file}" DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/pkgconfig COMPONENT pkgconfig)
++else()
+ install(FILES "${CMAKE_BINARY_DIR}/${pkg_conf_file}" DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig/ COMPONENT pkgconfig)
++endif()
+ 
+ add_library(${PROJECT_NAME} INTERFACE)
+ target_include_directories(${PROJECT_NAME} INTERFACE
 diff --git a/include/urdf_model/utils.hpp b/include/urdf_model/utils.hpp
-index 52982e1..83ba9d6 100644
+index 52982e1..fa3b90f 100644
 --- a/include/urdf_model/utils.hpp
 +++ b/include/urdf_model/utils.hpp
-@@ -38,6 +38,13 @@
+@@ -38,6 +38,12 @@
  #define URDF_INTERFACE_UTILS_HPP
  
  #include <locale>
-+#include <locale>
 +#if defined(__QNXNTO__) && __cplusplus >= 201703L
 +#include <charconv>
 +#include <cmath>
@@ -16,7 +40,7 @@ index 52982e1..83ba9d6 100644
  #include <sstream>
  #include <stdexcept>
  #include <string>
-@@ -72,6 +79,23 @@ void split_string(std::vector<std::string> &result,
+@@ -72,6 +78,23 @@ void split_string(std::vector<std::string> &result,
  // thrown.
  static inline double strToDouble(const char *in)
  {
@@ -40,7 +64,7 @@ index 52982e1..83ba9d6 100644
    std::stringstream ss;
    ss.imbue(std::locale::classic());
  
-@@ -85,6 +109,7 @@ static inline double strToDouble(const char *in)
+@@ -85,6 +108,7 @@ static inline double strToDouble(const char *in)
    }
  
    return out;
@@ -48,4 +72,3 @@ index 52982e1..83ba9d6 100644
  }
  
  }
- 
