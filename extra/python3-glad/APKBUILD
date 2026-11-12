@@ -1,0 +1,36 @@
+# Alpine-Maintainer: Simon Zeni <simon@bl4ckb0ne.ca>
+# Maintainer: jscaffidi <jscaffidi@qnx.com>
+pkgname=python3-glad
+pkgver=2.0.8
+pkgrel=0
+pkgdesc="Multi-Language Vulkan/GL/GLES/EGL/GLX/WGL Loader-Generator based on the official specs"
+url="https://github.com/Dav1dde/glad"
+arch="noarch"
+license="MIT AND Apache-2.0"
+depends="python3-jinja2 python3"
+makedepends="
+	python3-gpep517
+	python3-setuptools
+	python3-wheel
+	"
+source="$pkgname-$pkgver.tar.gz::https://github.com/Dav1dde/glad/archive/refs/tags/v$pkgver.tar.gz"
+builddir="$srcdir/glad-$pkgver"
+# only bigger integration tests
+options="!check"
+
+build() {
+	gpep517 build-wheel \
+		--wheel-dir .dist \
+		--output-fd 3 3>&1 >&2
+}
+
+package() {
+	python3 -m installer -d "$pkgdir" \
+		.dist/*.whl
+}
+
+
+
+sha512sums="
+ec964d0080c9714803f0464492b237039d2bede805d21aa9e487f3bf910447fd6440eeca59f3795dc4d5dd3b3df35101714fa21ea19eb29f6a021864a2310acd  python3-glad-2.0.8.tar.gz
+"
