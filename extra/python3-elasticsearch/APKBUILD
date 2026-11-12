@@ -1,0 +1,46 @@
+# Alpine-Contributor: Stuart Cardall <developer@it-offshore.co.uk>
+# Alpine-Maintainer: Stuart Cardall <developer@it-offshore.co.uk>
+# Maintainer: Terence Ang <taang@qnx.com>
+pkgname=python3-elasticsearch
+_pkgname=elasticsearch-py
+pkgver=7.11.0
+pkgrel=6
+pkgdesc="Official Python low-level client for Elasticsearch"
+url="https://elasticsearch-py.readthedocs.io/"
+arch="noarch"
+license="Apache-2.0"
+depends="python3 python3-urllib3"
+checkdepends="python3-requests python3-numpy python3-pytest python3-coverage python3-mock python3-yaml"
+makedepends="python3-gpep517 python3-setuptools python3-wheel python3-pytest-asyncio python3-pandas python3-numpy"
+source="$pkgname-$pkgver.tar.gz::https://github.com/elastic/elasticsearch-py/archive/v$pkgver.tar.gz
+	001-serializer_py.patch
+	002-test_serializer_py.patch
+	003-test_transport_py.patch
+	"
+builddir="$srcdir/"$_pkgname-$pkgver
+
+build() {
+	gpep517 build-wheel \
+		--wheel-dir .dist \
+		--output-fd 3 3>&1 >&2
+}
+
+check() {
+	python3 -m venv --clear --without-pip --system-site-packages .testenv
+	.testenv/bin/python3 -m installer .dist/*.whl
+	# TODO add back test_async once python3-aiohttp is available
+	.testenv/bin/python3 -m pytest -v --ignore=test_elasticsearch/test_async
+}
+
+package() {
+	python3 -m installer -d "$pkgdir" \
+		.dist/*.whl
+}
+
+
+sha512sums="
+39763a6cc884b03787e0afe92e70a358ece936f18fb123c2a7ae42b60408f6f2b2e99932c0162721d3ea5c95a021f3c2346dc67b7c39115773155fef9fbd67d4  python3-elasticsearch-7.11.0.tar.gz
+e7fa627c20634f2f90ed34cf54f83fdfb185b2833f45739f69a8a95108cd269dd007ce29b1f14c19e43736b50b599aa890777507da99f9b99fa3763b5908a16c  001-serializer_py.patch
+8c3bde8d44e37194c52ca80cec5053de71cff9e63fe3ae4f05ead4b10f1fba9b20b3c5748a479039dbe6aaff93153ef9c8b506dfb50482cf1af831062c8596c6  002-test_serializer_py.patch
+726ddaa9d21a8b298d285ffe64a335e0736606325424971f3bd4a6357bba92eefb0635ed132dcb9932c842aeabd187092d5b35bb1269fd7cbfa3e64e7fb1839c  003-test_transport_py.patch
+"
