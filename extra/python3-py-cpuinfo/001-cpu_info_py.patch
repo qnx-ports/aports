@@ -1,0 +1,16 @@
+--- a/cpuinfo/cpuinfo.py
++++ b/cpuinfo/cpuinfo.py
+@@ -785,11 +785,11 @@
+ 	if re.match(r'^i\d86$|^x86$|^x86_32$|^i86pc$|^ia32$|^ia-32$|^bepc$', arch_string_raw):
+ 		arch = 'X86_32'
+ 		bits = 32
+-	elif re.match(r'^x64$|^x86_64$|^x86_64t$|^i686-64$|^amd64$|^ia64$|^ia-64$', arch_string_raw):
++	elif re.match(r'^x64$|^x86_64$|^x86_64t$|^i686-64$|^amd64$|^x86pc|^ia64$|^ia-64$', arch_string_raw):
+ 		arch = 'X86_64'
+ 		bits = 64
+ 	# ARM
+-	elif re.match(r'^armv8-a|aarch64|arm64$', arch_string_raw):
++	elif re.match(r'^armv8-a|aarch64|arm64|raspberrypi5$', arch_string_raw):
+ 		arch = 'ARM_8'
+ 		bits = 64
+ 	elif re.match(r'^armv7$|^armv7[a-z]$|^armv7-[a-z]$|^armv6[a-z]$', arch_string_raw):
