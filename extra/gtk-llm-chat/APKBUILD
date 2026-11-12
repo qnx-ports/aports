@@ -1,0 +1,54 @@
+# Maintainer: Cris Sinnott <csinnott@qnx.com>
+pkgname=python3-gtk-llm-chat
+pkgver=4.0.5
+pkgrel=0
+pkgdesc="GTK4 / libadwaita LLM chat UI for QNX"
+url="https://github.com/icarito/gtk-llm-chat"
+arch="noarch"
+license="GPL-3.0-or-later"
+depends="
+    python3
+    python3-gobject3
+    libadwaita
+    "
+makedepends="python3-installer"
+source="https://files.pythonhosted.org/packages/05/cb/a1098e55004c1087ae1ce7e3b861c64ec1bf99302d47455dcf52c92e2a6f/gtk_llm_chat-$pkgver-py3-none-any.whl
+    0001-qnx-welcome-use-adw-window.patch
+    0002-qnx-chat-window-size-and-scroll.patch
+    "
+builddir="$srcdir/gtk_llm_chat-$pkgver"
+options="!check"
+
+# LLM backend dependencies (pip-installed separately into a venv):
+#   pip install 'llm==0.19' 'openai==1.35.0' 'httpx==0.27.2' 'pydantic<2'
+#   pip install extra-openai-models
+# See: https://github.com/qnx/codelabs/gtk-llm-chat
+
+prepare() {
+    mkdir -p "$builddir"
+    cd "$builddir"
+    # wheel is a zip; extract manually then let default_prepare apply patches
+    unzip -q "$srcdir/gtk_llm_chat-$pkgver-py3-none-any.whl"
+    default_prepare
+}
+
+package() {
+    # Install from the original wheel to get the console_scripts entry-point
+    # and dist-info, then overwrite with the patched Python files.
+    python3 -m installer -d "$pkgdir" \
+        "$srcdir/gtk_llm_chat-$pkgver-py3-none-any.whl"
+
+    local sitepkg
+    sitepkg=$(echo "$pkgdir"/usr/lib/python3*/site-packages)
+
+    install -m644 "$builddir/gtk_llm_chat/welcome.py" \
+        "$sitepkg/gtk_llm_chat/welcome.py"
+    install -m644 "$builddir/gtk_llm_chat/chat_window.py" \
+        "$sitepkg/gtk_llm_chat/chat_window.py"
+}
+
+sha512sums="
+443a4486584f70ac49958c8da16e680ef27e039f2c0d1b0608bc781b1535a39499993fea3ee96d0129b02f1e8fd85e0446bea5d64eb9fc1a04dee6490bc80be6  gtk_llm_chat-4.0.5-py3-none-any.whl
+35c534280eef695b51ae73905c66ee5053bf8fb446c18ddc23e1184d547beae7146ad5387a5c571e737e06f62f66f354a3e093c4b410aefe13007e67f10107b0  0001-qnx-welcome-use-adw-window.patch
+6f568cd8c15c0a9dd006520ebcf207921764df275c05814d3015d03a20a33598d1a88e41463fafa98979a391fd68c7ba5a9836b4f8c276ea77142e44ab6ccc6d  0002-qnx-chat-window-size-and-scroll.patch
+"
