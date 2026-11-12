@@ -66,7 +66,7 @@
 +    egl_context = eglCreateContext(egl_display, egl_config, EGL_NO_CONTEXT, ctx_attrib);
 +    if (egl_context) {
 +        if (VERBOSE) 
-+            cflp_info("OpenGL %s context created", glGetString(GL_VERSION));
++            cflp_info("OpenGL ES3 context created");
 +    } else {
          cflp_error("Failed to create EGL context %s", eglGetErrorString(eglGetError()));
          exit_mpvpaper(EXIT_FAILURE);
