@@ -1,8 +1,7 @@
 # Contributor: Alexander Edland <alpine@ocv.me>
 # Contributor: Nicolas Lorin <androw95220@gmail.com>
-# Maintainer: Patrycja Rosa <alpine@ptrcnull.me>
-# QNX Maintainer: Felix Xing <fxing@qnx.com>
-
+# Alpine-Maintainer: Patrycja Rosa <alpine@ptrcnull.me>
+# Maintainer: Felix Xing <fxing@qnx.com>
 pkgname=zimg
 pkgver=3.0.6
 pkgrel=0
@@ -51,6 +50,7 @@ build() {
             CC=clang \
             CXX=clang++
         make
+        ninja -C test/extra/googletest/build
         make test/unit_test.log
         test/unit_test
         make clean
