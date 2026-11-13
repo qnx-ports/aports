@@ -1,0 +1,43 @@
+Export EIGEN_MAX_STATIC_ALIGN_BYTES to PCL users through PCLConfig and pkg-config files
+
+--- a/cmake/pcl_pclconfig.cmake
++++ b/cmake/pcl_pclconfig.cmake
+@@ -20,12 +20,19 @@
+ # If PCL is compiled with C++14 and the user project is compiled with C++17, this will lead to problems (e.g. memory allocated with the custom mechanism but freed without it)
+ # Defining EIGEN_HAS_CXX17_OVERALIGN=0 forces Eigen in the user project to use Eigen's custom mechanism, even in C++17 and newer.
+ if(${CMAKE_CXX_STANDARD} LESS 17)
+   string(APPEND PCLCONFIG_SSE_DEFINITIONS " -DEIGEN_HAS_CXX17_OVERALIGN=0")
+ endif()
+ 
++# Eigen disables static alignment on QNX unless EIGEN_MAX_STATIC_ALIGN_BYTES is set, and PCL is built with it set.
++# Fixed-size Eigen members (e.g. Vector4f in VoxelGrid) then have a different layout in user code than in the PCL libraries
++# unless the user project defines it too, so export it through PCL_DEFINITIONS.
++if(CMAKE_SYSTEM_NAME STREQUAL "QNX" AND CMAKE_CXX_FLAGS MATCHES "EIGEN_MAX_STATIC_ALIGN_BYTES=([0-9]+)")
++  string(APPEND PCLCONFIG_SSE_DEFINITIONS " -DEIGEN_MAX_STATIC_ALIGN_BYTES=${CMAKE_MATCH_1}")
++endif()
++
+ foreach(_ss ${PCL_SUBSYSTEMS_MODULES})
+   PCL_GET_SUBSYS_STATUS(_status ${_ss})
+ 
+   # do not include test targets
+   string(REGEX MATCH "^tests_" _is_test ${_ss})
+ 
+--- a/cmake/pcl_targets.cmake
++++ b/cmake/pcl_targets.cmake
+@@ -566,12 +566,16 @@
+     message(FATAL_ERROR "PCL_MAKE_PKGCONFIG requires parameter COMPONENT.")
+   endif()
+ 
+   set(PKG_NAME ${_name})
+   set(PKG_DESC ${ARGS_DESC})
+   set(PKG_CFLAGS ${ARGS_CFLAGS})
++  # Keep Eigen's static alignment in user code the same as in the PCL libraries (see pcl_pclconfig.cmake).
++  if(CMAKE_SYSTEM_NAME STREQUAL "QNX" AND CMAKE_CXX_FLAGS MATCHES "EIGEN_MAX_STATIC_ALIGN_BYTES=([0-9]+)")
++    string(APPEND PKG_CFLAGS " -DEIGEN_MAX_STATIC_ALIGN_BYTES=${CMAKE_MATCH_1}")
++  endif()
+   set(PKG_LIBFLAGS ${ARGS_LIB_FLAGS})
+   LIST_TO_STRING(PKG_EXTERNAL_DEPS "${ARGS_EXT_DEPS}")
+   foreach(_dep ${ARGS_PCL_DEPS})
+     string(APPEND PKG_EXTERNAL_DEPS " pcl_${_dep}")
+   endforeach()
+   set(PKG_INTERNAL_DEPS "")
