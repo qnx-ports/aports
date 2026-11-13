@@ -6,7 +6,7 @@ pkgname=python3-matplotlib
 pkgver=3.10.6
 _imgver=3.10.3
 _ftver=2.13.1
-pkgrel=1
+pkgrel=2
 pkgdesc="Python3 library for plots"
 url="https://matplotlib.org"
 arch="all"
@@ -23,6 +23,8 @@ depends="
     python3-parsing
     python3-pillow
     libc++
+    freetype
+    qhull
     "
 makedepends="
     freetype-dev
