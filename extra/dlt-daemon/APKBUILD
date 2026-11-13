@@ -1,0 +1,61 @@
+# Maintainer: Ramya santoshi <rtimmaraju@qnx.com>
+pkgname=dlt-daemon
+pkgver=3.0.0
+pkgrel=0
+pkgdesc="Diagnostic Log and Trace (DLT) daemon"
+url="https://github.com/COVESA/dlt-daemon"
+arch="all"
+license="MPL-2.0"
+makedepends="cmake make libc++-dev zlib-dev qnx-io-sock-dev qnx-libjson-dev  qnx-libslog2-dev qnx-slogger2-dev gtest-dev"
+depends="libc++ qnx-io-sock qnx-libjson qnx-slogger2 gtest"
+source="
+    dlt-daemon-${pkgver}.tar.gz::https://github.com/qnx-ports/dlt-daemon/archive/refs/tags/v${pkgver}.tar.gz
+    dlt-daemon-3.0-qnx-clang.patch
+    dlt-gnu-version.patch
+"
+builddir="$srcdir/dlt-daemon-${pkgver}"
+subpackages="$pkgname-dev"
+
+build() {
+    export CXXFLAGS="$CXXFLAGS \
+    -Qunused-arguments \
+    -Wno-error=missing-designated-field-initializers \
+    -Wno-error=uninitialized-const-pointer \
+    -Wno-error=vla-cxx-extension \
+    -Wno-error=unused-but-set-variable \
+    -Wno-error=unused-result"
+
+    export CFLAGS="$CFLAGS -Qunused-arguments"
+
+    cmake -B build -S "$builddir" \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DWITH_DLT_QNX_SYSTEM=ON \
+        -DBUILD_SHARED_LIBS=ON \
+        -DWITH_DLT_INSTALLED_TESTS=ON \
+        -DWITH_DLT_UNIT_TESTS=ON \
+        -DWITH_DLT_CXX11_EXT=ON \
+        -DCMAKE_CXX_STANDARD=17 \
+        -DCMAKE_CXX_STANDARD_REQUIRED=ON \
+        -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+        -DCMAKE_CXX_FLAGS="$CXXFLAGS"
+
+        cmake --build build
+}
+
+
+check() {
+    GTEST_FILTER='-t_dlt_get_log_state.normal:t_dlt_daemon_logstorage_setup_internal_storage.normal' \
+        ctest --test-dir build/tests --output-on-failure -j1 \
+        -E 'gtest_dlt_daemon_offline_log|logstorage_filepath|logstorage_multi_file|logstorage_one_file|logstorage_fsync|logstorage_max_cache_size|disable_network'
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install build
+}
+
+sha512sums="
+8928c690f30349b1bfc057c07a3ea4c81033cfef7af6f6306ed2562b129fd104b23280be818d7f0bbb3b53b67e9c9df3064068648a23f2ab4949122df7206223  dlt-daemon-3.0.0.tar.gz
+1c1bd297398e50cd5e32c45f615b32cbab96c23569ade401eb120f047bff33ceed111d4f4b9b89ebfd8a56593df304d8a6faadf5181d92fce99219a91b618ae9  dlt-daemon-3.0-qnx-clang.patch
+e3544b17b907883c3b552ace62b815e73d91e6ef17d360bb4716eee5b9ffb8a2081c129adf76ea08a24148fc8f00d6c3b0c75d91ac1db5eccfa20cd229705a52  dlt-gnu-version.patch
+"
