@@ -1,3 +1,4 @@
+# Contributor: Cris Sinnott <cris.sinnott@qnx.com>
 # Maintainer: Deep Chordia <dchordia@blackberry.com>
 pkgname=openpi-client
 _commit=c23745b5ad24e98f66967ea795a07b2588ed6c79
