@@ -1,13 +1,14 @@
+# Maintainer: Terence Ang <taang@qnx.com>
 pkgname=libwebp
 pkgver=1.6.0
-pkgrel=0
+pkgrel=1
 pkgdesc="Libraries for working with WebP images"
 url="https://developers.google.com/speed/webp"
 arch="all"
 license="BSD-3-Clause"
 depends_dev="libjpeg-turbo-dev"
 makedepends="$depends_dev giflib-dev libpng-dev"
-depends="libsharpyuv"
+depends="libsharpyuv=$pkgver-r$pkgrel"
 subpackages="
     $pkgname-static
     $pkgname-dev
@@ -45,15 +46,30 @@ package() {
 
 tools() {
     pkgdesc="The WebP command line tools"
+    depends="
+        ${pkgname}mux=$pkgver-r$pkgrel
+        ${pkgname}demux=$pkgver-r$pkgrel
+        libpng
+        libjpeg-turbo
+        giflib
+    "
     amove usr/bin
 }
 
 _lib() {
     pkgdesc="$pkgdesc ($subpkgname library)"
+    case "$subpkgname" in
+        "${pkgname}mux" | "${pkgname}demux")
+            depends="$pkgname=$pkgver-r$pkgrel"
+            ;;
+        libsharpyuv | "${pkgname}decoder")
+            ;;
+
+    esac
+
     amove usr/lib/$subpkgname.so.*
 }
 
 sha512sums="
 5c159d9760efcb92749092536daada22c0a73c20926c76097a5f0448ddbf874cf761324ca97925ca5f578b30477564b2b072b47667e504673797128b31cafcbf  libwebp-1.6.0.tar.gz
 "
-
