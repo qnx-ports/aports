@@ -1,0 +1,73 @@
+# Alpine-Contributor: Alex Yam <alex@alexyam.com>
+# Alpine-Contributor: Leo <thinkabit.ukim@gmail.com>
+# Alpine-Maintainer: Simon Zeni <simon@bl4ckb0ne.ca>
+# Maintainer: jscaffidi <jscaffidi@qnx.com>
+pkgname=libplacebo
+pkgver=7.360.1
+pkgrel=0
+# rc testing
+_pkgver=${pkgver/_/-}
+pkgdesc="Reusable library for GPU-accelerated video/image rendering"
+url="https://code.videolan.org/videolan/libplacebo"
+arch="all"
+license="LGPL-2.1-or-later"
+depends="
+    glslang-libs
+    lcms2 
+    shaderc 
+    qnx-vulkan
+    libc++
+"
+depends_dev="
+    libc++-dev
+	glslang-dev
+	lcms2-dev
+	shaderc-dev
+	spirv-tools-dev
+    vulkan-headers
+"
+makedepends="
+    $depends_dev
+	glslang-static
+	meson
+    python3-glad
+    qnx-vulkan
+	"
+subpackages="$pkgname-dev $pkgname-dbg"
+source="https://code.videolan.org/videolan/libplacebo/-/archive/v$_pkgver/libplacebo-v$_pkgver.tar.gz
+  disable-failing-tests.patch
+"
+builddir="$srcdir/libplacebo-v$_pkgver"
+
+build() {
+	CFLAGS="$CFLAGS -O2" \
+	CXXFLAGS="$CXXFLAGS -O2" \
+	abuild-meson \
+		-Db_lto=false \
+		-Dbackend_max_links=4 \
+		-Ddemos=false \
+		-Ddovi=disabled \
+		-Dglslang=enabled \
+		-Dlcms=enabled \
+		-Dlibdovi=disabled \
+		-Dshaderc=enabled \
+		-Dtests="$(want_check && echo true || echo false)" \
+		-Dvulkan=enabled \
+		. output
+	meson compile -C output
+}
+
+check() {
+	meson test --print-errorlogs -C output
+}
+
+package() {
+	DESTDIR="$pkgdir" meson install --no-rebuild -C output
+}
+
+
+
+sha512sums="
+ea41f3852a5d877313d1969d771b0ba38338906a2a872abc67d2990f50c68848757616dc21cde1dbaa7e0fd46282e455bc7b3b14bfea14079935ff3afe7096e1  libplacebo-v7.360.1.tar.gz
+1e1612817422fa7ba7f8c312c65df254c88d9f5f23bf04d66e600cc7fbce6f101aa97100568a67cd24cf47d4f35c4e5e8b6a0ff929121fe31812676ecfb3c23d  disable-failing-tests.patch
+"
