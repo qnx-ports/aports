@@ -1,0 +1,19 @@
+diff --git a/src/Makefile b/src/Makefile
+index b23f2e9a..149ddc70 100644
+--- a/src/Makefile
++++ b/src/Makefile
+@@ -249,11 +249,11 @@ will_mosq.o : ${R}/lib/will_mosq.c ${R}/lib/will_mosq.h
+ 	${CROSS_COMPILE}${CC} $(LOCAL_CPPFLAGS) $(LOCAL_CFLAGS) -c $< -o $@
+ 
+ install : all
+-	$(INSTALL) -d "${DESTDIR}$(prefix)/sbin"
+-	$(INSTALL) ${STRIP_OPTS} mosquitto "${DESTDIR}${prefix}/sbin/mosquitto"
++	$(INSTALL) -d "${DESTDIR}$(prefix)/bin"
++	$(INSTALL) ${STRIP_OPTS} mosquitto "${DESTDIR}${prefix}/bin/mosquitto"
+ 
+ uninstall :
+-	-rm -f "${DESTDIR}${prefix}/sbin/mosquitto"
++	-rm -f "${DESTDIR}${prefix}/bin/mosquitto"
+ 	-rm -f "${DESTDIR}${prefix}/include/mosquitto_broker.h"
+ 	-rm -f "${DESTDIR}${prefix}/include/mosquitto_plugin.h"
+ 
