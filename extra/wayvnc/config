@@ -1,0 +1,3 @@
+# QNX: Necessary for correct keymappings through vnc
+xkb_rules=evdev
+
