@@ -1,0 +1,20 @@
+--- a/src/stream/tcp.c	2026-04-26 18:02:51.000000000 +0000
++++ b/src/stream/tcp.c	2026-11-13 18:49:08.000000000 +0000
+@@ -76,7 +76,7 @@
+ 	if (self->cork)
+ 		return 0;
+ 
+-	static struct iovec iov[IOV_MAX];
++	static struct iovec iov[1024];
+ 	size_t n_msgs = 0;
+ 	ssize_t bytes_sent;
+ 
+@@ -93,7 +93,7 @@
+ 		iov[n_msgs].iov_base = req->payload->payload;
+ 		iov[n_msgs].iov_len = req->payload->size;
+ 
+-		if (++n_msgs >= IOV_MAX)
++		if (++n_msgs >= 1024)
+ 			break;
+ 	}
+ 
