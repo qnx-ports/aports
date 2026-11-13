@@ -1,0 +1,11 @@
+--- a/os/osinit.c
++++ b/os/osinit.c
+@@ -252,7 +252,7 @@
+                 dup2(fileno(err), 2);
+                 fclose(err);
+             }
+-#if defined(SYSV) || defined(SVR4) || defined(WIN32) || defined(__CYGWIN__)
++#if defined(SYSV) || defined(SVR4) || defined(WIN32) || defined(__CYGWIN__) || defined(__QNX__)
+             {
+                 static char buf[BUFSIZ];
+
