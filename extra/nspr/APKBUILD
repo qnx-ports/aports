@@ -2,7 +2,7 @@
 # Maintainer: Aaron Bassett <abassett@qnx.com>
 pkgname=nspr
 pkgver=4.38.2
-pkgrel=0
+pkgrel=1
 _gitrel=1
 pkgdesc="Netscape Portable Runtime"
 url="https://www.mozilla.org/projects/nspr/"
@@ -14,45 +14,58 @@ makedepends="autoconf automake qnx-io-sock-dev"
 subpackages="$pkgname-dev"
 source="https://github.com/qnx-ports/nspr/archive/refs/tags/qnx-v$pkgver-r$_gitrel.tar.gz
 	"
-options="!check"
-_nspr_dir="$pkgname-qnx-v$pkgver-r$_gitrel"
+builddir="$srcdir/$pkgname-qnx-v$pkgver-r$_gitrel"
+
 prepare() {
-	mkdir "$srcdir/$pkgname-$pkgver"
-	mv "$_nspr_dir" "$builddir"/nspr
-	mkdir "$builddir"/build "$builddir"/inst
 	default_prepare
-	cp "$sharedir"/config.sub "$builddir/nspr/build/autoconf/config.sub"
+	cp "$sharedir"/config.sub "$builddir"/build/autoconf/config.sub
 }
 
 build() {
-	cd "$builddir"/build
 	CFLAGS="$CFLAGS -D_PR_POLL_AVAILABLE -D_PR_HAVE_OFF64_T -D_PR_INET6 -D_PR_HAVE_INET_NTOP -D_PR_HAVE_GETHOSTBYNAME2 -D_PR_HAVE_GETADDRINFO -D_PR_INET6_PROBE -DHAVE_SOCKLEN_T -Wincompatible-function-pointer-types" \
-	../nspr/configure \
-		--build=$CBUILD \
-		--host=$CHOST \
+	./configure \
 		--prefix=/usr \
 		--disable-debug \
 		--enable-optimize \
 		--enable-ipv6 \
-		--enable-64bit \
-		$conf
-	make CC="${CC:-gcc}" CXX="${CXX:-g++}"
+		--enable-64bit
+	make
 }
 
 package() {
-	cd "$builddir"/build
-	make DESTDIR="$pkgdir" install
+	DESTDIR="$pkgdir" make install
 
-	cd "$pkgdir"/usr/lib
-	rm -f -- *.a
-
-	cd "$builddir"/build/config
-	install -Dm755 nspr-config "$pkgdir"/usr/bin/nspr-config
-	install -Dm644 nspr.pc "$pkgdir"/usr/lib/pkgconfig/nspr.pc
+	install -Dm755 config/nspr-config "$pkgdir"/usr/bin/nspr-config
+	install -Dm644 config/nspr.pc "$pkgdir"/usr/lib/pkgconfig/nspr.pc
 	rm -rf "$pkgdir"/usr/bin/prerr.properties \
 		"$pkgdir"/usr/bin/compile-et.pl \
 		"$pkgdir"/usr/share/aclocal/nspr.m4 \
-		"$pkgdir"/usr/include/nspr/md
+		"$pkgdir"/usr/include/nspr/md \
+		"$pkgdir"/usr/lib/libnspr4.a \
+		"$pkgdir"/usr/lib/libplds4.a \
+		"$pkgdir"/usr/lib/libplc4.a
+}
+
+check() {
+	# Hang indefinitely
+	tests_excluded="anonfm"
+
+	# Fail in socketpair
+	tests_excluded="$tests_excluded foreign ioconthr sockping"
+
+	# Fail in PR_ACCEPT() / PR_WRITE() / PR_SetFDInheritable()
+	tests_excluded="$tests_excluded intrio peek pipeping2 poll_nm selct_nm sendzlf zerolen"
+
+	# Fail in RPI5 with segmentation violation
+	tests_excluded="$tests_excluded formattm"
+
+	for i in $tests_excluded; do
+		sed -i "s/$i//g" pr/tests/runtests.sh
+	done
+
+	cd pr/tests
+	EXTRA_LIBS="$EXTRA_LIBS -lsocket" make
+	./runtests.sh ../../dist/
 }
 
 
