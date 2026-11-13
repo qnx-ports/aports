@@ -1,3 +1,4 @@
+# Contributor: Cris Sinnott <cris.sinnott@qnx.com>
 # Maintainer: Deep Chordia <dchordia@blackberry.com>
 pkgname=python3-dm-tree
 pkgver=0.1.10
@@ -8,8 +9,6 @@ arch="all"
 license="Apache-2.0"
 depends="
 	python3
-	python3-absl-py
-	python3-attrs
 	python3-wrapt
 	"
 makedepends="
@@ -19,7 +18,13 @@ makedepends="
 	python3-setuptools
 	python3-wheel
 	"
-checkdepends="python3-pytest"
+checkdepends="
+	python3-absl-py
+	python3-attrs
+	python3-numpy
+	python3-pytest
+	python3-wrapt
+	"
 source="https://files.pythonhosted.org/packages/source/d/dm-tree/dm_tree-$pkgver.tar.gz"
 builddir="$srcdir/dm_tree-$pkgver"
 
@@ -27,7 +32,6 @@ build() {
 	CFLAGS="$CFLAGS -fPIC" CXXFLAGS="$CXXFLAGS -fPIC" CC=clang CXX=clang++ \
 		gpep517 build-wheel --wheel-dir .dist --output-fd 3 3>&1 >&2
 }
-
 
 check() {
 	python3 -m venv --clear --without-pip --system-site-packages .testenv
