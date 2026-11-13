@@ -1,0 +1,50 @@
+diff --git a/tests/CMakeLists.txt b/tests/CMakeLists.txt
+index 552d77d2..23cb7dcf 100644
+--- a/tests/CMakeLists.txt
++++ b/tests/CMakeLists.txt
+@@ -4,6 +4,7 @@ set(MENDER_SRC_DIR ${CMAKE_SOURCE_DIR}/src)
+ set(MENDER_TEST_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
+ 
+ option(MENDER_DOWNLOAD_GTEST "Download google test if it is not found (Default: ON)" ON)
++option(MENDER_TEST_SKIP_NETWORK_BASED_TESTS "Skip tests requiring (external) network access (Default: OFF)" OFF)
+ option(MENDER_TEST_SKIP_ASYNC_FIFO_OPENER_TESTS "Skip the AsyncFifoOpener tests (Default: OFF)" OFF)
+ option(MENDER_TEST_SKIP_NOFILE_BASED_TESTS "Skip tests based on limiting NOFILE (Default: OFF)" OFF)
+ option(MENDER_TEST_RUN_SEQUENTIALLY "Run tests sequentially instead of in parallel (Default: OFF)" OFF)
+diff --git a/tests/src/common/CMakeLists.txt b/tests/src/common/CMakeLists.txt
+index 2ad08184..d39fdbc3 100644
+--- a/tests/src/common/CMakeLists.txt
++++ b/tests/src/common/CMakeLists.txt
+@@ -62,6 +62,9 @@ add_dependencies(tests events_io_test)
+ 
+ add_executable(http_test EXCLUDE_FROM_ALL http_test.cpp)
+ target_link_libraries(http_test PUBLIC common_io common_http common_processes common_testing main_test gmock)
++if(MENDER_TEST_SKIP_NETWORK_BASED_TESTS)
++  target_compile_definitions(http_test PRIVATE MENDER_TEST_SKIP_NETWORK_BASED_TESTS)
++endif()
+ gtest_discover_tests(http_test
+   ${MENDER_TEST_FLAGS}
+   WORKING_DIRECTORY ${MENDER_TEST_SRC_DIR}/common/http/testdata/
+diff --git a/tests/src/common/http_test.cpp b/tests/src/common/http_test.cpp
+index 39521e26..36553d1b 100644
+--- a/tests/src/common/http_test.cpp
++++ b/tests/src/common/http_test.cpp
+@@ -1711,6 +1711,9 @@ TEST(HttpTest, SerialRequestsWithSameObjectAfterCancel) {
+ }
+ 
+ TEST(HttpTest, DestroyClientBeforeRequestComplete) {
++#ifdef MENDER_TEST_SKIP_NETWORK_BASED_TESTS
++	GTEST_SKIP();
++#endif
+ 	TestEventLoop loop(chrono::seconds(30));
+ 
+ 	bool client_hit_header = false;
+@@ -2265,6 +2268,9 @@ TEST(HttpsTest, NoCertificateError) {
+ }
+ 
+ TEST(HttpsTest, CorrectDefaultCertificateStoreVerification) {
++#ifdef MENDER_TEST_SKIP_NETWORK_BASED_TESTS
++	GTEST_SKIP();
++#endif
+ 	TestEventLoop loop(chrono::seconds(30));
+ 
+ 	bool client_hit_header {false};
