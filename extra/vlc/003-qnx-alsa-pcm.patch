@@ -1,0 +1,27 @@
+--- a/modules/audio_output/alsa.c
++++ b/modules/audio_output/alsa.c
+@@ -330,6 +330,16 @@
+ 
+     const char *device = sys->device;
+ 
++#if defined(__QNX__)
++    /* Start with PCM output: this SALSA SDK lacks IEC958 sample-rate constants.
++     * Do not advertise compressed passthrough without hardware validation. */
++    if (spdif)
++    {
++        msg_Err(aout, "S/PDIF passthrough is not supported on QNX");
++        return VLC_EGENERIC;
++    }
++    char *devbuf = NULL;
++#else
+     /* Choose the IEC device for S/PDIF output */
+     char sep = '\0';
+     if (spdif)
+@@ -380,6 +390,7 @@
+         device = devbuf;
+     }
+ 
++#endif
+     /* Open the device */
+     snd_pcm_t *pcm;
+     /* VLC always has a resampler. No need for ALSA's. */
