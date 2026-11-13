@@ -39,6 +39,9 @@ package() {
 
 	ln -s zerotier-one "$pkgdir"/usr/bin/zerotier-cli
 	ln -s zerotier-one "$pkgdir"/usr/bin/zerotier-idtool
+
+	install -Dm755 "$srcdir/$pkgname.initd" \
+		"$pkgdir/etc/init.d/$pkgname"
 }
 
 sha512sums="
