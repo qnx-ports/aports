@@ -13,7 +13,7 @@ makedepends="
 	ninja
 	pkgconfig
 	jrl-cmakemodules
-    doxygen
+	doxygen
 	"
 depends_dev="$pkgname"
 subpackages="$pkgname-doc $pkgname-dev"
@@ -30,10 +30,10 @@ build() {
 }
 
 package() {
-    DESTDIR="$pkgdir" cmake --install build
-    # Remove robots that cannot be redistributed due to license restrictions.
-    rm -rf "$pkgdir"/usr/share/example-robot-data/robots/{alex_description,tiago_description,tiago_pro_description}
-    rm -rf "$pkgdir"/usr/share/example-robot-data/robots/{borinot,hextilt,bravo7,allegro_hand,bluevolta,cassie,falcon,laikago,pr2}
+	DESTDIR="$pkgdir" cmake --install build
+	# Remove robots that cannot be redistributed due to license restrictions.
+	rm -rf "$pkgdir"/usr/share/example-robot-data/robots/{alex_description,tiago_description,tiago_pro_description}
+	rm -rf "$pkgdir"/usr/share/example-robot-data/robots/{borinot,hextilt,bravo7,allegro_hand,bluevolta,cassie,falcon,laikago,pr2}
 }
 
 sha512sums="
