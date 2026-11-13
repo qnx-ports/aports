@@ -1,0 +1,57 @@
+# Alpine-Contributor: Michał Polański <michal@polanski.me>
+# Alpine-Maintainer: Michał Polański <michal@polanski.me>
+# Maintainer: jscaffidi <jscaffidi@qnx.com>
+pkgname=neatvnc
+pkgver=1.0.0
+pkgrel=0
+pkgdesc="A liberally licensed VNC server library with a clean interface"
+url="https://github.com/any1/neatvnc"
+license="ISC"
+arch="all"
+options="!check" # no test suite
+depends="
+	aml
+	ffmpeg
+	libjpeg-turbo
+	libuv
+	qnx-screen
+	qnx-libdrm
+	pixman
+	zlib
+"
+depends_dev="
+	aml-dev
+	ffmpeg-dev
+	libjpeg-turbo-dev
+	libuv-dev
+	qnx-screen-dev
+	qnx-libdrm-dev
+	pixman-dev
+	zlib-dev
+"
+makedepends="
+    $depends_dev
+	meson
+	"
+subpackages="$pkgname-dbg $pkgname-dev"
+source="$pkgname-$pkgver.tar.gz::https://github.com/any1/neatvnc/archive/v$pkgver.tar.gz
+  qnx-IOV_MAX.patch
+"
+
+build() {
+    export CFLAGS="$CFLAGS -DMIN=min -DMAX=max"
+    export LDFLAGS="$LDFLAGS -lsocket"
+	abuild-meson . output
+	meson compile -C output
+}
+
+package() {
+	DESTDIR="$pkgdir" meson install --no-rebuild -C output
+}
+
+
+
+sha512sums="
+8a47611cf5ca94e87777052f53f9ecbd9673ab0fe970feeaae225f4d81af6f6945e3fb5620cc154db8fa57567188e9213340b3f46913e8cbf7999e70095a7c39  neatvnc-1.0.0.tar.gz
+df66433a301c508a070f4b3d62ae01c69a870b118b3e1b9e3f84a512d07ca4ee1a79f2e7040af29461bbbb99c69780d34106321770b95a63e4bce7f4e006879d  qnx-IOV_MAX.patch
+"
