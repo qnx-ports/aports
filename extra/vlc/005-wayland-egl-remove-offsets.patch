@@ -1,0 +1,29 @@
+egl: remove position offsets
+
+Backport of upstream VLC commit df739c3e5d85fc8339e76e626307a09aa5d5871e
+by Remi Denis-Courmont. Fixes the use of uninitialised sys->width/height
+and the non-zero wl_egl_window_resize() attach offsets that QNX rejects.
+
+--- a/modules/video_output/opengl/egl.c
++++ b/modules/video_output/opengl/egl.c
+@@ -54,7 +54,6 @@
+ #endif
+ #if defined (USE_PLATFORM_WAYLAND)
+     struct wl_egl_window *window;
+-    unsigned width, height;
+ #endif
+     PFNEGLCREATEIMAGEKHRPROC    eglCreateImageKHR;
+     PFNEGLDESTROYIMAGEKHRPROC   eglDestroyImageKHR;
+@@ -83,11 +82,7 @@
+ {
+     vlc_gl_sys_t *sys = gl->sys;
+ 
+-    wl_egl_window_resize(sys->window, width, height,
+-                         (sys->width - width) / 2,
+-                         (sys->height - height) / 2);
+-    sys->width = width;
+-    sys->height = height;
++    wl_egl_window_resize(sys->window, width, height, 0, 0);
+ }
+ #else
+ # define Resize (NULL)
