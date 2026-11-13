@@ -1,0 +1,40 @@
+# Alpine-Contributor: Sören Tempel <soeren+alpine@soeren-tempel.net>
+# Alpine-Maintainer: Peter Shkenev <santurysim@gmail.com>
+# Maintainer: Terence Ang <taang@qnx.com>
+pkgname=python3-elftools
+_pkgname=py${pkgname##python3-}
+pkgver=0.32
+pkgrel=0
+pkgdesc="Parsing ELF and DWARF in Python"
+url="https://github.com/eliben/pyelftools"
+arch="noarch"
+license="Unlicense"
+depends="python3"
+makedepends="python3-gpep517 python3-setuptools python3-wheel"
+subpackages="$pkgname-doc"
+source="$pkgname-$pkgver.tar.gz::https://github.com/eliben/$_pkgname/archive/refs/tags/v$pkgver.tar.gz"
+builddir="$srcdir/$_pkgname-$pkgver"
+
+build() {
+    gpep517 build-wheel \
+        --wheel-dir .dist \
+        --output-fd 3 3>&1 >&2
+}
+
+check() {
+    python3 -m venv --clear --without-pip --system-site-packages .testenv
+    .testenv/bin/python3 -m installer .dist/*.whl
+    .testenv/bin/python3 test/run_all_unittests.py
+}
+
+package() {
+    python3 -m installer -d "$pkgdir" .dist/*.whl
+
+    mkdir -p "$pkgdir"/usr/share/doc/$pkgname
+    install -m644 -t "$pkgdir"/usr/share/doc/$pkgname \
+        README.rst CHANGES
+}
+
+sha512sums="
+798da482d97bb759e9d54aa6c1be80bcfc118b7c0b2011b053564763ba3866946da8ad4b472a0b28c4e71f2b9023130ff044886f5d665d143b4922dbd87ba47e  python3-elftools-0.32.tar.gz
+"
