@@ -1,4 +1,4 @@
-# Contributor: Cris Sinnott <cris.sinnott@qnx.com>
+# Contributor: Cris Sinnott <csinnott@qnx.com>
 # Maintainer: Deep Chordia <dchordia@blackberry.com>
 pkgname=python3-dm-tree
 pkgver=0.1.10
