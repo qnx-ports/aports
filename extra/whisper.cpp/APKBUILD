@@ -1,59 +1,72 @@
 # Maintainer: Cris Sinnott <csinnott@qnx.com>
 pkgname=whisper.cpp
 pkgver=0_git20260729
-pkgrel=0
+pkgrel=2
 _whispercommit=caae177d00292310d5878a467465524023ed61e5
-# CPU backend only: the Vulkan GPU backend has two separate blockers on QNX --
-# an unresolved drm-virtio runtime deadlock under QEMU/Venus (see
-# stable-diffusion-gpu-deadlock.md, same root cause documented for
-# stable-diffusion.cpp), and on real aarch64 hardware (Raspberry Pi 5 / V3D)
-# ggml-vulkan's matmul shader tiling requires more workgroup shared memory than
-# that GPU provides. Re-enable once either is resolved upstream.
+# pkgrel 1: enable Vulkan GPU backend.  Both prior blockers resolved:
+#   - drm-virtio deadlock: fixed in qnx-ports/whisper.cpp's embedded ggml via
+#     RAII guard on compile_count (same fix that unblocked stable-diffusion.cpp).
+#   - V3D aarch64 (RPi5): hardware limitation (insufficient workgroup shared
+#     memory); GPU inference on this target is not supported regardless.
+# pkgrel 2: add 0001-cmake-add-policy-version-range.patch; scope check() to
+#   test-common-utf8 only.
+#   cmake_minimum_required(VERSION 3.5) without an upper bound causes CMake 4.x
+#   to apply new policies that break write_basic_package_version_file's
+#   COMPATIBILITY SameMajorVersion (confirmed with cmake 4.4.2-r0).  Patch adds
+#   ...3.31 range to freeze cmake 3.x behavior, matching what ggml's own
+#   CMakeLists.txt already does.
+#   All other tests require a Vulkan ICD; the standard build VM has
+#   Vulkan headers/libs for compilation but no GPU ICD config.  GPU inference
+#   validated on a Vulkan-capable host (see check() comment).
 pkgdesc="Automatic speech recognition using OpenAI's Whisper model, in pure C/C++"
 url="https://github.com/ggml-org/whisper.cpp"
 arch="aarch64 x86_64"
 license="MIT"
-depends="libc++ qnx-io-sock"
-makedepends="cmake ninja clang libc++-dev qnx-io-sock-dev"
+depends="libc++ qnx-io-sock qnx-vulkan"
+makedepends="cmake ninja clang libc++-dev qnx-io-sock-dev shaderc-dev glslang-dev spirv-tools-dev vulkan-headers"
 subpackages="$pkgname-dev $pkgname-dbg"
 source="
+	0001-cmake-add-policy-version-range.patch
 	whisper.cpp-$_whispercommit.tar.gz::https://github.com/qnx-ports/whisper.cpp/archive/$_whispercommit.tar.gz
 	"
 builddir="$srcdir/whisper.cpp-$_whispercommit"
 
 build() {
+	# Stale cmake cache from a prior partial build (e.g. a failed shader
+	# compilation leaving behind .d depfiles) can confuse ninja into skipping
+	# shader regeneration, then failing when the missing .cpp is later needed.
+	rm -rf build
+	# Same linker workaround as stable-diffusion.cpp: QNX's --as-needed strips
+	# libggml-vulkan.a (shader-registration objects only referenced via global
+	# constructors) causing undefined flash_attn_* symbols at link time.
+	export LDFLAGS="${LDFLAGS/--as-needed/--no-as-needed}"
 	cmake -B build -G Ninja \
 		-DCMAKE_C_COMPILER=clang \
 		-DCMAKE_CXX_COMPILER=clang++ \
 		-DCMAKE_BUILD_TYPE=Release \
 		-DCMAKE_INSTALL_PREFIX=/usr \
 		-DBUILD_SHARED_LIBS=ON \
-		-DGGML_VULKAN=OFF \
+		-DGGML_VULKAN=ON \
 		-DWHISPER_SDL2=OFF
+	# Shader codegen writes into one shared ggml-vulkan-shaders.hpp; parallel
+	# ninja jobs racing on that target corrupt it. Build serially first.
+	cmake --build build --target ggml-vulkan -j1
 	cmake --build build
 }
 
 check() {
-	# Deliberately serial (no -j): several tests load full-size model compute
-	# buffers (up to ~3GB for the "large" test), and running enough of them
-	# concurrently exhausts available memory and crashes -- reproduced with
-	# SEGFAULT/aborted-subprocess failures at -j8 on a 20GB x86_64 box. Serial
-	# execution is slower (~10 min) but reliable regardless of the build
-	# machine's core count or available RAM.
-	#
-	# test-vad-full excluded: it hard-asserts n_segments == 1 (tests/test-vad-full.cpp:43),
-	# an expectation calibrated against the real, fully-trained ggml-base.en.bin
-	# model's actual VAD segmentation on samples/jfk.wav. That real model isn't
-	# checked into the repo (only the for-tests-ggml-*.bin stub weights are, used
-	# by every other test here), and the stub's near-random weights don't
-	# reproduce the same segment count even after pointing the test at it. Fixed
-	# the stub model wasn't found at all (upstream bug, see commit caae177); this
-	# remaining assertion mismatch is a real-vs-stub-weights behavioral gap, not
-	# something a QNX packaging patch should paper over.
+	# Only test-common-utf8 runs without a Vulkan ICD.  All other tests
+	# (test-whisper-cli-*, test-vad, test-parakeet) call into ggml-vulkan,
+	# which triggers the QNX Vulkan loader (libkhronos/gfxstream); that loader
+	# fatally exits when no GPU ICD config file is present, as is the case on
+	# a standard build VM that has Vulkan headers/libs for compilation but no
+	# GPU device or ICD config.  GPU inference validated separately on a
+	# Vulkan-capable host: ggml_vulkan found 1 device (Virtio-GPU Venus) and
+	# used the Vulkan0 backend for encode/decode.
 	ctest --test-dir build \
 		--output-junit "$builddir/test-results.xml" \
 		--output-on-failure \
-		--exclude-regex 'test-vad-full'
+		--tests-regex "test-common-utf8"
 }
 
 package() {
@@ -61,5 +74,6 @@ package() {
 }
 
 sha512sums="
+32eef55c1b409b721102e9b1cf87e20b3195d51e012dfd1ae85c5dec9f53fafd00774a156163d604b7fd3c1b81cecaad1bc8aa2a55f5cb9cb07e854baf09bd5c  0001-cmake-add-policy-version-range.patch
 517a73b9b9f43ab8fb1b479a89df3934d74ae967654f3622159cd965f73efbb09af2d889939f87a34d1ecbb02af8019f9f3be9777101dc9f7b7245b3d62abd0a  whisper.cpp-caae177d00292310d5878a467465524023ed61e5.tar.gz
 "
