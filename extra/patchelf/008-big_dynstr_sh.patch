@@ -1,0 +1,11 @@
+--- a/tests/big-dynstr.sh
++++ b/tests/big-dynstr.sh
+@@ -14,7 +14,7 @@
+ if test -z "$oldRPath"; then oldRPath="/oops"; fi
+ ../src/patchelf --force-rpath --set-rpath "$oldRPath:$(pwd)/${SCRATCH}/libsA:$(pwd)/${SCRATCH}/libsB" "${SCRATCH}/big-dynstr"
+ 
+-if test "$(uname)" = FreeBSD; then
++if test "$(uname)" = FreeBSD || test "$(uname)" = QNX; then
+     LD_LIBRARY_PATH="$(pwd)/${SCRATCH}/libsB"
+     export LD_LIBRARY_PATH
+ fi
