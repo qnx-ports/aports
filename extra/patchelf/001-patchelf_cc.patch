@@ -19,3 +19,62 @@
      wri(phdr.p_align, getPageSize());
  }
  
+@@ -1001,11 +1012,58 @@
+     curOff += shtSize;
+ 
+     // ---
++#ifdef __QNX__
++    /* QNX seems to reject executables whose PT_INTERP string lies
++       far into the file. When the program header table grew in place, the
++       sections that overlapped its reserved range were moved to the new
++       segment, which leaves a gap between the real end of the table and
++       the reserved end. If the interpreter path fits there, keep it
++       inside the first PT_LOAD instead of moving it to the end of the file. */
++    Elf_Off interpSlot = 0;
++    size_t interpSize = 0;
++    if (!relocatePht) {
++        auto it = replacedSections.find(".interp");
++        if (it != replacedSections.end()) {
++            Elf_Off tableEnd = rdi(hdr()->e_phoff) + phdrs.size() * sizeof(Elf_Phdr);
++            if (tableEnd + it->second.size() <= (Elf_Off) phtEnd) {
++                interpSlot = tableEnd;
++                interpSize = it->second.size();
++            }
++        }
++    }
+ 
+     /* Write out the replaced sections. */
+     writeReplacedSections(curOff, startPage, startOffset);
+     assert(curOff == startOffset + neededSpace);
+ 
++    if (interpSlot != 0) {
++        Elf_Phdr * seg = findLoadSegmentByOffset(interpSlot);
++        if (seg && interpSlot + interpSize <= rdi(seg->p_offset) + rdi(seg->p_filesz)) {
++            Elf_Addr slotAddr = rdi(seg->p_vaddr) + (interpSlot - rdi(seg->p_offset));
++            for (auto & shdr : shdrs) {
++                if (getSectionName(shdr) != ".interp") continue;
++                checkOffset(fileContents, interpSlot, interpSize);
++                memmove(fileContents->data() + interpSlot,
++                    fileContents->data() + rdi(shdr.sh_offset), interpSize);
++                wri(shdr.sh_offset, interpSlot);
++                wri(shdr.sh_addr, slotAddr);
++                wri(shdr.sh_addralign, 1);
++                break;
++            }
++            for (auto & phdr : phdrs) {
++                if (rdi(phdr.p_type) == PT_INTERP) {
++                    wri(phdr.p_offset, interpSlot);
++                    wri(phdr.p_vaddr, wri(phdr.p_paddr, slotAddr));
++                }
++            }
++        }
++    }
++#else
++    /* Write out the replaced sections. */
++    writeReplacedSections(curOff, startPage, startOffset);
++    assert(curOff == startOffset + neededSpace);
++#endif
++
+     /* Write out the updated program and section headers */
+     if (relocatePht) {
+         rewriteHeaders(lastSegAddr);
