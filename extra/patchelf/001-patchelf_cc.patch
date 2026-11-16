@@ -78,3 +78,23 @@
      /* Write out the updated program and section headers */
      if (relocatePht) {
          rewriteHeaders(lastSegAddr);
+@@ -2544,7 +2602,19 @@
+         wri(phdr.p_offset, noteOffset);
+         wri(phdr.p_vaddr, wri(phdr.p_paddr, noteAddr));
+         wri(phdr.p_filesz, wri(phdr.p_memsz, noteSize));
++#ifdef __QNX__
++        /* QNX's loader behaves differently with segfault triggered when --build-resolution-cache
++           is enabled. Workaround by modifying read-only PT_LOAD following the RW segments
++           to be writeable. */
++        if (type == PT_LOAD) {
++            wri(phdr.p_flags, PF_R | PF_W);
++        }
++        else {
++            wri(phdr.p_flags, PF_R);
++        }
++#else
+         wri(phdr.p_flags, PF_R);
++#endif
+         wri(phdr.p_align, align);
+         phdrs.push_back(phdr);
+     };
