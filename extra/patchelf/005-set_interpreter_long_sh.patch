@@ -1,0 +1,26 @@
+--- a/tests/set-interpreter-long.sh
++++ b/tests/set-interpreter-long.sh
+@@ -1,5 +1,9 @@
+ #! /bin/sh -e
+-SCRATCH=scratch/$(basename "$0" .sh)
++if test "$(uname)" = QNX; then
++    SCRATCH=/tmp/scratch
++else
++    SCRATCH=scratch/$(basename "$0" .sh)
++fi
+ 
+ ./simple
+ 
+@@ -14,7 +18,11 @@
+ rm -rf "${SCRATCH}"
+ mkdir -p "${SCRATCH}"
+ 
+-newInterpreter="$(pwd)/${SCRATCH}/iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii"
++if test "$(uname)" = QNX; then
++    newInterpreter="${SCRATCH}/iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii"
++else
++    newInterpreter="$(pwd)/${SCRATCH}/iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii"
++fi
+ cp simple "${SCRATCH}/"
+ ../src/patchelf --set-interpreter "$newInterpreter" "${SCRATCH}/simple"
+ 
