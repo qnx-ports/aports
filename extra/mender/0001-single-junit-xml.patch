@@ -1,0 +1,13 @@
+diff --git a/tests/CMakeLists.txt b/tests/CMakeLists.txt
+index 552d77d2..d1ae421b 100644
+--- a/tests/CMakeLists.txt
++++ b/tests/CMakeLists.txt
+@@ -70,7 +70,7 @@ add_custom_target(tests
+ )
+ 
+ include(GoogleTest)
+-set(MENDER_TEST_FLAGS EXTRA_ARGS --gtest_output=xml:${CMAKE_SOURCE_DIR}/reports/)
++set(MENDER_TEST_FLAGS EXTRA_ARGS --gtest_output=xml:${CMAKE_BINARY_DIR}/test-results/junit-gtest.xml)
+ include_directories(${CMAKE_BINARY_DIR}/src ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/tests/src)
+ add_subdirectory(src/api)
+ add_subdirectory(src/artifact)
