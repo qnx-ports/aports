@@ -15,9 +15,28 @@ makedepends="
 	qnx-io-sock-dev
 "
 subpackages="$pkgname-doc $pkgname-zsh-completion"
-source="$pkgname-$pkgver-2.tar.gz::https://github.com/NixOS/patchelf/releases/download/$pkgver/patchelf-$pkgver.tar.gz
-	001-elf_h.patch
-	"
+source="
+	$pkgname-$pkgver-2.tar.gz::https://github.com/NixOS/patchelf/releases/download/$pkgver/patchelf-$pkgver.tar.gz
+	001-patchelf_cc.patch
+	002-Makefile.patch
+	003-pad_to_page_c.patch
+	004-foo_c.patch
+	005-set_interpreter_long_sh.patch
+	006-set_rpath_sh.patch
+	007-add_rpath_sh.patch
+	008-big_dynstr_sh.patch
+	009-output_flag_sh.patch
+	010-set_rpath_library_sh.patch
+	011-set_interpreter_same_sh.patch
+	012-repeated_updates_sh.patch
+	013-property_rewrite_sh.patch
+	014-replace_add_needed_sh.patch
+	015-executable_page_growth_sh.patch
+	016-executable_header_rewrite_sh.patch
+	017-header_load_pht_growth_sh.patch
+	018-strip_gap_rewrite_sh.patch
+	019-verdef_relocate_sh.patch
+"
 
 build() {
 	./configure \
@@ -26,27 +45,7 @@ build() {
 }
 
 check() {
-	# Following tests fail, which may be due to modifying file,
-	# investigation to be done
-	# - plain-run.sh
-	# - shrink-rpath.sh
-	# - set-interpreter-long.sh
-	# - set-rpath.sh
-	# - add-rpath.sh
-	# - no-rpath.sh
-	# - big-dynstr.sh
-	# - set-rpath-library.sh
-	# - output-flag.sh
-	# - grow-file.sh
-	# - replace-add-needed.sh
-	# - build-resolution-cache.sh
-	# - build-resolution-cache-symtab.sh
-	# - repeated-updates.sh
-	# - rename-dynamic-symbols.sh
-	# - set-interpreter-same.sh
-	# - property-rewrite.sh
-
-	make -C tests -j1 check || true
+	make -C tests -j1 check
 }
 
 package() {
@@ -56,5 +55,23 @@ package() {
 
 sha512sums="
 e75cccb533a3dd7f814dcc74ae365f3c75049473f33714140622614f192046028ea4ffc9050b5c9d174a3e201ca481978ef1bd86699ff6328003bf8d5eb19e35  patchelf-0.19.3-2.tar.gz
-bf529165506007489d56fd055ee174e9a8dfcee2e5bfd532d72e0e898954935b7923c0acdbe45dc9e58c1fbaf3663c0d636a97c0647c93ad2315baee7501b114  001-elf_h.patch
+d64f612a8b971db2e96b17f2339a236d863e6e96c4742d2bc9e5c7945b4f92c17e2fdeebe438dcc526e71b9cc7a1b91c4b56d5a7fdbe24d463d20ab50b6a34dc  001-patchelf_cc.patch
+99272a7710a54942be9aa4e609fa784452e7c7156d1f9ff129afb88ad488fc064ef47dd9777ad8b7dec766319fbcadf3d1b347d93f01827ed26a2c1b0c6b41da  002-Makefile.patch
+bf529165506007489d56fd055ee174e9a8dfcee2e5bfd532d72e0e898954935b7923c0acdbe45dc9e58c1fbaf3663c0d636a97c0647c93ad2315baee7501b114  003-pad_to_page_c.patch
+21b14bae8158d792904427f30865bcedbacd876e782cbd95c3c25b9b70dd9aa775ecb3fddccf6cb1abc993b10e15b6df7458ccbda3b0f4667afaba411e0045c3  004-foo_c.patch
+742930ea18b60dd511191ccd10b1ee3d125be66cd7a606bae1a58e108b60b21c7012f4000cbfd65628ffc3c7838d805d4feb7b3ccb26bdc6c7e3ca24935d86af  005-set_interpreter_long_sh.patch
+ba32452bfad4dda4d4ee27efb6d1d80b0f349308f137f357b7c1bbe581614e9db1aa0f4d93b0e5526f4999374a3ac3cc530777b8c52f193572e6d3a8a05e5cc0  006-set_rpath_sh.patch
+567623837eca182c91996e1b6aa16eceb8ce07d38823bf78ae5dcfd9cd30509da0eb175d9009b8d4379ed71cdd3e5b6c6d42b5f661d3a646c58463971600e501  007-add_rpath_sh.patch
+b031902abc5a56750251f3ee35a7abc2fd6090349a8ecf5ddc4d738424e9740ef6323c9012b0271630cdf9c4ac6cd8cb13ef248661be6340e266c04672b8c712  008-big_dynstr_sh.patch
+f789581effa47fd89207443f2a4f400ed76203292ec1663162482d9eeec0d5ed2a408c60eef1af0977d1bb37be6b9b8c016c606c2ff6bfbbf630ab355a8a4fd2  009-output_flag_sh.patch
+c583a9d65d634667489dd9837c45bdc8a9246402ba3c1a84d7220b6001086abe143e1698ca28a12646137675188e719571bf02db80c5767a7ef3097cffa1d195  010-set_rpath_library_sh.patch
+34de2136c9fe2d52d7f282a5e53ac13c996774b60dc273425246f1211ec93f0903206d9c9c3933898feb066ccaac5cb678bc869642fadb2c17aca2d6a1429f6a  011-set_interpreter_same_sh.patch
+ea654e55d975bba7b7c166bc483b2925aa9f7f2798b9023199d96deecc370aedc99e2a11437c9cd41282fa647b5b16ef9ecc1fb50efa417a0721fde39a514f9a  012-repeated_updates_sh.patch
+d37a91f967e30053c967e09d619f34d6dba45288ebc96e60290f194e0b5e5b8b7880f4ab1afe75cde26f9f7856ed80079c8d20df7cf39a29281c88c24780b0ad  013-property_rewrite_sh.patch
+8546314d3ec5c4f7fbfb92907e69292ebf8f59db3c1dc77bdc95500b7f8fa97823f9c6ed5626a964a35567bafd401d21019fd61a47ab34a2860b98231af0fe24  014-replace_add_needed_sh.patch
+2ea862cfb8aa2d15c16ca465eec791f418f5f9641596baa3ba1ee4c610bab4c02862dfde507ff7a58579901399e0a90ab3ec45b5fece244501be4e8022bf473d  015-executable_page_growth_sh.patch
+e953e6cec31d3fcebbe7ae92542eb7b6825cae9af71c67be1c4bed0a6885724b33328aa2f4ef620da035a581a6a327f150b2b76102069037bcde89cfb8a42baa  016-executable_header_rewrite_sh.patch
+9185a08e371db94e7533f9e333831331b6e19309762d9b81eb6f34be305c320e163fa9740376a68e2702d50fc8b8386e09309a9430be27ec14d4dcf459a4ba6a  017-header_load_pht_growth_sh.patch
+1802e48247a236d9b28fcb8717b7d77c184904f50677a9d2020c9bff284f98261bfacfe0dc13ee342d5bbdf23693d1f1ab1eab84e265356cbca2d045c350340c  018-strip_gap_rewrite_sh.patch
+3d73d6d8f4669001aa630f0132360a6bdebd6b144d245b4208c6eae6513deb7615514c2bfb279071e4f695f42e2f2bedc5f7a003e29b960a30af9a05ade4e363  019-verdef_relocate_sh.patch
 "
