@@ -1,0 +1,21 @@
+--- a/src/patchelf.cc
++++ b/src/patchelf.cc
+@@ -590,7 +590,18 @@
+     wri(phdr.p_paddr, phdrs.at(splitIndex).p_paddr - splitShift - shift);
+     wri(phdr.p_vaddr, phdrs.at(splitIndex).p_vaddr - splitShift - shift);
+     wri(phdr.p_filesz, wri(phdr.p_memsz, splitShift + extraBytes));
++#ifdef __QNX__
++    /* QNX no-pie executables (ET_EXEC) will result "Exec format error" when
++       the first PT_LOAD is not executable (executable-page-growth.sh).
++       Workaround by adding PF_R | PF_X instead */
++    if (rdi(hdr()->e_type) == ET_EXEC) {
++        wri(phdr.p_flags, PF_R | PF_X);
++    } else {
++        wri(phdr.p_flags, PF_R | PF_W);
++    }
++#else
+     wri(phdr.p_flags, PF_R | PF_W);
++#endif
+     wri(phdr.p_align, getPageSize());
+ }
+ 
