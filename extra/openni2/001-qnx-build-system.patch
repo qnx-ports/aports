@@ -1,0 +1,127 @@
+Build system: recognize aarch64, link libsocket on QNX, drop libudev
+
+--- a/Source/Drivers/PS1080/Makefile
++++ b/Source/Drivers/PS1080/Makefile
+@@ -29,13 +29,13 @@
+ LIB_NAME = PS1080
+ 
+ LIB_DIRS += ../../../ThirdParty/PSCommon/XnLib/Bin/$(PLATFORM)-$(CFG)
+ LIB_DIRS += $(BIN_DIR)/$(PLATFORM)-$(CFG)
+ USED_LIBS = XnLib dl pthread DepthUtils
+ ifneq ("$(OSTYPE)","Darwin")
+-        USED_LIBS += rt usb-1.0 udev
++        USED_LIBS += rt usb-1.0
+ else
+ 	USED_LIBS += usb-1.0.0
+ endif
+ 
+ CFLAGS += -Wall
+ 
+--- a/Source/Drivers/PS1080/PS1080Console/Makefile
++++ b/Source/Drivers/PS1080/PS1080Console/Makefile
+@@ -17,13 +17,13 @@
+ 	INC_DIRS += /opt/local/include
+ 	LIB_DIRS += /opt/local/lib
+ 	LDFLAGS += -framework CoreFoundation -framework IOKit
+ endif
+ 
+ ifneq ("$(OSTYPE)","Darwin")
+-	USED_LIBS += rt usb-1.0 udev
++	USED_LIBS += rt usb-1.0
+ else
+ 	USED_LIBS += usb-1.0.0
+ endif
+ 
+ CFLAGS += -Wall
+ 
+--- a/Source/Drivers/PSLink/Makefile
++++ b/Source/Drivers/PSLink/Makefile
+@@ -22,13 +22,13 @@
+ 	INC_DIRS += /opt/local/include
+ 	LIB_DIRS += /opt/local/lib
+ 	LDFLAGS += -framework CoreFoundation -framework IOKit
+ endif
+ 
+ ifneq ("$(OSTYPE)","Darwin")
+-	USED_LIBS += rt usb-1.0 udev
++	USED_LIBS += rt usb-1.0
+ else
+ 	USED_LIBS += usb-1.0.0
+ endif
+ 
+ CFLAGS += -Wall
+ 
+--- a/Source/Drivers/PSLink/PSLinkConsole/Makefile
++++ b/Source/Drivers/PSLink/PSLinkConsole/Makefile
+@@ -21,13 +21,13 @@
+ 	INC_DIRS += /opt/local/include
+ 	LIB_DIRS += /opt/local/lib
+ 	LDFLAGS += -framework CoreFoundation -framework IOKit
+ endif
+ 
+ ifneq ("$(OSTYPE)","Darwin")
+-	USED_LIBS += rt usb-1.0 udev
++	USED_LIBS += rt usb-1.0
+ else
+ 	USED_LIBS += usb-1.0.0
+ endif
+ 
+ CFLAGS += -Wall
+ 
+--- a/ThirdParty/PSCommon/BuildSystem/CommonCppMakefile
++++ b/ThirdParty/PSCommon/BuildSystem/CommonCppMakefile
+@@ -73,12 +73,16 @@
+ CFLAGS += -fPIC -fvisibility=hidden
+ 
+ ifneq "$(ALLOW_WARNINGS)" "1"
+ 	CFLAGS += -Werror
+ endif
+ 
++ifeq ("$(OSTYPE)","QNX")
++	USED_LIBS_OPTION += -lsocket
++endif
++
+ LDFLAGS += $(LIB_DIRS_OPTION) $(USED_LIBS_OPTION)
+ 
+ # some lib / exe specifics
+ ifneq "$(LIB_NAME)" ""
+ 	OUTPUT_NAME = lib$(LIB_NAME).so
+ 	ifneq ("$(OSTYPE)","Darwin")
+--- a/ThirdParty/PSCommon/BuildSystem/CommonDefs.mak
++++ b/ThirdParty/PSCommon/BuildSystem/CommonDefs.mak
+@@ -13,12 +13,14 @@
+ else ifneq (,$(findstring x86,$(MACHINE)))
+ 	HOST_PLATFORM = x86
+ else ifneq (,$(findstring i686,$(MACHINE)))
+ 	HOST_PLATFORM = x86
+ else ifneq (,$(findstring i386,$(MACHINE)))
+ 	HOST_PLATFORM = x86
++else ifneq (,$(findstring aarch64,$(MACHINE)))
++	HOST_PLATFORM = Arm64
+ else ifneq (,$(findstring arm,$(MACHINE)))
+ 	HOST_PLATFORM = Arm
+ else
+ 	DUMMY:=$(error Can't determine host platform)
+ endif
+ 
+--- /dev/null
++++ b/ThirdParty/PSCommon/BuildSystem/Platform.Arm64
+@@ -0,0 +1 @@
++# AArch64: no architecture-specific flags (Platform.Arm targets armv7 with NEON)
+--- a/ThirdParty/PSCommon/XnLib/Source/Makefile
++++ b/ThirdParty/PSCommon/XnLib/Source/Makefile
+@@ -13,13 +13,13 @@
+ 	INC_DIRS += /opt/local/include
+ 	LIB_DIRS += /opt/local/lib
+ 	LDFLAGS += -framework CoreFoundation -framework IOKit
+ endif
+ 
+ SLIB_NAME = XnLib
+-USED_LIBS = usb-1.0 dl pthread udev
++USED_LIBS = usb-1.0 dl pthread
+ ifneq ("$(OSTYPE)","Darwin")
+ 	USED_LIBS += rt 
+ endif
+ CFLAGS += -Wall
+ 
+ include ../../BuildSystem/CommonCppMakefile
