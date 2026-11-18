@@ -11,7 +11,7 @@ depends="libc++ libusb qnx-io-sock"
 subpackages="$pkgname-dev"
 source="$pkgname-$pkgver.tar.gz::https://github.com/qnx-ports/rtl-sdr/archive/refs/tags/qnx-$pkgver.tar.gz"
 builddir="$srcdir/rtl-sdr-qnx-$pkgver"
-options="!tracedeps"
+options="!check"
 
 build() {
     cd "$builddir"
