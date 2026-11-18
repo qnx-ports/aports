@@ -11,8 +11,10 @@ depends="
 	libcrypto3
 	qnx-io-sock
 	"
+# libc++-dev: project() names no LANGUAGES, so CMake also checks the C++ compiler
 makedepends="
 	cmake
+	libc++-dev
 	ninja
 	openssl-dev
 	qnx-io-sock-dev
