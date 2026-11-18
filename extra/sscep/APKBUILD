@@ -1,0 +1,46 @@
+# Maintainer: Cris Sinnott <csinnott@qnx.com>
+pkgname=sscep
+pkgver=0.10.0
+pkgrel=0
+pkgdesc="Simple SCEP (RFC 8894) client"
+url="https://github.com/certnanny/sscep"
+arch="all"
+license="BSD-2-Clause AND OpenSSL"
+# explicit: abuild does not derive so: dependencies on QNX (libcrypto.so.3, libsocket.so.4)
+depends="
+	libcrypto3
+	qnx-io-sock
+	"
+# libc++-dev: project() names no LANGUAGES, so CMake also checks the C++ compiler
+makedepends="
+	cmake
+	libc++-dev
+	ninja
+	openssl-dev
+	qnx-io-sock-dev
+	"
+subpackages="$pkgname-doc"
+source="$pkgname-$pkgver.tar.gz::https://github.com/certnanny/sscep/archive/refs/tags/v$pkgver.tar.gz"
+options="!check" # upstream ships no test suite
+
+build() {
+	# CMAKE_POLICY_VERSION_MINIMUM: upstream declares cmake_minimum_required(2.8.12), which CMake 4 rejects.
+	# -lsocket: recv() and the other socket calls live in libsocket on QNX, not libc. CMAKE_C_STANDARD_LIBRARIES
+	# puts it after the objects; in LDFLAGS it would come first and --as-needed would drop it.
+	cmake -B build -G Ninja \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+		-DCMAKE_C_STANDARD_LIBRARIES=-lsocket
+	cmake --build build
+}
+
+package() {
+	DESTDIR="$pkgdir" cmake --install build
+	install -Dm644 COPYING "$pkgdir"/usr/share/licenses/$pkgname/COPYING
+	install -Dm644 README.md sscep.conf -t "$pkgdir"/usr/share/doc/$pkgname/
+}
+
+sha512sums="
+df7ae59384956b5d902986c3c615b5f36e9b4c2dcb76a8a55858273ec41f228b1b6e35e9c66e5e7654e5371b974b07bd6baced8ae1a79115f90b4e93075fb702  sscep-0.10.0.tar.gz
+"
