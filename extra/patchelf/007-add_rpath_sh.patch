@@ -1,0 +1,11 @@
+--- a/tests/add-rpath.sh
++++ b/tests/add-rpath.sh
+@@ -13,7 +13,7 @@
+ ../src/patchelf --force-rpath --add-rpath "$(pwd)/${SCRATCH}/libsA" "${SCRATCH}/main"
+ ../src/patchelf --force-rpath --add-rpath "$(pwd)/${SCRATCH}/libsB" "${SCRATCH}/main"
+ 
+-if test "$(uname)" = FreeBSD; then
++if test "$(uname)" = FreeBSD || test "$(uname)" = QNX; then
+     LD_LIBRARY_PATH="$(pwd)/${SCRATCH}/libsB"
+     export LD_LIBRARY_PATH
+ fi

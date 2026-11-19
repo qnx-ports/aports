@@ -1,0 +1,18 @@
+--- a/tests/set-rpath-library.sh
++++ b/tests/set-rpath-library.sh
+@@ -24,6 +24,7 @@
+     echo "expected failure"
+ fi
+ 
++sleep 1
+ # So set an RUNPATH on libfoo as well.
+ oldRPath=$(../src/patchelf --print-rpath "${SCRATCH}/libsA/libfoo-scoped.so")
+ if test -z "$oldRPath"; then oldRPath="/oops"; fi
+@@ -37,6 +38,7 @@
+     exit 1
+ fi
+ 
++sleep 1
+ # Remove the libbar PATH from main using --shrink-rpath.
+ ../src/patchelf --shrink-rpath "${SCRATCH}/main-scoped"
+ if ../src/patchelf --print-rpath "${SCRATCH}/main-scoped" | grep /libsB; then

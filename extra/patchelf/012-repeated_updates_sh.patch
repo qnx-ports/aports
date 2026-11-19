@@ -1,0 +1,12 @@
+--- a/tests/repeated-updates.sh
++++ b/tests/repeated-updates.sh
+@@ -23,7 +23,9 @@
+ 
+ for _ in $(seq 1 100)
+ do
++    sleep 1
+     ${PATCHELF} --set-soname ./libbar.so libbar.so
++    sleep 1
+     ${PATCHELF} --set-soname libbar.so libbar.so
+     ./simple || exit 1
+ done

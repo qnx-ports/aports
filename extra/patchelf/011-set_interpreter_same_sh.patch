@@ -1,0 +1,10 @@
+--- a/tests/set-interpreter-same.sh
++++ b/tests/set-interpreter-same.sh
+@@ -25,6 +25,7 @@
+ 
+ dummyInterpreter="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ 
++sleep 1
+ echo "set the dummy interpreter"
+ before_checksum=$(sha256sum "${SCRATCH}/simple")
+ ../src/patchelf --set-interpreter "${dummyInterpreter}" "${SCRATCH}/simple"

@@ -1,0 +1,15 @@
+--- a/tests/pad-to-page.c
++++ b/tests/pad-to-page.c
+@@ -6,7 +6,11 @@
+  * The binary under test is native-endian (built by the same toolchain), so
+  * fields are read and written directly.
+  */
+-#include <elf.h>
++#if __QNX__
++#  include <sys/elf.h>
++#else
++#  include <elf.h>
++#endif
+ #include <stdint.h>
+ #include <stdio.h>
+ #include <stdlib.h>

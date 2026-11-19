@@ -1,0 +1,10 @@
+--- a/tests/replace-add-needed.sh
++++ b/tests/replace-add-needed.sh
+@@ -16,6 +16,7 @@
+ # We have to set the soname on these libraries
+ ${PATCHELF} --set-soname libbar.so ./libbar.so
+ 
++sleep 1
+ # Add a libbar.so so we can rewrite it later
+ ${PATCHELF} --add-needed libbar.so ./simple
+

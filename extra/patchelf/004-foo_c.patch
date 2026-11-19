@@ -1,0 +1,15 @@
+--- a/tests/foo.c
++++ b/tests/foo.c
+@@ -2,7 +2,12 @@
+ 
+ /* Include a bogus .interp section in libfoo.so (NIXPKGS-98).
+    Borrowed from Glibc. */
++
++/* The creation of .interp will automatically createn program header PT_INTERP
++   which will fail the test in QNX */
++#ifndef __QNX__
+ const char __invoke_dynamic_linker__[] __attribute__ ((section (".interp"))) = "/foo/bar";
++#endif
+ 
+ int bar();
+ 

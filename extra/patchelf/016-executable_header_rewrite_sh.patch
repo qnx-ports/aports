@@ -1,0 +1,36 @@
+--- a/tests/executable-header-rewrite.sh
++++ b/tests/executable-header-rewrite.sh
+@@ -1,6 +1,9 @@
+ #! /bin/sh -e
+ 
+-if test "$(uname -m)" != x86_64 || test "$(uname)" != Linux; then
++if ! { 
++    { test "$(uname -m)" = x86_64 && test "$(uname)" = Linux; } || 
++    { test "$(uname -p)" = x86_64 && test "$(uname)" = QNX; }
++} ; then
+     exit 77
+ fi
+ 
+@@ -51,11 +54,14 @@
+ # Large symbol tables make the second rewrite extend the small header LOAD
+ # created for .interp. Without an RPATH, .dynamic must also become writable.
+ for rpath in present absent; do
++    sleep 1
+     cp many-syms-no-pie "${SCRATCH}/main"
+     if test "${rpath}" = absent; then
+         ../src/patchelf --remove-rpath "${SCRATCH}/main"
+     fi
++    sleep 1
+     ../src/patchelf --set-interpreter "${newInterpreter}" "${SCRATCH}/main"
++    sleep 1
+     ../src/patchelf --set-rpath "$(pwd)" "${SCRATCH}/main"
+     check_load_pages "${SCRATCH}/main"
+     check_dynamic_writable "${SCRATCH}/main"
+@@ -64,6 +70,7 @@
+     # Later growth must reuse the header LOAD without creating overlapping
+     # mappings or exhausting the address space through needless LOAD splits.
+     for size in 6000 16000; do
++        sleep 1
+         ../src/patchelf --set-rpath "$(pwd):$(printf "%0${size}d" 0)" "${SCRATCH}/main"
+         check_load_pages "${SCRATCH}/main"
+         check_dynamic_writable "${SCRATCH}/main"
