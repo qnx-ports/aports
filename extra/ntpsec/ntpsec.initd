@@ -1,0 +1,17 @@
+#!/usr/bin/openrc-run
+
+name="ntpsec"
+description="NTP reference implementation focused on security"
+command="/usr/bin/ntpd"
+command_args="${NTPD_OPTS:--g -N} -n"
+pidfile="/run/$RC_SVCNAME.pid"
+command_background="yes"
+
+# no capabilities= line: QNX openrc is built without capabilities support
+# and refuses to start the service with one; ntpd runs as root instead
+
+depend() {
+	need net
+	provide ntp-client
+	use dns
+}

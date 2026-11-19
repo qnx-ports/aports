@@ -1,0 +1,114 @@
+# Alpine-Contributor: tcely <ntpsec+aports@tcely.33mail.com>
+# Alpine-Maintainer: Hoang Nguyen <folliekazetani@protonmail.com>
+# Maintainer: Cris Sinnott <csinnott@qnx.com>
+pkgname=ntpsec
+pkgver=1.2.5
+pkgrel=0
+_gitrel=0
+pkgdesc="NTP reference implementation, refactored for security"
+url="https://www.ntpsec.org/"
+arch="all"
+license="BSD-2-Clause"
+# py3-gpsd (only ntploggps uses it) is not packaged for QNX.
+# The libraries are explicit: abuild does not derive so: dependencies on QNX.
+depends="
+	avahi-compat-libdns_sd
+	bash
+	libcrypto3
+	libssl3
+	libsysv-ipc-shim
+	python3
+	qnx-io-sock
+	"
+# asciidoctor (man pages), libbsd, libcap and pps-tools are not packaged for QNX;
+# ntpsec builds without them (no man pages, no PPS refclocks, droproot needs root).
+# The tests run from the build tree; beyond makedepends they need only python3
+# (pylib unittest suites and waf-junit.py), already pulled in by python3-dev.
+checkdepends="python3"
+makedepends="
+	avahi-dev
+	bison
+	libsysv-ipc-shim-dev
+	openssl-dev>3
+	python3-dev
+	qnx-io-sock-dev
+	"
+# no -doc/-doc-html: without asciidoctor nothing is generated for them.
+# no -pyc: this abuild has no default pyc split; bytecode stays in the main package.
+# no -dev: its only file was usr/lib/libntpc.so, which the Python tools (ntpq,
+# ntpdig, ...) dlopen at runtime; ctypes.util.find_library() on QNX finds it only
+# through that unversioned name, so it has to stay in the main package.
+subpackages="$pkgname-openrc"
+# QNX changes live in https://github.com/qnx-ports/ntpsec (branch qnx-$pkgver)
+source="
+	$pkgname-qnx-$pkgver-r$_gitrel.tar.gz::https://github.com/qnx-ports/ntpsec/archive/refs/tags/qnx-$pkgver-r$_gitrel.tar.gz
+	ntp.conf
+	ntpsec.confd
+	ntpsec.initd
+	waf-junit.py
+	"
+builddir="$srcdir/$pkgname-qnx-$pkgver-r$_gitrel"
+
+# secfixes:
+#   1.2.5-r0:
+#     - CVE-2026-18321
+#   1.2.2a-r0:
+#     - CVE-2023-4012
+#   1.2.1-r0:
+#     - CVE-2021-22212
+#   1.1.3-r0:
+#     - CVE-2019-6442
+#     - CVE-2019-6443
+#     - CVE-2019-6444
+#     - CVE-2019-6445
+
+prepare() {
+	default_prepare
+
+	grep -r -l '#! /usr/bin/env python' . \
+		| xargs sed -i '1s@^.*$@#!/usr/bin/python3@'
+}
+
+build() {
+	# --sbindir: this abuild rejects /usr/sbin
+	./waf configure \
+		--prefix=/usr \
+		--sbindir=/usr/bin \
+		--python=python3 \
+		--disable-debug-gdb \
+		--enable-leap-smear \
+		--enable-mssntp \
+		--refclock=all \
+		--pyshebang=/usr/bin/python3
+	./waf build --verbose
+}
+
+check() {
+	# JUnit for CI: waf writes build/main/test.log (one block per test program);
+	# waf-junit.py turns it and the binary checks in waf's output into JUnit XML.
+	local rc=0
+	./waf check --verbose > waf-check.out 2>&1 || rc=$?
+	cat waf-check.out
+	python3 "$srcdir"/waf-junit.py build/main/test.log waf-check.out \
+		"$builddir"/test-results.xml
+	return $rc
+}
+
+package() {
+	./waf install --destdir="$pkgdir"
+
+	install -Dm644 "$srcdir"/ntp.conf "$pkgdir"/etc/ntp.conf
+	install -Dm755 "$srcdir"/ntpsec.initd "$pkgdir"/etc/init.d/ntpsec
+	install -Dm644 "$srcdir"/ntpsec.confd "$pkgdir"/etc/conf.d/ntpsec
+	install -dm755 "$pkgdir"/etc/ntp.d
+	# ntpd runs as root on QNX (no ntp user; see ntpsec.confd)
+	install -dm700 "$pkgdir"/var/lib/ntp
+	install -dm750 "$pkgdir"/var/log/ntpstats
+}
+sha512sums="
+bc08090b214152b661b4a184339ad2107694179da2f7a635239e5dbdeb0a59a42d9741c1a8c15c3782ccab44d2b46ca450d18a905a7fc98a3ae2981f6188358d  ntpsec-qnx-1.2.5-r0.tar.gz
+e8a72067151dac8cad29db40851343ee51c08dc9f35f71e137910bcf4b8269bafd72dfcb45b93e04d887dc426322fdc3bc250888f988879e006925855c644bd0  ntp.conf
+b1d82e790b94375d9d3df9364a847b4ae40ecf988e19a4fd6081415405e7345e17c1755a9b0e17671a92c4199e12853d1d9fb2694855e39f9159ca006bcac47d  ntpsec.confd
+f38fd2d1677cfba9ba5396f0ee7d4b7a0c287f01e27ea2fa202c89c6aeb4e56a2fc648205d5412a8d44dd7fecaf677ebac86a2a5af4024da4048f88f59d8cc6d  ntpsec.initd
+f0c34b6d1ea913bf598d5138876f793a81d19b6f44184ba19282951e67907d5fd3190cf66ed97893a786414ee40417a696c6e8b66e7bfe18dc696c39afc22c8b  waf-junit.py
+"
