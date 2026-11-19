@@ -1,0 +1,105 @@
+# Maintainer: Narayana Murthy Naidu <nnarayanamurthy@qnx.com>
+
+pkgname=sherpa-onnx
+pkgver=2.0.1
+pkgrel=0
+pkgdesc="Offline speech recognition and audio processing using ONNX Runtime"
+url="https://github.com/k2-fsa/sherpa-onnx"
+arch="all"
+license="Apache-2.0"
+
+depends="
+	libc++
+	onnxruntime
+	qnx-gcc-libs
+	qnx-microkernel
+	"
+
+makedepends="
+	cmake
+	libc++-dev
+	ninja
+	onnxruntime-dev
+	"
+
+subpackages="$pkgname-dev"
+
+source="
+	$pkgname-$pkgver.tar.gz::https://github.com/k2-fsa/sherpa-onnx/archive/refs/tags/v$pkgver.tar.gz
+	kaldi-native-fbank-1.22.4.tar.gz::https://github.com/csukuangfj/kaldi-native-fbank/archive/refs/tags/v1.22.4.tar.gz
+	kissfft-febd4cae.zip::https://github.com/mborgerding/kissfft/archive/febd4caeed32e33ad8b2e0bb5ea77542c40f18ec.zip
+	utf8proc-2.12.0.tar.gz::https://github.com/JuliaStrings/utf8proc/archive/refs/tags/v2.12.0.tar.gz
+	kaldi-decoder-0.3.0.tar.gz::https://github.com/k2-fsa/kaldi-decoder/archive/refs/tags/v0.3.0.tar.gz
+	kaldifst-1.8.0.tar.gz::https://github.com/k2-fsa/kaldifst/archive/refs/tags/v1.8.0.tar.gz
+	openfst-1.8.5-2026-07-09.tar.gz::https://github.com/csukuangfj/openfst/archive/refs/tags/v1.8.5-2026-07-09.tar.gz
+	simple-sentencepiece-0.7.tar.gz::https://github.com/pkufool/simple-sentencepiece/archive/refs/tags/v0.7.tar.gz
+	googletest-1.13.0.tar.gz::https://github.com/google/googletest/archive/refs/tags/v1.13.0.tar.gz
+	json-3.12.0.tar.gz::https://github.com/nlohmann/json/archive/refs/tags/v3.12.0.tar.gz  
+	eigen-5.0.1.tar.gz::https://gitlab.com/libeigen/eigen/-/archive/5.0.1/eigen-5.0.1.tar.gz
+	qnx-setlinebuf.patch
+	"
+builddir="$srcdir/$pkgname-$pkgver"
+
+build() {
+	export CFLAGS="${CFLAGS/-fstack-clash-protection/}"
+	export CXXFLAGS="${CXXFLAGS/-fstack-clash-protection/}"
+
+	cmake -S . -B build -G Ninja \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DCMAKE_INSTALL_LIBDIR=lib \
+		-DCMAKE_SKIP_INSTALL_RPATH=ON \
+		-DCMAKE_CXX_STANDARD=17 \
+		-DCMAKE_CXX_STANDARD_REQUIRED=ON \
+		-DBUILD_SHARED_LIBS=ON \
+		-DSHERPA_ONNX_USE_PRE_INSTALLED_ONNXRUNTIME_IF_AVAILABLE=ON \
+		-DFETCHCONTENT_SOURCE_DIR_KALDI_NATIVE_FBANK="$srcdir/kaldi-native-fbank-1.22.4" \
+		-DFETCHCONTENT_SOURCE_DIR_KISSFFT="$srcdir/kissfft-febd4caeed32e33ad8b2e0bb5ea77542c40f18ec" \
+		-DFETCHCONTENT_SOURCE_DIR_UTF8PROC="$srcdir/utf8proc-2.12.0" \
+		-DFETCHCONTENT_SOURCE_DIR_KALDI_DECODER="$srcdir/kaldi-decoder-0.3.0" \
+		-DFETCHCONTENT_SOURCE_DIR_KALDIFST="$srcdir/kaldifst-1.8.0" \
+		-DFETCHCONTENT_SOURCE_DIR_OPENFST="$srcdir/openfst-1.8.5-2026-07-09" \
+		-DFETCHCONTENT_SOURCE_DIR_EIGEN="$srcdir/eigen-5.0.1" \
+		-DFETCHCONTENT_SOURCE_DIR_GOOGLETEST="$srcdir/googletest-1.13.0" \
+		-DFETCHCONTENT_SOURCE_DIR_JSON="$srcdir/json-3.12.0" \
+		-DFETCHCONTENT_SOURCE_DIR_SIMPLE-SENTENCEPIECE="$srcdir/simple-sentencepiece-0.7" \
+		-DSHERPA_ONNX_LINK_LIBSTDCPP_STATICALLY=OFF \
+		-DSHERPA_ONNX_ENABLE_C_API=ON \
+		-DSHERPA_ONNX_ENABLE_BINARY=OFF \
+		-DSHERPA_ONNX_BUILD_C_API_EXAMPLES=OFF \
+		-DSHERPA_ONNX_ENABLE_PYTHON=OFF \
+		-DSHERPA_ONNX_ENABLE_JNI=OFF \
+		-DSHERPA_ONNX_ENABLE_PORTAUDIO=OFF \
+		-DSHERPA_ONNX_ENABLE_WEBSOCKET=OFF \
+		-DSHERPA_ONNX_ENABLE_TTS=OFF \
+		-DSHERPA_ONNX_ENABLE_SPEAKER_DIARIZATION=OFF \
+		-DSHERPA_ONNX_ENABLE_GPU=OFF \
+		-DSHERPA_ONNX_ENABLE_TESTS=ON \
+		-DSHERPA_ONNX_ENABLE_CHECK=OFF
+
+	cmake --build build -j2
+}
+
+check() {
+	ctest --test-dir build \
+		--output-on-failure -j1
+}
+
+package() {
+	DESTDIR="$pkgdir" cmake --install build
+}
+
+sha512sums="
+71f0edb0e962f8be357adb82bd3018100a0a09a490229aaf90d22435154c9aa1bbcb5391b5b12ee48ea00fe5b359cd6d14439cc3a27bba478c3544062cadc466  sherpa-onnx-2.0.1.tar.gz
+5b779291429ba5ec3b43385146fd210ad076c4196e88b4e12c4338fa7a42840936b04e09c837031b768a59855124ae06f514d1ac1b21811e37eb5e1281f55f88  kaldi-native-fbank-1.22.4.tar.gz
+602d8a82ed5fa72a8df48f153a9f319eb0c93dc94552ebf63528e081f41e5b8efbedf931870da9dab085612a128d71465d83e10d28f38cf2a3b329f85adbf378  kissfft-febd4cae.zip
+364ea5a8a7670dda0a863a1ee774a682b8fc1c6ad69b6fe3458a288af2cbecb4bc3fc0913bd588ec47b987bb106e109e3dbbbd68f1e305b60feeb58e18093725  utf8proc-2.12.0.tar.gz
+52e102af496e49d091600fb515f83e786be7a44c34c834e996a64bf1963c42e1699d965be94b57deacf82b97fe70c9794c90dd2117aef7d835f2cfc97b4b1603  kaldi-decoder-0.3.0.tar.gz
+a2765dc4b76ea514e2280e228257121843bdd5bcd8e34fd4deb8bcb6c885e2f230dc06f9b5929b9f9c4111f311832f194d4aed44a54af4ccc8c65d218f4bbd49  kaldifst-1.8.0.tar.gz
+640c83e07d9c81d3f5278ce98f42092c48b57470fe71758f4a27d635986317fb0087fe89eb26a3a491dc30ff021b7887c7db3478082b6f576572ae82ba8dd496  openfst-1.8.5-2026-07-09.tar.gz
+db53c9bcd94633775af31b0f4a3c09479ac8f3d9b24698e991e08dadac05233a78895a058058d34aea7a40f1a21aac291b9428afd7503a0c1a9adbf9f61e8bbf  simple-sentencepiece-0.7.tar.gz
+70c0cfb1b4147bdecb467ecb22ae5b5529eec0abc085763213a796b7cdbd81d1761d12b342060539b936fa54f345d33f060601544874d6213fdde79111fa813e  googletest-1.13.0.tar.gz
+6cc1e86261f8fac21cc17a33da3b6b3c3cd5c116755651642af3c9e99bb3538fd42c1bd50397a77c8fb6821bc62d90e6b91bcdde77a78f58f2416c62fc53b97d  json-3.12.0.tar.gz
+b337d3bc38440db190a8f1fbc4eabc0098e69fcc95bfba195fe039ffb942cae2a7f0153f3094f35fa26325750d1c62e20cccaf916a41f5c7f248ec5e5d30a942  eigen-5.0.1.tar.gz
+c8a0eb1a83611257864238e4ec9dfecdfa8c8ff0e059b332542fa0953c1eac2878e8639034ff019494b4d4c3edc34fe5cef3420703eaf661c8a8dda379c75a18  qnx-setlinebuf.patch
+"
