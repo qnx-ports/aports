@@ -1,0 +1,13 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 3f55509..db5978a 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -74,6 +74,8 @@ install(FILES ${PROJECT_BINARY_DIR}/${PROJECT_NAME}_export.h
+ 
+ if(WIN32 AND NOT CYGWIN)
+   set(CMAKE_CONFIG_INSTALL_DIR CMake)
++elseif(CMAKE_SYSTEM_NAME STREQUAL "QNX")
++  set(CMAKE_CONFIG_INSTALL_DIR ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
+ else()
+   set(CMAKE_CONFIG_INSTALL_DIR ${CMAKE_INSTALL_LIBDIR}/${PROJECT_NAME}/cmake/)
+ endif()
