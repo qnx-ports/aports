@@ -1,0 +1,81 @@
+# Alpine-Contributor: August Klein <amatcoder@gmail.com>
+# Alpine-Maintainer: Duncan Bellamy <dunk@denkimushi.com>
+# Maintainer: Terence Ang <taang@qnx.com>
+pkgname=python3-cryptography
+# version must be compatible with python3-openssl
+pkgver=50.0.0
+pkgrel=0
+pkgdesc="Cryptographic recipes and primitives for Python"
+url="https://cryptography.io/"
+arch="all"
+license="Apache-2.0 OR BSD-3-Clause"
+depends="python3 python3-cffi"
+makedepends="
+	cargo
+	libffi-dev
+	openssl-dev>3
+	python3-uv-build
+	python3-gpep517
+	python3-maturin
+	python3-setuptools
+	python3-wheel
+	python3-dev
+	"
+checkdepends="
+	python3-certifi
+	python3-pretend
+	python3-pytest
+	python3-pytest-benchmark
+	python3-pytest-xdist
+	"
+source="https://files.pythonhosted.org/packages/source/c/cryptography/cryptography-$pkgver.tar.gz
+	https://files.pythonhosted.org/packages/source/c/cryptography_vectors/cryptography_vectors-$pkgver.tar.gz
+	config.toml
+	001-cargo_toml.patch
+	"
+builddir="$srcdir/cryptography-$pkgver"
+options="net"
+
+prepare() {
+	default_prepare
+	mkdir -p .cargo
+	cp "$srcdir"/config.toml .cargo
+
+	cargo vendor vendor
+}
+
+build() {
+	export CRATE_CC_NO_DEFAULTS=1
+	export CARGO_PROFILE_RELEASE_LTO=off
+	export AR=/usr/bin/ar
+	gpep517 build-wheel \
+		--wheel-dir .dist \
+		--output-fd 3 3>&1 >&2
+
+	# prepare cryptography vectors for testing
+	cd "$srcdir/cryptography_vectors-$pkgver"
+	gpep517 build-wheel \
+		--wheel-dir .dist \
+		--output-fd 3 3>&1 >&2
+}
+
+check() {
+	python3 -m venv --clear --without-pip --system-site-packages test-env
+	test-env/bin/python3 -m installer .dist/cryptography*.whl
+	test-env/bin/python3 -m installer "$srcdir"/cryptography_vectors-$pkgver/.dist/cryptography*.whl
+	test-env/bin/python3 -m pytest -n $JOBS
+}
+
+package() {
+	python3 -m installer -d "$pkgdir" \
+		.dist/cryptography-*.whl
+}
+
+
+
+sha512sums="
+b473d5625aa0367825fdbe771377056b660dbe0e9d155a769098bfa03d77e0e3d9d11c4c0761c66f45ed93857c1410239c0e8e5f558d1d9d603b4b7502a626a4  cryptography-50.0.0.tar.gz
+e0969245a61bb84b992ebc8f53b45191f6d78e2cea228b7d7ee35a6658722028956e6c54414811e0c03cbd6232075904edfcaeaefc7d8e61a4981149ac1e28ef  cryptography_vectors-50.0.0.tar.gz
+8d542abd3b4a2ad323554c4d9c8fdd9e178e09af085bf35e4adbd325805af688f0bb6add30fa34ca7b62866bb07412a798c113b41fd6f93cb187abc0795c8379  config.toml
+01f636340d564e0c450da9bb8f4ad440c127cb25033e262a8c1d137a13448626546e7aff09e145d5fa5995636d83bbf993a4bcf053bc591bae6ace1362fdeb1e  001-cargo_toml.patch
+"
