@@ -1,0 +1,226 @@
+# Contributor: Łukasz Jendrysik <scadu@yandex.com>
+# Contributor: Leonardo Arena <rnalrd@alpinelinux.org>
+# Contributor: Natanael Copa <ncopa@alpinelinux.org>
+# Maintainer: Elliott Mazzuca <emazzuca@qnx.com>
+pkgname=vlc
+pkgver=3.0.24
+pkgrel=0
+pkgdesc="Multi-platform MPEG, VCD/DVD, and DivX player"
+url="https://www.videolan.org/vlc/"
+arch="x86_64 aarch64"
+license="GPL-2.0-or-later"
+depends="vlc-libs=$pkgver-r$pkgrel qnx-io-sock"
+# This repository does not use so: provides, so runtime libraries are named
+# explicitly; abuild reports anything missing as "so dependency missing: <pkg>"
+# when the package is built. qt6-wayland is listed by hand because Qt loads its
+# Wayland platform plugin with dlopen(), so nothing records it as DT_NEEDED.
+# qnx-microkernel is deliberately absent: platform packages are not declared.
+# FFmpeg is pinned to the 8.0 ABI these plugins were built against.
+depends_libs="
+	ffmpeg-libavcodec~8.0
+	ffmpeg-libavformat~8.0
+	ffmpeg-libavutil~8.0
+	ffmpeg-libswscale~8.0
+	glib
+	gst-plugins-base
+	gstreamer
+	libarchive
+	libc++
+	libiconv
+	libintl
+	libjpeg-turbo
+	liblocale-shim
+	libpng
+	libsecret
+	libxml2
+	qnx-alsa
+	qnx-egl
+	qnx-gcc-libs
+	qnx-gles
+	qnx-io-sock
+	qt6-base
+	qt6-svg
+	qt6-wayland
+	wayland
+	zlib-ng
+	"
+makedepends="
+	autoconf
+	automake
+	build-base
+	diffutils
+	egl-headers
+	ffmpeg-dev
+	gettext-dev
+	gles-headers
+	gst-plugins-base-dev
+	gstreamer-dev
+	libarchive-dev
+	liblocale-shim
+	liblocale-shim-dev
+	libsecret-dev
+	libtool
+	pkgconf
+	qnx-alsa-dev
+	qnx-io-sock-dev
+	qt6-base-dev
+	qt6-svg-dev
+	qt6-wayland
+	wayland-dev
+	wayland-protocols
+	"
+# Split order matters here. -libs runs first so it keeps the licence notices,
+# which default_doc would otherwise claim. -doc runs before -dev because
+# default_dev sweeps every *.[cho] under usr/, which would otherwise drag
+# VLC's example sources in usr/share/doc into -dev.
+subpackages="$pkgname-libs:libs $pkgname-doc $pkgname-dev"
+triggers="vlc-libs.trigger=/usr/lib/vlc/plugins"
+install="vlc-libs.pre-deinstall"
+source="https://download.videolan.org/vlc/$pkgver/vlc-$pkgver.tar.xz
+	001-qnx-clang-fortify.patch
+	002-qnx-strerror.patch
+	003-qnx-alsa-pcm.patch
+	004-qnx-qt-wayland-embed.patch
+	005-wayland-egl-remove-offsets.patch
+	006-qnx-wayland-display-geometry.patch
+	007-null-safe-log-arguments.patch
+	008-qnx-directory-access.patch
+	"
+
+prepare() {
+	default_prepare
+	NOCONFIGURE=1 ./bootstrap
+}
+
+build() {
+	# QNX keeps sockets and the locale_t API outside libc. VLC core calls
+	# newlocale()/uselocale() unconditionally, so the locale shim is required.
+	# With liblocale-shim installed, -llocale resolves to the shared
+	# liblocale.so rather than the static archive in liblocale-shim-dev.
+	export LIBS="$LIBS -lsocket -llocale"
+	export CFLAGS="$CFLAGS -D_QNX_SOURCE -Qunused-arguments"
+	export CXXFLAGS="$CXXFLAGS -D_QNX_SOURCE -Qunused-arguments"
+
+	# configure runs qmake to discover the Qt build flags. qmake's built-in
+	# default here is the qnx-*-qcc cross spec, which expects a QNX_TARGET SDP
+	# sysroot; linux-clang matches the native clang/libc++ toolchain instead.
+	export QMAKESPEC=linux-clang
+
+	# QNX ships these Linux headers as compatibility shims, so the stock
+	# probes find them and enable Linux-only code that does not build.
+	export ac_cv_header_linux_fb_h=no ac_cv_header_linux_magic_h=no
+
+	# Interface: Qt only.
+	local _ui="--enable-qt --disable-skins2 --disable-ncurses"
+
+	# Video: Qt on Wayland with the GLES2 renderer. Wayland reaches QNX
+	# Screen through the platform's Weston QNX backend.
+	#
+	# --without-x is needed in addition to --disable-xcb. With Qt6, VLC turns
+	# on its own X11 helper code whenever autoconf finds X headers
+	# (configure.ac, HAVE_QT_X11), and that code calls
+	# QNativeInterface::QX11Application, which a Qt6 built without X11 support
+	# does not provide. Without this flag the Qt plugin fails to compile on
+	# such an image.
+	local _video="--enable-wayland --enable-gles2 --without-x
+		--disable-xcb --disable-vdpau --disable-libva
+		--disable-caca --disable-aa --disable-vnc --disable-screen"
+
+	# Audio: QNX SALSA via ALSA, PCM only (see 003-qnx-alsa-pcm.patch).
+	local _audio="--enable-alsa --disable-pulse --disable-jack --disable-oss"
+
+	# Decoding: FFmpeg and GStreamer. The standalone codec libraries are not
+	# packaged for QNX, and each is disabled explicitly so the build result
+	# does not depend on what the builder happens to have installed.
+	local _codecs="--enable-avcodec --enable-avformat --enable-swscale
+		--enable-gst-decode
+		--disable-a52 --disable-dca --disable-mad --disable-mpg123
+		--disable-faad --disable-fdkaac --disable-flac --disable-theora
+		--disable-vorbis --disable-opus --disable-speex --disable-ogg
+		--disable-vpx --disable-dav1d --disable-aom --disable-x264
+		--disable-x265 --disable-matroska --disable-mod --disable-gme
+		--disable-fluidsynth --disable-dvbpsi --disable-crystalhd
+		--disable-chromaprint --disable-samplerate --disable-soxr"
+
+	# No font stack is packaged for QNX, so this build renders no subtitle
+	# or OSD text.
+	local _text="--disable-freetype --disable-fribidi --disable-harfbuzz
+		--disable-fontconfig --disable-svg --disable-libass
+		--disable-sdl-image --disable-zvbi --disable-kate --disable-tiger"
+
+	# Streaming output and network services are out of scope for this port.
+	local _net="--disable-sout --disable-vlm --disable-chromecast
+		--disable-live555 --disable-srt --disable-shout --disable-upnp
+		--disable-microdns --disable-smbclient --disable-sftp
+		--disable-gnutls --disable-libgcrypt"
+
+	# Optical media and capture hardware are not wired up on QNX.
+	local _hw="--disable-dvdread --disable-dvdnav --disable-bluray
+		--disable-v4l2 --disable-dc1394 --disable-dv1394
+		--disable-decklink --disable-linsys --disable-mtp --disable-lirc"
+
+	# Desktop integration services not present on the QNX image.
+	local _desktop="--disable-dbus --disable-udev --disable-notify
+		--disable-taglib"
+
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--disable-maintainer-mode \
+		--disable-rpath \
+		--disable-nls \
+		--disable-lua \
+		--enable-archive \
+		--enable-secret \
+		$_ui $_video $_audio $_codecs $_text $_net $_hw $_desktop
+
+	make
+}
+
+check() {
+	# The libvlc harness arms alarm(10) per test (test/libvlc/test.h:71). Run in
+	# parallel on this target a varying subset exceeds it and dies with SIGALRM
+	# (exit 142); run serially every test passes.
+	make -j1 check
+}
+
+package() {
+	# install-exec-hook runs vlc-cache-gen against the library it has just
+	# installed, and abuild then strips that library in place. On QNX the
+	# write fails with "Resource busy" while the file is still mapped. The
+	# cache is removed below and regenerated by vlc-libs.trigger on install,
+	# so skip generating it here. build and host are compared only to gate
+	# cache generation, in Makefile.am and bin/Makefile.am, so overriding one
+	# of them has no other effect.
+	make DESTDIR="$pkgdir" install build=skip-cache-gen
+
+	# Regenerated by vlc-libs.trigger on install.
+	rm -f "$pkgdir"/usr/lib/vlc/plugins/plugins.dat
+	find "$pkgdir" -name '*.la' -delete
+
+	install -Dm644 "$builddir"/COPYING \
+		"$pkgdir"/usr/share/licenses/$pkgname/COPYING
+	install -Dm644 "$builddir"/COPYING.LIB \
+		"$pkgdir"/usr/share/licenses/$pkgname/COPYING.LIB
+}
+
+libs() {
+	pkgdesc="VLC media player libraries and plugins"
+	default_libs
+
+	amove usr/lib/vlc
+	amove usr/share/licenses
+}
+
+sha512sums="
+3654e6b6205932e6389d0a7a58dfdd014ae24212ec192f11625b92b41b18d57b4afc4e72ccdfd6b402f31bafd71fd82e976dc7697c58f07a10be848047335265  vlc-3.0.24.tar.xz
+b0abc2db0a13c1a0e3c07e037b1ddc9c87ecbb35abbd60bc4cd2d0347cb55dfc7652ff9e69bbb4e40115e105c0b0b07ae9997751789274d8661a828f67a4988b  001-qnx-clang-fortify.patch
+a68859b89f3207586f4e8cd8eb72b836c02e217adc36ea5fe2ec56832901c5e0236de492a5bb3733eccb90036d9abd2fc90f0461428a9d341ad404907f08fff9  002-qnx-strerror.patch
+1ed017a42d70c9f82cac483d05956d4a77a9c052150c710808d385ed59e6fb799a3dcedbdf5c59f6d2ab54ee660b4fa5cb51a338355938c1253e3f8d43b32df2  003-qnx-alsa-pcm.patch
+8e889ea869c62fa9897a95fc0d918895f6c6a34c6d0787f29222828b9c11e6ddc46808da1bec655076e52ca4e1023d7c390103b040420d99049ff3127a534a73  004-qnx-qt-wayland-embed.patch
+2dc69b14bab38f8b129336768221e9b6f0ceea72092eb727c85d031c2d37483317000d464e3d7e6dd1b4957e80288b560420f86f2a731bd3891f9e34eb96b903  005-wayland-egl-remove-offsets.patch
+a60e4630cf2a34b2cc84f1c085aeac1f270d0ff42755917af0bce3da91961d67b7efb6f5e5fcdfbde23b751ce103619fc659d0fe94a0b24785e23fa78f776346  006-qnx-wayland-display-geometry.patch
+2764f4cf99c517125994a9d7fbeb5057936b0bc402b58486678e84f23c3cbea6670a29bcc75c23f470bfe61dc383e0152410b9ca80de3d7b94bfd2a200f259a8  007-null-safe-log-arguments.patch
+01165a265219fb2133190e7df7c7ea981f53fb6061f78e1fc098177ebe05fbe79787a3d1e5f69d3a617f157a681edb6f494f954aebf96c429b0d3f687b8b728c  008-qnx-directory-access.patch
+"

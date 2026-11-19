@@ -1,0 +1,121 @@
+--- a/modules/gui/qt/main_interface.cpp
++++ b/modules/gui/qt/main_interface.cpp
+@@ -758,6 +758,14 @@
+                                   unsigned i_width, unsigned i_height,
+                                   bool fullscreen, bool *res )
+ {
++#ifdef __QNX__
++    if( p_intf->p_sys->voutWindowType == VOUT_WINDOW_TYPE_WAYLAND &&
++        THEDP->isDying() )
++    {
++        *res = false;
++        return;
++    }
++#endif
+     /* Hidden or minimized, activate */
+     if( isHidden() || isMinimized() )
+         toggleUpdateSystrayMenu();
+@@ -1696,6 +1704,15 @@
+ 
+ void MainInterface::closeEvent( QCloseEvent *e )
+ {
++#ifdef __QNX__
++    if( videoWidget && videoWidget->hasLiveWaylandWindow() )
++    {
++        e->ignore();
++        if( !THEDP->isDying() )
++            emit askToQuit();
++        return;
++    }
++#endif
+ //  hide();
+     if ( b_minimalView )
+         setMinimalView( false );
+--- a/modules/gui/qt/components/interface_widgets.hpp
++++ b/modules/gui/qt/components/interface_widgets.hpp
+@@ -61,6 +61,9 @@
+ 
+     bool request( struct vout_window_t * );
+     void release( bool forced );
++#ifdef __QNX__
++    bool hasLiveWaylandWindow() const;
++#endif
+     void sync( void );
+ 
+ protected:
+--- a/modules/gui/qt/components/interface_widgets.cpp
++++ b/modules/gui/qt/components/interface_widgets.cpp
+@@ -65,6 +65,11 @@
+ #include <qpa/qplatformnativeinterface.h>
+ #endif
+ 
++#if defined(__QNX__)
++#include <QWindow>
++#include <qpa/qplatformnativeinterface.h>
++#endif
++
+ #include <math.h>
+ #include <cassert>
+ 
+@@ -130,6 +135,10 @@
+     stable->setPalette( plt );
+     stable->setAutoFillBackground(true);
+     /* Force the widget to be native so that it gets a winId() */
++#ifdef __QNX__
++    if (p_intf->p_sys->voutWindowType == VOUT_WINDOW_TYPE_WAYLAND)
++        stable->setAttribute( Qt::WA_DontCreateNativeAncestors, true );
++#endif
+     stable->setAttribute( Qt::WA_NativeWindow, true );
+     /* Indicates that the widget wants to draw directly onto the screen.
+        Widgets with this attribute set do not participate in composition
+@@ -137,7 +146,10 @@
+     /* This is currently disabled on X11 as it does not seem to improve
+      * performance, but causes the video widget to be transparent... */
+ #if !defined (QT_HAS_X11)
+-    stable->setAttribute( Qt::WA_PaintOnScreen, true );
++#ifdef __QNX__
++    if ( p_intf->p_sys->voutWindowType != VOUT_WINDOW_TYPE_WAYLAND )
++#endif
++        stable->setAttribute( Qt::WA_PaintOnScreen, true );
+ #else
+     stable->setMouseTracking( true );
+     setMouseTracking( true );
+@@ -150,6 +162,24 @@
+     p_wnd->type = p_intf->p_sys->voutWindowType;
+     switch( p_wnd->type )
+     {
++#ifdef __QNX__
++        case VOUT_WINDOW_TYPE_WAYLAND:
++        {
++            (void) stable->winId();
++            QWindow *window = stable->windowHandle();
++            QPlatformNativeInterface *native = QGuiApplication::platformNativeInterface();
++            p_wnd->handle.wl = native && window ? static_cast<struct wl_surface *>(native->nativeResourceForWindow("surface", window)) : nullptr;
++            p_wnd->display.wl = native ? static_cast<struct wl_display *>(native->nativeResourceForIntegration("display")) : nullptr;
++            if (!p_wnd->handle.wl || !p_wnd->display.wl) {
++                msg_Err(p_intf, "Qt Wayland surface or display is unavailable");
++                delete stable;
++                stable = NULL;
++                p_window = NULL;
++                return false;
++            }
++            break;
++        }
++#endif
+         case VOUT_WINDOW_TYPE_XID:
+             p_wnd->handle.xid = stable->winId();
+             p_wnd->display.x11 = NULL;
+@@ -382,6 +412,13 @@
+     event->ignore();
+ }
+ 
++
++#ifdef __QNX__
++bool VideoWidget::hasLiveWaylandWindow() const
++{
++    return stable && p_window && p_window->type == VOUT_WINDOW_TYPE_WAYLAND;
++}
++#endif
+ 
+ void VideoWidget::release( bool forced )
+ {
