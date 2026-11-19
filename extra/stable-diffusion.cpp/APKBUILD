@@ -1,33 +1,46 @@
 # Maintainer: Cris Sinnott <csinnott@qnx.com>
 pkgname=stable-diffusion.cpp
 pkgver=0_git20260602
-pkgrel=2
+pkgrel=15
 _sdcommit=a51021b190b3aac1684c22a03fb0607f144ab6ce
-_ggmlcommit=c73febe42fc107ae2de109ea40fdca42f623e005
-# c73febe4 ports the retry/throw glslc-empty-output safety net from
-# extra/llama.cpp/0004-qnx-vulkan-shader-compat.patch into vulkan-shaders-gen.cpp,
-# which qnx-ports/ggml never had before this commit. Needed because the previous
-# pin (0861b685) hit exactly that bug for real during this build:
-# mul_mat_vec_id_bf16_f32_f32_subgroup_no_shmem silently failed to compile (glslc
-# exit 0, empty stderr, no .spv written) even at the existing N=1 serialization,
-# and with no retry/error-surfacing the missing shader wasn't caught until an
-# undefined-reference linker error in ggml's test binaries.
-# Vulkan GPU backend re-enabled (pkgrel 2): the drm-virtio-looking deadlock
-# (stable-diffusion-gpu-deadlock.md) root-caused to a real bug in
-# ggml-vulkan itself, not QNX/drm-virtio -- ggml_vk_create_pipeline_func
-# only decremented compile_count/signalled compile_count_cond on the normal
-# return path; when vkCreateComputePipelines throws vk::SystemError (e.g.
-# VK_ERROR_INITIALIZATION_FAILED), the exception unwinds past that
-# decrement, the scheduler's condvar wait in ggml_vk_load_shaders never
-# wakes, and the process hangs forever. Fixed upstream in qnx-ports/ggml
-# (this pin) via an RAII guard that decrements/signals unconditionally on
-# scope exit. See project_llama_vulkan.md for the full writeup and
-# reproducer. ggml also carries the pre-existing QNX Vulkan patches this
-# port already needed before Vulkan was disabled: vulkan-shaders-gen.cpp's
-# N=1 compile-slot cap (QNX's default 1000 FD-per-process limit) and the
-# GL_KHR_cooperative_matrix* feature tests guarded off on QNX (glslc syntax
-# errors on complex coopmat shaders; the ICD doesn't expose coopmat at
-# runtime anyway).
+_ggmlcommit=8a704126b405b25ebb46b4a99301219df7b7c41e
+# 8a704126: qnx-ports/ggml PR#2 — ggml-vulkan VRAM fragmentation + TTM buffer
+# cache fixes merged.  Scratch buffers (prealloc_x/y/split_k/add_rms) are now
+# sub-allocated from within the compute VkDeviceMemory so they are freed
+# atomically with the compute buffer (no fragmentation hole).  Large compute
+# buffers (>=256 MiB) are cached across renders instead of calling vkFreeMemory,
+# eliminating TTM eviction queue pressure on NVK/amdgpu/radv.  Builds on the
+# prior ggml pin (c73febe4) which carried the QNX-specific Vulkan patches
+# (vulkan-shaders-gen N=1 serialize cap, GL_KHR_cooperative_matrix guard,
+# RAII compile_count fix).
+#
+# pkgrel 11: drop 0004a-vk-disable-int-dot-on-qnx.patch (GL_EXT_integer_dot_product).
+# The silent glslc compile failure (exit 0, no .spv output) for the
+# dotPacked4x8EXT subgroup_no_shmem shader variants was a glslang bug fixed
+# between SDK 1.4.321.0 and 1.4.350.0 (confirmed compiling on 1.4.350.0 host).
+# Bump shaderc+glslang APKBUILDs to 2026.4 / 1.4.363.0 to pick up the fix.
+# 0003 gains a bf16 runtime gate (absorbed from the former 0004 patch): rather
+# than suppressing bf16 shader compilation at build time, it clears the per-type
+# mul_mat pipeline flags for GGML_TYPE_BF16 when device->bf16=false, so pipeline
+# creation is never attempted on hardware that lacks VK_KHR_shader_bfloat16 (all
+# current QNX targets per graphics team; Radeon 9070 is the only known exception).
+# Removing 0004a re-enables the dotPacked4x8EXT quantized matmul shader path
+# and recovers ~15% per-image performance on the NUC if NVK/QNX exposes
+# integerDotProduct8BitPacked=true at runtime.
+#
+# pkgrel 12: drop 0001-vk-memory-leak-check.patch. The async ring-buffer
+# memory logger and VK_EXT_memory_budget leak checker were diagnostic tools
+# built to investigate the VRAM fragmentation issue (scratch buffers outliving
+# the compute allocation). That root cause is resolved by 0003 (scratch
+# sub-allocated from within the compute buffer, freed atomically). Diagnostic
+# confirmed useful; patch archived at
+# Claude-Projects/patches/retired/0001-vk-memory-leak-check.patch.
+#
+# pkgrel 15: 0003+0005 ggml changes merged into qnx-ports/ggml (PR#2); bump
+# _ggmlcommit to the merge result.  Drop the ggml-internal 0003+0005 patches;
+# add 0003-vk-scratch-workspace-hint-caller.patch (one-liner in ggml_extend.hpp
+# that calls the new API before alloc_compute_buffer).  0007 stays as a patch
+# (QNX-specific VK_TIMEOUT graceful handling, not suitable for upstream).
 pkgdesc="Stable Diffusion in pure C/C++ (Vulkan GPU + CPU backend)"
 url="https://github.com/leejet/stable-diffusion.cpp"
 arch="aarch64 x86_64"
@@ -40,26 +53,26 @@ license="MIT"
 # missing-shared-library error on any system that doesn't already happen to
 # have both packages installed for some other reason.
 depends="libc++ qnx-io-sock qnx-vulkan openmp"
-makedepends="cmake ninja clang libc++-dev qnx-io-sock-dev shaderc-dev glslang-dev spirv-tools-dev vulkan-headers"
+makedepends="cmake ninja clang libc++-dev qnx-microkernel-dev qnx-io-sock-dev shaderc-dev glslang-dev spirv-tools-dev vulkan-headers"
 subpackages="$pkgname-dev $pkgname-dbg"
 source="
+	0003-vk-scratch-workspace-hint-caller.patch
+	0007-vk-fence-hang-graceful.patch
 	stable-diffusion.cpp-$_sdcommit.tar.gz::https://github.com/qnx-ports/stable-diffusion.cpp/archive/$_sdcommit.tar.gz
 	ggml-$_ggmlcommit.tar.gz::https://github.com/qnx-ports/ggml/archive/$_ggmlcommit.tar.gz
 	"
-# ggml bumped to ec4c7d9f to pick up the aarch64le/aarch64be CMAKE_SYSTEM_PROCESSOR
-# fixes needed for the aarch64 build added in pkgrel 1 (two occurrences: one in
-# cmake/common.cmake affecting NEON codegen, one in tests/CMakeLists.txt that
-# unconditionally applied x86-only -mfma/-mavx flags on any unmatched arch,
-# breaking the aarch64 build outright) -- see those commits for details.
-# pkgrel 2 bumps one commit further to 0861b685, the ggml-vulkan deadlock fix
-# described above (no other changes in between), then to c73febe4 (this pin)
-# for the glslc retry-logic fix described above.
 builddir="$srcdir/stable-diffusion.cpp-$_sdcommit"
 
 prepare() {
-	default_prepare
 	rm -rf "$builddir/ggml"
 	mv "$srcdir/ggml-$_ggmlcommit" "$builddir/ggml"
+
+	# 0003: one-liner in src/ggml_extend.hpp -- call the new Vulkan scratch
+	# workspace hint API before alloc_compute_buffer (SD.cpp tree only).
+	patch -p1 -d "$builddir" < "$srcdir/0003-vk-scratch-workspace-hint-caller.patch"
+
+	# 0007: QNX-specific graceful VK_TIMEOUT handling (not suitable for upstream).
+	patch -p1 -d "$builddir/ggml" < "$srcdir/0007-vk-fence-hang-graceful.patch"
 }
 
 build() {
@@ -135,6 +148,8 @@ package() {
 }
 
 sha512sums="
+b2c6f174a3b2096e98860e06acd5b04bd84a93211f55e292a1b4a62d825afdc43cc506de7a966cb62715564fff83759fd4f49d306103ecd4d678abf248067da8  0003-vk-scratch-workspace-hint-caller.patch
+b49edf080383cbbb9c1b12879c80140f08f03a25f82408ad29255862b67a514294547754403542c341d9230bc20caf5356d61db31072d46dfe61d1c54a8b826a  0007-vk-fence-hang-graceful.patch
 7b4e19a95c4038eb08158395849ce93dfabefdbc7e7a398e4080484f34a7a0d69ad069bc2b6960d5d9a03f9de23286a682eca81128d052dbe3ac0e7a7b2bd098  stable-diffusion.cpp-a51021b190b3aac1684c22a03fb0607f144ab6ce.tar.gz
-f5631cdfdf507f50b1db31cc59258a7b7b8e198c93d1b0f6d4227144df1d78ef258f7db3a71cb38e092da77b8e975cbbcebacdef25c9310d83dcb5494364276f  ggml-c73febe42fc107ae2de109ea40fdca42f623e005.tar.gz
+86d66a65ab1b40de308131328351eb441b4ecb8cbbfcceb6f4d46e21c52361defd2ce1e0ceb33740fc5410fc782019fbc25921d5c5bec82c9a77a3e2c1924741  ggml-8a704126b405b25ebb46b4a99301219df7b7c41e.tar.gz
 "
