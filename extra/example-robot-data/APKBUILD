@@ -1,0 +1,42 @@
+# Maintainer: Narayana Murthy Naidu <nnarayanamurthy@qnx.com>
+
+pkgname=example-robot-data
+pkgver=6.0.0
+pkgrel=0
+pkgdesc="Robot URDFs for benchmarking, unit tests and examples"
+url="https://github.com/Gepetto/example-robot-data"
+arch="noarch"
+license="BSD-3-Clause AND BSD-2-Clause AND Apache-2.0 AND MPL-2.0 AND LGPL-3.0-only AND CC-BY-SA-4.0"
+options="!check" # only python interface is tested, which is not built in this package, to build and test python interface, eigenpy and pinocchio-python should be installed.
+makedepends="
+	cmake
+	ninja
+	pkgconfig
+	jrl-cmakemodules
+	doxygen
+	"
+depends_dev="$pkgname"
+subpackages="$pkgname-doc $pkgname-dev"
+source="$pkgname-$pkgver.tar.gz::https://github.com/Gepetto/example-robot-data/archive/v$pkgver.tar.gz"
+builddir="$srcdir/$pkgname-$pkgver"
+
+build() {
+	cmake -S . -B build -G Ninja \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DBUILD_PYTHON_INTERFACE=OFF
+
+	cmake --build build
+}
+
+package() {
+	DESTDIR="$pkgdir" cmake --install build
+	# Remove robots that cannot be redistributed due to license restrictions.
+	rm -rf "$pkgdir"/usr/share/example-robot-data/robots/{alex_description,tiago_description,tiago_pro_description}
+	rm -rf "$pkgdir"/usr/share/example-robot-data/robots/{borinot,hextilt,bravo7,allegro_hand,bluevolta,cassie,falcon,laikago,pr2}
+}
+
+sha512sums="
+1d6bb0d29c228b104fe68a88bd98e8f5adcb1fc55833d0c453862f36aedc7a608201cc0c74f9b31b6f78685ee7fa6209a411dccbe8feace72fbc29ba687e1ff8  example-robot-data-6.0.0.tar.gz
+"
+
