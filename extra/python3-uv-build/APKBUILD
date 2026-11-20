@@ -1,0 +1,62 @@
+# Alpine-Contributor: Will Sinatra <wpsinatra@gmail.com>
+# Alpine-Maintainer: Will Sinatra <wpsinatra@gmail.com>
+# Maintainer: Terence Ang <taang@qnx.com>
+pkgname=python3-uv-build
+pkgver=0.13.9
+pkgrel=0
+pkgdesc="An extremely fast Python build backend written in Rust"
+url="https://github.com/astral-sh/uv"
+arch="all"
+license="MIT or Apache-2.0"
+depends="python3"
+makedepends="python3-gpep517 python3-wheel python3-installer python3-maturin cargo qnx-io-sock-dev"
+checkdepends="python3-pytest"
+source="https://files.pythonhosted.org/packages/source/u/uv-build/uv_build-$pkgver.tar.gz
+	001-cargo_toml.patch
+	config.toml
+	"
+builddir="$srcdir/uv_build-$pkgver"
+
+prepare() {
+	patch -p1 -i "$srcdir"/001-cargo_toml.patch
+
+	cargo update \
+		-p libc \
+		-p signal-hook-registry \
+		-p socket2 \
+		-p rustix \
+		-p cap-primitives \
+		-p errno \
+		-p tokio \
+		-p mio 
+
+	cargo vendor vendor
+	mkdir .cargo
+	cp "$srcdir"/config.toml .cargo
+}
+
+build() {
+	export CARGO_PROFILE_RELEASE_LTO=off
+
+	gpep517 build-wheel \
+		--wheel-dir .dist \
+		--output-fd 3 3>&1 >&2
+}
+
+check() {
+	python3 -m venv --clear --without-pip --system-site-packages .testenv
+	.testenv/bin/python3 -m installer .dist/*.whl
+	.testenv/bin/python3 -c "import uv_build; print('uv_build imported successfully')"
+}
+
+package() {
+	python3 -m installer -d "$pkgdir" \
+		.dist/*.whl
+}
+
+
+sha512sums="
+6ceed8cc7b9940c94141534c016691f6ba43941185574e67cd1011463533cce6b6ff252220e3b84e805e0a059645575c2a8668371ac4c648823b766bf9b57a6a  uv_build-0.13.9.tar.gz
+ffe9d4cae7749e3506c54b06b2babd002c3fafe0564e30485fe0e99db449cc1d07bb0e67c0018882c8a732578339fce8e150c82c0c80588f3e575016abb93b12  001-cargo_toml.patch
+8d542abd3b4a2ad323554c4d9c8fdd9e178e09af085bf35e4adbd325805af688f0bb6add30fa34ca7b62866bb07412a798c113b41fd6f93cb187abc0795c8379  config.toml
+"
