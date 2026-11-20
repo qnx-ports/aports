@@ -1,0 +1,21 @@
+--- a/vendor/ring/src/rand.rs
++++ b/vendor/ring/src/rand.rs
+@@ -135,6 +135,8 @@
+     target_os = "horizon",
+     target_os = "illumos",
+     target_os = "linux",
++    target_os = "nto",
++    target_os = "qnx",
+     target_os = "netbsd",
+     target_os = "openbsd",
+     target_os = "redox",
+--- a/vendor/ring/build.rs
++++ b/vendor/ring/build.rs
+@@ -252,6 +252,7 @@
+     "netbsd",
+     "openbsd",
+     "linux",
++    "qnx",
+     "redox",
+     "solaris",
+ ];

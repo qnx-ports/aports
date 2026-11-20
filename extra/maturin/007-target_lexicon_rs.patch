@@ -1,0 +1,60 @@
+--- a/vendor/target-lexicon/src/targets.rs
++++ b/vendor/target-lexicon/src/targets.rs
+@@ -722,6 +722,7 @@
+     IOS(Option<DeploymentTarget>),
+     L4re,
+     Linux,
++    Qnx,
+     /// macOS.
+     ///
+     /// WARNING: This does _not_ match the macOS triples when parsing `rustc`
+@@ -788,6 +789,7 @@
+             IOS(deployment_target) => darwin_version("ios", deployment_target),
+             L4re => Cow::Borrowed("l4re"),
+             Linux => Cow::Borrowed("linux"),
++            Qnx => Cow::Borrowed("Qnx"),
+             MacOSX(deployment_target) => darwin_version("macosx", deployment_target),
+             Nebulet => Cow::Borrowed("nebulet"),
+             Netbsd => Cow::Borrowed("netbsd"),
+@@ -1640,6 +1642,7 @@
+             "illumos" => Illumos,
+             "l4re" => L4re,
+             "linux" => Linux,
++            "qnx" => Qnx,
+             "nebulet" => Nebulet,
+             "netbsd" => Netbsd,
+             "none" => None_,
+@@ -1780,6 +1783,7 @@
+             "aarch64-unknown-none",
+             "aarch64-unknown-none-softfloat",
+             //"aarch64-unknown-nto-qnx710", // TODO
++            "aarch64-unknown-qnx",
+             "aarch64-unknown-openbsd",
+             "aarch64-unknown-redox",
+             //"aarch64-unknown-teeos", // TODO
+@@ -1977,6 +1981,7 @@
+             "x86_64h-apple-darwin",
+             "x86_64-linux-android",
+             //"x86_64-pc-nto-qnx710", // TODO
++            "x86_64-pc-qnx",
+             "x86_64-linux-kernel", // Changed to x86_64-unknown-none-linuxkernel in 1.53.0
+             "x86_64-apple-macosx",
+             "x86_64-apple-macosx10.7.0",
+--- a/vendor/target-lexicon/src/triple.rs
++++ b/vendor/target-lexicon/src/triple.rs
+@@ -136,6 +136,7 @@
+             | OperatingSystem::Hurd
+             | OperatingSystem::L4re
+             | OperatingSystem::Linux
++            | OperatingSystem::Qnx
+             | OperatingSystem::Netbsd
+             | OperatingSystem::Openbsd
+             | OperatingSystem::Redox
+@@ -213,6 +214,7 @@
+                 && (self.environment == Environment::Android
+                     || self.environment == Environment::Androideabi
+                     || self.environment == Environment::Kernel))
++                || self.operating_system == OperatingSystem::Qnx
+                 || self.operating_system == OperatingSystem::Wasi
+                 || self.operating_system == OperatingSystem::WasiP1
+                 || self.operating_system == OperatingSystem::WasiP2
