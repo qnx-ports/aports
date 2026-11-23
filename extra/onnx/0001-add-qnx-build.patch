@@ -1,17 +1,35 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 584c0419a..9e4f710c8 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -438,7 +438,7 @@
+@@ -415,7 +415,8 @@ endif()
+ add_library(onnx_proto ${ONNX_PROTO_SRCS})
+ add_onnx_global_defines(onnx_proto)
+ 
+-add_library(onnx ${ONNX_SRCS} ${ONNX_PROTO_SRCS})
++add_library(onnx ${ONNX_SRCS})
++target_link_libraries(onnx PUBLIC onnx_proto)
+ add_dependencies(onnx onnx_proto)
+ set_source_files_properties(${ONNX_SRCS} PROPERTIES CXX_VISIBILITY_PRESET hidden)
+ add_onnx_global_defines(onnx)
+@@ -438,9 +439,9 @@ if(ONNX_BUILD_PYTHON)
    # Configure nanobind: https://nanobind.readthedocs.io/en/latest/api_cmake.html
    nanobind_add_module(
      onnx_cpp2py_export
 -    NB_STATIC NB_DOMAIN onnx STABLE_ABI FREE_THREADED LTO
+-    "${ONNX_ROOT}/onnx/cpp2py_export.cc" ${ONNX_SRCS} ${ONNX_PROTO_SRCS})
+-  add_dependencies(onnx_cpp2py_export onnx)
 +    NB_STATIC NB_DOMAIN onnx STABLE_ABI
-     "${ONNX_ROOT}/onnx/cpp2py_export.cc" ${ONNX_SRCS} ${ONNX_PROTO_SRCS})
-   add_dependencies(onnx_cpp2py_export onnx)
++    "${ONNX_ROOT}/onnx/cpp2py_export.cc" ${ONNX_SRCS})
++  target_link_libraries(onnx_cpp2py_export PRIVATE onnx_proto)
  endif()
+ 
+ add_onnx_compile_options(onnx_proto)
+diff --git a/setup.py b/setup.py
+index 2b60ff68a..4f34b66ef 100644
 --- a/setup.py
 +++ b/setup.py
-@@ -322,7 +322,7 @@
+@@ -322,7 +322,7 @@ CMD_CLASS = {
  
  NO_GIL = hasattr(sys, "_is_gil_enabled") and not sys._is_gil_enabled()
  PY_312_OR_NEWER = sys.version_info >= (3, 12)
