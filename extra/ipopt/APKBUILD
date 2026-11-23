@@ -1,0 +1,51 @@
+# Maintainer: Terence Ang <taang@qnx.com>
+pkgname=ipopt
+pkgver=3.14.20
+pkgrel=0
+pkgdesc="COIN-OR Interior Point Optimizer"
+url="https://github.com/coin-or/Ipopt"
+arch="all"
+license="EPL-2.0"
+depends="mumps openblas"
+depends_dev="mumps-dev openblas-dev"
+makedepends="
+    $depends_dev
+    libtool
+    doxygen
+    graphviz
+"
+subpackages="$pkgname-doc $pkgname-dev"
+source="$pkgname-$pkgver.tar.gz::https://github.com/coin-or/Ipopt/archive/refs/tags/releases/$pkgver.tar.gz"
+builddir="$srcdir/Ipopt-releases-$pkgver"
+
+build() {
+    CFLAGS="$CFLAGS -DSA_RESTART=0 -I/usr/include/mumps -I/usr/include/mumps/libseq -I/usr/include/mumps/PORD" \
+    CXXFLAGS="$CXXFLAGS -DSA_RESTART=0 -I/usr/include/mumps -I/usr/include/mumps/libseq -I/usr/include/mumps/PORD" \
+    ./configure \
+        --prefix=/usr \
+        --libdir=/usr/lib \
+        --with-mumps=yes \
+        --with-lapack-lflags="-lopenblas" \
+        --with-mumps-lflags="-ldmumps -lmumps_common -lpord -lopenblas -lmpiseq" \
+        --without-asl \
+        --disable-java \
+        --disable-sipopt
+
+    make doc
+}
+
+check() {
+    make test
+}
+
+package() {
+    make DESTDIR="$pkgdir" install
+
+    install -dm755 "$pkgdir"/usr/share/doc/"$pkgname"
+    cp -a doc/html/. "$pkgdir"/usr/share/doc/"$pkgname"
+}
+
+
+sha512sums="
+f3bd9773e61dbe740d9b21d3618b9e90c8c2a410b37e82264c910000fd8707d3da9b351395ec4bfec06c2e1a2f712407cf4b571fb5625de19f0056087c1bc47d  ipopt-3.14.20.tar.gz
+"
