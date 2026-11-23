@@ -1,0 +1,15 @@
+--- a/src/cfg.c	2026-04-27 21:20:01.000000000 +0000
++++ b/src/cfg.c	2026-11-13 17:56:20.000000000 +0000
+@@ -122,8 +122,10 @@
+ 		return -1;
+ 
+ 	FILE* stream = fopen(path, "r");
+-	if (!stream)
+-		return -1;
++	if (!stream) {
++		stream = fopen("/etc/wayvnc/config", "r");
++		if (!stream) return -1;
++	}
+ 
+ 	self->directory = cfg__dirname(path);
+ 
