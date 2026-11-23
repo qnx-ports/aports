@@ -1,0 +1,53 @@
+Modified version of the following commit to make it apply cleanly
+against WebKit v25.1.1.
+
+From 84754119c2480ac749ce31ad00df7e9b16d3dce6 Mon Sep 17 00:00:00 2001
+From: Albert Peschar <albert@peschar.net>
+Date: Sun, 18 Oct 2026 09:28:52 -0700
+Subject: [PATCH] [WPE][GTK] Significant web process leak
+ https://bugs.webkit.org/show_bug.cgi?id=315153
+
+Reviewed by Michael Catanzaro
+
+Keep sandbox-rejected prewarmed processes in the prewarmed set so that
+subsequent prewarming does not accumulate untracked web processes.
+
+Canonical link: https://commits.webkit.org/324092@main
+---
+ .../UIProcess/API/glib/WebKitWebContext.cpp   | 19 ++++++++++
+ .../API/glib/WebKitWebContextInternal.h       | 36 +++++++++++++++++++
+ Source/WebKit/UIProcess/WebProcessPool.cpp    | 10 +++---
+ Source/WebKit/UIProcess/WebProcessPool.h      |  5 +++
+ .../UIProcess/glib/WebProcessPoolGLib.cpp     | 26 ++++++++++----
+ .../WKWebView/glib/TestMultiprocess.cpp       | 27 ++++++++++++++
+ .../TestWebKitAPI/glib/TestExpectations.json  |  3 ++
+ 7 files changed, 115 insertions(+), 11 deletions(-)
+ create mode 100644 Source/WebKit/UIProcess/API/glib/WebKitWebContextInternal.h
+
+diff --git a/Source/WebKit/UIProcess/WebProcessPool.cpp b/Source/WebKit/UIProcess/WebProcessPool.cpp
+index d059546661a2..5824c9081891 100644
+--- a/Source/WebKit/UIProcess/WebProcessPool.cpp
++++ b/Source/WebKit/UIProcess/WebProcessPool.cpp
+@@ -879,11 +879,6 @@
+         return nullptr;
+     }
+ 
+-    WTFEmitSignpost(this, ProcessPrewarming, "Using prewarmed process with pid %d", prewarmedProcess->processID());
+-
+-    bool didRemove = m_prewarmedProcesses.remove(*prewarmedProcess);
+-    ASSERT_UNUSED(didRemove, didRemove);
+-
+ #if PLATFORM(GTK) || PLATFORM(WPE)
+     // In platforms using Bubblewrap for sandboxing, prewarmed process is launched using the WebProcessPool primary WebsiteDataStore,
+     // so we don't use it in case of using a different WebsiteDataStore.
+@@ -891,6 +886,10 @@
+         return nullptr;
+ #endif
+ 
++    WTFEmitSignpost(this, ProcessPrewarming, "Using prewarmed process with pid %d", prewarmedProcess->processID());
++    bool didRemove = m_prewarmedProcesses.remove(*prewarmedProcess);
++    ASSERT_UNUSED(didRemove, didRemove);
++
+     ASSERT(prewarmedProcess->isPrewarmed());
+     prewarmedProcess->setWebsiteDataStore(websiteDataStore);
+     prewarmedProcess->markIsNoLongerInPrewarmedPool();
