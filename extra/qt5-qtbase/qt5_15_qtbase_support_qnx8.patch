@@ -1,0 +1,78 @@
+diff --git a/src/plugins/platforms/qnx/qqnxintegration.cpp b/src/plugins/platforms/qnx/qqnxintegration.cpp
+index 84baa6ec443..de28ffeb993 100644
+--- a/src/plugins/platforms/qnx/qqnxintegration.cpp
++++ b/src/plugins/platforms/qnx/qqnxintegration.cpp
+@@ -63,7 +63,13 @@
+ #include "qqnxvirtualkeyboardpps.h"
+ #endif
+ 
+-#if QT_CONFIG(qqnx_pps)
++#if (__QNX__ >= 800)
++#  if QT_CONFIG(qqnx_imf)
++#    include "qqnxinputcontext_imf.h"
++#  else
++#    include "qqnxinputcontext_noimf.h"
++#  endif
++#elif QT_CONFIG(qqnx_pps)
+ #  include "qqnxbuttoneventnotifier.h"
+ #  include "qqnxclipboard.h"
+ #  if QT_CONFIG(qqnx_imf)
+@@ -152,7 +158,9 @@ QQnxIntegration::QQnxIntegration(const QStringList &paramList)
+     , m_screenEventThread(0)
+     , m_navigatorEventHandler(new QQnxNavigatorEventHandler())
+     , m_virtualKeyboard(0)
+-#if QT_CONFIG(qqnx_pps)
++#if (__QNX__ >= 800)
++    , m_inputContext(0)
++#elif QT_CONFIG(qqnx_pps)
+     , m_navigatorEventNotifier(0)
+     , m_inputContext(0)
+     , m_buttonsNotifier(new QQnxButtonEventNotifier())
+@@ -290,7 +298,10 @@ QQnxIntegration::~QQnxIntegration()
+     destroyEglDisplay();
+ #endif
+ 
+-#if QT_CONFIG(qqnx_pps)
++#if (__QNX__ >= 800)
++    // Destroy input context
++    delete m_inputContext;
++#elif QT_CONFIG(qqnx_pps)
+     // Destroy the hardware button notifier
+     delete m_buttonsNotifier;
+ 
+diff --git a/src/plugins/platforms/qnx/qqnxintegration.h b/src/plugins/platforms/qnx/qqnxintegration.h
+index 2596af3c45e..8a23967deab 100644
+--- a/src/plugins/platforms/qnx/qqnxintegration.h
++++ b/src/plugins/platforms/qnx/qqnxintegration.h
+@@ -64,8 +64,9 @@ class QQnxAbstractVirtualKeyboard;
+ class QQnxServices;
+ 
+ class QSimpleDrag;
+-
+-#if QT_CONFIG(qqnx_pps)
++#if (__QNX__ >= 800)
++class QQnxInputContext;
++#elif QT_CONFIG(qqnx_pps)
+ class QQnxInputContext;
+ class QQnxNavigatorEventNotifier;
+ class QQnxButtonEventNotifier;
+@@ -105,7 +106,7 @@ public:
+     QPlatformOpenGLContext *createPlatformOpenGLContext(QOpenGLContext *context) const override;
+ #endif
+ 
+-#if QT_CONFIG(qqnx_pps)
++#if QT_CONFIG(qqnx_pps) | (__QNX__ >= 800)
+     QPlatformInputContext *inputContext() const override;
+ #endif
+ 
+@@ -156,7 +157,9 @@ private:
+     QQnxScreenEventThread *m_screenEventThread;
+     QQnxNavigatorEventHandler *m_navigatorEventHandler;
+     QQnxAbstractVirtualKeyboard *m_virtualKeyboard;
+-#if QT_CONFIG(qqnx_pps)
++#if (__QNX__ >= 800)
++    QQnxInputContext *m_inputContext;
++#elif QT_CONFIG(qqnx_pps)
+     QQnxNavigatorEventNotifier *m_navigatorEventNotifier;
+     QQnxInputContext *m_inputContext;
+     QQnxButtonEventNotifier *m_buttonsNotifier;
