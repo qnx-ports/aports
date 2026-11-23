@@ -1,3 +1,5 @@
+# Alpine-Contributor: Russ Webber <russ@rw.id.au>
+# Alpine-Maintainer: Russ Webber <russ@rw.id.au>
 # Maintainer: Narayana Murthy Naidu <nnarayanamurthy@qnx.com>
 pkgname=console-bridge
 pkgver=1.0.2
@@ -11,13 +13,10 @@ makedepends="
 	cmake
 	libc++-dev
 "
-checkdepends="
-	python3
-"
 subpackages="$pkgname-dev"
-
 source="$pkgname-$pkgver.tar.gz::https://github.com/ros/console_bridge/archive/refs/tags/$pkgver.tar.gz
 	cmake-install-dir.patch
+	no-downloads.patch
 	"
 builddir="$srcdir/console_bridge-$pkgver"
 
@@ -43,5 +42,6 @@ package() {
 sha512sums="
 ed427da8e59f9629f8d70e0a14415f88177c06fbaf7334bee56135dde91d19a1b54f5c9c668e0fd68314ab8dfd61446a174b9f528304decc5d4626a7c98882cb  console-bridge-1.0.2.tar.gz
 75ab2989bf80a6815124b11fe5a3b0ae68e0bbd69a20c05bea816875158748ac3ece9fd76ba297172765da15d7486f1f6bb412c4245cccc7bc719c1c6572097d  cmake-install-dir.patch
+28c8b652f90014762882adc6b33f11b160e2c6b8e5e63edb5d1e8d75c6a05fe453c50e66fde77b44178e15d51f3e58dd3ba98b304a9380d3d8c38028fe6ecff4  no-downloads.patch
 "
 
