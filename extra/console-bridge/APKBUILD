@@ -13,6 +13,9 @@ makedepends="
 	cmake
 	libc++-dev
 "
+checkdepends="
+	python3
+"
 subpackages="$pkgname-dev"
 source="$pkgname-$pkgver.tar.gz::https://github.com/ros/console_bridge/archive/refs/tags/$pkgver.tar.gz
 	cmake-install-dir.patch
