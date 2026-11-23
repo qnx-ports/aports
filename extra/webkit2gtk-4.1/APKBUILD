@@ -113,6 +113,7 @@ source="https://webkitgtk.org/releases/webkitgtk-$pkgver.tar.xz
         013-add-qnx-memory-pressure-monitor.patch
 	cmake4-linked-into-quoting.patch
         015-0001-WPE-GTK-Significant-web-process-leak.patch
+        016-qnx-uncommitted-memory.patch
     "
 builddir="$srcdir/webkitgtk-$pkgver"
 
@@ -248,4 +249,5 @@ ffb19b71f445800457704bc027ae8525462eced440821adbe387f79858f830fd3bcf642b8616b081
 59126de48cca0ec5baf02cb139e65f0211a566d016693be8a8df4bca99c17fa7573383704dcd1b9452be14bf878e68add71dc2152c511aa944e3b3f54f139578  013-add-qnx-memory-pressure-monitor.patch
 3da45d98f56b302a6073a44e174a8ff07e98c2bd3e9a95bcf1ac59f9d5e14cccb9c07c436441abb3ca9229504e980fb00c79f0c94d0e13e898e39d9131611a2f  cmake4-linked-into-quoting.patch
 f20efd3e1741d80e0fb7a4735bd8edc20400035640c506bcaf611cc550affc32f4ef6f6bab4fb10265ec9273d9a4898a580dfabd186a00354ba1ef2c55efeb76  015-0001-WPE-GTK-Significant-web-process-leak.patch
+3096ad4abb9b1101eb2fe4a10abe049c702d77d972552244c54f4062c308ffd63cd844d98d597dbb3bb1582c4b8c17df3488092dba0644be46f5e9103fca2a68  016-qnx-uncommitted-memory.patch
 "
