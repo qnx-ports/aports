@@ -1,0 +1,22 @@
+--- a/src/trio/_core/__init__.py
++++ b/src/trio/_core/__init__.py
+@@ -87,7 +87,7 @@
+     )
+ # Kqueue imports
+ if (
+-    sys.platform != "linux" and sys.platform != "win32" and sys.platform != "android"
++    sys.platform != "linux" and not sys.platform.startswith("qnx") and sys.platform != "win32" and sys.platform != "android"
+ ) or (not _t.TYPE_CHECKING and "sphinx.ext.autodoc" in sys.modules):
+     from ._run import current_kqueue, monitor_kevent, wait_kevent
+ 
+--- a/src/trio/_subprocess_platform/__init__.py
++++ b/src/trio/_subprocess_platform/__init__.py
+@@ -70,7 +70,7 @@
+ try:
+     if sys.platform == "win32":
+         from .windows import wait_child_exiting
+-    elif sys.platform != "linux" and (TYPE_CHECKING or hasattr(_core, "wait_kevent")):
++    elif sys.platform != "linux" and not sys.platform.startswith("qnx") and (TYPE_CHECKING or hasattr(_core, "wait_kevent")):
+         from .kqueue import wait_child_exiting
+     else:
+         # as it's an exported symbol, noqa'd

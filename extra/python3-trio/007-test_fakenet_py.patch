@@ -1,0 +1,11 @@
+--- a/src/trio/_tests/test_fakenet.py
++++ b/src/trio/_tests/test_fakenet.py
+@@ -13,6 +13,8 @@
+     ENOTCONN_MSG = r"^\[Errno 107\] (Transport endpoint is|Socket) not connected$"
+ elif sys.platform == "darwin":
+     ENOTCONN_MSG = r"^\[Errno 57\] Socket is not connected$"
++elif sys.platform.startswith("qnx"):
++    ENOTCONN_MSG = r"^\[Errno 257\] Socket is not connected$"
+ else:
+     ENOTCONN_MSG = r"^\[Errno 10057\] Unknown error$"
+ 

@@ -1,0 +1,47 @@
+--- a/src/trio/_tests/test_subprocess.py
++++ b/src/trio/_tests/test_subprocess.py
+@@ -533,6 +533,8 @@
+     ) -> None:
+         with move_on_after(1.0) as scope:
+             async with background_process(SLEEP(3600)) as proc:
++                if sys.platform.startswith("qnx"):
++                    await sleep(0.1)
+                 send_it(proc)
+                 await proc.wait()
+         assert not scope.cancelled_caught
+@@ -662,6 +664,8 @@
+             partial(run_process, SLEEP(9999), deliver_cancel=custom_deliver_cancel),
+         )
+         await wait_all_tasks_blocked()
++        if sys.platform.startswith("qnx"):
++            await sleep(0.1)
+         nursery.cancel_scope.cancel()
+ 
+     assert custom_deliver_cancel_called
+@@ -678,6 +682,8 @@
+                 partial(run_process, SLEEP(9999), deliver_cancel=custom_deliver_cancel),
+             )
+             await wait_all_tasks_blocked()
++            if sys.platform.startswith("qnx"):
++                await sleep(0.1)
+             nursery.cancel_scope.cancel()
+ 
+     # double wrap from our nursery + the internal nursery
+@@ -700,6 +706,8 @@
+         async with _core.open_nursery() as nursery:
+             nursery.start_soon(run_process, SLEEP(9999))
+             await wait_all_tasks_blocked()
++            if sys.platform.startswith("qnx"):
++                await sleep(0.1)
+             nursery.cancel_scope.cancel()
+ 
+ 
+@@ -773,6 +781,8 @@
+     async with _core.open_nursery() as nursery:
+         nursery.start_soon(wait_and_tell, proc)
+         await wait_all_tasks_blocked()
++        if sys.platform.startswith("qnx"):
++            await sleep(0.1)
+         assert isinstance(noticed_exit, Event)
+         proc.terminate()
+         # without giving trio a chance to do so,

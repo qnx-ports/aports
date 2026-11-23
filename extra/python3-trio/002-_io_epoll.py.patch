@@ -1,0 +1,86 @@
+--- a/src/trio/_core/_io_epoll.py
++++ b/src/trio/_core/_io_epoll.py
+@@ -13,6 +13,37 @@
+ from ._run import Task, _public
+ from ._wakeup_socketpair import WakeupSocketpair
+ 
++# QNX's /usr/include/sys/epoll.h does not define EPOLLONESHOT,
++# so select.EPOLLONESHOT doesn't exist there. Fall back to 0 and let
++# process_events/_update_registrations do the disarming by hand.
++# In Linux, it is always 1U << 30, i.e., 1,073,741,824
++_EPOLLONESHOT = getattr(select, "EPOLLONESHOT", 0)
++
++# QNX's /usr/include/sys/epoll.h defines EPOLLNVAL as 0x1000,
++# a poll(2)-style "invalid fd" event that Linux epoll never reports.
++#
++# QNX epoll is poll(2)-based: an fd closed without trio's knowledge
++# stays in the epoll set and reports EPOLLNVAL on every poll,
++# even after modify(fd, 0), until it is # unregistered.
++# 
++# Python's select module doesn't export EPOLLNVAL, so the
++# value is referenced from the header. We keep this for QNX only
++# and it would not change the behaviour for Linux epoll.
++#
++# Example of how it happens:
++#     await trio.lowlevel.wait_readable(sock)   # trio registers fd 7
++#     os.close(7)    # fd closed behind trio's back,
++#                    # no trio.lowlevel.notify_closing() call
++#
++#   Linux:  closing an fd silently drops it from the epoll set,
++#           so nothing is reported for it.
++#   QNX:    the dead fd stays in the set and every poll() returns
++#           (7, 0x1000), even after modify(fd, 0).
++#
++# Without this block, epoll_wait() returns immediately every
++# time and the run loop spins at 100% CPU, making no progress.
++_EPOLLNVAL = 0x1000 if sys.platform.startswith("qnx") else 0
++
+ if TYPE_CHECKING:
+     from .._core import Abort, RaiseCancelT
+     from .._file_io import _HasFileNo
+@@ -25,7 +56,7 @@
+     current_flags: int = 0
+ 
+ 
+-assert not TYPE_CHECKING or sys.platform == "linux"
++assert not TYPE_CHECKING or sys.platform == "linux" or sys.platform.startswith("qnx")
+ 
+ 
+ EventResult: TypeAlias = "list[tuple[int, int]]"
+@@ -248,8 +279,18 @@
+                 self._force_wakeup.drain()
+                 continue
+             waiters = self._registered[fd]
+-            # EPOLLONESHOT always clears the flags when an event is delivered
+-            waiters.current_flags = 0
++
++            # This clause is for QNX only
++            if sys.platform.startswith("qnx"):
++                if flags & _EPOLLNVAL:
++                    try:
++                        self._epoll.unregister(fd)
++                    except OSError:
++                        pass
++                    waiters.current_flags = 0
++            else:
++                waiters.current_flags = 0
++
+             # Clever hack stolen from selectors.EpollSelector: an event
+             # with EPOLLHUP or EPOLLERR flags wakes both readers and
+             # writers.
+@@ -272,10 +313,13 @@
+             try:
+                 try:
+                     # First try EPOLL_CTL_MOD
+-                    self._epoll.modify(fd, wanted_flags | select.EPOLLONESHOT)
++                    self._epoll.modify(fd, wanted_flags | _EPOLLONESHOT)
+                 except OSError:
++                    import os
++                    if not _EPOLLONESHOT:
++                        os.fstat(fd)  # raises EBADF for a closed fd
+                     # If that fails, it might be a new fd; try EPOLL_CTL_ADD
+-                    self._epoll.register(fd, wanted_flags | select.EPOLLONESHOT)
++                    self._epoll.register(fd, wanted_flags | _EPOLLONESHOT)
+                 waiters.current_flags = wanted_flags
+             except OSError as exc:
+                 # If everything fails, probably it's a bad fd, e.g. because

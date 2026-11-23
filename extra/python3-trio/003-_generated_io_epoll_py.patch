@@ -1,0 +1,11 @@
+--- a/src/trio/_core/_generated_io_epoll.py
++++ b/src/trio/_core/_generated_io_epoll.py
+@@ -12,7 +12,7 @@
+ if TYPE_CHECKING:
+     from .._file_io import _HasFileNo
+ 
+-assert not TYPE_CHECKING or sys.platform == "linux"
++assert not TYPE_CHECKING or sys.platform == "linux" or sys.platform.startswith("qnx")
+ 
+ 
+ __all__ = ["notify_closing", "wait_readable", "wait_writable"]
