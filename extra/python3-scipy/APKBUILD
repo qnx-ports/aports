@@ -4,15 +4,19 @@
 # Maintainer: Ethan Leir <eleir@qnx.com>
 pkgname=python3-scipy
 pkgver=1.17.1
-pkgrel=0
+pkgrel=1
 pkgdesc="Python library for scientific computing"
 url="https://www.scipy.org/"
 arch="all"
 license="BSD-3-Clause"
-depends="python3-numpy libc++"
+depends="
+    python3-numpy
+    libc++
+    openblas
+"
 makedepends="
     cython
-    flang
+    flang22
     openblas-dev
     python3-gpep517
     python3-meson-python
@@ -37,6 +41,7 @@ build() {
     export CFLAGS="$CFLAGS -O3"
     export CXXFLAGS="$CXXFLAGS -O3"
     export LDFLAGS="$LDFLAGS -Wl,--no-as-needed -lgcc_s -lm"
+    export FC=/usr/lib/llvm22/bin/flang-22
 
     gpep517 build-wheel \
         --wheel-dir .dist \
