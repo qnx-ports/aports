@@ -9,7 +9,9 @@ license="Apache-2.0"
 _commit="e336d9944e38e72f9c3679b98032ed21b3bb89dd"
 source="apache-arrow-$pkgver.tar.gz::https://github.com/apache/arrow/archive/$_commit.tar.gz
         arrow-testing.tar.gz::https://github.com/apache/arrow-testing/archive/refs/heads/master.tar.gz
-        arrow-cmakelists-qnx.patch"
+        arrow-cmakelists-qnx.patch
+        boost-process-qnx
+        "
 builddir="$srcdir/arrow-$_commit/cpp"
 depends="libc++"
 makedepends="
@@ -17,7 +19,11 @@ makedepends="
     ninja
     libc++-dev
     ca-certificates
-    qnx-io-sock-dev"
+    qnx-io-sock-dev
+    gflags-dev
+    xsimd-dev=14.2.0-r0
+    rapidjson-dev=1.1.0-r0
+    "
 subpackages="$pkgname-dev"
 prepare() {
     cd "$srcdir/arrow-$_commit"
@@ -55,6 +61,8 @@ build() {
         -S "$builddir" \
         -B "$builddir/build" \
         -G Ninja \
+        -DARROW_MIMALLOC:BOOL=OFF \
+        -DCMAKE_CXX_FLAGS="-DSA_RESTART=0" \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_SYSTEM_PROCESSOR=${CMAKE_PROCESSOR} \
         -DBOOST_CONTEXT_ARCHITECTURE=${BOOST_CONTEXT_ARCH} \
@@ -78,9 +86,8 @@ build() {
 
     (
     cd "$builddir/build"
-    patch -p3 < "$startdir/boost-asio-qnx.patch"
-    patch -p3 < "$startdir/boost-process-qnx.patch"
-    )
+    git apply "$srcdir/boost-process-qnx"
+   )
 
     cmake --build  build
 }
@@ -97,6 +104,7 @@ package() {
 
 sha512sums="
 4c6028c6835c024605598207ea70fa6d16b4f44589deee0f9760294f38be1095e628443316df932fa425b240dc3643ed163cc31d5c81b47ed807015fa207c0d1  apache-arrow-25.0.0.tar.gz
-d73f6e0ec189bc6ff8f9fd8671e7e98ffa9f225bbe149dc98589fa18916d6415d465849c8a85e8fa4399006b3415a614ef04ece5b88a38ca13b7b395872b9ffd  arrow-testing.tar.gz
+36807d74a0ca497e63b0e5bb422de7f8cb64dd64d4b69bf6ffe13a49ad8080d18df891c34372981c55cacb75886974b3b96cbe70b0a4be053a9f5f4ecb1c085d  arrow-testing.tar.gz
 0d2852f40983f8c813e3db7ddaa332eacb9ae3d24ee5a70d272247fc89699536db63bdbc99d8e5e80d0616ceb64734c5c43ae0732e532e57633569a333491d74  arrow-cmakelists-qnx.patch
+0fce438dbe7d2129e081980944a93fefe34126ce13692ddb62de8a38d50664714c404e21ef80688d947abf75d33388d599082f3bad189c0c849b319ddaa80476  boost-process-qnx
 "
