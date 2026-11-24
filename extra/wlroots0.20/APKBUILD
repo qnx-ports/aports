@@ -2,7 +2,7 @@
 # Alpine-Maintainer: Achill Gilgenast <achill@achill.org>
 # Maintainer: Aaron Bassett <abassett@qnx.com>
 pkgname=wlroots0.20
-pkgver=0.20.2_p1
+pkgver=0.20.2_p2
 pkgrel=0
 pkgdesc="Modular Wayland compositor library"
 url="https://gitlab.freedesktop.org/wlroots/wlroots"
@@ -33,7 +33,8 @@ makedepends="
 # manually. Otherwise, the wlroots shared object is not installed with -dev.
 depends_dev="$pkgname=$pkgver-r$pkgrel qnx-libdrm-dev qnx-libgbm-dev  qnx-screen-dev wayland-protocols wayland-dev pixman-dev lcms2-dev libxkbcommon-dev"
 subpackages="$pkgname-dbg $pkgname-static $pkgname-dev"
-source="wlroots-qnx-$pkgver.tar.gz::https://github.com/qnx-ports/wlroots/archive/refs/tags/qnx-$pkgver.tar.gz"
+source="wlroots-qnx-$pkgver.tar.gz::https://github.com/qnx-ports/wlroots/archive/refs/tags/qnx-$pkgver.tar.gz
+"
 builddir="$srcdir/wlroots-qnx-$pkgver"
 options="!check" # no test suite
 
@@ -56,5 +57,5 @@ package() {
 
 
 sha512sums="
-eeaf0f19856b63ae5706062f54c8afc029b392cf0f2eb7d161dccf1fc69c5f8ce1341f3c907a6bcdabea4c5dfc2e27df9dcb40822aeb082d4f9e4391e274e897  wlroots-qnx-0.20.2_p1.tar.gz
+4632d8c14fe3ce2472b09b3cdd59fa058302fe567633673bf03485f2ab96842ecc85792159daf3ee985c465d48923d3eec0f4bc480136f9b76ff8de5f0683376  wlroots-qnx-0.20.2_p2.tar.gz
 "
