@@ -1,0 +1,45 @@
+--- a/pytest_trio/plugin.py
++++ b/pytest_trio/plugin.py
+@@ -310,6 +310,7 @@
+                 except StopAsyncIteration:
+                     pass
+                 else:
++                    __tracebackhide__ = False
+                     raise RuntimeError("too many yields in fixture")
+             elif isinstance(func_value, Generator):
+                 try:
+@@ -317,6 +318,7 @@
+                 except StopIteration:
+                     pass
+                 else:
++                    __tracebackhide__ = False
+                     raise RuntimeError("too many yields in fixture")
+ 
+ 
+@@ -340,6 +342,7 @@
+             elif len(clocks) == 1:
+                 clock = list(clocks.values())[0]
+             else:
++                __tracebackhide__ = False
+                 raise ValueError(
+                     f"Expected at most one Clock in kwargs, got {clocks!r}"
+                 )
+@@ -347,6 +350,7 @@
+             try:
+                 return run(partial(fn, **kwargs), clock=clock, instruments=instruments)
+             except BaseExceptionGroup as eg:
++                __tracebackhide__ = False
+                 queue = [eg]
+                 leaves = []
+                 while queue:
+@@ -423,8 +427,10 @@
+                 )
+ 
+         if len(test_ctx.error_list) == 1:
++            __tracebackhide__ = False
+             raise test_ctx.error_list[0]
+         elif test_ctx.error_list:
++            __tracebackhide__ = False
+             raise BaseExceptionGroup(
+                 "errors in async test and trio fixtures", test_ctx.error_list
+             )
