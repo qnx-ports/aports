@@ -1,0 +1,62 @@
+# Alpine-Contributor: Bart Ribbers <bribbers@disroot.org>
+# Alpine-Maintainer: Bart Ribbers <bribbers@disroot.org>
+# Maintainer: Terence Ang <taang@qnx.com>
+pkgname=python3-pytest-trio
+pkgver=0.8.0
+pkgrel=0
+pkgdesc="pytest plugin for trio"
+url="https://github.com/python-trio/pytest-trio"
+arch="noarch"
+license="MIT OR Apache-2.0"
+depends="
+	python3
+	python3-pytest
+	python3-trio
+	python3-outcome
+	python3-async_generator
+"
+makedepends="
+	python3-setuptools
+	python3-gpep517
+"
+checkdepends="python3-hypothesis"
+source="
+	https://pypi.python.org/packages/source/p/pytest-trio/pytest-trio-$pkgver.tar.gz
+	001-test_hypothesis_interaction_py.patch
+	002-plugin_py.patch
+"
+builddir="$srcdir/pytest-trio-$pkgver"
+
+prepare() {
+	default_prepare
+	# Defining 'pytest_plugins' in a non-top-level conftest is no longer supported
+	if [ -f "$builddir"/pytest_trio/_tests/conftest.py ]; then
+		rm "$builddir"/pytest_trio/_tests/conftest.py
+	fi
+	echo 'pytest_plugins = ["pytester"]' >> "$builddir"/conftest.py
+}
+
+build() {
+	gpep517 build-wheel \
+		--wheel-dir .dist \
+		--output-fd 3 3>&1 >&2
+}
+
+check() {
+	# A patch to workaround the incompatibility of this version to pytest 8.4
+	# https://github.com/python-trio/pytest-trio/issues/151
+	python3 -m venv --clear --without-pip --system-site-packages .testenv
+	.testenv/bin/python3 -m installer .dist/*.whl
+	.testenv/bin/python3 -m pytest
+}
+
+package() {
+	python3 -m installer -d "$pkgdir" .dist/*.whl
+}
+
+
+sha512sums="
+79141021633b7b2d8a840d7eaf6a3447bccd59d1bd4909e7feba88a9ae8244376f281b64fde4333b5a575957e3f73028e389a9abf0d19a35417f15c47eeccd05  pytest-trio-0.8.0.tar.gz
+5f62b1d1fa400be4e0f5e4650448324507cf07a279f4697bc6f9c8d7ea78e4ad4897d9a3d3c87454e2f89ab15b69df767131af1552b9efd8cbea6d58574932b2  001-test_hypothesis_interaction_py.patch
+a7c1c9bbee19178ba5497ddda89694e1dcbd9a40fb9b2d432085378487572c74ef26f81a64096f59713c465dbf6852a7887b4e033d3cb8d56aaba6f36828ec2f  002-plugin_py.patch
+"
