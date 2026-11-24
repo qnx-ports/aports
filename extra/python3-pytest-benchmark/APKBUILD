@@ -1,0 +1,59 @@
+# Alpine-Contributor: Michał Polański <michal@polanski.me>
+# Alpine-Maintainer: Michał Polański <michal@polanski.me>
+# Maintainer: Terence Ang <taang@qnx.com>
+pkgname=python3-pytest-benchmark
+_pkgname=pytest-benchmark
+pkgver=5.3.1
+pkgrel=0
+pkgdesc="pytest fixture for benchmarking code"
+url="https://github.com/ionelmc/pytest-benchmark"
+arch="noarch"
+license="BSD-2-Clause"
+depends="
+	python3
+	python3-pytest
+	python3-py-cpuinfo
+"
+makedepends="
+	python3-gpep517
+	python3-setuptools
+	python3-wheel
+"
+checkdepends="
+	python3-pytest-xdist
+	python3-freezegun
+	python3-pygal
+	python3-pygaljs
+	python3-elasticsearch
+"
+source="https://github.com/ionelmc/pytest-benchmark/archive/v$pkgver/pytest-benchmark-$pkgver.tar.gz"
+builddir="$srcdir/$_pkgname-$pkgver"
+
+build() {
+	gpep517 build-wheel \
+		--wheel-dir .dist \
+		--output-fd 3 3>&1 >&2
+}
+
+check() {
+	python3 -m venv --clear --without-pip --system-site-packages .testenv
+	.testenv/bin/python3 -m installer .dist/*.whl
+
+	# override default options "nbmake" by using "-o addopts="
+	# disable tests/test_nbmake.ipynb requires nbmake (needs python3-nmake, jupyter-nbformat, jupyter-nbclient)
+	# disable three tests that require aspectlib (needs packaging)
+	PATH="$builddir/.testenv/bin:$PATH" .testenv/bin/python3 -m \
+		pytest -o addopts= -v \
+		--deselect tests/test_nbmake.ipynb \
+		--deselect tests/test_with_testcase.py::TerribleTerribleWayToWritePatchTests::test_foo2 \
+		--deselect tests/test_with_weaver.py::test_weave_fixture \
+		--deselect tests/test_with_weaver.py::test_weave_method
+}
+
+package() {
+	python3 -m installer -d "$pkgdir" .dist/*.whl
+}
+
+sha512sums="
+593cc0136a736ce331189d5720ab0b70de414d7614d3adcb53ed7d6772418d346bf08d28be7b9bf9bcb9af3ee6c6880c2d8ff69ed96aa9601c4673e72dfc9292  pytest-benchmark-5.3.1.tar.gz
+"
