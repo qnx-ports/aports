@@ -53,6 +53,7 @@ build() {
         -DCOMPILER_RT_BUILD_PROFILE=ON \
         -DCOMPILER_RT_USE_LIBCXX=ON \
         -DSANITIZER_CXX_ABI=libc++ \
+        -DLIBCXX_TYPEINFO_COMPARISON_IMPLEMENTATION=2 \
         -DCMAKE_C_STANDARD_LIBRARIES="-lcatalog -llocale" \
         -DCMAKE_CXX_STANDARD_LIBRARIES="-lcatalog -llocale"
 
