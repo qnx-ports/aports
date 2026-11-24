@@ -56,6 +56,7 @@ depends_dev="$_sub
     freetype-dev
     glib-dev
     gobject-introspection-dev
+    gles-headers
     harfbuzz-dev
     icu-dev
     libb2-dev
