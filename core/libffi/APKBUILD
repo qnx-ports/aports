@@ -1,21 +1,25 @@
+# Alpine-Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+# Maintainer: jscaffidi <jscaffidi@qnx.com>
 pkgname=libffi
-pkgver=3.4.7
+pkgver=3.8.0
 pkgrel=0
 pkgdesc="A portable foreign-function interface library."
 arch="all"
 license="MIT"
 url="http://sourceware.org/libffi"
 subpackages="${pkgname}-static ${pkgname}-dev ${pkgname}-doc"
-source="https://github.com/libffi/libffi/releases/download/v${pkgver}/${pkgname}-${pkgver}.tar.gz"
-sha512sums="
-d19f59a5b5d61bd7d9e8a7a74b8bf2e697201a19c247c410c789e93ca8678a4eb9f13c9bee19f129be80ade8514f6b1acb38d66f44d86edd32644ed7bbe31dd6  libffi-3.4.7.tar.gz
-"
+makedepends="automake libtool texinfo"
+source="https://github.com/qnx-ports/libffi/archive/refs/tags/qnx-v$pkgver-r$pkgrel.tar.gz"
+builddir="$srcdir/$pkgname-qnx-v$pkgver-r$pkgrel"
+  
+
+prepare() {
+    cd "$builddir"
+    ./autogen.sh
+}
 
 build() {
-    CFLAGS="$CFLAGS -O2" \
     ./configure \
-        --build="$CBUILD" \
-        --host="$CHOST" \
         --prefix=/usr \
         --docdir=/usr/share/doc/libffi \
         --disable-rpath
@@ -26,3 +30,6 @@ build() {
 package() {
     make DESTDIR="${pkgdir}" install
 }
+sha512sums="
+28db7e0e904952cd7a13a4914a0ffb59e61ccd0af120793d62c3a200cd8ec2932fb39ec7211f93d13f43d6bac28b5dc3f161360339275fde83437115016dacc0  qnx-v3.8.0-r0.tar.gz
+"
