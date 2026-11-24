@@ -1,0 +1,60 @@
+# Maintainer: Cris Sinnott <csinnott@qnx.com>
+pkgname=python3-gtk-llm-chat
+pkgver=4.0.5
+pkgrel=0
+pkgdesc="GTK4/libadwaita chat front end for large language models"
+url="https://github.com/icarito/gtk-llm-chat"
+arch="noarch"
+license="GPL-3.0-or-later"
+# Run-time needs, not yet satisfiable from this repository:
+# - libffi with QNX static trampolines (qnx-ports/aports#676): PyGObject
+#   callbacks crash with the current core/libffi 3.4.7;
+# - the `llm` Python package and its OpenAI backend. Current versions need
+#   pydantic 2 (pydantic-core) and openai (jiter), which are Rust extensions,
+#   so they wait on the Rust/maturin tooling (#776, #777);
+# - Python packages not yet in this repository: markdown-it-py, python-ulid,
+#   watchdog, pyxdg, pystray-freedesktop and the llm-* provider plugins.
+depends="
+	libadwaita
+	python3
+	python3-gobject3
+	"
+makedepends="python3-installer"
+# 0001: the welcome window is a plain Adw.Window (Adw.ApplicationWindow
+#       registration can crash at start-up on QNX).
+# 0002: wider default window and scroll-to-bottom fixes under labwc.
+source="https://files.pythonhosted.org/packages/05/cb/a1098e55004c1087ae1ce7e3b861c64ec1bf99302d47455dcf52c92e2a6f/gtk_llm_chat-$pkgver-py3-none-any.whl
+	0001-welcome-use-adw-window-on-qnx.patch
+	0002-chat-window-wider-default-size-and-scroll-fixes.patch
+	"
+builddir="$srcdir/gtk_llm_chat-$pkgver"
+# No test suite in the wheel.
+options="!check"
+
+prepare() {
+	mkdir -p "$builddir"
+	cd "$builddir"
+	# The source is a wheel (a zip); unpack it so the patches can apply.
+	python3 -m zipfile -e "$srcdir/gtk_llm_chat-$pkgver-py3-none-any.whl" .
+	default_prepare
+}
+
+package() {
+	# Install from the original wheel to get the entry point and dist-info,
+	# then replace the two patched modules.
+	python3 -m installer -d "$pkgdir" \
+		"$srcdir/gtk_llm_chat-$pkgver-py3-none-any.whl"
+
+	local sitepkg
+	sitepkg=$(echo "$pkgdir"/usr/lib/python3*/site-packages)
+
+	install -m644 "$builddir/gtk_llm_chat/welcome.py" \
+		"$sitepkg/gtk_llm_chat/welcome.py"
+	install -m644 "$builddir/gtk_llm_chat/chat_window.py" \
+		"$sitepkg/gtk_llm_chat/chat_window.py"
+}
+sha512sums="
+443a4486584f70ac49958c8da16e680ef27e039f2c0d1b0608bc781b1535a39499993fea3ee96d0129b02f1e8fd85e0446bea5d64eb9fc1a04dee6490bc80be6  gtk_llm_chat-4.0.5-py3-none-any.whl
+2b0cd9eb9ede0a90c530aabd99aec68bc9b615455b113ab2f24aa69a92aa8fc090a37cc71295d4130e59ccf3006be1f28a33f2ff4d7c57940c04d27c69a2cd53  0001-welcome-use-adw-window-on-qnx.patch
+c3a1e1584d87e61539eb378fc4d9000b383e7222ac8a459199d4ede1a5d35ac51468f25f3ee6aaf12d595406a605ae2490dbd475b603ce7d4c0453d888d7092e  0002-chat-window-wider-default-size-and-scroll-fixes.patch
+"

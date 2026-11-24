@@ -1,0 +1,31 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Cris Sinnott <csinnott@qnx.com>
+Date: Tue, 24 Nov 2026 19:23:20 +0000
+Subject: [PATCH 1/2] welcome: use Adw.Window on QNX
+
+---
+ gtk_llm_chat/welcome.py | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/gtk_llm_chat/welcome.py b/gtk_llm_chat/welcome.py
+index 7d2a47e..f4ff81a 100644
+--- a/gtk_llm_chat/welcome.py
++++ b/gtk_llm_chat/welcome.py
+@@ -11,9 +11,12 @@ from .style_manager import style_manager
+ from .chat_application import _
+ 
+ 
+-class WelcomeWindow(Adw.ApplicationWindow):
++# QNX: Adw.ApplicationWindow registers itself with the GApplication
++# (g_application_add_window), which can crash during start-up on QNX, so the
++# welcome window is a plain Adw.Window that is not registered.
++class WelcomeWindow(Adw.Window):
+     def __init__(self, app, on_welcome_finished=None):
+-        super().__init__(application=app)
++        super().__init__()
+         self._on_welcome_finished = on_welcome_finished
+         self.set_default_size(900, 700)
+         self.set_size_request(700, 500)  # Tamaño mínimo razonable para evitar colapsos
+-- 
+2.51.0
+
