@@ -1,0 +1,75 @@
+--- a/Source/WTF/wtf/posix/OSAllocatorPOSIX.cpp.orig	2026-11-20 22:44:40.000000000 +0000
++++ b/Source/WTF/wtf/posix/OSAllocatorPOSIX.cpp	2026-11-20 22:45:36.000000000 +0000
+@@ -76,6 +76,12 @@
+     UNUSED_PARAM(jitCageEnabled);
+     if (usage == OSAllocator::UncommittedPages)
+         flags |= MAP_NORESERVE;
++#elif OS(QNX)
++    UNUSED_PARAM(jitCageEnabled);
++    if (usage == OSAllocator::UncommittedPages) {
++        flags = MAP_PRIVATE;
++        protection = PROT_NONE;
++    }
+ #else
+     UNUSED_PARAM(jitCageEnabled);
+ #endif
+@@ -120,7 +126,10 @@
+     void* result = tryReserveAndCommit(bytes, OSAllocator::UncommittedPages, address, writable, executable, jitCageEnabled, numGuardPagesToAddOnEachEnd);
+     if (result)
+         while (madvise(result, bytes, MADV_DONTNEED) == -1 && errno == EAGAIN) { }
+-#else // not OS(LINUX) || OS(HAIKU)
++#elif OS(QNX)
++    UNUSED_PARAM(usage);
++    void* result = tryReserveAndCommit(bytes, OSAllocator::UncommittedPages, address, writable, executable, jitCageEnabled, numGuardPagesToAddOnEachEnd);
++#else // not OS(LINUX) || OS(HAIKU) || OS(QNX)
+     void* result = tryReserveAndCommit(bytes, usage, address, writable, executable, jitCageEnabled, numGuardPagesToAddOnEachEnd);
+ #if HAVE(MADV_FREE_REUSE)
+     if (result) {
+@@ -221,7 +230,7 @@
+ 
+ void OSAllocator::commit(void* address, size_t bytes, bool writable, bool executable)
+ {
+-#if OS(LINUX) || OS(HAIKU) || OS(QNX)
++#if OS(LINUX) || OS(HAIKU)
+     UNUSED_PARAM(writable);
+     UNUSED_PARAM(executable);
+     while (madvise(address, bytes, MADV_WILLNEED) == -1 && errno == EAGAIN) { }
+@@ -228,3 +237,14 @@
++#elif OS(QNX)
++    int protection = PROT_READ;
++    if (writable)
++        protection |= PROT_WRITE;
++    if (executable)
++        protection |= PROT_EXEC;
++    auto result = mmap(address, bytes, protection, MAP_ANON | MAP_PRIVATE | MAP_FIXED, NOFD, 0);
++    if (result == MAP_FAILED) {
++        FATAL("Unable to commit VMem! address=0x%p, bytes=%zu, writable=%d exectuable=%d. Error=%s",
++                     address, bytes, writable, executable, safeStrerror(errno).data());
++    }
+ #elif HAVE(MADV_FREE_REUSE)
+     UNUSED_PARAM(writable);
+     UNUSED_PARAM(executable);
+@@ -242,6 +262,12 @@
+ {
+ #if OS(LINUX) || OS(HAIKU)
+     while (madvise(address, bytes, MADV_DONTNEED) == -1 && errno == EAGAIN) { }
++#elif OS(QNX)
++    auto result = mmap(address, bytes, PROT_NONE, MAP_PRIVATE | MAP_FIXED, NOFD, 0);
++    if (result == MAP_FAILED) {
++        FATAL("Unable to decommit VMem! address=0x%p, bytes=%zu. Error=%s",
++              address, bytes, safeStrerror(errno).data());
++    }
+ #elif HAVE(MADV_FREE_REUSE)
+     while (madvise(address, bytes, MADV_FREE_REUSABLE) == -1 && errno == EAGAIN) { }
+ #elif HAVE(MADV_FREE)
+--- a/Source/WTF/wtf/OSAllocator.h.orig	2026-11-20 22:53:15.000000000 +0000
++++ b/Source/WTF/wtf/OSAllocator.h	2026-11-20 22:53:23.000000000 +0000
+@@ -37,7 +37,7 @@
+         UnknownUsage = -1,
+         FastMallocPages = VM_TAG_FOR_TCMALLOC_MEMORY,
+         JSJITCodePages = VM_TAG_FOR_EXECUTABLEALLOCATOR_MEMORY,
+-#if OS(LINUX) || OS(HAIKU)
++#if OS(LINUX) || OS(HAIKU) || OS(QNX)
+         UncommittedPages = -2,
+ #endif
+     };
