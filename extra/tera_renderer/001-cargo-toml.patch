@@ -1,0 +1,13 @@
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -11,3 +11,10 @@
+ 
+ [profile.release]
+ opt-level = 'z'
++lto = false
++codegen-units = 16
++incremental = false
++
++[dependencies.getrandom]
++version = "0.2"
++features = ["custom"]

@@ -1,0 +1,43 @@
+# Maintainer: Terence Ang <taang@qnx.com>
+pkgver=0.2.1
+pkgname=tera_renderer
+pkgrel=0
+pkgdesc="Tera-based renderer for acados templated code"
+url="https://github.com/acados/tera_renderer"
+arch="all"
+license="NOASSERTION"
+source="
+    $pkgname-$pkgver.tar.gz::https://github.com/acados/tera_renderer/archive/refs/tags/v$pkgver.tar.gz
+    001-cargo-toml.patch
+    002-random.patch
+"
+makedepends="
+    qnx-fs-notify-dev
+    qnx-io-sock-dev
+    cargo
+    rust
+"
+
+prepare() {
+    default_prepare
+    if [ ! -f Cargo.lock ]; then
+        cargo generate-lockfile
+    fi
+}
+
+build() {
+    CARGO_PROFILE_RELEASE_LTO=false \
+    CARGO_PROFILE_RELEASE_CODEGEN_UNITS=4 \
+    cargo build --verbose --release --locked
+}
+
+package() {
+    install -Dm755 target/release/t_renderer "$pkgdir"/usr/bin/t_renderer
+}
+
+
+sha512sums="
+f248f97e766170c495da9421968f4244995e5a0ca7062034c372e0732b88bae75e9a10b0b214fce59904bd418df514923b3e05413042e9d4e6ea15ff7560256b  tera_renderer-0.2.1.tar.gz
+c121daaaba47a825aff230d9e3a500cd8686ab5d415e990159ab87b7cd24fc5a808e8273fa3c7c493b9d6d066c85f11770703a943e01dfa7dea297dee99bec34  001-cargo-toml.patch
+74bd61b4df9ab544a8ef30d8793213d969d8f39e1f06d16079e8fb2f90f7df0e4800e5df6b327bf5b08fe3533bff26464827e5009e11b5fde043d5ccdc40da0e  002-random.patch
+"

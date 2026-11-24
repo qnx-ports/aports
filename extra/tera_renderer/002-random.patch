@@ -1,0 +1,27 @@
+--- a/src/main.rs
++++ b/src/main.rs
+@@ -8,6 +8,24 @@
+ use std::io::Read;
+ use std::process;
+ 
++use getrandom::register_custom_getrandom;
++
++pub fn custom_getrandom(dest: &mut [u8]) -> Result<(), getrandom::Error> {
++    // Read from QNX's /dev/urandom for entropy
++    use std::io::Read;
++    if let Ok(mut f) = std::fs::File::open("/dev/urandom") {
++        if f.read_exact(dest).is_ok() {
++            return Ok(());
++        }
++    }
++    // Fallback if file reading fails
++    for (i, b) in dest.iter_mut().enumerate() {
++        *b = (i as u8).wrapping_mul(37);
++    }
++    Ok(())
++}
++
++register_custom_getrandom!(custom_getrandom);
+ #[derive(Parser, Debug)]
+ #[command(version)]
+ struct Args {
