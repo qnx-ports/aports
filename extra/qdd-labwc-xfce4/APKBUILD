@@ -6,7 +6,7 @@ pkgdesc="QNX Developer Desktop labwc + xfce4 settings"
 url="https://github.com/qnx/qdd-labwc-xfce4"
 arch="noarch"
 license="Apache-2.0"
-depends="qdd-backgrounds labwc xfce4 xfce4-terminal thunar swaybg pqiv lxde-icon-theme"
+depends="qdd-backgrounds labwc xfce4 xfce4-terminal thunar swaybg pqiv lxde-icon-theme font-noto font-noto-emoji "
 options="!check"
 source="$pkgname-$pkgver.tar.gz::https://github.com/qnx/$pkgname/archive/refs/tags/v$pkgver.tar.gz"
 
