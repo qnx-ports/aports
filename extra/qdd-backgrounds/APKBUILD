@@ -1,0 +1,20 @@
+# Maintainer: Aaron Bassett <abassett@qnx.com>
+pkgname=qdd-backgrounds
+pkgver=0.1.0
+pkgrel=0
+pkgdesc="QNX Developer Desktop Backgrounds"
+url="https://github.com/qnx/qdd-backgrounds"
+arch="noarch"
+license="LicenseRef-QDL-Non-Commercial"
+depends=""
+options="!check"
+source="$pkgname-$pkgver.tar.gz::https://github.com/qnx/$pkgname/archive/refs/tags/v$pkgver.tar.gz"
+
+package() {
+  mkdir -p "$pkgdir"
+  cp -rf "$builddir/usr" "$pkgdir"
+}
+
+sha512sums="
+48929fe04524265d8cd194880d0dac14660067f55670f7c0b4e596e47cc8b06027ab40a7498ad9b2a06a911afe8adfe4e2057db244fec87618aab256229adade  qdd-backgrounds-0.1.0.tar.gz
+"
