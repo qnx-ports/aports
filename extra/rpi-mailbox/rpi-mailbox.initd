@@ -1,0 +1,17 @@
+#!/usr/bin/openrc-run
+# vi: ft=sh sw=4 et
+
+description="QNX RPI5 mailbox"
+command="/usr/bin/rpi_mbox"
+command_background="true"
+priority=21
+pidfile="/var/run/rpi_mbox.pid"
+
+depend() {
+    after screen
+}
+
+start() {
+    default_start
+    ewaitfile 30 /dev/mailbox
+}

@@ -3,9 +3,9 @@
 # Alpine-Maintainer: Natanael Copa <ncopa@alpinelinux.org>
 # Maintainer: Aaron Bassett <abassett@qnx.com>
 pkgname=nss
-pkgver=3.120
+pkgver=3.131.1_p0
+_pkgver=${pkgver//_*} # Remove the _p#
 pkgrel=0
-_gitrel=1
 pkgdesc="Mozilla Network Security Services"
 url="https://developer.mozilla.org/docs/Mozilla/Projects/NSS"
 arch="all"
@@ -23,7 +23,7 @@ makedepends="
 	libc++-dev
 	"
 subpackages="$pkgname-dev $pkgname-tools"
-_tagname="qnx-NSS_${pkgver//./_}_RTM-r$_gitrel"
+_tagname="qnx-NSS_${_pkgver//./_}_RTM-r$pkgrel"
 source="https://github.com/qnx-ports/nss/archive/refs/tags/$_tagname.tar.gz
 	nss.pc.in
 	nss-util.pc.in
@@ -33,14 +33,13 @@ source="https://github.com/qnx-ports/nss/archive/refs/tags/$_tagname.tar.gz
 builddir="$srcdir/$pkgname-$_tagname/nss"
 
 prepare() {
-    default_prepare
-
     # we need to make this look like the release archive
     mkdir "$srcdir"/nss
     mv "$srcdir/$pkgname-$_tagname"/* "$srcdir"/nss/
     mv "$srcdir"/nss "$builddir"
 
     mkdir "$srcdir/$pkgname-$_tagname"/dist
+    default_prepare
 }
 
 build() {
@@ -77,10 +76,10 @@ package() {
 			-e "s,%prefix%,/usr,g" \
 			-e "s,%exec_prefix%,/usr/bin,g" \
 			-e "s,%includedir%,/usr/include/nss,g" \
-			-e "s,%SOFTOKEN_VERSION%,$pkgver,g" \
+			-e "s,%SOFTOKEN_VERSION%,$_pkgver,g" \
 			-e "s,%NSPR_VERSION%,$nspr_version,g" \
-			-e "s,%NSS_VERSION%,$pkgver,g" \
-			-e "s,%NSSUTIL_VERSION%,$pkgver,g" \
+			-e "s,%NSS_VERSION%,$_pkgver,g" \
+			-e "s,%NSSUTIL_VERSION%,$_pkgver,g" \
 			> "$pkgdir"/usr/lib/pkgconfig/$_pc
 	done
 	ln -sf nss.pc "$pkgdir"/usr/lib/pkgconfig/mozilla-nss.pc
@@ -147,7 +146,7 @@ tools() {
 
 
 sha512sums="
-28bb8d496c816a06265046dc609507f638c7fbfe08530f5d01f1db2220536887c1d426f0ba814b50efb843a04eb8cf9f5392fadd0b12648cf9359563c2c5446e  qnx-NSS_3_120_RTM-r1.tar.gz
+38184f29826708fbe3391e8bb222f77bb63d82f465f0f0de9d5d54c44aa1f64d3eec3be543e6f89b5391bc22eacc47f08422a2c4b6daa2038c759556837096de  qnx-NSS_3_131_1_RTM-r0.tar.gz
 8650b41e19a84712dab9dd9af6188c6feca32c7e7f4dd4623b1be72606cc7ae4940821bb8c2a838c63b1f2996d8f2d4cedab1be93cf092f2e8ed4ef6d4fdef30  nss.pc.in
 223e7e4f638dde7b77a2e3ca64349ccd7a79be23a7fb6c74eac92b095acd5d8b445d0f82b5905d2e638ead2fbb3388149cdf2c91d7353f9055e0a3dccc950171  nss-util.pc.in
 e0f1807c10bf04152a67aa4f04b1a1b0306dc86508af60a781a46389fb147dee1b359721b567d1c00c45c73434299a792a3d435346e8d230c8413518af1eff6d  nss-softokn.pc.in

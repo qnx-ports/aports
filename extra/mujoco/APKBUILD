@@ -1,0 +1,69 @@
+# Maintainer: Ramya santoshi <rtimmaraju@qnx.com>
+pkgname=mujoco
+pkgver=3.10.0
+pkgrel=0
+pkgdesc="MuJoCo physics engine"
+url="https://github.com/google-deepmind/mujoco"
+arch="all"
+license="Apache-2.0"
+depends="miniz libc++"
+makedepends="
+    cmake
+    ninja
+    eigen-dev
+    tinyxml2-dev
+    miniz-dev
+	libc++-dev
+	ca-certificates
+"
+options="!lto net"
+subpackages="
+    $pkgname-dev
+    $pkgname-models:models
+"
+source="$pkgname-$pkgver.tar.gz::https://github.com/google-deepmind/mujoco/archive/refs/tags/$pkgver.tar.gz 
+    004-mujoco-qnx.patch
+    003-disable-benchmark-qnx.patch
+    001-fix-qnx-setjmp-link-error.patch
+    002-increase-gtest-discovery-timeout.patch
+"
+builddir="$srcdir/${pkgname}-$pkgver"
+
+build() {
+	cmake -B build \
+		-G Ninja \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DBUILD_SHARED_LIBS=ON \
+		-DMUJOCO_BUILD_TESTS=ON \
+		-DMUJOCO_BUILD_EXAMPLES=OFF \
+		-DMUJOCO_BUILD_SIMULATE=OFF \
+		-DMUJOCO_WITH_USD=OFF \
+		-DCMAKE_CXX_FLAGS="${CXXFLAGS} -Wno-error=unused-command-line-argument" \
+        -DCMAKE_C_FLAGS="${CFLAGS} -Wno-error=unused-command-line-argument" \
+		-DCMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF \
+		-DBENCHMARK_ENABLE_TESTING=OFF
+
+	cmake --build build
+}
+
+check() {
+    ctest --test-dir build --output-on-failure -j1 \
+        -E 'KeyframeTest\.(CheckValues|ResetDataKeyframe)|UserUtilTest\.StringToVectorError|XMLReaderTest\.(LargeTextureTest|LargeTextureAddressTest|ParseFrame)|AllModels/WriteReadCompareTest\.WriteReadCompare/(flag_xml_4|bunny_shell_xml_218|quadratic_xml_235|floppy_xml_222|jelly_xml_226|press_xml_233)|CoreSmoothTest\.(SolveLDs|SolveLDmultipleVectors)|SupportTest\.DifferentiatePosSubQuat'
+}
+
+models() {
+    amove usr/share/mujoco/model
+}
+
+package() {
+	DESTDIR="$pkgdir" cmake --install build
+}
+
+sha512sums="
+dafc848fbda134156f32b1c7668ab95d458e587d10f699ff6f233a03b3cb9e5ae4ceb76df5cc9f7b34d007f4a7419a66f56389e85c4c2cbb2e79a525a63ba557  mujoco-3.10.0.tar.gz
+95b536fa19681c664f9fd6f273f7fa9ba9012dd5de4d0d5831faae37e6bd2fed4503170e497173a4e47455073405df5bb80a4cb692d62c3006fa90b08a5622b4  004-mujoco-qnx.patch
+f7653fcad3af8d00b9602cf63668d92cdcbad6e003198752a4b45e4f2f6fcd7a37d7b172c63b5f18cd92da18317bb46734935271512f92a2b4e75a4ce323ef41  003-disable-benchmark-qnx.patch
+202c484e4b7b01cf3626d51f3c9890d61dadf22061a9a53b365a164a76759310920afd95e0d9a8087e7fc933e012d50a0a7680a725bd5104f550d415c6beb0c8  001-fix-qnx-setjmp-link-error.patch
+3e0eb250fe86e14ac815b4a31ede96cb5d8862b9f51a56ace5e902d7e173e12be8314d5d267a72c44de11bd387625ed42821986297b1a8a153251e43bece8491  002-increase-gtest-discovery-timeout.patch
+"

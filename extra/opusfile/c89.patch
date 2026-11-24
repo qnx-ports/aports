@@ -1,0 +1,19 @@
+diff --color -u opusfile-0.12/configure.ac opusfile-0.12-after/configure.ac
+--- opusfile-0.12/configure.ac	2026-10-05 17:20:52.116905790 -0400
++++ opusfile-0.12-after/configure.ac	2026-10-05 17:31:08.104926068 -0400
+@@ -42,7 +42,7 @@
+ AC_SUBST(OP_LT_AGE)
+ 
+ CC_CHECK_CFLAGS_APPEND(
+-  [-std=c89 -pedantic -Wall -Wextra -Wno-parentheses -Wno-long-long])
++  [-pedantic -Wall -Wextra -Wno-parentheses -Wno-long-long])
+ 
+ # Platform-specific tweaks
+ case $host in
+Common subdirectories: opusfile-0.12/doc and opusfile-0.12-after/doc
+Common subdirectories: opusfile-0.12/examples and opusfile-0.12-after/examples
+Common subdirectories: opusfile-0.12/include and opusfile-0.12-after/include
+Common subdirectories: opusfile-0.12/m4 and opusfile-0.12-after/m4
+Common subdirectories: opusfile-0.12/src and opusfile-0.12-after/src
+Common subdirectories: opusfile-0.12/unix and opusfile-0.12-after/unix
+Common subdirectories: opusfile-0.12/win32 and opusfile-0.12-after/win32

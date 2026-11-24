@@ -3,7 +3,7 @@
 # Alpine-Maintainer: Celeste <cielesti@protonmail.com>
 pkgname=less
 pkgver=691
-pkgrel=0
+pkgrel=1
 pkgdesc="File pager"
 url="https://www.greenwoodsoftware.com/less/"
 vcs_url="https://github.com/gwsw/less"
@@ -12,11 +12,12 @@ license="GPL-3.0-or-later OR BSD-2-Clause"
 options="!check"
 depends="ncurses"
 makedepends="ncurses-dev"
-subpackages="$pkgname-doc"
+subpackages="$pkgname-doc $pkgname-dbg"
 source="https://www.greenwoodsoftware.com/less/less-${pkgver/_beta/-beta}.tar.gz"
 builddir="$srcdir/less-${pkgver%_beta}"
 
 build() {
+    export CFLAGS="$CFLAGS -ggdb"
     ./configure \
         --build=$CBUILD \
         --host=$CHOST \

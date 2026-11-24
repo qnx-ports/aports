@@ -1,0 +1,50 @@
+# Alpine-Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+# Maintainer: Ethan Leir <eleir@qnx.com>
+pkgname=opusfile
+pkgver=0.12
+pkgrel=0
+pkgdesc="High-level API for decoding and seeking within .opus files"
+url="https://www.opus-codec.org/"
+arch="all"
+license="BSD-3-Clause"
+depends="automake libcrypto3 libogg libssl3 opus"
+depends_dev="openssl-dev>3"
+makedepends="$depends_dev libogg-dev opus-dev"
+subpackages="$pkgname-dev $pkgname-doc"
+source="https://downloads.xiph.org/releases/opus/opusfile-$pkgver.tar.gz
+    $pkgname-CVE-2022-47021-1.patch::https://github.com/xiph/opusfile/commit/0a4cd796df5b030cb866f3f4a5e41a4b92caddf5.patch
+    c89.patch
+    "
+
+prepare() {
+    default_prepare
+    update_config_sub
+    (cd "$builddir" && autoreconf)
+}
+
+build() {
+    ./configure \
+        --build=$CBUILD \
+        --host=$CHOST \
+        --prefix=/usr \
+        --sysconfdir=/etc \
+        --mandir=/usr/share/man \
+        --infodir=/usr/share/info \
+        --localstatedir=/var \
+        --disable-static
+    make
+}
+
+check() {
+    make check
+}
+
+package() {
+    make DESTDIR="$pkgdir" install
+}
+
+sha512sums="
+e25e6968a3183ac0628ce1000840fd6f9f636e92ba984d6a72b76fb2a98ec632d2de4c66a8e4c05ef30655c2a4a13ab35f89606fa7d79a54cfa8506543ca57af  opusfile-0.12.tar.gz
+1bf8cbf25413f64958524d340fd1f8b06157267196b95a775e14b674354391b70918ecf5ce8514d09f4b0e66ab9de63370ec7358dd91f190d7effbbabd41e1de  opusfile-CVE-2022-47021-1.patch
+3f3d923248d64a5a117d6407741e90b30dd8877c7d5ab300b9925c5fdff87fb79bfde533381b3cdee251d993108f87a4f593fcac9ac24d1f7ab2d99e97b308a8  c89.patch
+"

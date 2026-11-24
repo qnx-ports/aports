@@ -1,0 +1,66 @@
+# Contributor: V.Krishn <vkrishn4@gmail.com>
+# Alphine Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+# Maintainer: Narayana Murthy <nnarayanamurthy@qnx.com>
+pkgname=libwebsockets
+pkgver=4.5.8
+pkgrel=0
+pkgdesc="C library for lightweight websocket clients and servers"
+url="https://libwebsockets.org/"
+arch="all"
+license="MIT"
+depends="libcrypto3 libssl3 qnx-io-sock libuv"
+makedepends="cmake openssl-dev>3 zlib-dev libuv-dev ninja libc++-dev qnx-io-sock-dev"
+subpackages="$pkgname-doc $pkgname-dev $pkgname-test:_test"
+source="
+	$pkgname-$pkgver.tar.gz::https://github.com/warmcat/$pkgname/archive/v$pkgver.tar.gz
+    add_qnx_support.patch
+"
+options="!check" # Disabling test as ref from alpinelinux.
+
+build() {
+	cmake -B build -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DCMAKE_VERBOSE_MAKEFILE=TRUE \
+        -DLWS_WITH_LIBUV=ON \
+        -DLWS_WITH_STATIC=OFF \
+        -DLWS_LINK_TESTAPPS_DYNAMIC=ON \
+        -DLWS_WITH_EVLIB_PLUGINS=OFF \
+        -DLWS_WITH_MINIMAL_EXAMPLES=OFF \
+        -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+        -DCMAKE_C_FLAGS="-Wno-error=sign-conversion -Wno-error=conversion -Wno-error=implicit-function-declaration"
+	cmake --build build 
+}
+
+check() {
+	ctest --test-dir build
+}
+
+package() {
+	DESTDIR="$pkgdir" cmake --install build
+
+	# Ensure license exists (only if not installed)
+	[ -f LICENSE ] && install -Dm644 LICENSE \
+		"$pkgdir"/usr/share/licenses/$pkgname/LICENSE
+
+	# Fix pkg-config version
+	sed -i "s/^Version:.*/Version: $pkgver/" \
+		"$pkgdir/usr/lib/pkgconfig/$pkgname.pc"
+
+	sed -i "s/^Version:.*/Version: $pkgver/" \
+		"$pkgdir/usr/lib/pkgconfig/libwebsockets_static.pc"
+}
+
+_test() {
+    pkgdesc="$pkgdesc (test server)"
+    depends="$pkgname=$pkgver-r$pkgrel $depends"
+
+    amove \
+        usr/bin/$pkgname-test-* \
+        usr/share/$pkgname-test-server
+}
+
+sha512sums="
+77fcb15c325d514fee18193a6509755618ce4232115259377d67f93015490a11642f5974fddd2efebc89496e28a52f0a135b6635c662be1e2c641aaa68397b11  libwebsockets-4.5.8.tar.gz
+0f9bf9fd22c12e4038245bef92bf7c9528cd764efc58f986d9c4ae3ac570257f9f8f4e736f4b34cd31ce48793488a0f0949145fc8269f75f0873ca9b0be3a8bf  add_qnx_support.patch
+"

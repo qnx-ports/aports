@@ -1,7 +1,7 @@
 # Maintainer: Leo Shen <yishen@qnx.com>
 pkgname=filesystem
 pkgver=1
-pkgrel=5
+pkgrel=6
 pkgdesc="Base file system layout and files"
 arch="noarch"
 license="LicenseRef-QDL-Non-Commercial"
@@ -36,9 +36,25 @@ package() {
 		etc/profile.d \
 		mnt \
 		run \
-		usr usr/bin usr/lib usr/share usr/share/man \
-		usr/local usr/local/bin usr/local/lib \
-		var var/cache var/lib var/log
+		usr \
+        usr/bin \
+        usr/lib \
+        usr/local \
+        usr/local/bin \
+        usr/local/lib \
+        usr/local/share \
+        usr/share \
+        usr/share/man \
+        usr/share/misc \
+        var \
+        var/cache \
+        var/cache/misc \
+        var/lib \
+        var/lib/misc \
+        var/log \
+        var/mail \
+        var/spool
+        
 	install -d -m 1777 "$pkgdir"/var/tmp
     	# Compatibility symlinks
 	ln -sv usr/bin bin

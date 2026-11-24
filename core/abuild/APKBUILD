@@ -1,6 +1,6 @@
 # Maintainer: Leo Shen <yishen@qnx.com>
 pkgname=abuild
-pkgver=3.16.0_p4
+pkgver=3.16.0_p5
 pkgrel=0
 pkgdesc="APK build toolchain, adapted for QNX"
 url="https://gitlab.alpinelinux.org/alpine/abuild/"
@@ -23,5 +23,5 @@ package() {
 }
 
 sha512sums="
-fd67aa285dcf5a5241376ca5fc32f2de31b78f22e3a2fdca20fb7c2a3606640e24eabc250aea62a36e31e60d33ed1ac733f0f21e5c5faf445a8098280b819a6a  qnx-3.16.0_p4.tar.gz
+fe2d1576619f7722f4052321c793145fa9d4555326a8cf631510d5657b2d6cf08b3bad68df4e20a3326fda9e8326beda67ab5703ff6e56bfcb29d38efd9fa32d  qnx-3.16.0_p5.tar.gz
 "

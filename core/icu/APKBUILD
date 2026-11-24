@@ -10,7 +10,7 @@ url="https://icu.unicode.org"
 license="ICU"
 options="!check"
 depends="libc++ icu-libs"
-makedepends="cmake ninja clang libc++-dev"
+makedepends="cmake ninja clang libc++-dev llvm"
 subpackages="
     $pkgname-static
     $pkgname-dbg

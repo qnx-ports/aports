@@ -1,0 +1,22 @@
+Pass explicit length to UTF-32 Writer::String in tests to avoid std::basic_string<unsigned> with libc++ 19+
+
+--- a/test/unittest/writertest.cpp
++++ b/test/unittest/writertest.cpp
+@@ -373,7 +373,7 @@
+         StringBuffer buffer;
+         Writer<StringBuffer, UTF32<> > writer(buffer);
+         static const UTF32<>::Ch s[] = { 0x110000, 0 }; // Out of U+0000 to U+10FFFF
+-        EXPECT_FALSE(writer.String(s));
++        EXPECT_FALSE(writer.String(s, 1));
+     }
+ 
+     // Fail in unicode escaping in ASCII output
+@@ -381,7 +381,7 @@
+         StringBuffer buffer;
+         Writer<StringBuffer, UTF32<>, ASCII<> > writer(buffer);
+         static const UTF32<>::Ch s[] = { 0x110000, 0 }; // Out of U+0000 to U+10FFFF
+-        EXPECT_FALSE(writer.String(s));
++        EXPECT_FALSE(writer.String(s, 1));
+     }
+ }
+ 

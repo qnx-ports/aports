@@ -1,19 +1,21 @@
 # Contributor: Stuart Cardall <developer@it-offshore.co.uk>
-# Maintainer: Stuart Cardall <developer@it-offshore.co.uk>
+# Alpine-Maintainer: Stuart Cardall <developer@it-offshore.co.uk>
+# Maintainer: Terence Ang <taang@qnx.com>
 pkgname=lz4
 pkgver=1.10.0
-pkgrel=0
+pkgrel=1
 pkgdesc="LZ4 is lossless compression algorithm with fast decoder @ multiple GB/s per core."
 url="https://github.com/lz4/lz4"
 arch="all"
 license="BSD-2-Clause AND GPL-2.0-or-later"
 subpackages="$pkgname-static $pkgname-dev $pkgname-doc $pkgname-libs $pkgname-tests:tests"
-source="$pkgname-$pkgver.tar.gz::https://github.com/lz4/lz4/archive/v$pkgver.tar.gz 
+checkdepends="diffutils"
+source="$pkgname-$pkgver.tar.gz::https://github.com/lz4/lz4/archive/refs/tags/v$pkgver.tar.gz
         fix-qnx.patch"
 
 build() {
-    export CFLAGS="$CFLAGS -O3 -flto=auto"
-    export CPPFLAGS="$CPPFLAGS -O3 -flto=auto"
+    export CFLAGS="$CFLAGS -O3"
+    export CPPFLAGS="$CPPFLAGS -O3"
     make PREFIX=/usr
 }
 

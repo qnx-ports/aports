@@ -1,0 +1,39 @@
+# Maintainer: Ramya santoshi <rtimmaraju@qnx.com>
+pkgname=libusb
+pkgver=1.0.23
+pkgrel=0
+pkgdesc="Cross-platform user-mode USB device library"
+url="https://libusb.info/"
+arch="all"
+license="LGPL-2.1-or-later"
+makedepends="autoconf automake libtool pkgconf ninja libc++-dev qnx-libpci-dev  qnx-usb-dev"
+depends="libc++ qnx-libpci qnx-usb"
+subpackages="$pkgname-dev"
+source="$pkgname-$pkgver.tar.gz::https://github.com/qnx-ports/libusb/archive/refs/tags/qnx-1.0.23-r0.tar.gz"
+builddir="$srcdir/libusb-qnx-1.0.23-r0"
+options="!check"
+
+prepare() {   
+	./bootstrap.sh
+}
+
+build() {
+
+    export LIBS="$LIBS -lusbdi -lpci"
+
+    ./configure \
+    --prefix=/usr \
+    --enable-shared \
+    --disable-static
+
+    make
+}
+
+package() {
+
+    make DESTDIR="$pkgdir" install
+}
+
+sha512sums="
+760ac2d728a04dd0b7ca1cf2121da1bc9070e59f0f9609bb62d81e2c3290c69cd437b9c458b6be66ff04751023ad23e599bbb7c9dd5b9ced5f792aa4066e5978  libusb-1.0.23.tar.gz
+"
