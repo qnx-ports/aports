@@ -100,6 +100,19 @@ index b13e3b55bdf..dd9aa38a4e3 100644
  
  QMAKE_CFLAGS_OPTIMIZE      = -O2
  QMAKE_CFLAGS_OPTIMIZE_FULL = -O3
+diff --git a/mkspecs/qnx-aarch64le-qcc/qmake.conf b/mkspecs/qnx-aarch64le-qcc/qmake.conf
+index 754bc273589..b3904939207 100644
+--- a/mkspecs/qnx-aarch64le-qcc/qmake.conf
++++ b/mkspecs/qnx-aarch64le-qcc/qmake.conf
+@@ -2,8 +2,6 @@
+ # qmake configuration for qnx aarch64le systems
+ #
+ 
+-DEFINES += _FORTIFY_SOURCE=2
+-
+ QMAKE_LFLAGS_SHLIB += -Wl,-z,relro -Wl,-z,now
+ 
+ include(../common/qcc-base-qnx-aarch64le.conf)
 diff --git a/src/gui/configure.json b/src/gui/configure.json
 index d5582dda6e5..0988d3d9601 100644
 --- a/src/gui/configure.json
