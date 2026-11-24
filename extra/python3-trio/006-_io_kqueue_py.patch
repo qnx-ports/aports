@@ -1,0 +1,11 @@
+--- a/src/trio/_core/_io_kqueue.py
++++ b/src/trio/_core/_io_kqueue.py
+@@ -19,7 +19,7 @@
+     from .._core import Abort, RaiseCancelT, Task, UnboundedQueue
+     from .._file_io import _HasFileNo
+ 
+-assert not TYPE_CHECKING or (sys.platform != "linux" and sys.platform != "win32")
++assert not TYPE_CHECKING or (sys.platform != "linux" and not sys.platform.startswith("qnx") and sys.platform != "win32")
+ 
+ EventResult: TypeAlias = "list[select.kevent]"
+ 

@@ -1,0 +1,11 @@
+--- a/src/trio/_core/_tests/test_io.py
++++ b/src/trio/_core/_tests/test_io.py
+@@ -407,7 +407,7 @@
+         # let the call_soon_task settle down
+         await wait_all_tasks_blocked()
+ 
+-        if sys.platform != "win32" and sys.platform != "linux":
++        if sys.platform != "win32" and sys.platform != "linux" and not sys.platform.startswith("qnx"):
+             # 1 for call_soon_task
+             check(expected_monitors=0, expected_readers=1, expected_writers=0)
+

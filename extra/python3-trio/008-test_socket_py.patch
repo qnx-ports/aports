@@ -1,0 +1,12 @@
+     sysctl = pathlib.Path("/proc/sys/dev/tty/legacy_tiocsti")
+--- a/src/trio/_tests/test_socket.py
++++ b/src/trio/_tests/test_socket.py
+@@ -369,7 +369,7 @@
+         assert s.family == tsocket.AF_INET6
+ 
+ 
+-@pytest.mark.skipif(sys.platform != "linux", reason="linux only")
++@pytest.mark.skipif(sys.platform != "linux" and not sys.platform.startswith("qnx"), reason="linux and qnx only")
+ async def test_sniff_sockopts() -> None:
+     from socket import AF_INET, AF_INET6, SOCK_DGRAM, SOCK_STREAM
+ 

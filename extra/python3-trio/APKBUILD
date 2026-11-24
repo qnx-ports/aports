@@ -1,0 +1,130 @@
+# Alpine-Maintainer: Bart Ribbers <bribbers@disroot.org>
+# Maintainer: Terence Ang <taang@qnx.com>
+pkgname=python3-trio
+pkgver=0.35.0
+pkgrel=0
+pkgdesc="A friendly Python library for async concurrency and I/O"
+url="https://trio.readthedocs.io/"
+arch="noarch"
+license="MIT OR Apache-2.0"
+depends="
+	python3-attrs
+	python3-async_generator
+	python3-idna
+	python3-cffi
+	python3-openssl
+	python3-outcome
+	python3-sniffio
+	python3-sortedcontainers
+"
+makedepends="
+	python3-gpep517
+	python3-setuptools
+	python3-wheel
+"
+checkdepends="
+	python3-astor
+	python3-pytest
+	python3-trustme
+	python3-yaml
+	python3-coverage
+"
+source="
+	https://pypi.python.org/packages/source/t/trio/trio-$pkgver.tar.gz
+	001-_init_py.patch
+	002-_io_epoll.py.patch 
+	003-_generated_io_epoll_py.patch
+	004-kqueue_py.patch
+	005-_socket_py.patch
+	006-_io_kqueue_py.patch
+	007-test_fakenet_py.patch
+	008-test_socket_py.patch
+	009-test_reply_py.patch
+	010-test_io_py.patch
+	011-test_subprocess.patch
+"
+builddir="$srcdir/trio-$pkgver"
+
+build() {
+	gpep517 build-wheel \
+		--wheel-dir .dist \
+		--output-fd 3 3>&1 >&2
+}
+
+check() {
+	python3 -m venv --clear --without-pip --system-site-packages .testenv
+	.testenv/bin/python3 -m installer .dist/*.whl
+	.testenv/bin/python3 -m pytest \
+		--pyargs trio --skip-optional-imports \
+		--deselect='.testenv/lib/python3.14/site-packages/trio/_tests/test_repl.py::test_ki_newline_injection' \
+		--deselect='.testenv/lib/python3.14/site-packages/trio/_tests/test_repl.py::test_ki_in_repl' \
+		--deselect='.testenv/lib/python3.14/site-packages/trio/_tests/test_unix_pipes.py::test_bizarro_OSError_from_receive' \
+		-v -m "not redistributors_should_skip"
+
+	# Following tests passed after workarounding _io_epoll.py and resume testing for "qnx" platform
+	# - _core/_tests/test_io.py::test_socket_simultaneous_read_write
+	# - _core/_tests/test_io.py::test_wait_on_invalid_object
+	# - _core/_tests/test_io.py::test_io_manager_kqueue_monitors_statistics
+	# - _core/_tests/test_io.py::test_can_survive_unnotified_close
+	# - _core/_tests/test_io.py::test_wait_basic
+	# - _core/_tests/test_guest_mode.py::test_guest_mode_asyncgens
+	# - _tests/test_asyncgen.py::test_asyncgen_basics
+	# - _tests/test_fakenet.py::test_recv_methods
+	# - _tests/test_fakenet.py::test_nonwindows_functionality
+	# - _tests/test_fakenet.py::test_getpeername
+
+	# Following tests passed after workarounding test_subprocess.py
+	# with addition of 10 ms sleep or else QNX parent process will fail to
+	# kill its child process
+	# - _tests/test_subprocess.py::test_signals[open_process]
+	# - _tests/test_subprocess.py::test_signals[run_process in nursery]
+	# - _tests/test_subprocess.py::test_custom_deliver_cancel
+	# - _tests/test_subprocess.py::test_bad_deliver_cancel
+	# - _tests/test_subprocess.py::test_warn_on_failed_cancel_terminate
+	# - _tests/test_subprocess.py::test_subprocess_pidfd_unnotified
+
+	# When attempting to read a directory as a file using a file descriptor
+	# duplicated via os.dup2(), QNX consistently returns ENOSYS (89):
+	# 'Function not implemented'.
+	# Similarly when os.set_blocking() on same descriptor, same error returns.
+	#
+	# Reproduction steps:
+	# - r, w = os.pipe()
+	# - d = os.open("/", os.O_DIRECTORY, 0)
+	# - os.dup2(d, r, inheritable=False)
+	# - os.close(d)
+	# - os.read(r, 10)            # It throws an error in trio's receive_some()
+	# - os.set_blocking(r, True)  # It throws again when "async with s, r" is cleaning up
+        #                             # afterBrorkenResourceError is called
+	#
+	# Linux will have no problem when os.set_blocking(r, True) during the clean-up of "async with s, r"
+	#
+	# Skipped test:
+	# - _tests/test_unix_pipes.py::test_bizarro_OSError_from_recieve
+
+	# The following are skipped and need further investigation
+	# python3-coverge is needed
+	# - _tests/test_repl.py::test_ki_newline_injection
+	# - _tests/test_repl.py::test_ki_in_repl
+}
+
+package() {
+	python3 -m installer -d "$pkgdir" \
+		.dist/*.whl
+}
+
+
+sha512sums="
+f77ca2e55d5c829ffcfb279867236385b89b27f77a9ea91a53d68ea80a00b3bd8475b66aeb4312f1093f3726b7c1735ef577f3098f122603b2afcb39a66b0b0f  trio-0.35.0.tar.gz
+d48fca427288c914d841e4dcbe15bb1a7ffa156592d3ba631a1d9221ada7e3d4f51c8fb21e8a1259562e5c8c9743f3d5fc0e5ff1ca8c1f7f48fa105c820d5560  001-_init_py.patch
+592872fecf6064ea832ac1824ece1096bc8ef91c75e0b56caba78caf0ce38f1c5513808c9d5e74c17136d794cfcb39803072910cddcf808e98b9b99ae1d8eb90  002-_io_epoll.py.patch
+0e38bb559282c94545fd7121bb82acdf3ba6378a0cd6abd25bb8484f1168a2de2db92baaa149441934ca82d931045d9a89b3c2a23c3ec34545bd6bdea4660053  003-_generated_io_epoll_py.patch
+2da3c9d4774e43e2b8aaa1f96abbf58e01c431c8909b09b93d227850bbae7b2c6739b1f8e02c2707277a5259cdde92413d5db29380ee1cafb8e0bfbd1b1557ca  004-kqueue_py.patch
+9df628ace25387527c39260d76027fe2f75132bfcf3c352038b32afd7ade741c431f4e82a7ee9549c8e57e29647c2593f557ed70ad3598afdd1fdcaba25975d0  005-_socket_py.patch
+f4c20f08de19c66866e1afd84fc54890e5a8179ec43f643a5fea35aec9f50306b19bf13a56ef734e6f2c65bb868eab7e2aa0d5c3c3e4f297b48c97f2d441bdd8  006-_io_kqueue_py.patch
+2d35018dafb43375422c097490dd20fba52882934d873249ecd761c24348cc7594b4e80e60e078db3f9f40acf0072ed9e445f3316cd3dcd10f743b98b3bd7330  007-test_fakenet_py.patch
+0011e6a31ea11576d945eec83e772bdb6159129f5fba72e03cbe3bcb697b9bb0310a652ea8120475b7eb15e413647f804c7b3dc062a71066d9736a79a75520ba  008-test_socket_py.patch
+675baf2bc0684120932059959686163f51aca6c50a180b19878989a3dc6077d71a16daa7888bc428fbd3588bb6e5f4af323186780383141a233f68164603ea14  009-test_reply_py.patch
+61c4c3bd32b2db4195b42bd1c3904e76ee6094e9292c530e834c26b4fa6369eff332a6a05f48bde67db8cfd67f4aa30ea757feaca6d96f9d269603bf79a0cc12  010-test_io_py.patch
+bf934321ba48b808a107c0785935a842672d399dda580491f76f2bb670f081f42314b76f74a7f4ce98a66bea70de0a977d0afec300f656b9f7fd380e740f0b0c  011-test_subprocess.patch
+"

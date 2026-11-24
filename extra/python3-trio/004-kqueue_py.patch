@@ -1,0 +1,11 @@
+--- a/src/trio/_subprocess_platform/kqueue.py
++++ b/src/trio/_subprocess_platform/kqueue.py
+@@ -6,7 +6,7 @@
+ 
+ from .. import _core, _subprocess
+ 
+-assert (sys.platform != "win32" and sys.platform != "linux") or not TYPE_CHECKING
++assert (sys.platform != "win32" and sys.platform != "linux" and not sys.platform.startswith("qnx")) or not TYPE_CHECKING
+ 
+ 
+ async def wait_child_exiting(process: _subprocess.Process) -> None:
