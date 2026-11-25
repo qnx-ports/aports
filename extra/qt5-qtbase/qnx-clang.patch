@@ -1,0 +1,198 @@
+diff --git a/mkspecs/common/qcc-base-qnx-aarch64le.conf b/mkspecs/common/qcc-base-qnx-aarch64le.conf
+index 92eff229544..fd6b8f80278 100644
+--- a/mkspecs/common/qcc-base-qnx-aarch64le.conf
++++ b/mkspecs/common/qcc-base-qnx-aarch64le.conf
+@@ -7,17 +7,17 @@ MAKEFILE_GENERATOR      = UNIX
+ include(g++-unix.conf)
+ include(unix.conf)
+ 
+-QMAKE_CC                = qcc -Vgcc_ntoaarch64le
+-QMAKE_CXX               = q++ -Vgcc_ntoaarch64le
++QMAKE_CC                = clang
++QMAKE_CXX               = clang++
+ QNX_CPUDIR              = aarch64le
+ 
+ include(qcc-base-qnx.conf)
+ 
+-QMAKE_AR                = ntoaarch64-ar cqs
+-QMAKE_OBJCOPY           = ntoaarch64-objcopy
+-QMAKE_NM                = ntoaarch64-nm -P
+-QMAKE_RANLIB            = ntoaarch64-ranlib
++QMAKE_AR                = llvm-ar cqs
++QMAKE_OBJCOPY           = llvm-objcopy
++QMAKE_NM                = llvm-nm -P
++QMAKE_RANLIB            = llvm-ranlib
+ 
+-QMAKE_STRIP             = ntoaarch64-strip
++QMAKE_STRIP             = llvm-strip
+ 
+ load(qt_config)
+diff --git a/mkspecs/common/qcc-base-qnx-x86-64.conf b/mkspecs/common/qcc-base-qnx-x86-64.conf
+index 8e77b5b6600..a3e1931ba52 100644
+--- a/mkspecs/common/qcc-base-qnx-x86-64.conf
++++ b/mkspecs/common/qcc-base-qnx-x86-64.conf
+@@ -7,17 +7,17 @@ MAKEFILE_GENERATOR      = UNIX
+ include(g++-unix.conf)
+ include(unix.conf)
+ 
+-QMAKE_CC                = qcc -Vgcc_ntox86_64
+-QMAKE_CXX               = q++ -Vgcc_ntox86_64
++QMAKE_CC                = clang
++QMAKE_CXX               = clang++
+ QNX_CPUDIR              = x86_64
+ 
+ include(qcc-base-qnx.conf)
+ 
+-QMAKE_AR                = ntox86_64-ar cqs
+-QMAKE_OBJCOPY           = ntox86_64-objcopy
+-QMAKE_NM                = ntox86_64-nm -P
+-QMAKE_RANLIB            = ntox86_64-ranlib
++QMAKE_AR                = llvm-ar cqs
++QMAKE_OBJCOPY           = llvm-objcopy
++QMAKE_NM                = llvm-nm -P
++QMAKE_RANLIB            = llvm-ranlib
+ 
+-QMAKE_STRIP             = ntox86_64-strip
++QMAKE_STRIP             = llvm-strip
+ 
+ load(qt_config)
+diff --git a/mkspecs/common/qcc-base-qnx.conf b/mkspecs/common/qcc-base-qnx.conf
+index 4725371c29a..88457cd070f 100644
+--- a/mkspecs/common/qcc-base-qnx.conf
++++ b/mkspecs/common/qcc-base-qnx.conf
+@@ -24,6 +24,7 @@ QMAKE_LFLAGS_VERSION_SCRIPT = -Wl,--version-script,
+ QMAKE_CFLAGS_THREAD     = -D_REENTRANT
+ QMAKE_CXXFLAGS_THREAD   = $$QMAKE_CFLAGS_THREAD
+ QMAKE_COMPILER_DEFINES += __QNXNTO__
++DEFINES += QT_POSIX_IPC
+ 
+ QMAKE_LIBS              = -lm
+ QMAKE_LIBS_NETWORK      = -lsocket
+@@ -35,14 +36,13 @@ QMAKE_LIBS_EGL          = -lEGL
+ # When using this mkspec to build Qt apps (ie - not Qt itself) we want to build
+ # against the NDK's target directory which is referenced by the QNX_TARGET environment
+ # variable, and which is guaranteed by the NDK to be set.
++isEmpty(QNX_HOST): QNX_HOST = /
++isEmpty(QNX_TARGET): QNX_TARGET = /
+ QNX_DIR = $$(QNX_TARGET)
+-isEmpty(QNX_DIR) {
+-    error("QNX_TARGET environment variable not set")
+-}
+ 
+ QMAKE_INCDIR_POST       = $${QNX_DIR}/usr/include $${QNX_DIR}/usr/include/freetype2
+-QMAKE_LIBDIR_POST       = $${QNX_DIR}/$${QNX_CPUDIR}/lib $${QNX_DIR}/$${QNX_CPUDIR}/usr/lib
+-QMAKE_RPATHLINKDIR_POST += $${QNX_DIR}/$${QNX_CPUDIR}/lib $${QNX_DIR}/$${QNX_CPUDIR}/usr/lib
++QMAKE_LIBDIR_POST       = $${QNX_DIR}/usr/lib
++QMAKE_RPATHLINKDIR_POST += $${QNX_DIR}/usr/lib
+ 
+ QMAKE_CXXFLAGS_CXX11    =
+ QMAKE_CXXFLAGS_CXX14    =
+diff --git a/mkspecs/common/qcc-base.conf b/mkspecs/common/qcc-base.conf
+index b13e3b55bdf..dd9aa38a4e3 100644
+--- a/mkspecs/common/qcc-base.conf
++++ b/mkspecs/common/qcc-base.conf
+@@ -9,7 +9,7 @@
+ # 2) -Wno-psabi is added to silence harmless warnings about va_list mangling
+ #
+ 
+-QMAKE_COMPILER          = rim_qcc gcc   # qcc is mostly gcc in disguise
++QMAKE_COMPILER          = gcc clang   # qcc is mostly gcc in disguise
+ 
+ QMAKE_CFLAGS_OPTIMIZE      = -O2
+ QMAKE_CFLAGS_OPTIMIZE_FULL = -O3
+diff --git a/mkspecs/qnx-aarch64le-qcc/qmake.conf b/mkspecs/qnx-aarch64le-qcc/qmake.conf
+index 754bc273589..b3904939207 100644
+--- a/mkspecs/qnx-aarch64le-qcc/qmake.conf
++++ b/mkspecs/qnx-aarch64le-qcc/qmake.conf
+@@ -2,8 +2,6 @@
+ # qmake configuration for qnx aarch64le systems
+ #
+ 
+-DEFINES += _FORTIFY_SOURCE=2
+-
+ QMAKE_LFLAGS_SHLIB += -Wl,-z,relro -Wl,-z,now
+ 
+ include(../common/qcc-base-qnx-aarch64le.conf)
+diff --git a/src/gui/configure.json b/src/gui/configure.json
+index d5582dda6e5..0988d3d9601 100644
+--- a/src/gui/configure.json
++++ b/src/gui/configure.json
+@@ -1695,7 +1695,7 @@
+             "label": "QClipboard",
+             "purpose": "Provides cut and paste operations.",
+             "section": "Kernel",
+-            "condition": "!config.integrity && !config.qnx && !config.rtems",
++            "condition": "!config.integrity && !config.rtems",
+             "output": [ "publicFeature", "feature" ]
+         },
+         "wheelevent": {
+diff --git a/src/plugins/platforms/qnx/qqnxintegration.cpp b/src/plugins/platforms/qnx/qqnxintegration.cpp
+index 84baa6ec443..571f3d07086 100644
+--- a/src/plugins/platforms/qnx/qqnxintegration.cpp
++++ b/src/plugins/platforms/qnx/qqnxintegration.cpp
+@@ -163,7 +163,7 @@ QQnxIntegration::QQnxIntegration(const QStringList &paramList)
+     , m_eventDispatcher(createUnixEventDispatcher())
+     , m_nativeInterface(new QQnxNativeInterface(this))
+     , m_screenEventHandler(new QQnxScreenEventHandler(this))
+-#if !defined(QT_NO_CLIPBOARD)
++#if QT_CONFIG(qqnx_pps) && !defined(QT_NO_CLIPBOARD)
+     , m_clipboard(0)
+ #endif
+     , m_navigator(0)
+@@ -261,7 +261,7 @@ QQnxIntegration::~QQnxIntegration()
+     delete m_drag;
+ #endif
+ 
+-#if !defined(QT_NO_CLIPBOARD)
++#if QT_CONFIG(qqnx_pps) && !defined(QT_NO_CLIPBOARD)
+     // Delete the clipboard
+     delete m_clipboard;
+ #endif
+@@ -465,15 +465,13 @@ QPlatformNativeInterface *QQnxIntegration::nativeInterface() const
+     return m_nativeInterface;
+ }
+ 
+-#if !defined(QT_NO_CLIPBOARD)
++#if QT_CONFIG(qqnx_pps) && !defined(QT_NO_CLIPBOARD)
+ QPlatformClipboard *QQnxIntegration::clipboard() const
+ {
+     qIntegrationDebug();
+ 
+-#if QT_CONFIG(qqnx_pps)
+     if (!m_clipboard)
+         m_clipboard = new QQnxClipboard;
+-#endif
+     return m_clipboard;
+ }
+ #endif
+diff --git a/src/plugins/platforms/qnx/qqnxintegration.h b/src/plugins/platforms/qnx/qqnxintegration.h
+index 2596af3c45e..86215715767 100644
+--- a/src/plugins/platforms/qnx/qqnxintegration.h
++++ b/src/plugins/platforms/qnx/qqnxintegration.h
+@@ -71,7 +71,7 @@ class QQnxNavigatorEventNotifier;
+ class QQnxButtonEventNotifier;
+ #endif
+ 
+-#if !defined(QT_NO_CLIPBOARD)
++#if QT_CONFIG(qqnx_pps) && !defined(QT_NO_CLIPBOARD)
+ class QQnxClipboard;
+ #endif
+ 
+@@ -119,7 +119,7 @@ public:
+ 
+     QPlatformNativeInterface *nativeInterface() const override;
+ 
+-#if !defined(QT_NO_CLIPBOARD)
++#if QT_CONFIG(qqnx_pps) && !defined(QT_NO_CLIPBOARD)
+     QPlatformClipboard *clipboard() const override;
+ #endif
+ #if QT_CONFIG(draganddrop)
+@@ -168,7 +168,7 @@ private:
+     QQnxNativeInterface *m_nativeInterface;
+     QList<QQnxScreen*> m_screens;
+     QQnxScreenEventHandler *m_screenEventHandler;
+-#if !defined(QT_NO_CLIPBOARD)
++#if QT_CONFIG(qqnx_pps) && !defined(QT_NO_CLIPBOARD)
+     mutable QQnxClipboard* m_clipboard;
+ #endif
+     QQnxAbstractNavigator *m_navigator;
