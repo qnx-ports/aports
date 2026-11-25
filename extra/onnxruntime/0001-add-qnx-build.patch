@@ -236,6 +236,54 @@ index 8af418a88c..65e510dc70 100644
    constexpr int kCallstackLimit = 64;  // Maximum depth of callstack
  
    void* array[kCallstackLimit];
+diff --git a/onnxruntime/core/session/environment.cc b/onnxruntime/core/session/environment.cc
+index 7cd02e5413..ce753e456e 100644
+--- a/onnxruntime/core/session/environment.cc
++++ b/onnxruntime/core/session/environment.cc
+@@ -304,14 +304,22 @@ Status Environment::Initialize(std::unique_ptr<logging::LoggingManager> logging_
+ #ifdef USE_DML
+       dml::RegisterDmlSchemas();
+ #endif
+-      RegisterOnnxOperatorSetSchema();
++      // Skip explicit registration if schemas were already statically registered
++      // (e.g., when linking against a system libonnx built without __ONNX_DISABLE_STATIC_REGISTRATION).
++      if (ONNX_NAMESPACE::OpSchemaRegistry::Schema("Add", 1, onnxruntime::kOnnxDomain) == nullptr) {
++        RegisterOnnxOperatorSetSchema();
++      }
+ 
+ #ifndef DISABLE_ML_OPS
+-      RegisterOnnxMLOperatorSetSchema();
++      if (ONNX_NAMESPACE::OpSchemaRegistry::Schema("LabelEncoder", 1, onnxruntime::kMLDomain) == nullptr) {
++        RegisterOnnxMLOperatorSetSchema();
++      }
+ #endif
+ 
+ #if defined(ENABLE_TRAINING_OPS)
+-      RegisterOnnxTrainingOperatorSetSchema();
++      if (ONNX_NAMESPACE::OpSchemaRegistry::Schema("Adagrad", 1, ONNX_NAMESPACE::AI_ONNX_TRAINING_DOMAIN) == nullptr) {
++        RegisterOnnxTrainingOperatorSetSchema();
++      }
+ #endif
+ 
+ #if defined(ENABLE_TRAINING_OPS)
+diff --git a/onnxruntime/python/onnxruntime_validation.py b/onnxruntime/python/onnxruntime_validation.py
+index 6912d19897..6e13c26c6a 100644
+--- a/onnxruntime/python/onnxruntime_validation.py
++++ b/onnxruntime/python/onnxruntime_validation.py
+@@ -62,9 +62,12 @@ def check_distro_info():
+         returned_output = subprocess.check_output("oslevel")
+         __my_distro_ver__str = returned_output.decode("utf-8")
+         __my_distro_ver = __my_distro_ver__str[:3]
++    elif __my_system__ == "qnx":
++        __my_distro__ = __my_system__
++        __my_distro_ver__ = platform.release().lower()
+     else:
+         warnings.warn(
+-            f"Unsupported platform ({__my_system__}). ONNX Runtime supports Linux, macOS, AIX and Windows platforms, only."
++            f"Unsupported platform ({__my_system__}). ONNX Runtime supports Linux, macOS, AIX, QNX and Windows platforms, only."
+         )
+ 
+ 
 diff --git a/onnxruntime/test/providers/cpu/generator/random_test.cc b/onnxruntime/test/providers/cpu/generator/random_test.cc
 index b44aff56f1..efd36f1834 100644
 --- a/onnxruntime/test/providers/cpu/generator/random_test.cc
@@ -258,15 +306,3 @@ index b44aff56f1..efd36f1834 100644
    const std::vector<int32_t> expected_output_1{1, 1, 2, 2, 0, 2, 2, 2, 0, 2, 1, 1, 2, 0, 2, 2, 0, 2, 1, 1};
    const std::vector<int32_t> expected_output_2{1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 2, 0, 1, 1, 0, 2, 2, 2, 1};
  #else
-diff --git a/onnxruntime/test/shared_lib/test_runtime_path.cc b/onnxruntime/test/shared_lib/test_runtime_path.cc
-index f004c96041..00ecb6f425 100644
---- a/onnxruntime/test/shared_lib/test_runtime_path.cc
-+++ b/onnxruntime/test/shared_lib/test_runtime_path.cc
-@@ -30,6 +30,7 @@ TEST(GetRuntimePathFromSharedLibraryTest, DISABLED_Basic) {
-   ASSERT_NE(runtime_path_cstr, nullptr);
- 
-   const auto runtime_path_str = std::basic_string_view<PathChar>{runtime_path_cstr};
-+  std::cout<<runtime_path_str.length();
-   ASSERT_FALSE(runtime_path_str.empty());
-   ASSERT_TRUE(IsDirectorySeparator(runtime_path_str.back()));
- 
