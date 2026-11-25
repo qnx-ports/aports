@@ -23,7 +23,7 @@ makedepends="
 checkdepends="
 	python3-idna
 	python3-openssl
-	python3-pytest-runner
+	python3-pytest
 "
 source="
 	$_pkgname-$pkgver.tar.gz::https://github.com/pyca/service-identity/archive/$pkgver.tar.gz
