@@ -1,0 +1,52 @@
+# Alpine-Contributor: Dennis Krupenik <dennis@krupenik.com>
+# Alpine-Maintainer: Dennis Krupenik <dennis@krupenik.com>
+# Maintainer: NarayanaMurthy <nnarayanamurthy@qnx.com>
+
+pkgname=one-dnn
+pkgver=3.13.4
+pkgrel=0
+pkgdesc="oneAPI Deep Neural Network Library"
+url="https://github.com/uxlfoundation/oneDNN"
+arch="all !aarch64"
+license="Apache-2.0"
+depends="libc++ openmp"
+makedepends="cmake onetbb-dev"
+subpackages="$pkgname-dev $pkgname-doc"
+source="$pkgname-$pkgver.tar.gz::https://github.com/uxlfoundation/oneDNN/archive/refs/tags/v$pkgver.tar.gz
+001-qnx-fix-linking.patch
+"
+
+builddir="$srcdir/oneDNN-$pkgver"
+# Tests are disabled on QNX because some tests hang or exhaust available memory.
+options="!check"
+
+build() {
+    rm -rf build
+
+    cmake -B build -S . \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DCMAKE_INSTALL_LIBDIR=lib \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_C_FLAGS_RELEASE="-O1 -DNDEBUG -U_FORTIFY_SOURCE" \
+        -DCMAKE_CXX_FLAGS_RELEASE="-O1 -DNDEBUG -U_FORTIFY_SOURCE" \
+        -DONEDNN_ARCH_OPT_FLAGS="" \
+        -DDNNL_BUILD_TESTS=OFF \
+        -DDNNL_BUILD_EXAMPLES=OFF
+
+    cmake --build build --parallel 1
+}
+
+check() {
+    OMP_NUM_THREADS=1 \
+    CTEST_PARALLEL_LEVEL=1 \
+        ctest --test-dir build -j1
+}
+
+package() {
+    make -C build DESTDIR="$pkgdir" install
+}
+
+sha512sums="
+b2e46cfa7b3515ea5f22e515327a15b523b933bd29d24ef9f2a6a6904b771e3d1a920768af49e269b92009febeb109344e1ecbebd474ac58bef2e79544b34f92  one-dnn-3.13.4.tar.gz
+9ed26bca2b7b743d5ed6378fcc108461d5e3d14f45f005e5d622eea5b5f3f6a31360d728af6be7a90fb207e63797be064ee37871ab6b9c3b23412932d71376d1  001-qnx-fix-linking.patch
+"
