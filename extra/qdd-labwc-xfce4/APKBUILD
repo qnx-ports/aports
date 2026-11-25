@@ -1,0 +1,20 @@
+# Maintainer: Aaron Bassett <abassett@qnx.com>
+pkgname=qdd-labwc-xfce4
+pkgver=0.1.0
+pkgrel=0
+pkgdesc="QNX Developer Desktop labwc + xfce4 settings"
+url="https://github.com/qnx/qdd-labwc-xfce4"
+arch="noarch"
+license="Apache-2.0"
+depends="qdd-backgrounds labwc xfce4 xfce4-terminal thunar swaybg pqiv lxde-icon-theme font-noto font-noto-emoji "
+options="!check"
+source="$pkgname-$pkgver.tar.gz::https://github.com/qnx/$pkgname/archive/refs/tags/v$pkgver.tar.gz"
+
+package() {
+  mkdir -p "$pkgdir"
+  cp -rf "$builddir/etc" "$pkgdir"
+}
+
+sha512sums="
+7044689bc191801690d52cd1360d726595394d0cc1da8a6159d237a7917a620424936c06596fd73f66e0308d8ed6e8cb811d98b6abb7d64fc90752c3922884da  qdd-labwc-xfce4-0.1.0.tar.gz
+"
