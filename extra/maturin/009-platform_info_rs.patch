@@ -1,0 +1,18 @@
+--- a/vendor/platform-info/src/platform/unix.rs
++++ b/vendor/platform-info/src/platform/unix.rs
+@@ -132,6 +132,7 @@
+             target_os = "macos",
+             target_os = "ios",
+             target_os = "dragonfly",
++            target_os = "qnx",
+             target_os = "freebsd",
+             target_os = "openbsd",
+             target_os = "netbsd",
+@@ -170,6 +171,7 @@
+             target_os = "macos",
+             target_os = "ios",
+             target_os = "dragonfly",
++            target_os = "qnx",
+             target_os = "freebsd",
+             target_os = "openbsd",
+             target_os = "netbsd",

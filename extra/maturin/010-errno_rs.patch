@@ -1,0 +1,9 @@
+--- a/vendor/errno/src/unix.rs
++++ b/vendor/errno/src/unix.rs
+@@ -100,5 +100,6 @@
+     )]
+     #[cfg_attr(target_os = "aix", link_name = "_Errno")]
+     #[cfg_attr(target_os = "nto", link_name = "__get_errno_ptr")]
++    #[cfg_attr(target_os = "qnx", link_name = "__get_errno_ptr")]
+     fn errno_location() -> *mut c_int;
+ }

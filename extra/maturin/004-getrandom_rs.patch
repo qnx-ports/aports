@@ -1,0 +1,75 @@
+--- a/vendor/getrandom-0.2.17/src/lib.rs
++++ b/vendor/getrandom-0.2.17/src/lib.rs
+@@ -235,7 +235,7 @@
+ // The function MUST NOT ever write uninitialized bytes into `dest`,
+ // regardless of what value it returns.
+ cfg_if! {
+-    if #[cfg(any(target_os = "haiku", target_os = "redox", target_os = "nto", target_os = "aix"))] {
++    if #[cfg(any(target_os = "haiku", target_os = "redox", target_os = "nto", target_os = "qnx", target_os = "aix"))] {
+         mod util_libc;
+         #[path = "use_file.rs"] mod imp;
+     } else if #[cfg(any(
+--- a/vendor/getrandom-0.2.17/src/util_libc.rs
++++ b/vendor/getrandom-0.2.17/src/util_libc.rs
+@@ -19,7 +19,7 @@
+         use libc::__error as errno_location;
+     } else if #[cfg(target_os = "haiku")] {
+         use libc::_errnop as errno_location;
+-    } else if #[cfg(target_os = "nto")] {
++    } else if #[cfg(any(target_os = "nto", target_os = "qnx"))] {
+         use libc::__get_errno_ptr as errno_location;
+     } else if #[cfg(any(all(target_os = "horizon", target_arch = "arm"), target_os = "vita"))] {
+         extern "C" {
+--- a/vendor/getrandom/Cargo.toml
++++ b/vendor/getrandom/Cargo.toml
+@@ -115,7 +115,7 @@
+ version = "0.2.154"
+ default-features = false
+ 
+-[target.'cfg(any(target_os = "haiku", target_os = "redox", target_os = "nto", target_os = "aix"))'.dependencies.libc]
++[target.'cfg(any(target_os = "haiku", target_os = "redox", target_os = "nto", target_os = "qnx", target_os = "aix"))'.dependencies.libc]
+ version = "0.2.154"
+ default-features = false
+ 
+--- a/vendor/getrandom/src/backends.rs
++++ b/vendor/getrandom/src/backends.rs
+@@ -45,6 +45,7 @@
+         target_os = "haiku",
+         target_os = "redox",
+         target_os = "nto",
++        target_os = "qnx",
+         target_os = "aix",
+     ))] {
+         mod use_file;
+@@ -78,14 +78,19 @@
+         // that precede the version (3.17) in which `getrandom(2)` was added:
+         // https://doc.rust-lang.org/stable/rustc/platform-support.html
+         all(
+-            target_os = "linux",
+             any(
++                target_os = "linux",
++                target_os = "qnx",
++            ),
++            any(
+                 target_arch = "aarch64",
++                target_arch = "raspberrypi5",
+                 target_arch = "arm",
+                 target_arch = "powerpc",
+                 target_arch = "powerpc64",
+                 target_arch = "s390x",
+                 target_arch = "x86",
++                target_arch = "x86pc",
+                 target_arch = "x86_64",
+                 // Minimum supported Linux kernel version for MUSL targets
+                 // is not specified explicitly (as of Rust 1.77) and they
+--- a/vendor/getrandom/src/utils/get_errno.rs
++++ b/vendor/getrandom/src/utils/get_errno.rs
+@@ -9,7 +9,7 @@
+         use libc::__error as errno_location;
+     } else if #[cfg(target_os = "haiku")] {
+         use libc::_errnop as errno_location;
+-    } else if #[cfg(target_os = "nto")] {
++    } else if #[cfg(any(target_os = "nto", target_os = "qnx"))] {
+         use libc::__get_errno_ptr as errno_location;
+     } else if #[cfg(any(all(target_os = "horizon", target_arch = "arm"), target_os = "vita"))] {
+         unsafe extern "C" {

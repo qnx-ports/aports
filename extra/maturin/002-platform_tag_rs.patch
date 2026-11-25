@@ -1,0 +1,28 @@
+--- a/src/target/platform_tag.rs
++++ b/src/target/platform_tag.rs
+@@ -75,6 +75,25 @@
+             }
+             tags.join(".")
+         }
++        // Qnx
++        (Os::Qnx, _) => {
++            let arch = target.get_platform_arch()?;
++            let mut platform_tags = platform_tags.to_vec();
++            platform_tags.sort();
++            let mut tags = vec![];
++            for platform_tag in platform_tags {
++                tags.push(format!("{platform_tag}_{arch}"));
++                for alias in platform_tag.aliases() {
++                    let alias_tag = format!("{alias}_{arch}");
++                    // Only add legacy aliases if they're in PyPI's static allow-list,
++                    // e.g. manylinux2014 was never defined for riscv64
++                    if ALLOWED_PLATFORMS.contains(&alias_tag.as_str()) {
++                        tags.push(alias_tag);
++                    }
++                }
++            }
++            tags.join(".")
++        }
+         // macOS
+         (Os::Macos, Arch::X86_64) | (Os::Macos, Arch::Aarch64) => {
+             let ((x86_64_major, x86_64_minor), (arm64_major, arm64_minor)) =

@@ -1,0 +1,1945 @@
+--- a/vendor/rustix/src/backend/libc/fs/dir.rs
++++ b/vendor/rustix/src/backend/libc/fs/dir.rs
+@@ -3,6 +3,7 @@
+     target_os = "aix",
+     target_os = "haiku",
+     target_os = "nto",
++target_os = "qnx",
+     target_os = "vita"
+ )))]
+ use super::types::FileType;
+@@ -19,6 +20,7 @@
+     target_os = "horizon",
+     target_os = "netbsd",
+     target_os = "nto",
++target_os = "qnx",
+     target_os = "redox",
+     target_os = "vita",
+     target_os = "wasi",
+@@ -204,6 +206,7 @@
+                         target_os = "aix",
+                         target_os = "haiku",
+                         target_os = "nto",
++target_os = "qnx",
+                         target_os = "vita"
+                     )))]
+                     d_type: dirent.d_type,
+@@ -246,6 +249,7 @@
+         target_os = "horizon",
+         target_os = "netbsd",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "redox",
+         target_os = "vita",
+         target_os = "wasi",
+@@ -322,6 +326,7 @@
+         target_os = "aix",
+         target_os = "haiku",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "vita"
+     )))]
+     d_type: u8,
+@@ -374,6 +379,7 @@
+         target_os = "aix",
+         target_os = "haiku",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "vita"
+     )))]
+     #[inline]
+--- a/vendor/rustix/src/backend/libc/fs/syscalls.rs
++++ b/vendor/rustix/src/backend/libc/fs/syscalls.rs
+@@ -20,6 +20,7 @@
+     target_os = "espidf",
+     target_os = "horizon",
+     target_os = "nto",
++target_os = "qnx",
+     target_os = "redox",
+     target_os = "vita",
+ )))]
+@@ -44,6 +45,7 @@
+     target_os = "horizon",
+     target_os = "netbsd",
+     target_os = "nto",
++target_os = "qnx",
+     target_os = "redox",
+     target_os = "vita",
+     target_os = "wasi",
+@@ -259,6 +261,7 @@
+     target_os = "horizon",
+     target_os = "netbsd",
+     target_os = "nto",
++target_os = "qnx",
+     target_os = "redox",
+     target_os = "vita",
+     target_os = "wasi",
+@@ -1607,6 +1610,7 @@
+     target_os = "horizon",
+     target_os = "netbsd",
+     target_os = "nto",
++target_os = "qnx",
+     target_os = "redox",
+     target_os = "vita",
+     target_os = "wasi",
+@@ -1752,6 +1756,7 @@
+     target_os = "espidf",
+     target_os = "horizon",
+     target_os = "nto",
++target_os = "qnx",
+     target_os = "redox",
+     target_os = "vita",
+ )))]
+--- a/vendor/rustix/src/backend/libc/fs/types.rs
++++ b/vendor/rustix/src/backend/libc/fs/types.rs
+@@ -630,6 +630,7 @@
+         target_os = "haiku",
+         target_os = "horizon",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "redox",
+         target_os = "vita"
+     )))]
+@@ -776,6 +777,7 @@
+     target_os = "espidf",
+     target_os = "horizon",
+     target_os = "nto",
++target_os = "qnx",
+     target_os = "redox",
+     target_os = "vita"
+ )))]
+@@ -1071,6 +1073,7 @@
+     target_os = "horizon",
+     target_os = "netbsd",
+     target_os = "nto",
++target_os = "qnx",
+     target_os = "redox",
+     target_os = "vita",
+     target_os = "wasi",
+@@ -1093,6 +1096,7 @@
+     target_os = "haiku",
+     target_os = "horizon",
+     target_os = "nto",
++target_os = "qnx",
+     target_os = "redox",
+     target_os = "vita",
+     target_os = "wasi",
+--- a/vendor/rustix/src/backend/libc/io/errno.rs
++++ b/vendor/rustix/src/backend/libc/io/errno.rs
+@@ -247,6 +247,7 @@
+         target_os = "hurd",
+         target_os = "l4re",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "vita",
+         target_os = "wasi",
+     )))]
+@@ -283,6 +284,7 @@
+         target_os = "hurd",
+         target_os = "l4re",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "redox",
+         target_os = "vita",
+         target_os = "wasi",
+@@ -334,6 +336,7 @@
+         target_os = "hurd",
+         target_os = "l4re",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "vita",
+         target_os = "wasi",
+     )))]
+@@ -351,6 +354,7 @@
+         target_os = "hurd",
+         target_os = "l4re",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "vita",
+         target_os = "wasi",
+     )))]
+@@ -368,6 +372,7 @@
+         target_os = "hurd",
+         target_os = "l4re",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "vita",
+         target_os = "wasi",
+     )))]
+@@ -385,6 +390,7 @@
+         target_os = "hurd",
+         target_os = "l4re",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "vita",
+         target_os = "wasi",
+     )))]
+@@ -538,6 +544,7 @@
+         target_os = "hurd",
+         target_os = "l4re",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "vita",
+         target_os = "wasi",
+     )))]
+@@ -568,6 +575,7 @@
+         target_os = "hurd",
+         target_os = "l4re",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "vita",
+         target_os = "wasi",
+     )))]
+@@ -649,6 +657,7 @@
+         target_os = "hurd",
+         target_os = "l4re",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "vita",
+         target_os = "wasi",
+     )))]
+@@ -671,6 +680,7 @@
+         target_os = "hurd",
+         target_os = "l4re",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "vita",
+         target_os = "wasi",
+     )))]
+@@ -774,6 +784,7 @@
+         target_os = "hurd",
+         target_os = "l4re",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "vita",
+         target_os = "wasi",
+     )))]
+@@ -903,6 +914,7 @@
+         target_os = "hurd",
+         target_os = "l4re",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "vita",
+         target_os = "wasi",
+     )))]
+@@ -935,6 +947,7 @@
+         target_os = "hurd",
+         target_os = "l4re",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "redox",
+         target_os = "vita",
+         target_os = "wasi",
+@@ -1035,6 +1048,7 @@
+         target_os = "hurd",
+         target_os = "l4re",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "vita",
+         target_os = "wasi",
+     )))]
+--- a/vendor/rustix/src/backend/libc/io/syscalls.rs
++++ b/vendor/rustix/src/backend/libc/io/syscalls.rs
+@@ -10,6 +10,7 @@
+     target_os = "espidf",
+     target_os = "horizon",
+     target_os = "nto",
++target_os = "qnx",
+     target_os = "vita",
+     target_os = "wasi"
+ )))]
+@@ -99,6 +100,7 @@
+     target_os = "haiku",
+     target_os = "horizon",
+     target_os = "nto",
++target_os = "qnx",
+     target_os = "redox",
+     target_os = "solaris",
+     target_os = "vita",
+@@ -129,6 +131,7 @@
+     target_os = "espidf",
+     target_os = "haiku",
+     target_os = "nto",
++target_os = "qnx",
+     target_os = "horizon",
+     target_os = "redox",
+     target_os = "solaris",
+@@ -274,6 +277,7 @@
+     target_os = "haiku",
+     target_os = "horizon",
+     target_os = "nto",
++target_os = "qnx",
+     target_os = "redox",
+     target_os = "vita",
+     target_os = "wasi",
+--- a/vendor/rustix/src/backend/libc/mm/types.rs
++++ b/vendor/rustix/src/backend/libc/mm/types.rs
+@@ -88,6 +88,7 @@
+             target_os = "haiku",
+             target_os = "hurd",
+             target_os = "nto",
++target_os = "qnx",
+             target_os = "redox",
+         )))]
+         const SHARED_VALIDATE = bitcast!(c::MAP_SHARED_VALIDATE);
+@@ -102,6 +103,7 @@
+             target_os = "haiku",
+             target_os = "hurd",
+             target_os = "nto",
++target_os = "qnx",
+             target_os = "redox",
+         )))]
+         const DENYWRITE = bitcast!(c::MAP_DENYWRITE);
+@@ -119,6 +121,7 @@
+             target_os = "haiku",
+             target_os = "hurd",
+             target_os = "nto",
++target_os = "qnx",
+             target_os = "redox",
+         )))]
+         const FIXED_NOREPLACE = bitcast!(c::MAP_FIXED_NOREPLACE);
+@@ -131,6 +134,7 @@
+             target_os = "haiku",
+             target_os = "hurd",
+             target_os = "nto",
++target_os = "qnx",
+             target_os = "redox",
+         )))]
+         const GROWSDOWN = bitcast!(c::MAP_GROWSDOWN);
+@@ -143,6 +147,7 @@
+             target_os = "haiku",
+             target_os = "hurd",
+             target_os = "nto",
++target_os = "qnx",
+             target_os = "redox",
+         )))]
+         const HUGETLB = bitcast!(c::MAP_HUGETLB);
+@@ -158,6 +163,7 @@
+             target_os = "haiku",
+             target_os = "hurd",
+             target_os = "nto",
++target_os = "qnx",
+             target_os = "redox",
+         )))]
+         const HUGE_2MB = bitcast!(c::MAP_HUGE_2MB);
+@@ -173,6 +179,7 @@
+             target_os = "haiku",
+             target_os = "hurd",
+             target_os = "nto",
++target_os = "qnx",
+             target_os = "redox",
+         )))]
+         const HUGE_1GB = bitcast!(c::MAP_HUGE_1GB);
+@@ -185,6 +192,7 @@
+             target_os = "haiku",
+             target_os = "hurd",
+             target_os = "nto",
++target_os = "qnx",
+             target_os = "redox",
+         )))]
+         const LOCKED = bitcast!(c::MAP_LOCKED);
+@@ -197,6 +205,7 @@
+             target_os = "aix",
+             target_os = "hurd",
+             target_os = "nto",
++target_os = "qnx",
+             target_os = "redox",
+         )))]
+         const NORESERVE = bitcast!(c::MAP_NORESERVE);
+@@ -212,6 +221,7 @@
+             target_os = "haiku",
+             target_os = "hurd",
+             target_os = "nto",
++target_os = "qnx",
+             target_os = "redox",
+         )))]
+         const POPULATE = bitcast!(c::MAP_POPULATE);
+@@ -241,6 +251,7 @@
+             target_os = "haiku",
+             target_os = "hurd",
+             target_os = "nto",
++target_os = "qnx",
+             target_os = "redox",
+             all(
+                 linux_kernel,
+--- a/vendor/rustix/src/backend/libc/mod.rs
++++ b/vendor/rustix/src/backend/libc/mod.rs
+@@ -205,7 +205,8 @@
+ #[cfg(bsd)]
+ const MAX_IOV: usize = c::IOV_MAX as usize;
+ 
+-#[cfg(any(linux_kernel, target_os = "emscripten", target_os = "nto"))]
++
++#[cfg(any(linux_kernel, target_os = "emscripten", target_os = "nto", target_os = "qnx"))]
+ const MAX_IOV: usize = c::UIO_MAXIOV as usize;
+ 
+ #[cfg(not(any(
+@@ -215,6 +216,7 @@
+     target_os = "emscripten",
+     target_os = "espidf",
+     target_os = "nto",
++target_os = "qnx",
+     target_os = "horizon",
+ )))]
+ const MAX_IOV: usize = 16; // The minimum value required by POSIX.
+--- a/vendor/rustix/src/backend/libc/net/addr.rs
++++ b/vendor/rustix/src/backend/libc/net/addr.rs
+@@ -109,20 +109,23 @@
+                 target_os = "haiku",
+                 target_os = "horizon",
+                 target_os = "nto",
++target_os = "qnx",
+                 target_os = "hurd",
+             ))]
+             sun_len: 0,
+             #[cfg(target_os = "vita")]
+             ss_len: 0,
+             sun_family: c::AF_UNIX as _,
+-            #[cfg(any(bsd, target_os = "horizon", target_os = "nto"))]
++
++            #[cfg(any(bsd, target_os = "horizon", target_os = "nto", target_os = "qnx"))]
+             sun_path: [0; 104],
+             #[cfg(not(any(
+                 bsd,
+                 target_os = "aix",
+                 target_os = "haiku",
+                 target_os = "horizon",
+-                target_os = "nto"
++                target_os = "nto",
++target_os = "qnx"
+             )))]
+             sun_path: [0; 108],
+             #[cfg(target_os = "haiku")]
+@@ -350,6 +353,7 @@
+             target_os = "horizon",
+             target_os = "hurd",
+             target_os = "nto",
++target_os = "qnx",
+         ))]
+         sun_len: 0_u8,
+         #[cfg(target_os = "vita")]
+@@ -361,6 +365,7 @@
+             target_os = "haiku",
+             target_os = "hurd",
+             target_os = "nto",
++target_os = "qnx",
+             target_os = "vita"
+         ))]
+         sun_family: 0_u8,
+@@ -371,17 +376,20 @@
+             target_os = "haiku",
+             target_os = "hurd",
+             target_os = "nto",
++target_os = "qnx",
+             target_os = "vita"
+         )))]
+         sun_family: 0_u16,
+-        #[cfg(any(bsd, target_os = "horizon", target_os = "nto"))]
++
++        #[cfg(any(bsd, target_os = "horizon", target_os = "nto", target_os = "qnx"))]
+         sun_path: [0; 104],
+         #[cfg(not(any(
+             bsd,
+             target_os = "aix",
+             target_os = "haiku",
+             target_os = "horizon",
+-            target_os = "nto"
++            target_os = "nto",
++target_os = "qnx"
+         )))]
+         sun_path: [0; 108],
+         #[cfg(target_os = "haiku")]
+--- a/vendor/rustix/src/backend/libc/net/ext.rs
++++ b/vendor/rustix/src/backend/libc/net/ext.rs
+@@ -85,6 +85,7 @@
+         target_os = "haiku",
+         target_os = "hurd",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "vita"
+     ))]
+     sin6_len: u8,
+@@ -102,6 +103,7 @@
+             target_os = "haiku",
+             target_os = "hurd",
+             target_os = "nto",
++target_os = "qnx",
+             target_os = "vita"
+         ))]
+         sin6_len,
+--- a/vendor/rustix/src/backend/libc/net/msghdr.rs
++++ b/vendor/rustix/src/backend/libc/net/msghdr.rs
+@@ -59,6 +59,7 @@
+     target_os = "haiku",
+     target_os = "hurd",
+     target_os = "nto",
++target_os = "qnx",
+ ))]
+ #[inline]
+ fn msg_control_len(len: usize) -> c::socklen_t {
+@@ -79,6 +80,7 @@
+     target_os = "haiku",
+     target_os = "hurd",
+     target_os = "nto",
++target_os = "qnx",
+     target_os = "vita",
+     target_os = "wasi",
+ )))]
+--- a/vendor/rustix/src/backend/libc/net/read_sockaddr.rs
++++ b/vendor/rustix/src/backend/libc/net/read_sockaddr.rs
+@@ -25,6 +25,7 @@
+         target_os = "espidf",
+         target_os = "haiku",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "vita"
+     ))]
+     sa_len: u8,
+@@ -34,6 +35,7 @@
+         target_os = "espidf",
+         target_os = "haiku",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "vita"
+     ))]
+     sa_family: u8,
+@@ -43,6 +45,7 @@
+         target_os = "espidf",
+         target_os = "haiku",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "vita"
+     )))]
+     sa_family: u16,
+@@ -64,6 +67,7 @@
+             target_os = "haiku",
+             target_os = "hurd",
+             target_os = "nto",
++target_os = "qnx",
+             target_os = "vita"
+         ))]
+         sa_len: 0_u8,
+@@ -74,6 +78,7 @@
+             target_os = "haiku",
+             target_os = "hurd",
+             target_os = "nto",
++target_os = "qnx",
+             target_os = "vita"
+         ))]
+         sa_family: 0_u8,
+@@ -84,6 +89,7 @@
+             target_os = "haiku",
+             target_os = "hurd",
+             target_os = "nto",
++target_os = "qnx",
+             target_os = "vita"
+         )))]
+         sa_family: 0_u16,
+--- a/vendor/rustix/src/backend/libc/net/send_recv.rs
++++ b/vendor/rustix/src/backend/libc/net/send_recv.rs
+@@ -19,6 +19,7 @@
+             target_os = "cygwin",
+             target_os = "espidf",
+             target_os = "nto",
++target_os = "qnx",
+             target_os = "haiku",
+             target_os = "horizon",
+             target_os = "hurd",
+@@ -44,6 +45,7 @@
+             target_os = "haiku",
+             target_os = "hurd",
+             target_os = "nto",
++target_os = "qnx",
+             target_os = "redox",
+             target_os = "vita",
+         )))]
+@@ -78,6 +80,7 @@
+             target_os = "haiku",
+             target_os = "horizon",
+             target_os = "nto",
++target_os = "qnx",
+             target_os = "redox",
+             target_os = "vita",
+         )))]
+@@ -97,6 +100,7 @@
+             target_os = "horizon",
+             target_os = "hurd",
+             target_os = "nto",
++target_os = "qnx",
+             target_os = "redox",
+             target_os = "vita",
+         )))]
+--- a/vendor/rustix/src/backend/libc/net/sockopt.rs
++++ b/vendor/rustix/src/backend/libc/net/sockopt.rs
+@@ -30,6 +30,7 @@
+     target_os = "horizon",
+     target_os = "netbsd",
+     target_os = "nto",
++target_os = "qnx",
+     target_os = "vita",
+ )))]
+ use crate::net::AddressFamily;
+@@ -79,7 +80,8 @@
+ use alloc::string::String;
+ #[cfg(apple)]
+ use c::TCP_KEEPALIVE as TCP_KEEPIDLE;
+-#[cfg(not(any(apple, target_os = "haiku", target_os = "nto", target_os = "openbsd")))]
++
++#[cfg(not(any(apple, target_os = "haiku", target_os = "nto", target_os = "qnx", target_os = "openbsd")))]
+ use c::TCP_KEEPIDLE;
+ use core::mem::{size_of, MaybeUninit};
+ use core::time::Duration;
+@@ -395,6 +397,7 @@
+     target_os = "hurd",
+     target_os = "netbsd",
+     target_os = "nto",
++target_os = "qnx",
+     target_os = "vita",
+ )))]
+ pub(crate) fn socket_domain(fd: BorrowedFd<'_>) -> io::Result<AddressFamily> {
+@@ -689,7 +692,8 @@
+         solarish,
+         target_os = "haiku",
+         target_os = "l4re",
+-        target_os = "nto"
++        target_os = "nto",
++target_os = "qnx"
+     )))]
+     use c::IPV6_ADD_MEMBERSHIP;
+     #[cfg(any(
+@@ -697,7 +701,8 @@
+         solarish,
+         target_os = "haiku",
+         target_os = "l4re",
+-        target_os = "nto"
++        target_os = "nto",
++target_os = "qnx"
+     ))]
+     use c::IPV6_JOIN_GROUP as IPV6_ADD_MEMBERSHIP;
+ 
+@@ -744,7 +749,8 @@
+         solarish,
+         target_os = "haiku",
+         target_os = "l4re",
+-        target_os = "nto"
++        target_os = "nto",
++target_os = "qnx"
+     )))]
+     use c::IPV6_DROP_MEMBERSHIP;
+     #[cfg(any(
+@@ -752,7 +758,8 @@
+         solarish,
+         target_os = "haiku",
+         target_os = "l4re",
+-        target_os = "nto"
++        target_os = "nto",
++target_os = "qnx"
+     ))]
+     use c::IPV6_LEAVE_GROUP as IPV6_DROP_MEMBERSHIP;
+ 
+@@ -781,6 +788,7 @@
+     target_os = "fuchsia",
+     target_os = "haiku",
+     target_os = "nto",
++target_os = "qnx",
+     target_env = "newlib"
+ ))]
+ #[inline]
+@@ -795,6 +803,7 @@
+     target_os = "fuchsia",
+     target_os = "haiku",
+     target_os = "nto",
++target_os = "qnx",
+     target_env = "newlib"
+ ))]
+ #[inline]
+@@ -832,7 +841,8 @@
+     linux_like,
+     target_os = "aix",
+     target_os = "fuchsia",
+-    target_os = "nto"
++    target_os = "nto",
++target_os = "qnx"
+ ))]
+ #[inline]
+ pub(crate) fn set_ipv6_recvtclass(fd: BorrowedFd<'_>, value: bool) -> io::Result<()> {
+@@ -844,7 +854,8 @@
+     linux_like,
+     target_os = "aix",
+     target_os = "fuchsia",
+-    target_os = "nto"
++    target_os = "nto",
++target_os = "qnx"
+ ))]
+ #[inline]
+ pub(crate) fn ipv6_recvtclass(fd: BorrowedFd<'_>) -> io::Result<bool> {
+@@ -939,6 +950,7 @@
+ #[cfg(not(any(
+     target_os = "haiku",
+     target_os = "nto",
++target_os = "qnx",
+     target_os = "openbsd",
+     target_os = "redox"
+ )))]
+@@ -950,6 +962,7 @@
+ #[cfg(not(any(
+     target_os = "haiku",
+     target_os = "nto",
++target_os = "qnx",
+     target_os = "openbsd",
+     target_os = "redox"
+ )))]
+@@ -958,14 +971,16 @@
+ }
+ 
+ #[inline]
+-#[cfg(not(any(target_os = "haiku", target_os = "nto", target_os = "openbsd")))]
++
++#[cfg(not(any(target_os = "haiku", target_os = "nto", target_os = "qnx", target_os = "openbsd")))]
+ pub(crate) fn set_tcp_keepidle(fd: BorrowedFd<'_>, duration: Duration) -> io::Result<()> {
+     let secs: c::c_uint = duration_to_secs(duration)?;
+     setsockopt(fd, c::IPPROTO_TCP, TCP_KEEPIDLE, secs)
+ }
+ 
+ #[inline]
+-#[cfg(not(any(target_os = "haiku", target_os = "nto", target_os = "openbsd")))]
++
++#[cfg(not(any(target_os = "haiku", target_os = "nto", target_os = "qnx", target_os = "openbsd")))]
+ pub(crate) fn tcp_keepidle(fd: BorrowedFd<'_>) -> io::Result<Duration> {
+     let secs: c::c_uint = getsockopt(fd, c::IPPROTO_TCP, TCP_KEEPIDLE)?;
+     Ok(Duration::from_secs(secs as u64))
+@@ -975,6 +990,7 @@
+ #[cfg(not(any(
+     target_os = "haiku",
+     target_os = "nto",
++target_os = "qnx",
+     target_os = "openbsd",
+     target_os = "redox"
+ )))]
+@@ -987,6 +1003,7 @@
+ #[cfg(not(any(
+     target_os = "haiku",
+     target_os = "nto",
++target_os = "qnx",
+     target_os = "openbsd",
+     target_os = "redox"
+ )))]
+--- a/vendor/rustix/src/backend/libc/net/syscalls.rs
++++ b/vendor/rustix/src/backend/libc/net/syscalls.rs
+@@ -289,6 +289,7 @@
+     target_os = "haiku",
+     target_os = "horizon",
+     target_os = "nto",
++target_os = "qnx",
+     target_os = "redox",
+     target_os = "vita",
+ )))]
+@@ -324,6 +325,7 @@
+     target_os = "haiku",
+     target_os = "horizon",
+     target_os = "nto",
++target_os = "qnx",
+     target_os = "redox",
+     target_os = "vita",
+ )))]
+@@ -353,6 +355,7 @@
+     target_os = "haiku",
+     target_os = "horizon",
+     target_os = "nto",
++target_os = "qnx",
+     target_os = "redox",
+     target_os = "vita",
+ ))]
+@@ -370,6 +373,7 @@
+     target_os = "haiku",
+     target_os = "horizon",
+     target_os = "nto",
++target_os = "qnx",
+     target_os = "redox",
+     target_os = "vita",
+ ))]
+--- a/vendor/rustix/src/backend/libc/net/write_sockaddr.rs
++++ b/vendor/rustix/src/backend/libc/net/write_sockaddr.rs
+@@ -14,6 +14,7 @@
+             target_os = "haiku",
+             target_os = "hurd",
+             target_os = "nto",
++target_os = "qnx",
+             target_os = "vita",
+         ))]
+         sin_len: core::mem::size_of::<c::sockaddr_in>() as _,
+@@ -39,6 +40,7 @@
+         target_os = "haiku",
+         target_os = "hurd",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "vita"
+     ))]
+     {
+@@ -58,6 +60,7 @@
+         target_os = "haiku",
+         target_os = "hurd",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "vita"
+     )))]
+     {
+--- a/vendor/rustix/src/backend/libc/pipe/syscalls.rs
++++ b/vendor/rustix/src/backend/libc/pipe/syscalls.rs
+@@ -9,6 +9,7 @@
+     target_os = "haiku",
+     target_os = "horizon",
+     target_os = "nto",
++target_os = "qnx",
+     target_os = "wasi"
+ )))]
+ use crate::pipe::PipeFlags;
+@@ -40,6 +41,7 @@
+     target_os = "haiku",
+     target_os = "horizon",
+     target_os = "nto",
++target_os = "qnx",
+     target_os = "wasi"
+ )))]
+ pub(crate) fn pipe_with(flags: PipeFlags) -> io::Result<(OwnedFd, OwnedFd)> {
+--- a/vendor/rustix/src/backend/libc/pipe/types.rs
++++ b/vendor/rustix/src/backend/libc/pipe/types.rs
+@@ -23,6 +23,7 @@
+             target_os = "horizon",
+             target_os = "hurd",
+             target_os = "nto",
++target_os = "qnx",
+             target_os = "openbsd",
+             target_os = "redox",
+             target_os = "vita",
+--- a/vendor/rustix/src/backend/libc/process/types.rs
++++ b/vendor/rustix/src/backend/libc/process/types.rs
+@@ -46,6 +46,7 @@
+         target_os = "cygwin",
+         target_os = "haiku",
+         target_os = "nto",
++target_os = "qnx",
+     )))]
+     Rss = bitcast!(c::RLIMIT_RSS),
+     /// `RLIMIT_NPROC`
+@@ -68,6 +69,7 @@
+         target_os = "haiku",
+         target_os = "hurd",
+         target_os = "nto",
++target_os = "qnx",
+     )))]
+     Locks = bitcast!(c::RLIMIT_LOCKS),
+     /// `RLIMIT_SIGPENDING`
+@@ -79,6 +81,7 @@
+         target_os = "haiku",
+         target_os = "hurd",
+         target_os = "nto",
++target_os = "qnx",
+     )))]
+     Sigpending = bitcast!(c::RLIMIT_SIGPENDING),
+     /// `RLIMIT_MSGQUEUE`
+@@ -90,6 +93,7 @@
+         target_os = "haiku",
+         target_os = "hurd",
+         target_os = "nto",
++target_os = "qnx",
+     )))]
+     Msgqueue = bitcast!(c::RLIMIT_MSGQUEUE),
+     /// `RLIMIT_NICE`
+@@ -101,6 +105,7 @@
+         target_os = "haiku",
+         target_os = "hurd",
+         target_os = "nto",
++target_os = "qnx",
+     )))]
+     Nice = bitcast!(c::RLIMIT_NICE),
+     /// `RLIMIT_RTPRIO`
+@@ -112,6 +117,7 @@
+         target_os = "haiku",
+         target_os = "hurd",
+         target_os = "nto",
++target_os = "qnx",
+     )))]
+     Rtprio = bitcast!(c::RLIMIT_RTPRIO),
+     /// `RLIMIT_RTTIME`
+@@ -125,6 +131,7 @@
+         target_os = "haiku",
+         target_os = "hurd",
+         target_os = "nto",
++target_os = "qnx",
+     )))]
+     Rttime = bitcast!(c::RLIMIT_RTTIME),
+ }
+--- a/vendor/rustix/src/backend/libc/termios/syscalls.rs
++++ b/vendor/rustix/src/backend/libc/termios/syscalls.rs
+@@ -368,7 +368,8 @@
+     }
+ }
+ 
+-#[cfg(not(any(target_os = "espidf", target_os = "nto", target_os = "wasi")))]
++
++#[cfg(not(any(target_os = "espidf", target_os = "nto", target_os = "qnx", target_os = "wasi")))]
+ #[inline]
+ pub(crate) fn set_speed(termios: &mut Termios, arbitrary_speed: u32) -> io::Result<()> {
+     #[cfg(bsd)]
+@@ -490,7 +491,8 @@
+     }
+ }
+ 
+-#[cfg(not(any(target_os = "espidf", target_os = "nto", target_os = "wasi")))]
++
++#[cfg(not(any(target_os = "espidf", target_os = "nto", target_os = "qnx", target_os = "wasi")))]
+ #[inline]
+ pub(crate) fn cfmakeraw(termios: &mut Termios) {
+     unsafe {
+--- a/vendor/rustix/src/fs/abs.rs
++++ b/vendor/rustix/src/fs/abs.rs
+@@ -10,6 +10,7 @@
+     target_os = "horizon",
+     target_os = "netbsd",
+     target_os = "nto",
++target_os = "qnx",
+     target_os = "redox",
+     target_os = "vita",
+     target_os = "wasi",
+@@ -261,6 +262,7 @@
+     target_os = "horizon",
+     target_os = "netbsd",
+     target_os = "nto",
++target_os = "qnx",
+     target_os = "redox",
+     target_os = "vita",
+     target_os = "wasi",
+--- a/vendor/rustix/src/fs/constants.rs
++++ b/vendor/rustix/src/fs/constants.rs
+@@ -277,6 +277,7 @@
+             target_os = "cygwin",
+             target_os = "haiku",
+             target_os = "nto",
++target_os = "qnx",
+             target_os = "redox",
+             target_os = "wasi",
+         )))]
+--- a/vendor/rustix/src/fs/fd.rs
++++ b/vendor/rustix/src/fs/fd.rs
+@@ -13,6 +13,7 @@
+     target_os = "espidf",
+     target_os = "horizon",
+     target_os = "nto",
++target_os = "qnx",
+     target_os = "redox",
+     target_os = "vita",
+ )))]
+@@ -35,6 +36,7 @@
+     target_os = "horizon",
+     target_os = "netbsd",
+     target_os = "nto",
++target_os = "qnx",
+     target_os = "redox",
+     target_os = "vita",
+     target_os = "wasi",
+@@ -173,6 +175,7 @@
+     target_os = "horizon",
+     target_os = "netbsd",
+     target_os = "nto",
++target_os = "qnx",
+     target_os = "redox",
+     target_os = "vita",
+     target_os = "wasi",
+@@ -237,6 +240,7 @@
+     target_os = "espidf",
+     target_os = "horizon",
+     target_os = "nto",
++target_os = "qnx",
+     target_os = "redox",
+     target_os = "vita",
+ )))] // not implemented in libc for NetBSD yet
+--- a/vendor/rustix/src/io/dup.rs
++++ b/vendor/rustix/src/io/dup.rs
+@@ -116,6 +116,7 @@
+     target_os = "espidf",
+     target_os = "horizon",
+     target_os = "nto",
++target_os = "qnx",
+     target_os = "vita",
+     target_os = "wasi"
+ )))]
+--- a/vendor/rustix/src/io/read_write.rs
++++ b/vendor/rustix/src/io/read_write.rs
+@@ -219,6 +219,7 @@
+     target_os = "haiku",
+     target_os = "horizon",
+     target_os = "nto",
++target_os = "qnx",
+     target_os = "redox",
+     target_os = "solaris",
+     target_os = "vita",
+@@ -258,6 +259,7 @@
+     target_os = "haiku",
+     target_os = "horizon",
+     target_os = "nto",
++target_os = "qnx",
+     target_os = "redox",
+     target_os = "solaris",
+     target_os = "vita",
+--- a/vendor/rustix/src/ioctl/mod.rs
++++ b/vendor/rustix/src/ioctl/mod.rs
+@@ -332,6 +332,7 @@
+     target_os = "fuchsia",
+     target_os = "emscripten",
+     target_os = "nto",
++target_os = "qnx",
+     target_os = "wasi",
+ ))]
+ type _Opcode = c::c_int;
+--- a/vendor/rustix/src/net/sockopt.rs
++++ b/vendor/rustix/src/net/sockopt.rs
+@@ -159,6 +159,7 @@
+     target_os = "horizon",
+     target_os = "netbsd",
+     target_os = "nto",
++target_os = "qnx",
+     target_os = "vita",
+ )))]
+ use crate::net::AddressFamily;
+@@ -581,6 +582,7 @@
+     target_os = "hurd",
+     target_os = "netbsd",
+     target_os = "nto",
++target_os = "qnx",
+     target_os = "vita",
+ )))]
+ #[inline]
+@@ -1212,6 +1214,7 @@
+     target_os = "fuchsia",
+     target_os = "haiku",
+     target_os = "nto",
++target_os = "qnx",
+     target_env = "newlib"
+ ))]
+ #[inline]
+@@ -1232,6 +1235,7 @@
+     target_os = "fuchsia",
+     target_os = "haiku",
+     target_os = "nto",
++target_os = "qnx",
+     target_env = "newlib"
+ ))]
+ #[inline]
+@@ -1286,7 +1290,8 @@
+     linux_like,
+     target_os = "aix",
+     target_os = "fuchsia",
+-    target_os = "nto"
++    target_os = "nto",
++target_os = "qnx"
+ ))]
+ #[inline]
+ #[doc(alias = "IPV6_RECVTCLASS")]
+@@ -1304,7 +1309,8 @@
+     linux_like,
+     target_os = "aix",
+     target_os = "fuchsia",
+-    target_os = "nto"
++    target_os = "nto",
++target_os = "qnx"
+ ))]
+ #[inline]
+ #[doc(alias = "IPV6_RECVTCLASS")]
+@@ -1460,6 +1466,7 @@
+ #[cfg(not(any(
+     target_os = "haiku",
+     target_os = "nto",
++target_os = "qnx",
+     target_os = "openbsd",
+     target_os = "redox"
+ )))]
+@@ -1477,6 +1484,7 @@
+ #[cfg(not(any(
+     target_os = "haiku",
+     target_os = "nto",
++target_os = "qnx",
+     target_os = "openbsd",
+     target_os = "redox"
+ )))]
+@@ -1493,7 +1501,8 @@
+ /// See the [module-level documentation] for more.
+ ///
+ /// [module-level documentation]: self#references-for-get_tcp_-and-set_tcp_-functions
+-#[cfg(not(any(target_os = "haiku", target_os = "nto", target_os = "openbsd")))]
++
++#[cfg(not(any(target_os = "haiku", target_os = "nto", target_os = "qnx", target_os = "openbsd")))]
+ #[inline]
+ #[doc(alias = "TCP_KEEPIDLE")]
+ pub fn set_tcp_keepidle<Fd: AsFd>(fd: Fd, value: Duration) -> io::Result<()> {
+@@ -1507,7 +1516,8 @@
+ /// See the [module-level documentation] for more.
+ ///
+ /// [module-level documentation]: self#references-for-get_tcp_-and-set_tcp_-functions
+-#[cfg(not(any(target_os = "haiku", target_os = "nto", target_os = "openbsd")))]
++
++#[cfg(not(any(target_os = "haiku", target_os = "nto", target_os = "qnx", target_os = "openbsd")))]
+ #[inline]
+ #[doc(alias = "TCP_KEEPIDLE")]
+ pub fn tcp_keepidle<Fd: AsFd>(fd: Fd) -> io::Result<Duration> {
+@@ -1522,6 +1532,7 @@
+ #[cfg(not(any(
+     target_os = "haiku",
+     target_os = "nto",
++target_os = "qnx",
+     target_os = "openbsd",
+     target_os = "redox"
+ )))]
+@@ -1539,6 +1550,7 @@
+ #[cfg(not(any(
+     target_os = "haiku",
+     target_os = "nto",
++target_os = "qnx",
+     target_os = "openbsd",
+     target_os = "redox"
+ )))]
+--- a/vendor/rustix/src/net/types.rs
++++ b/vendor/rustix/src/net/types.rs
+@@ -101,6 +101,7 @@
+         target_os = "horizon",
+         target_os = "hurd",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "redox",
+         target_os = "vita",
+     )))]
+@@ -120,6 +121,7 @@
+         target_os = "horizon",
+         target_os = "hurd",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "redox",
+         target_os = "vita",
+     )))]
+@@ -154,6 +156,7 @@
+         target_os = "horizon",
+         target_os = "hurd",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "redox",
+         target_os = "vita",
+     )))]
+@@ -170,6 +173,7 @@
+         target_os = "horizon",
+         target_os = "hurd",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "redox",
+         target_os = "vita",
+     )))]
+@@ -186,6 +190,7 @@
+         target_os = "horizon",
+         target_os = "hurd",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "redox",
+         target_os = "vita",
+     )))]
+@@ -201,6 +206,7 @@
+         target_os = "horizon",
+         target_os = "hurd",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "redox",
+         target_os = "vita",
+     )))]
+@@ -217,6 +223,7 @@
+         target_os = "horizon",
+         target_os = "hurd",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "redox",
+         target_os = "vita",
+     )))]
+@@ -242,6 +249,7 @@
+         target_os = "horizon",
+         target_os = "hurd",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "redox",
+         target_os = "vita",
+     )))]
+@@ -258,6 +266,7 @@
+         target_os = "horizon",
+         target_os = "hurd",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "redox",
+         target_os = "vita",
+     )))]
+@@ -273,6 +282,7 @@
+         target_os = "horizon",
+         target_os = "hurd",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "redox",
+         target_os = "vita",
+     )))]
+@@ -293,6 +303,7 @@
+         target_os = "horizon",
+         target_os = "hurd",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "redox",
+         target_os = "vita",
+     )))]
+@@ -309,6 +320,7 @@
+         target_os = "horizon",
+         target_os = "hurd",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "redox",
+         target_os = "vita",
+     )))]
+@@ -325,6 +337,7 @@
+         target_os = "horizon",
+         target_os = "hurd",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "redox",
+         target_os = "vita",
+     )))]
+@@ -341,6 +354,7 @@
+         target_os = "horizon",
+         target_os = "hurd",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "redox",
+         target_os = "vita",
+     )))]
+@@ -357,6 +371,7 @@
+         target_os = "horizon",
+         target_os = "hurd",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "redox",
+         target_os = "vita",
+     )))]
+@@ -381,6 +396,7 @@
+         target_os = "horizon",
+         target_os = "hurd",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "redox",
+         target_os = "vita",
+     )))]
+@@ -397,6 +413,7 @@
+         target_os = "horizon",
+         target_os = "hurd",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "redox",
+         target_os = "vita",
+     )))]
+@@ -413,6 +430,7 @@
+         target_os = "horizon",
+         target_os = "hurd",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "redox",
+         target_os = "vita",
+     )))]
+@@ -429,6 +447,7 @@
+         target_os = "horizon",
+         target_os = "hurd",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "redox",
+         target_os = "vita",
+     )))]
+@@ -445,6 +464,7 @@
+         target_os = "horizon",
+         target_os = "hurd",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "redox",
+         target_os = "vita",
+     )))]
+@@ -461,6 +481,7 @@
+         target_os = "horizon",
+         target_os = "hurd",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "redox",
+         target_os = "vita",
+     )))]
+@@ -491,6 +512,7 @@
+         target_os = "horizon",
+         target_os = "hurd",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "redox",
+         target_os = "vita",
+     )))]
+@@ -507,6 +529,7 @@
+         target_os = "horizon",
+         target_os = "hurd",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "redox",
+         target_os = "vita",
+     )))]
+@@ -537,6 +560,7 @@
+         target_os = "horizon",
+         target_os = "hurd",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "redox",
+         target_os = "vita",
+     )))]
+@@ -553,6 +577,7 @@
+         target_os = "horizon",
+         target_os = "hurd",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "redox",
+         target_os = "vita",
+     )))]
+@@ -563,7 +588,8 @@
+     #[cfg(target_os = "fuchsia")]
+     /// `AF_ALG`
+     pub const ALG: Self = Self(c::AF_ALG as _);
+-    #[cfg(any(target_os = "freebsd", target_os = "netbsd", target_os = "nto"))]
++
++    #[cfg(any(target_os = "freebsd", target_os = "netbsd", target_os = "nto", target_os = "qnx"))]
+     /// `AF_ARP`
+     pub const ARP: Self = Self(c::AF_ARP as _);
+     /// `AF_ATM`
+@@ -573,19 +599,24 @@
+     #[cfg(any(target_os = "android", target_os = "emscripten", target_os = "fuchsia"))]
+     pub const CAIF: Self = Self(c::AF_CAIF as _);
+     /// `AF_CCITT`
+-    #[cfg(any(bsd, solarish, target_os = "aix", target_os = "nto"))]
++
++    #[cfg(any(bsd, solarish, target_os = "aix", target_os = "nto", target_os = "qnx"))]
+     pub const CCITT: Self = Self(c::AF_CCITT as _);
+     /// `AF_CHAOS`
+-    #[cfg(any(bsd, solarish, target_os = "aix", target_os = "nto"))]
++
++    #[cfg(any(bsd, solarish, target_os = "aix", target_os = "nto", target_os = "qnx"))]
+     pub const CHAOS: Self = Self(c::AF_CHAOS as _);
+     /// `AF_CNT`
+-    #[cfg(any(bsd, target_os = "nto"))]
++
++    #[cfg(any(bsd, target_os = "nto", target_os = "qnx"))]
+     pub const CNT: Self = Self(c::AF_CNT as _);
+     /// `AF_COIP`
+-    #[cfg(any(bsd, target_os = "nto"))]
++
++    #[cfg(any(bsd, target_os = "nto", target_os = "qnx"))]
+     pub const COIP: Self = Self(c::AF_COIP as _);
+     /// `AF_DATAKIT`
+-    #[cfg(any(bsd, solarish, target_os = "aix", target_os = "nto"))]
++
++    #[cfg(any(bsd, solarish, target_os = "aix", target_os = "nto", target_os = "qnx"))]
+     pub const DATAKIT: Self = Self(c::AF_DATAKIT as _);
+     /// `AF_DLI`
+     #[cfg(any(
+@@ -593,11 +624,13 @@
+         solarish,
+         target_os = "aix",
+         target_os = "haiku",
+-        target_os = "nto"
++        target_os = "nto",
++target_os = "qnx"
+     ))]
+     pub const DLI: Self = Self(c::AF_DLI as _);
+     /// `AF_E164`
+-    #[cfg(any(bsd, target_os = "nto"))]
++
++    #[cfg(any(bsd, target_os = "nto", target_os = "qnx"))]
+     pub const E164: Self = Self(c::AF_E164 as _);
+     /// `AF_ECMA`
+     #[cfg(any(
+@@ -606,6 +639,7 @@
+         solarish,
+         target_os = "aix",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "openbsd"
+     ))]
+     pub const ECMA: Self = Self(c::AF_ECMA as _);
+@@ -619,13 +653,15 @@
+     #[cfg(solarish)]
+     pub const GOSIP: Self = Self(c::AF_GOSIP as _);
+     /// `AF_HYLINK`
+-    #[cfg(any(bsd, solarish, target_os = "aix", target_os = "nto"))]
++
++    #[cfg(any(bsd, solarish, target_os = "aix", target_os = "nto", target_os = "qnx"))]
+     pub const HYLINK: Self = Self(c::AF_HYLINK as _);
+     /// `AF_IB`
+     #[cfg(any(target_os = "emscripten", target_os = "fuchsia"))]
+     pub const IB: Self = Self(c::AF_IB as _);
+     /// `AF_IMPLINK`
+-    #[cfg(any(bsd, solarish, target_os = "aix", target_os = "nto"))]
++
++    #[cfg(any(bsd, solarish, target_os = "aix", target_os = "nto", target_os = "qnx"))]
+     pub const IMPLINK: Self = Self(c::AF_IMPLINK as _);
+     /// `AF_IEEE80211`
+     #[cfg(any(apple, freebsdlike, target_os = "netbsd"))]
+@@ -643,10 +679,12 @@
+     #[cfg(target_os = "aix")]
+     pub const INTF: Self = Self(c::AF_INTF as _);
+     /// `AF_ISO`
+-    #[cfg(any(bsd, target_os = "aix", target_os = "nto"))]
++
++    #[cfg(any(bsd, target_os = "aix", target_os = "nto", target_os = "qnx"))]
+     pub const ISO: Self = Self(c::AF_ISO as _);
+     /// `AF_LAT`
+-    #[cfg(any(bsd, solarish, target_os = "aix", target_os = "nto"))]
++
++    #[cfg(any(bsd, solarish, target_os = "aix", target_os = "nto", target_os = "qnx"))]
+     pub const LAT: Self = Self(c::AF_LAT as _);
+     /// `AF_LINK`
+     #[cfg(any(
+@@ -654,7 +692,8 @@
+         solarish,
+         target_os = "aix",
+         target_os = "haiku",
+-        target_os = "nto"
++        target_os = "nto",
++target_os = "qnx"
+     ))]
+     pub const LINK: Self = Self(c::AF_LINK as _);
+     /// `AF_MPLS`
+@@ -666,7 +705,8 @@
+     ))]
+     pub const MPLS: Self = Self(c::AF_MPLS as _);
+     /// `AF_NATM`
+-    #[cfg(any(bsd, target_os = "nto"))]
++
++    #[cfg(any(bsd, target_os = "nto", target_os = "qnx"))]
+     pub const NATM: Self = Self(c::AF_NATM as _);
+     /// `AF_NBS`
+     #[cfg(solarish)]
+@@ -696,13 +736,15 @@
+     #[cfg(any(target_os = "emscripten", target_os = "fuchsia"))]
+     pub const NFC: Self = Self(c::AF_NFC as _);
+     /// `AF_NS`
+-    #[cfg(any(apple, solarish, netbsdlike, target_os = "aix", target_os = "nto"))]
++
++    #[cfg(any(apple, solarish, netbsdlike, target_os = "aix", target_os = "nto", target_os = "qnx"))]
+     pub const NS: Self = Self(c::AF_NS as _);
+     /// `AF_OROUTE`
+     #[cfg(target_os = "netbsd")]
+     pub const OROUTE: Self = Self(c::AF_OROUTE as _);
+     /// `AF_OSI`
+-    #[cfg(any(bsd, solarish, target_os = "aix", target_os = "nto"))]
++
++    #[cfg(any(bsd, solarish, target_os = "aix", target_os = "nto", target_os = "qnx"))]
+     pub const OSI: Self = Self(c::AF_OSI as _);
+     /// `AF_OSINET`
+     #[cfg(solarish)]
+@@ -714,7 +756,8 @@
+     #[cfg(apple)]
+     pub const PPP: Self = Self(c::AF_PPP as _);
+     /// `AF_PUP`
+-    #[cfg(any(bsd, solarish, target_os = "aix", target_os = "nto"))]
++
++    #[cfg(any(bsd, solarish, target_os = "aix", target_os = "nto", target_os = "qnx"))]
+     pub const PUP: Self = Self(c::AF_PUP as _);
+     /// `AF_RIF`
+     #[cfg(target_os = "aix")]
+@@ -727,7 +770,8 @@
+         target_os = "emscripten",
+         target_os = "fuchsia",
+         target_os = "haiku",
+-        target_os = "nto"
++        target_os = "nto",
++target_os = "qnx"
+     ))]
+     pub const ROUTE: Self = Self(c::AF_ROUTE as _);
+     /// `AF_SCLUSTER`
+@@ -884,6 +928,7 @@
+         target_os = "haiku",
+         target_os = "horizon",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "openbsd",
+         target_os = "redox",
+         target_os = "vita",
+@@ -946,6 +991,7 @@
+         target_os = "haiku",
+         target_os = "horizon",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "redox",
+         target_os = "vita",
+     )))]
+@@ -961,6 +1007,7 @@
+         target_os = "haiku",
+         target_os = "horizon",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "redox",
+         target_os = "vita",
+     )))]
+@@ -1001,6 +1048,7 @@
+         target_os = "haiku",
+         target_os = "horizon",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "redox",
+         target_os = "vita",
+     )))]
+@@ -1031,6 +1079,7 @@
+         target_os = "haiku",
+         target_os = "horizon",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "redox",
+         target_os = "vita",
+     )))]
+@@ -1048,6 +1097,7 @@
+         target_os = "horizon",
+         target_os = "netbsd",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "redox",
+         target_os = "vita",
+     )))]
+@@ -1071,6 +1121,7 @@
+         target_os = "haiku",
+         target_os = "horizon",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "redox",
+         target_os = "vita",
+     )))]
+@@ -1099,6 +1150,7 @@
+         target_os = "haiku",
+         target_os = "horizon",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "redox",
+         target_os = "vita",
+     )))]
+@@ -1707,6 +1759,7 @@
+             target_os = "haiku",
+             target_os = "horizon",
+             target_os = "nto",
++target_os = "qnx",
+             target_os = "vita",
+         )))]
+         const NONBLOCK = bitcast!(c::SOCK_NONBLOCK);
+--- a/vendor/rustix/src/pipe.rs
++++ b/vendor/rustix/src/pipe.rs
+@@ -104,7 +104,8 @@
+     target_os = "espidf",
+     target_os = "haiku",
+     target_os = "horizon",
+-    target_os = "nto"
++    target_os = "nto",
++target_os = "qnx"
+ )))]
+ #[inline]
+ #[doc(alias = "pipe2")]
+--- a/vendor/rustix/src/signal.rs
++++ b/vendor/rustix/src/signal.rs
+@@ -95,6 +95,7 @@
+         target_os = "horizon",
+         target_os = "hurd",
+         target_os = "nto",
++target_os = "qnx",
+         target_os = "vita",
+         all(
+             linux_kernel,
+@@ -316,6 +317,7 @@
+                 target_os = "horizon",
+                 target_os = "hurd",
+                 target_os = "nto",
++target_os = "qnx",
+                 target_os = "vita",
+                 all(
+                     linux_kernel,
+@@ -424,6 +426,7 @@
+                 target_os = "horizon",
+                 target_os = "hurd",
+                 target_os = "nto",
++target_os = "qnx",
+                 target_os = "vita",
+                 all(
+                     linux_kernel,
+--- a/vendor/rustix/src/termios/types.rs
++++ b/vendor/rustix/src/termios/types.rs
+@@ -1,6 +1,7 @@
+ use crate::backend::c;
+ use crate::backend::termios::types;
+-#[cfg(target_os = "nto")]
++
++#[cfg(any(target_os = "nto", target_os = "qnx"))]
+ use crate::ffi;
+ use crate::{backend, io};
+ use bitflags::bitflags;
+@@ -45,7 +46,8 @@
+     #[cfg(not(target_os = "haiku"))]
+     pub special_codes: SpecialCodes,
+ 
+-    #[cfg(target_os = "nto")]
++
++    #[cfg(any(target_os = "nto", target_os = "qnx"))]
+     pub(crate) __reserved: [ffi::c_uint; 3],
+ 
+     /// Line discipline.
+@@ -79,7 +81,8 @@
+     ///
+     /// In raw mode, input is available a byte at a time, echoing is disabled,
+     /// and special terminal input and output codes are disabled.
+-    #[cfg(not(target_os = "nto"))]
++
++    #[cfg(not(any(target_os = "nto", target_os = "qnx")))]
+     #[doc(alias = "cfmakeraw")]
+     #[inline]
+     pub fn make_raw(&mut self) {
+@@ -162,7 +165,8 @@
+     /// encoded constant value. Not all implementations support all integer
+     /// values; use the constants in the [`speed`] module for likely-supported
+     /// speeds.
+-    #[cfg(not(target_os = "nto"))]
++
++    #[cfg(not(any(target_os = "nto", target_os = "qnx")))]
+     #[doc(alias = "cfsetspeed")]
+     #[doc(alias = "CBAUD")]
+     #[doc(alias = "CBAUDEX")]
+@@ -275,7 +279,8 @@
+         const ICRNL = c::ICRNL;
+ 
+         /// `IUCLC`
+-        #[cfg(any(linux_raw_dep, solarish, target_os = "aix", target_os = "haiku", target_os = "nto"))]
++
++        #[cfg(any(linux_raw_dep, solarish, target_os = "aix", target_os = "haiku", target_os = "nto", target_os = "qnx"))]
+         const IUCLC = c::IUCLC;
+ 
+         /// `IXON`
+@@ -570,7 +575,8 @@
+         const CLOCAL = c::CLOCAL;
+ 
+         /// `CRTSCTS`
+-        #[cfg(not(any(target_os = "aix", target_os = "nto", target_os = "redox")))]
++
++        #[cfg(not(any(target_os = "aix", target_os = "nto", target_os = "qnx", target_os = "redox")))]
+         const CRTSCTS = c::CRTSCTS;
+ 
+         /// `CMSPAR`
+@@ -582,6 +588,7 @@
+             target_os = "haiku",
+             target_os = "hurd",
+             target_os = "nto",
++target_os = "qnx",
+             target_os = "redox",
+         )))]
+         const CMSPAR = c::CMSPAR;
+@@ -605,7 +612,8 @@
+         const ECHOCTL = c::ECHOCTL;
+ 
+         /// `ECHOPRT`
+-        #[cfg(not(any(target_os = "cygwin", target_os = "nto", target_os = "redox")))]
++
++        #[cfg(not(any(target_os = "cygwin", target_os = "nto", target_os = "qnx", target_os = "redox")))]
+         const ECHOPRT = c::ECHOPRT;
+ 
+         /// `ECHOKE`
+@@ -613,11 +621,13 @@
+         const ECHOKE = c::ECHOKE;
+ 
+         /// `FLUSHO`
+-        #[cfg(not(any(target_os = "nto", target_os = "redox")))]
++
++        #[cfg(not(any(target_os = "nto", target_os = "qnx", target_os = "redox")))]
+         const FLUSHO = c::FLUSHO;
+ 
+         /// `PENDIN`
+-        #[cfg(not(any(target_os = "cygwin", target_os = "nto", target_os = "redox")))]
++
++        #[cfg(not(any(target_os = "cygwin", target_os = "nto", target_os = "qnx", target_os = "redox")))]
+         const PENDIN = c::PENDIN;
+ 
+         /// `EXTPROC`
+@@ -626,6 +636,7 @@
+             target_os = "cygwin",
+             target_os = "haiku",
+             target_os = "nto",
++target_os = "qnx",
+             target_os = "redox",
+         )))]
+         const EXTPROC = c::EXTPROC;
+@@ -863,7 +874,8 @@
+             c::B57600 => Some(57600),
+             #[cfg(not(target_os = "aix"))]
+             c::B115200 => Some(115_200),
+-            #[cfg(not(any(target_os = "aix", target_os = "nto")))]
++
++            #[cfg(not(any(target_os = "aix", target_os = "nto", target_os = "qnx")))]
+             c::B230400 => Some(230_400),
+             #[cfg(not(any(
+                 apple,
+@@ -871,6 +883,7 @@
+                 target_os = "dragonfly",
+                 target_os = "haiku",
+                 target_os = "nto",
++target_os = "qnx",
+                 target_os = "openbsd"
+             )))]
+             c::B460800 => Some(460_800),
+@@ -879,7 +892,8 @@
+                 solarish,
+                 target_os = "aix",
+                 target_os = "haiku",
+-                target_os = "nto"
++                target_os = "nto",
++target_os = "qnx"
+             )))]
+             c::B500000 => Some(500_000),
+             #[cfg(not(any(
+@@ -887,7 +901,8 @@
+                 solarish,
+                 target_os = "aix",
+                 target_os = "haiku",
+-                target_os = "nto"
++                target_os = "nto",
++target_os = "qnx"
+             )))]
+             c::B576000 => Some(576_000),
+             #[cfg(not(any(
+@@ -896,6 +911,7 @@
+                 target_os = "dragonfly",
+                 target_os = "haiku",
+                 target_os = "nto",
++target_os = "qnx",
+                 target_os = "openbsd"
+             )))]
+             c::B921600 => Some(921_600),
+@@ -904,6 +920,7 @@
+                 target_os = "aix",
+                 target_os = "haiku",
+                 target_os = "nto",
++target_os = "qnx",
+                 target_os = "solaris"
+             )))]
+             c::B1000000 => Some(1_000_000),
+@@ -912,6 +929,7 @@
+                 target_os = "aix",
+                 target_os = "haiku",
+                 target_os = "nto",
++target_os = "qnx",
+                 target_os = "solaris"
+             )))]
+             c::B1152000 => Some(1_152_000),
+@@ -920,6 +938,7 @@
+                 target_os = "aix",
+                 target_os = "haiku",
+                 target_os = "nto",
++target_os = "qnx",
+                 target_os = "solaris"
+             )))]
+             c::B1500000 => Some(1_500_000),
+@@ -928,6 +947,7 @@
+                 target_os = "aix",
+                 target_os = "haiku",
+                 target_os = "nto",
++target_os = "qnx",
+                 target_os = "solaris"
+             )))]
+             c::B2000000 => Some(2_000_000),
+@@ -938,6 +958,7 @@
+                 target_os = "aix",
+                 target_os = "haiku",
+                 target_os = "nto",
++target_os = "qnx",
+                 target_os = "solaris",
+             )))]
+             c::B2500000 => Some(2_500_000),
+@@ -948,6 +969,7 @@
+                 target_os = "aix",
+                 target_os = "haiku",
+                 target_os = "nto",
++target_os = "qnx",
+                 target_os = "solaris",
+             )))]
+             c::B3000000 => Some(3_000_000),
+@@ -959,6 +981,7 @@
+                 target_os = "cygwin",
+                 target_os = "haiku",
+                 target_os = "nto",
++target_os = "qnx",
+                 target_os = "solaris",
+             )))]
+             c::B3500000 => Some(3_500_000),
+@@ -970,6 +993,7 @@
+                 target_os = "cygwin",
+                 target_os = "haiku",
+                 target_os = "nto",
++target_os = "qnx",
+                 target_os = "solaris",
+             )))]
+             c::B4000000 => Some(4_000_000),
+@@ -1002,7 +1026,8 @@
+             57600 => Some(c::B57600),
+             #[cfg(not(target_os = "aix"))]
+             115_200 => Some(c::B115200),
+-            #[cfg(not(any(target_os = "aix", target_os = "nto")))]
++
++            #[cfg(not(any(target_os = "aix", target_os = "nto", target_os = "qnx")))]
+             230_400 => Some(c::B230400),
+             #[cfg(not(any(
+                 apple,
+@@ -1010,6 +1035,7 @@
+                 target_os = "dragonfly",
+                 target_os = "haiku",
+                 target_os = "nto",
++target_os = "qnx",
+                 target_os = "openbsd",
+             )))]
+             460_800 => Some(c::B460800),
+@@ -1018,7 +1044,8 @@
+                 solarish,
+                 target_os = "aix",
+                 target_os = "haiku",
+-                target_os = "nto"
++                target_os = "nto",
++target_os = "qnx"
+             )))]
+             500_000 => Some(c::B500000),
+             #[cfg(not(any(
+@@ -1026,7 +1053,8 @@
+                 solarish,
+                 target_os = "aix",
+                 target_os = "haiku",
+-                target_os = "nto"
++                target_os = "nto",
++target_os = "qnx"
+             )))]
+             576_000 => Some(c::B576000),
+             #[cfg(not(any(
+@@ -1035,6 +1063,7 @@
+                 target_os = "dragonfly",
+                 target_os = "haiku",
+                 target_os = "nto",
++target_os = "qnx",
+                 target_os = "openbsd"
+             )))]
+             921_600 => Some(c::B921600),
+@@ -1043,6 +1072,7 @@
+                 target_os = "aix",
+                 target_os = "haiku",
+                 target_os = "nto",
++target_os = "qnx",
+                 target_os = "solaris"
+             )))]
+             1_000_000 => Some(c::B1000000),
+@@ -1051,6 +1081,7 @@
+                 target_os = "aix",
+                 target_os = "haiku",
+                 target_os = "nto",
++target_os = "qnx",
+                 target_os = "solaris"
+             )))]
+             1_152_000 => Some(c::B1152000),
+@@ -1059,6 +1090,7 @@
+                 target_os = "aix",
+                 target_os = "haiku",
+                 target_os = "nto",
++target_os = "qnx",
+                 target_os = "solaris"
+             )))]
+             1_500_000 => Some(c::B1500000),
+@@ -1067,6 +1099,7 @@
+                 target_os = "aix",
+                 target_os = "haiku",
+                 target_os = "nto",
++target_os = "qnx",
+                 target_os = "solaris"
+             )))]
+             2_000_000 => Some(c::B2000000),
+@@ -1077,6 +1110,7 @@
+                 target_os = "aix",
+                 target_os = "haiku",
+                 target_os = "nto",
++target_os = "qnx",
+                 target_os = "solaris",
+             )))]
+             2_500_000 => Some(c::B2500000),
+@@ -1087,6 +1121,7 @@
+                 target_os = "aix",
+                 target_os = "haiku",
+                 target_os = "nto",
++target_os = "qnx",
+                 target_os = "solaris",
+             )))]
+             3_000_000 => Some(c::B3000000),
+@@ -1098,6 +1133,7 @@
+                 target_os = "cygwin",
+                 target_os = "haiku",
+                 target_os = "nto",
++target_os = "qnx",
+                 target_os = "solaris",
+             )))]
+             3_500_000 => Some(c::B3500000),
+@@ -1109,6 +1145,7 @@
+                 target_os = "cygwin",
+                 target_os = "haiku",
+                 target_os = "nto",
++target_os = "qnx",
+                 target_os = "solaris",
+             )))]
+             4_000_000 => Some(c::B4000000),
+@@ -1213,6 +1250,7 @@
+         target_os = "haiku",
+         target_os = "hurd",
+         target_os = "nto",
++target_os = "qnx",
+     )))]
+     pub const VSWTC: Self = Self(c::VSWTC as usize);
+ 
+@@ -1248,7 +1286,8 @@
+     pub const VEOL2: Self = Self(c::VEOL2 as usize);
+ 
+     /// `VSWTCH`
+-    #[cfg(any(solarish, target_os = "haiku", target_os = "nto"))]
++
++    #[cfg(any(solarish, target_os = "haiku", target_os = "nto", target_os = "qnx"))]
+     pub const VSWTCH: Self = Self(c::VSWTCH as usize);
+ 
+     /// `VDSUSP`
+@@ -1257,7 +1296,8 @@
+         solarish,
+         target_os = "aix",
+         target_os = "hurd",
+-        target_os = "nto"
++        target_os = "nto",
++target_os = "qnx"
+     ))]
+     pub const VDSUSP: Self = Self(c::VDSUSP as usize);
+ 
+@@ -1323,6 +1363,7 @@
+                 target_os = "haiku",
+                 target_os = "hurd",
+                 target_os = "nto",
++target_os = "qnx",
+             )))]
+             Self::VSWTC => write!(f, "VSWTC"),
+             Self::VSTART => write!(f, "VSTART"),
+@@ -1344,14 +1385,16 @@
+             #[cfg(not(target_os = "haiku"))]
+             Self::VLNEXT => write!(f, "VLNEXT"),
+             Self::VEOL2 => write!(f, "VEOL2"),
+-            #[cfg(any(solarish, target_os = "haiku", target_os = "nto"))]
++
++            #[cfg(any(solarish, target_os = "haiku", target_os = "nto", target_os = "qnx"))]
+             Self::VSWTCH => write!(f, "VSWTCH"),
+             #[cfg(any(
+                 bsd,
+                 solarish,
+                 target_os = "aix",
+                 target_os = "hurd",
+-                target_os = "nto"
++                target_os = "nto",
++target_os = "qnx"
+             ))]
+             Self::VDSUSP => write!(f, "VDSUSP"),
+             #[cfg(any(bsd, target_os = "hurd", target_os = "illumos"))]
