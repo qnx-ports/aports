@@ -7,12 +7,11 @@ url="https://arrow.apache.org/"
 arch="aarch64 x86_64"
 license="Apache-2.0"
 _commit="e336d9944e38e72f9c3679b98032ed21b3bb89dd"
-source="apache-arrow-$pkgver.tar.gz::https://github.com/apache/arrow/archive/$_commit.tar.gz
-        arrow-testing.tar.gz::https://github.com/apache/arrow-testing/archive/refs/heads/master.tar.gz
-        arrow-cmakelists-qnx.patch
+source="apache-arrow-$pkgver.tar.gz::https://github.com/rtimmaraju/arrow/archive/refs/tags/v25.0.0.tar.gz
+        arrow-testing.tar.gz::https://github.com/qnx-ports/arrow-testing/archive/refs/tags/qnx-arrow-testing.tar.gz
         boost-process-qnx
         "
-builddir="$srcdir/arrow-$_commit/cpp"
+builddir="$srcdir/arrow-25.0.0/cpp"
 depends="libc++"
 makedepends="
     cmake
@@ -26,9 +25,7 @@ makedepends="
     "
 subpackages="$pkgname-dev"
 prepare() {
-    cd "$srcdir/arrow-$_commit"
-    patch -p1 < "$startdir/arrow-cmakelists-qnx.patch"
-
+    
     mkdir -p testing
     tar -xf "$srcdir/arrow-testing.tar.gz" -C testing --strip-components=1
 }
@@ -103,8 +100,7 @@ package() {
 }
 
 sha512sums="
-4c6028c6835c024605598207ea70fa6d16b4f44589deee0f9760294f38be1095e628443316df932fa425b240dc3643ed163cc31d5c81b47ed807015fa207c0d1  apache-arrow-25.0.0.tar.gz
+9296b2fe13c59daea1764c188cbb7e0960ab8364b8378f51971c2ff81ff56d5ebd85349adb83e023700f9a5cd6a38802e0a12c6d0fcee8261f4e7522f2faf7e7  apache-arrow-25.0.0.tar.gz
 36807d74a0ca497e63b0e5bb422de7f8cb64dd64d4b69bf6ffe13a49ad8080d18df891c34372981c55cacb75886974b3b96cbe70b0a4be053a9f5f4ecb1c085d  arrow-testing.tar.gz
-0d2852f40983f8c813e3db7ddaa332eacb9ae3d24ee5a70d272247fc89699536db63bdbc99d8e5e80d0616ceb64734c5c43ae0732e532e57633569a333491d74  arrow-cmakelists-qnx.patch
 0fce438dbe7d2129e081980944a93fefe34126ce13692ddb62de8a38d50664714c404e21ef80688d947abf75d33388d599082f3bad189c0c849b319ddaa80476  boost-process-qnx
 "
