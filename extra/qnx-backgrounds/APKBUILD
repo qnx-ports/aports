@@ -1,0 +1,20 @@
+# Maintainer: Aaron Bassett <abassett@qnx.com>
+pkgname=qnx-backgrounds
+pkgver=0.1.0
+pkgrel=0
+pkgdesc="QNX Backgrounds"
+url="https://github.com/qnx/qnx-backgrounds"
+arch="noarch"
+license="LicenseRef-QDL-Non-Commercial"
+depends=""
+options="!check"
+source="$pkgname-$pkgver.tar.gz::https://github.com/qnx/$pkgname/archive/refs/tags/v$pkgver.tar.gz"
+
+package() {
+  mkdir -p "$pkgdir"
+  install -D "$builddir"/backgrounds/* -t "$pkgdir/usr/share/backgrounds/qnx/"
+}
+
+sha512sums="
+705cd7ecf6a58c1cfa01f3cd561510ce7d6cd4afa01e00a141f14be92d083f5ef1ab396ba841101247a293c7f1b7e90274082684d647f8fe87b29b11b7f0e89d  qnx-backgrounds-0.1.0.tar.gz
+"
