@@ -1,0 +1,104 @@
+# Contributor: Pedro Filipe <xpecex@outlook.com>
+# Alpine Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+# Maintainer: Narayana Murthy <nnarayanamurthy@qnx.com>
+pkgname=mosquitto
+pkgver=2.1.2
+pkgrel=0
+pkgdesc="open source MQTT broker"
+url="https://mosquitto.org/"
+arch="all"
+license="EPL-1.0 OR EPL-2.0"
+replaces="mosquitto-utils"
+install="$pkgname.pre-install"
+depends="$pkgname-libs=$pkgver-r$pkgrel libc++ cjson libssl3 libcrypto3 openssl c-ares libxslt qnx-io-sock libwebsockets sqlite-libs"
+makedepends="openssl-dev>3 c-ares-dev libxslt libc++-dev qnx-io-sock-dev cjson-dev libwebsockets-dev cunit-dev compiler-rt sqlite-dev"
+checkdepends="python3 cunit-dev libwebsockets-dev cjson-dev"
+subpackages="$pkgname-dev $pkgname-doc $pkgname-libs++:_pp $pkgname-openrc
+	$pkgname-libs $pkgname-clients"
+source="https://mosquitto.org/files/source/mosquitto-$pkgver.tar.gz
+	mosquitto.initd
+	mosquitto.confd
+	0001-QNX.patch
+	0002-QNX_install.patch
+	"
+
+if [ -z "$BOOTSTRAP" ] && [ -z "$APORTS_BOOTSTRAP" ]; then
+	subpackages="$pkgname-dbg $subpackages"
+	_websockets=yes
+	_cjson=yes
+else
+	_websockets=no
+	_cjson=no
+fi
+
+build() {
+	make \
+		WITH_MEMORY_TRACKING=no \
+		WITH_EDITLINE=no \
+		WITH_HTTP_API=no \
+		WITH_WEBSOCKETS=$_websockets \
+		WITH_CJSON=$_cjson \
+		WITH_SRV=yes \
+		WITH_ADNS=no \
+		prefix=/usr
+}
+
+check() {
+	make -C test/unit \
+		WITH_EDITLINE=no \
+		WITH_HTTP_API=no \
+		test
+}
+
+package() {
+	make prefix=/usr \
+		DESTDIR="$pkgdir" \
+		WITH_EDITLINE=no \
+		WITH_HTTP_API=no \
+		WITH_WEBSOCKETS=$_websockets \
+		WITH_CJSON=$_cjson \
+		WITH_SRV=yes \
+		WITH_ADNS=no \
+		install
+
+	mv "$pkgdir"/etc/mosquitto/mosquitto.conf.example \
+		"$pkgdir"/etc/mosquitto/mosquitto.conf
+	sed -i -e 's/#log_dest stderr/log_dest syslog/' \
+		"$pkgdir"/etc/mosquitto/mosquitto.conf
+
+	install -Dm755 "$srcdir"/mosquitto.initd "$pkgdir"/etc/init.d/mosquitto
+	install -Dm644 "$srcdir"/mosquitto.confd "$pkgdir"/etc/conf.d/mosquitto
+}
+
+_pp() {
+	pkgdesc="C++ wrapper for libmosquitto"
+	replaces=""
+	depends="$pkgname-libs=$pkgver-r$pkgrel libc++"
+
+	mkdir -p "$subpkgdir"/usr/lib
+	mv "$pkgdir"/usr/lib/libmosquittopp.so.* "$subpkgdir"/usr/lib/
+}
+
+libs() {
+	pkgdesc="$pkgname shared library"
+	depends="cjson libssl3 libcrypto3 c-ares qnx-io-sock libc++"
+	mkdir -p "$subpkgdir"/usr/lib
+	mv "$pkgdir"/usr/lib/libmosquitto.so.* "$subpkgdir"/usr/lib/
+}
+
+clients() {
+	pkgdesc="Mosquitto command line MQTT clients"
+	replaces="mosquitto-utils"
+	depends="$pkgname-libs=$pkgver-r$pkgrel cjson libssl3 libcrypto3"
+
+	mkdir -p "$subpkgdir"/usr/bin
+	mv "$pkgdir"/usr/bin/mosquitto_[ps]ub "$subpkgdir"/usr/bin/
+}
+
+sha512sums="
+f75bf9461680c35ec1c9837bec33490f3709df0adee3bb1ef69151e61b6afabc36dc562f54de43cb11fa7aa57417100d30be83fafc0d6585308f239f0a4a40d5  mosquitto-2.1.2.tar.gz
+5c3be617028a0e733a5bbea0c749760ce97ef08d2610cdccc67b57ae4a8112d54673398418b2ad5f79011f5268c611180636dcb8870be7979ccf6ae464e5885d  mosquitto.initd
+678a8aaefb9181f5f4998304046e5a8737049f90cf6bbbfd5fd4549592728afe77cb536547b39ad1598d53fe0b7c03e1506b2683e7b936712b9fad4a317f4b43  mosquitto.confd
+da52bade80dbb3250cd623bc19f507cc3fb0dbd6e17355c0dd0b6f3eefeb9d0e44caa3a0c726883867e92d721d1757b19abb85c79f5a4101aa165ff6a1eaa31c  0001-QNX.patch
+3921d308dd16215a9bb63762ad62fb352202fb84ca2c882d373ac19209588e539934fe5e43a113282df88013b8dcce70d8f691615ebf9a7bbcd0b333f66f5760  0002-QNX_install.patch
+"
