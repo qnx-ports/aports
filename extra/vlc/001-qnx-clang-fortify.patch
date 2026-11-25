@@ -1,0 +1,23 @@
+QNX: disable _FORTIFY_SOURCE for the native Clang toolchain.
+
+--- a/configure.ac
++++ b/configure.ac
+@@ -50,7 +50,17 @@
+ AC_PROG_CC
+ AC_USE_SYSTEM_EXTENSIONS
+ VLC_PROG_CC_C11
+-AC_DEFINE([_FORTIFY_SOURCE], 2, [Define to 2 to get glibc warnings.])
++dnl QNX 8.0 <wchar.h> includes wchar_chk.h, which uses __bvap
++dnl (__builtin_va_arg_pack()) without the "#ifdef __bvap" guard that the
++dnl sibling QNX fortify headers apply. __bvap is defined only for GCC 4.3
++dnl and newer, and Clang reports itself as GCC 4.2, so every fortified
++dnl variadic wide-character wrapper fails to compile with the native QNX
++dnl Clang toolchain whenever _FORTIFY_SOURCE is greater than 0. This turns
++dnl fortification off on QNX, which reduces hardening there; all other
++dnl targets keep level 2.
++AS_CASE([$host_os],
++  [nto*], [AC_DEFINE([_FORTIFY_SOURCE], 0, [Fortification level the target headers support.])],
++  [AC_DEFINE([_FORTIFY_SOURCE], 2, [Fortification level the target headers support.])])
+ AC_DEFINE([_FILE_OFFSET_BITS], 64, [Define to 64 for large files support.])
+ AH_TOP([
+ #ifndef _REENTRANT

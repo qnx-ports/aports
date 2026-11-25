@@ -1,0 +1,27 @@
+QNX: open directory descriptors with O_DIRECTORY for fdopendir().
+
+--- a/modules/access/fs.c
++++ b/modules/access/fs.c
+@@ -43,7 +43,7 @@
+     add_submodule()
+     set_section( N_("Directory" ), NULL )
+     set_capability( "access", 55 )
+-#ifndef HAVE_FDOPENDIR
++#if !defined(HAVE_FDOPENDIR) || defined(__QNX__)
+     add_shortcut( "file", "directory", "dir" )
+ #else
+     add_shortcut( "directory", "dir" )
+--- a/test/libvlc/media.c
++++ b/test/libvlc/media.c
+@@ -307,7 +307,11 @@
+ 
+ #ifdef HAVE_OPENAT
+     /* listing directory via a fd works only if HAVE_OPENAT is defined */
++#ifdef __QNX__
++    int fd = open (subitems_path, O_RDONLY | O_DIRECTORY);
++#else
+     int fd = open (subitems_path, O_RDONLY);
++#endif
+     test_log ("Testing media_subitems: fd: '%d'\n", fd);
+     assert (fd >= 0);
+     media = libvlc_media_new_fd (vlc, fd);

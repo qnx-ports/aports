@@ -1,0 +1,44 @@
+Guard nullable strings passed to printf-style logging.
+
+--- a/src/input/demux.c
++++ b/src/input/demux.c
+@@ -232,7 +232,8 @@
+         msg_Dbg( p_obj, "creating demux: access='%s' demux='%s' "
+                  "location='%s' file='%s'",
+                  p_demux->psz_access, p_demux->psz_demux,
+-                 p_demux->psz_location, p_demux->psz_file );
++                 p_demux->psz_location,
++                 p_demux->psz_file ? p_demux->psz_file : "(null)" );
+ 
+     p_demux->s              = s;
+     p_demux->out            = out;
+--- a/test/src/interface/dialog.c
++++ b/test/src/interface/dialog.c
+@@ -68,7 +68,7 @@
+     struct cb_answer *p_ans = p_data;
+     printf("login dialog: title: '%s', text: '%s', "
+            "default_username: '%s', b_ask_store: %d\n",
+-           psz_title, psz_text, psz_default_username, b_ask_store);
++           psz_title, psz_text, psz_default_username ? psz_default_username : "(null)", b_ask_store);
+ 
+     if (p_ans->b_dismiss)
+         vlc_dialog_id_dismiss(p_id);
+@@ -85,7 +85,8 @@
+     struct cb_answer *p_ans = p_data;
+     printf("question dialog: title: '%s', text: '%s', "
+            "type: %d, cancel: '%s', action1: '%s', action2: '%s'\n",
+-           psz_title, psz_text, i_type, psz_cancel, psz_action1, psz_action2);
++           psz_title, psz_text, i_type, psz_cancel ? psz_cancel : "(null)",
++           psz_action1 ? psz_action1 : "(null)", psz_action2 ? psz_action2 : "(null)");
+ 
+     if (p_ans->b_dismiss)
+         vlc_dialog_id_dismiss(p_id);
+@@ -101,7 +102,7 @@
+     struct cb_answer *p_ans = p_data;
+     printf("progress dialog: title: '%s', text: '%s', "
+            "indeterminate: %d, position: %f, cancel: '%s'\n",
+-           psz_title, psz_text, b_indeterminate, f_position, psz_cancel);
++           psz_title, psz_text, b_indeterminate, f_position, psz_cancel ? psz_cancel : "(null)");
+ 
+     if (p_ans->b_dismiss)
+         vlc_dialog_id_dismiss(p_id);

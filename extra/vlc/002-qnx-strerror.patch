@@ -1,0 +1,27 @@
+--- a/src/posix/error.c
++++ b/src/posix/error.c
+@@ -31,6 +31,16 @@
+ 
+ static const char *vlc_strerror_l(int errnum, const char *lname)
+ {
++#if defined(__QNX__)
++    /* QNX 8 has strerror_r, but no strerror_l. Keep storage per thread.
++     * Locale selection is unavailable on this fallback. */
++    static _Thread_local char message[256];
++    int saved_errno = errno;
++    (void)lname;
++    int result = strerror_r(errnum, message, sizeof(message));
++    errno = saved_errno;
++    return result == 0 ? message : "Error message unavailable";
++#else
+     int saved_errno = errno;
+     locale_t loc = newlocale(LC_MESSAGES_MASK, lname, (locale_t)0);
+ 
+@@ -52,6 +62,7 @@
+ 
+     freelocale(loc);
+     return buf;
++#endif
+ }
+ 
+ /**
