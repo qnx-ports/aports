@@ -1,0 +1,71 @@
+# Maintainer: Ramya santoshi <rtimmaraju@qnx.com>
+pkgname=librealsense
+pkgver=2.58.1
+pkgrel=0
+pkgdesc="Intel RealSense SDK 2.0"
+url="https://github.com/IntelRealSense/librealsense"
+arch="all"
+license="Apache-2.0"
+makedepends="
+	cmake
+	libusb-dev
+	qnx-fs-core-dev
+    libc++-dev
+    python3-dev
+    qnx-fs-gpt-dev
+    catch2
+    nlohmann-json
+     fast-cdr-dev=1.0.25-r0
+    glfw-dev
+	python3-pybind11-dev
+	ca-certificates
+	sqlite-dev
+	lz4-dev
+"
+options="net"
+depends="qnx-fs-core libc++ libusb qnx-fs-gpt fast-cdr sqlite-libs lz4"
+subpackages="$pkgname-dev"
+source="
+    $pkgname-$pkgver.tar.gz::https://github.com/qnx-ports/librealsense/archive/refs/tags/qnx-v$pkgver.tar.gz
+"
+builddir="$srcdir/$pkgname-qnx-v$pkgver"
+
+build() {
+	CFLAGS=$(echo "$CFLAGS" | sed 's/-fstack-clash-protection//g')
+	CXXFLAGS=$(echo "$CXXFLAGS" | sed 's/-fstack-clash-protection//g')
+
+	cmake -B build -S . \
+		-DFORCE_RSUSB_BACKEND=ON \
+        -DBUILD_PYTHON_BINDINGS=ON \
+		-DBUILD_SHARED_LIBS=ON \
+		-DBUILD_UNIT_TESTS=true \
+		-DBUILD_EXAMPLES=OFF \
+		-DUSE_EXTERNAL_LZ4=ON \
+		-DBUILD_GRAPHICAL_EXAMPLES=OFF \
+		-DBUILD_TOOLS=OFF \
+		-DCMAKE_C_FLAGS="$CFLAGS -DPLATFORM_POSIX" \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+		-DCMAKE_CXX_FLAGS="$CXXFLAGS -DPLATFORM_POSIX"
+
+	cmake --build build
+}
+
+check() {
+    cd "$builddir/build/Release" || return 1
+
+    for t in test-rsutils-*; do
+        [ -x "$t" ] || continue
+
+        echo "Running $t"
+        ./"$t" || echo "FAILED: $t"
+    done
+}
+
+package() {
+	cd "$builddir"
+	DESTDIR="$pkgdir" cmake --install build
+}
+
+sha512sums="
+87ce85e17cb6d928418c98d6a1defff6376017e573c0a5308004d7a52394d476845c0df67fe8eafa4852135b88bcc0efe82033791e7c8faa087bd57fcb439e0b  librealsense-2.58.1.tar.gz
+"
