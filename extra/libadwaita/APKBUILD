@@ -1,0 +1,59 @@
+# Maintainer: Cris Sinnott <csinnott@qnx.com>
+pkgname=libadwaita
+pkgver=1.4.8
+pkgrel=0
+pkgdesc="Building blocks for modern GNOME applications"
+url="https://gitlab.gnome.org/GNOME/libadwaita"
+arch="all"
+license="LGPL-2.1-or-later"
+# QNX abuild adds no so: dependencies, so the libraries libadwaita links are
+# listed here (from its NEEDED entries).
+depends="
+	adwaita-fonts
+	fribidi
+	glib
+	graphene
+	gtk4
+	libintl
+	pango
+	"
+depends_dev="fribidi-dev glib-dev gtk4-dev"
+makedepends="
+	fribidi-dev
+	glib-dev
+	gobject-introspection-dev
+	gtk4-dev
+	meson
+	ninja
+	sassc
+	"
+subpackages="$pkgname-dev $pkgname-lang"
+# 0001: appstream is not packaged for QNX; adw_about_window_new_from_appdata()
+# returns an empty about window instead of parsing AppStream metadata.
+source="https://download.gnome.org/sources/libadwaita/${pkgver%.*}/libadwaita-$pkgver.tar.xz
+	0001-build-without-appstream-on-qnx.patch
+	"
+# Tests are not built (-Dtests=false).
+options="!check"
+
+build() {
+	CC=clang \
+	CXX=clang++ \
+	CFLAGS="$CFLAGS -Qunused-arguments" \
+	abuild-meson \
+		-Dintrospection=enabled \
+		-Dvapi=false \
+		-Dtests=false \
+		-Dexamples=false \
+		-Dgtk_doc=false \
+		. output
+	meson compile -C output
+}
+
+package() {
+	DESTDIR="$pkgdir" meson install --no-rebuild -C output
+}
+sha512sums="
+6705291a50b1698a570af13f59fd063240e6f1509550f0aa0e8e14e9a167aa1c237566623806d76ea879eb4c1fe286690609b6a2f687e07dac3685800faceff2  libadwaita-1.4.8.tar.xz
+88eb1eda10a47500ef3e8e29777bb210fd3703d12654f01b0a7fbbe5d2086209f8cb4051a93fae3d098189ec84f8e53dfbd6561b179113bf88c32911d41eb9c0  0001-build-without-appstream-on-qnx.patch
+"
