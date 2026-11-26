@@ -15,6 +15,7 @@ depends="qt5-qtbase qt5-qtdeclarative"
 makedepends="
 	qt5-qtbase-dev
 	qt5-qtdeclarative-dev
+	gles-headers
 	"
 subpackages="$pkgname-doc"
 source="https://dev.alpinelinux.org/archive/qt/$_fullname.tar.xz"
