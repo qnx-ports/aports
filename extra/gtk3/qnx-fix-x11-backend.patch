@@ -1,0 +1,169 @@
+--- a/gdk/x11/gdkglcontext-x11.h
++++ b/gdk/x11/gdkglcontext-x11.h
+@@ -25,7 +25,14 @@
+ #include <X11/Xlib.h>
+
+ #include <epoxy/gl.h>
++#ifndef __QNX__
+ #include <epoxy/glx.h>
++#else
++/* QNX: libepoxy built without GLX; provide minimal type stubs */
++typedef void *GLXContext;
++typedef void *GLXFBConfig;
++typedef unsigned long GLXDrawable;
++#endif
+
+ #include "gdkglcontextprivate.h"
+ #include "gdkdisplayprivate.h"
+--- a/gdk/x11/gdkglcontext-x11.c
++++ b/gdk/x11/gdkglcontext-x11.c
+@@ -39,8 +39,12 @@
+
+ #include <cairo/cairo-xlib.h>
+
++#ifndef __QNX__
+ #include <epoxy/glx.h>
++#endif
+
++#ifndef __QNX__
++
+ G_DEFINE_TYPE (GdkX11GLContext, gdk_x11_gl_context, GDK_TYPE_GL_CONTEXT)
+
+ typedef struct {
+@@ -1400,3 +1404,71 @@
+
+   return TRUE;
+ }
++
++#else /* __QNX__ */
++
++/* QNX: GLX is not available; provide stub implementations */
++
++G_DEFINE_TYPE (GdkX11GLContext, gdk_x11_gl_context, GDK_TYPE_GL_CONTEXT)
++
++static void
++gdk_x11_gl_context_class_init (GdkX11GLContextClass *klass)
++{
++}
++
++static void
++gdk_x11_gl_context_init (GdkX11GLContext *self)
++{
++}
++
++gboolean
++gdk_x11_screen_init_gl (GdkScreen *screen)
++{
++  return FALSE;
++}
++
++GdkGLContext *
++gdk_x11_window_create_gl_context (GdkWindow    *window,
++                                   gboolean      attached,
++                                   GdkGLContext *share,
++                                   GError      **error)
++{
++  g_set_error_literal (error, GDK_GL_ERROR, GDK_GL_ERROR_NOT_AVAILABLE,
++                       "GLX is not available on QNX");
++  return NULL;
++}
++
++void
++gdk_x11_window_invalidate_for_new_frame (GdkWindow      *window,
++                                          cairo_region_t *update_area)
++{
++}
++
++gboolean
++gdk_x11_display_is_gl_context_current (GdkDisplay   *display,
++                                        GdkGLContext *context)
++{
++  return FALSE;
++}
++
++gboolean
++gdk_x11_display_make_gl_context_current (GdkDisplay   *display,
++                                          GdkGLContext *context)
++{
++  return FALSE;
++}
++
++void
++_gdk_x11_screen_update_visuals_for_gl (GdkScreen *screen)
++{
++}
++
++gboolean
++gdk_x11_display_get_glx_version (GdkDisplay *display,
++                                  gint       *major,
++                                  gint       *minor)
++{
++  return FALSE;
++}
++
++#endif /* !__QNX__ */
+--- a/gtk/inspector/general.c
++++ b/gtk/inspector/general.c
+@@ -35,8 +35,10 @@
+
+ #ifdef GDK_WINDOWING_X11
+ #include "x11/gdkx.h"
++#ifndef __QNX__
+ #include <epoxy/glx.h>
+ #endif
++#endif
+
+ #ifdef GDK_WINDOWING_WIN32
+ #include "win32/gdkwin32.h"
+@@ -222,6 +224,7 @@
+ }
+
+ #ifdef GDK_WINDOWING_X11
++#ifndef __QNX__
+ static void
+ append_glx_extension_row (GtkInspectorGeneral *gen,
+                           Display             *dpy,
+@@ -229,6 +232,7 @@
+ {
+   add_check_row (gen, GTK_LIST_BOX (gen->priv->gl_box), ext, epoxy_has_glx_extension (dpy, 0, ext), 0);
+ }
++#endif /* __QNX__ */
+ #endif
+
+ #ifdef GDK_WINDOWING_WAYLAND
+@@ -280,6 +284,7 @@
+ init_gl (GtkInspectorGeneral *gen)
+ {
+ #ifdef GDK_WINDOWING_X11
++#ifndef __QNX__
+   if (GDK_IS_X11_DISPLAY (gdk_display_get_default ()))
+     {
+       GdkDisplay *display = gdk_display_get_default ();
+@@ -304,6 +309,7 @@
+       append_glx_extension_row (gen, dpy, "GLX_EXT_visual_rating");
+     }
+   else
++#endif /* __QNX__ */
+ #endif
+ #ifdef GDK_WINDOWING_WAYLAND
+   if (GDK_IS_WAYLAND_DISPLAY (gdk_display_get_default ()))
+--- a/gdk/wayland/gdkwindow-wayland.c
++++ b/gdk/wayland/gdkwindow-wayland.c
+@@ -5268,7 +5268,7 @@
+       egl_window = gdk_wayland_window_get_wl_egl_window (window);
+
+       impl->egl_surface =
+-        eglCreateWindowSurface (display->egl_display, config, egl_window, NULL);
++        eglCreateWindowSurface (display->egl_display, config, (EGLNativeWindowType) egl_window, NULL);
+     }
+
+   return impl->egl_surface;
+@@ -5291,7 +5291,7 @@
+         wl_egl_window_create (impl->display_server.wl_surface, 1, 1);
+
+       impl->dummy_egl_surface =
+-        eglCreateWindowSurface (display->egl_display, config, impl->display_server.dummy_egl_window, NULL);
++        eglCreateWindowSurface (display->egl_display, config, (EGLNativeWindowType) impl->display_server.dummy_egl_window, NULL);
+     }
+
+   return impl->dummy_egl_surface;
