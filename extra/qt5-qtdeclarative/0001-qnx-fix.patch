@@ -1,0 +1,38 @@
+From 217a9a5cbc29e077b11edb433f911f63e66b721f Mon Sep 17 00:00:00 2001
+From: felixlionardo <flionardo@blackberry.com>
+Date: Tue, 24 Feb 2026 15:33:58 -0500
+Subject: [PATCH] qnx-fix
+---
+ src/3rdparty/masm/assembler/ARM64Assembler.h | 2 +-
+ src/3rdparty/masm/assembler/X86Assembler.h   | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/3rdparty/masm/assembler/ARM64Assembler.h b/src/3rdparty/masm/assembler/ARM64Assembler.h
+index 3e988a277c..3461c1e041 100644
+--- a/src/3rdparty/masm/assembler/ARM64Assembler.h
++++ b/src/3rdparty/masm/assembler/ARM64Assembler.h
+@@ -507,7 +507,7 @@ namespace ARM64Registers {
+     V(double, q30) \
+     V(double, q31)
+ 
+-typedef enum {
++typedef enum : int8_t {
+     #define DECLARE_REGISTER(_type, _regName) _regName,
+     FOR_EACH_CPU_GPREGISTER(DECLARE_REGISTER)
+     #undef DECLARE_REGISTER
+diff --git a/src/3rdparty/masm/assembler/X86Assembler.h b/src/3rdparty/masm/assembler/X86Assembler.h
+index 8f9ee29a4d..e8101f97f1 100644
+--- a/src/3rdparty/masm/assembler/X86Assembler.h
++++ b/src/3rdparty/masm/assembler/X86Assembler.h
+@@ -42,7 +42,7 @@ namespace JSC {
+ inline bool CAN_SIGN_EXTEND_8_32(int32_t value) { return value == (int32_t)(signed char)value; }
+ 
+ namespace X86Registers {
+-    typedef enum {
++    typedef enum : int8_t {
+         eax,
+         ecx,
+         edx,
+-- 
+2.54.0
+

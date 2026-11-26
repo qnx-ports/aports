@@ -1,0 +1,93 @@
+# Alpine-Maintainer: Bart Ribbers <bribbers@disroot.org>
+# Maintainer: Felix Lionardo <flionardo@qnx.com>
+pkgname=qt5-qtdeclarative
+pkgver=5.15.18_git20230629
+pkgrel=0
+_module="${pkgname#qt5-}"
+_pkgver=3e98cdb2780d052fce3d7a3694596a690cd76aca
+_fullname=$_module-$_pkgver
+pkgdesc="Qt5 - QtDeclarative component"
+# Broken on armhf, upstream bug report https://bugreports.qt.io/browse/QTBUG-65246
+arch="all"
+url="https://www.qt.io/developers/"
+license="LGPL-2.1-only AND LGPL-3.0-only AND GPL-3.0-only AND Qt-GPL-exception-1.0"
+makedepends="
+	python3
+	qt5-qtbase-dev
+	vulkan-headers
+	gles-headers
+	llvm-tools
+	"
+subpackages="$pkgname-dev"
+source="https://dev.alpinelinux.org/archive/qt/$_fullname.tar.xz
+0001-qnx-fix.patch	
+"
+
+_qt5_prefix=/usr/lib/qt5
+
+builddir="$srcdir/$_fullname"
+
+_disturl="dev.alpinelinux.org:/archive/qt/"
+snapshot() {
+	clean
+	makedepends="git xz rsync tar" deps
+	mkdir -p "$srcdir" && cd "$srcdir"
+	git clone --filter=tree:0 https://invent.kde.org/qt/qt/$_module.git .
+	git archive --format tar --prefix=$_fullname/ $_pkgver > "$SRCDEST"/$_fullname.tar
+	xz -vv -T0 -9 -e "$SRCDEST"/$_fullname.tar
+	rsync --progress -La "$SRCDEST"/$_fullname.tar.xz $_disturl
+}
+
+prepare() {
+	default_prepare
+
+	# We need to make the build system think we're running in a git repository
+	# so it correctly symlinks during the build
+	mkdir .git
+}
+
+build() {
+	# Compiling with -Os generates segfaults
+	export CFLAGS="${CFLAGS/-Os/-O2}"
+	export CPPFLAGS=${CPPFLAGS/-Os/-O2}
+	export CXXFLAGS="${CXXFLAGS/-Os/-O2}"
+
+	# significantly reduce debug symbol size
+	export CFLAGS="$CFLAGS -g1"
+	export CXXFLAGS="$CXXFLAGS -g1"
+	qmake-qt5
+	make
+}
+
+check() {
+	make check
+}
+
+package() {
+	make install INSTALL_ROOT="$pkgdir"
+
+	mkdir -p "$pkgdir"/usr/bin/
+	for i in "$pkgdir"/"$_qt5_prefix"/bin/*; do
+		ln -s ../lib/qt5/bin/${i##*/} "$pkgdir"/usr/bin/${i##*/}-qt5
+	done
+
+	# Drop QMAKE_PRL_BUILD_DIR because reference the build dir
+	find "$pkgdir/usr/lib" -type f -name '*.prl' \
+		-exec sed -i -e '/^QMAKE_PRL_BUILD_DIR/d' {} \;
+}
+
+dev() {
+	default_dev
+
+	find "$pkgdir"/"$_qt5_prefix"/bin/ -type f ! -name "qmlscene" | while read -r f; do
+		file=$(basename $f)
+		amove "${_qt5_prefix#/}"/bin/$file
+		amove usr/bin/$file-qt5
+	done
+}
+
+
+sha512sums="
+c5239058e0032fb7536aab6b90b7c72f2a6a9cd1ea48d0e06c1123dacd55513356fe905eb199db9c9defdad8e2a7cc40c22d10d6af767fd4d3297c907796b461  qtdeclarative-3e98cdb2780d052fce3d7a3694596a690cd76aca.tar.xz
+a51ea8ebb6c1245c09759f412afe68be34e5a34d3246006e2e4cc93c06a1681cb4c05e4054aecf0d4d660203b4dee3c0e319bd3634ae643f5ec6f2b2f223fdca  0001-qnx-fix.patch
+"
