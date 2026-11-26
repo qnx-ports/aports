@@ -16,6 +16,7 @@ depends="qt5-qtgraphicaleffects"
 makedepends="
 	qt5-qtbase-dev
 	qt5-qtdeclarative-dev
+	gles-headers
 	"
 subpackages="$pkgname-dev"
 options="!check" # No tests
