@@ -1,0 +1,38 @@
+# Alpine-Contributor: Peter Bui <pnutzh4x0r@gmail.com>
+# Alpine-Maintainer: Patrycja Rosa <alpine@ptrcnull.me>
+# Maintainer: Terence Ang <taang@qnx.com>
+pkgname=python3-asn1
+pkgver=0.6.5
+pkgrel=0
+pkgdesc="Python3 ASN1 library"
+url="https://github.com/pyasn1/pyasn1"
+arch="noarch"
+license="BSD-2-Clause"
+depends="python3"
+makedepends="
+	python3-gpep517
+	python3-setuptools
+	python3-wheel
+"
+checkdepends="python3-pytest"
+source="https://files.pythonhosted.org/packages/source/p/pyasn1/pyasn1-$pkgver.tar.gz"
+builddir="$srcdir/pyasn1-$pkgver"
+
+build() {
+	gpep517 build-wheel --wheel-dir .dist --output-fd 3 3>&1 >&2
+}
+
+check() {
+	python3 -m venv --clear --without-pip --system-site-packages .testenv
+	.testenv/bin/python3 -m installer .dist/*.whl
+	.testenv/bin/python3 -m pytest
+}
+
+package() {
+	python3 -m installer -d "$pkgdir" .dist/*.whl
+}
+
+
+sha512sums="
+c7bc9320e41a52d476fcd50c50ab23e518bfd4515f062b00887f79575b6a5f8947900ea2d95897395577b01be7ff0c37cf5b2c04d8af375e9a9a594752ba22d0  pyasn1-0.6.5.tar.gz
+"
