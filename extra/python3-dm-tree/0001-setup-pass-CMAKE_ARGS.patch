@@ -1,0 +1,14 @@
+Pass extra CMake arguments from $CMAKE_ARGS, so a distribution build can use
+the system abseil-cpp and pybind11 (USE_SYSTEM_ABSEIL/USE_SYSTEM_PYBIND11)
+instead of downloading them with FetchContent.
+
+--- a/setup.py
++++ b/setup.py
+@@ -84,6 +84,7 @@
+         f'-DCMAKE_LIBRARY_OUTPUT_DIRECTORY={extension_dir}',
+         f'-DCMAKE_BUILD_TYPE={build_cfg}'
+     ]
++    cmake_args += os.environ.get('CMAKE_ARGS', '').split()
+     if platform.system() != 'Windows':
+       cmake_args.extend([
+           f'-DPython3_LIBRARY={sysconfig.get_paths()["stdlib"]}',
