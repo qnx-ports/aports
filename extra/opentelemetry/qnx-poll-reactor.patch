@@ -1,0 +1,97 @@
+--- a/ext/include/opentelemetry/ext/http/server/socket_tools.h
++++ b/ext/include/opentelemetry/ext/http/server/socket_tools.h
+@@ -34,6 +34,10 @@
+ 
+ #  include <unistd.h>
+ 
++#  ifdef __QNXNTO__
++#    include <poll.h>
++#  endif
++
+ #  ifdef __linux__
+ #    include <sys/epoll.h>
+ #  endif
+@@ -933,6 +937,83 @@
+         LOG_ERROR("Reactor: unhandled kevent!");
+       }
+ #endif
++
++#ifdef __QNXNTO__
++      std::vector<pollfd> poll_fds;
++      poll_fds.reserve(m_sockets.size());
++
++      for (const auto &sd : m_sockets)
++      {
++        pollfd pfd{};
++        pfd.fd = static_cast<int>(sd.socket);
++
++        if (sd.flags & (Readable | Acceptable))
++        {
++          pfd.events |= POLLIN;
++        }
++        if (sd.flags & Writable)
++        {
++          pfd.events |= POLLOUT;
++        }
++
++        poll_fds.push_back(pfd);
++      }
++
++      int result = ::poll(poll_fds.data(),
++                          static_cast<nfds_t>(poll_fds.size()), 500);
++
++      if (result == 0 || (result == -1 && errno == EINTR))
++      {
++        continue;
++      }
++
++      if (result == -1)
++      {
++        LOG_ERROR("Reactor: poll() failed with errno %d", errno);
++        continue;
++      }
++
++      for (const auto &pfd : poll_fds)
++      {
++        if (pfd.revents == 0)
++        {
++          continue;
++        }
++
++        auto it = std::find(m_sockets.begin(), m_sockets.end(), pfd.fd);
++        if (it == m_sockets.end())
++        {
++          continue;
++        }
++
++        Socket socket = it->socket;
++        int flags = it->flags;
++
++        LOG_TRACE("Reactor: Handling socket 0x%x with poll events 0x%x",
++                  pfd.fd, pfd.revents);
++
++        if ((flags & Acceptable) && (pfd.revents & POLLIN))
++        {
++          m_callback.onSocketAcceptable(socket);
++        }
++
++        if ((flags & Readable) && (pfd.revents & POLLIN))
++        {
++          m_callback.onSocketReadable(socket);
++        }
++
++        if ((flags & Writable) && (pfd.revents & POLLOUT))
++        {
++          m_callback.onSocketWritable(socket);
++        }
++
++        if ((flags & Closed) &&
++            (pfd.revents & (POLLHUP | POLLERR | POLLNVAL)))
++        {
++          m_callback.onSocketClosed(socket);
++        }
++      }
++#endif
+     }
+     LOG_TRACE("Reactor: Thread done");
+   }

@@ -1,0 +1,19 @@
+--- a/exporters/otlp/test/otlp_http_metric_exporter_test.cc
++++ b/exporters/otlp/test/otlp_http_metric_exporter_test.cc
+@@ -694,9 +694,15 @@
+               EXPECT_EQ(3, data_points[0]["explicitBounds"].size());
+               if (3 == data_points[0]["explicitBounds"].size())
+               {
++#ifdef __QNXNTO__
++                EXPECT_NEAR(10.1, data_points[0]["explicitBounds"][0].get<double>(), 1e-12);
++                EXPECT_NEAR(20.2, data_points[0]["explicitBounds"][1].get<double>(), 1e-12);
++                EXPECT_NEAR(30.2, data_points[0]["explicitBounds"][2].get<double>(), 1e-12);
++#else
+                 EXPECT_EQ(10.1, data_points[0]["explicitBounds"][0].get<double>());
+                 EXPECT_EQ(20.2, data_points[0]["explicitBounds"][1].get<double>());
+                 EXPECT_EQ(30.2, data_points[0]["explicitBounds"][2].get<double>());
++#endif
+               }
+ 
+               EXPECT_EQ(3, JsonToInteger<int64_t>(data_points[1]["count"]));
+               
