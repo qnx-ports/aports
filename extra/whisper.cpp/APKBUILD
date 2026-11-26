@@ -2,19 +2,14 @@
 pkgname=whisper.cpp
 pkgver=0_git20260729
 pkgrel=2
-_whispercommit=caae177d00292310d5878a467465524023ed61e5
+_whispercommit=dbc719d50ab5b0068ac338f843c28b470dcfc243
 # pkgrel 1: enable Vulkan GPU backend.  Both prior blockers resolved:
 #   - drm-virtio deadlock: fixed in qnx-ports/whisper.cpp's embedded ggml via
 #     RAII guard on compile_count (same fix that unblocked stable-diffusion.cpp).
 #   - V3D aarch64 (RPi5): hardware limitation (insufficient workgroup shared
 #     memory); GPU inference on this target is not supported regardless.
-# pkgrel 2: add 0001-cmake-add-policy-version-range.patch; scope check() to
-#   test-common-utf8 only.
-#   cmake_minimum_required(VERSION 3.5) without an upper bound causes CMake 4.x
-#   to apply new policies that break write_basic_package_version_file's
-#   COMPATIBILITY SameMajorVersion (confirmed with cmake 4.4.2-r0).  Patch adds
-#   ...3.31 range to freeze cmake 3.x behavior, matching what ggml's own
-#   CMakeLists.txt already does.
+# pkgrel 2: CMake 4 fix (a cmake_minimum_required range, now a commit on the
+#   fork's qnx-8.0 branch); scope check() to test-common-utf8 only.
 #   All other tests require a Vulkan ICD; the standard build VM has
 #   Vulkan headers/libs for compilation but no GPU ICD config.  GPU inference
 #   validated on a Vulkan-capable host (see check() comment).
@@ -26,7 +21,6 @@ depends="libc++ qnx-io-sock qnx-vulkan"
 makedepends="cmake ninja clang libc++-dev qnx-io-sock-dev shaderc-dev glslang-dev spirv-tools-dev vulkan-headers"
 subpackages="$pkgname-dev $pkgname-dbg"
 source="
-	0001-cmake-add-policy-version-range.patch
 	whisper.cpp-$_whispercommit.tar.gz::https://github.com/qnx-ports/whisper.cpp/archive/$_whispercommit.tar.gz
 	"
 builddir="$srcdir/whisper.cpp-$_whispercommit"
@@ -74,6 +68,5 @@ package() {
 }
 
 sha512sums="
-32eef55c1b409b721102e9b1cf87e20b3195d51e012dfd1ae85c5dec9f53fafd00774a156163d604b7fd3c1b81cecaad1bc8aa2a55f5cb9cb07e854baf09bd5c  0001-cmake-add-policy-version-range.patch
-517a73b9b9f43ab8fb1b479a89df3934d74ae967654f3622159cd965f73efbb09af2d889939f87a34d1ecbb02af8019f9f3be9777101dc9f7b7245b3d62abd0a  whisper.cpp-caae177d00292310d5878a467465524023ed61e5.tar.gz
+477b4d4d7cc602fcfe8479789b662f2a70fa90a93abb8246e80be4a359be51a41c94791205a37b58d7bf672bfae0b02e37e03f10c181bbac202048677dcdcbd6  whisper.cpp-dbc719d50ab5b0068ac338f843c28b470dcfc243.tar.gz
 "
