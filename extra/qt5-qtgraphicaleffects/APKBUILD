@@ -11,6 +11,7 @@ pkgdesc="Qt5 - QtGraphicalEffects component"
 url="https://www.qt.io/developers/"
 license="LGPL-2.1-only AND LGPL-3.0-only AND GPL-3.0-only AND Qt-GPL-exception-1.0"
 arch="all"
+depends="qt5-qtbase qt5-qtdeclarative"
 makedepends="
 	qt5-qtbase-dev
 	qt5-qtdeclarative-dev
