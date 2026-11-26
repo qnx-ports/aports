@@ -5,13 +5,12 @@ pkgrel=0
 pkgdesc="Simple SCEP (RFC 8894) client"
 url="https://github.com/certnanny/sscep"
 arch="all"
-license="BSD-2-Clause AND OpenSSL"
+license="BSD-2-Clause AND OpenSSL AND VSL-1.0"
 # explicit: abuild does not derive so: dependencies on QNX (libcrypto.so.3, libsocket.so.4)
 depends="
 	libcrypto3
 	qnx-io-sock
 	"
-# libc++-dev: project() names no LANGUAGES, so CMake also checks the C++ compiler
 makedepends="
 	cmake
 	libc++-dev
@@ -25,8 +24,7 @@ options="!check" # upstream ships no test suite
 
 build() {
 	# CMAKE_POLICY_VERSION_MINIMUM: upstream declares cmake_minimum_required(2.8.12), which CMake 4 rejects.
-	# -lsocket: recv() and the other socket calls live in libsocket on QNX, not libc. CMAKE_C_STANDARD_LIBRARIES
-	# puts it after the objects; in LDFLAGS it would come first and --as-needed would drop it.
+	# -lsocket: recv() and the other socket calls live in libsocket on QNX, not libc.
 	cmake -B build -G Ninja \
 		-DCMAKE_INSTALL_PREFIX=/usr \
 		-DCMAKE_BUILD_TYPE=Release \
