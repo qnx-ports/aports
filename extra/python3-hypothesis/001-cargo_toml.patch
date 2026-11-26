@@ -1,0 +1,10 @@
+--- a/rust/Cargo.toml
++++ b/rust/Cargo.toml
+@@ -1,3 +1,7 @@
++[patch.crates-io]
++libc = { path = "/usr/local/lib/rustlib/src/rust/library/vendor/libc-0.2.189" }
++target-lexicon = { git = "https://github.com/qnx-ports/target-lexicon.git", branch = "qnx-0.13.5" }
++
+ [package]
+ name = "hypothesis-native"
+ version = "6.170.17"

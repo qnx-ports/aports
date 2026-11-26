@@ -1,0 +1,137 @@
+# Maintainer: Terence Ang <taang@qnx.com>
+pkgname=python3-hypothesis
+pkgver=6.170.17
+pkgrel=0
+pkgdesc="The property-based testing library for Python"
+url="https://hypothesis.works/"
+arch="all"
+license="MPL-2.0"
+depends="
+	python3-attrs
+	python3-sortedcontainers
+"
+makedepends="
+	python3-gpep517
+	python3-setuptools
+	python3-wheel
+	python3-maturin
+	qnx-io-sock-dev
+	cargo
+	rust
+"
+checkdepends="
+	python3-pytest
+	python3-coverage
+	python3-tz
+	python3-numpy
+	python3-dateutil
+	python3-pexpect
+	python3-typing-extensions
+	python3-pandas
+	python3-pytest-xdist
+	python3-scipy
+	tzdata
+"
+source="
+	$pkgname-$pkgver.tar.gz::https://github.com/HypothesisWorks/hypothesis-python/archive/refs/tags/v$pkgver.tar.gz
+	config.toml
+	001-cargo_toml.patch
+	002-test_database_py.patch
+	003-test_zoneinfo_timezone_py.patch
+	004-scrutineer_py.patch
+"
+builddir="$srcdir/hypothesis-$pkgver/hypothesis/"
+
+prepare() {
+	default_prepare
+
+	mkdir -p "$builddir"/rust/.cargo
+	cp "$srcdir"/config.toml "$builddir"/rust/.cargo
+
+	cd "$builddir"/rust
+
+	cargo vendor vendor
+	cargo update \
+		-p libc \
+		-p target-lexicon
+
+}
+
+build() {
+	export CARGO_PROFILE_RELEASE_LTO=off
+	gpep517 build-wheel \
+		--wheel-dir .dist \
+		--output-fd 3 3>&1 >&2
+}
+
+check() {
+	python3 -m venv --clear --without-pip --system-site-packages .testenv
+	.testenv/bin/python3 -m installer .dist/*.whl
+	.testenv/bin/python3 -m pytest \
+		--ignore=tests/codemods/test_codemods.py \
+		--ignore=tests/codemods/test_codemod_cli.py \
+		--ignore=tests/patching/test_patching.py \
+		--ignore=tests/crosshair/test_conformance.py \
+		--ignore=tests/crosshair/test_crosshair.py \
+		--ignore=tests/ghostwriter/test_expected_output.py \
+		--ignore=tests/ghostwriter/test_ghostwriter.py \
+		--ignore=tests/ghostwriter/test_ghostwriter_cli.py \
+		--ignore=tests/dpcontracts/test_contracts.py \
+		--ignore=tests/lark/test_grammar.py \
+		--ignore=tests/redis/test_redis_exampledatabase.py \
+		--ignore=tests/watchdog/test_database_cover.py \
+		--ignore=tests/watchdog/test_database.py \
+		--ignore=tests/cover/test_custom_reprs.py \
+		--ignore=tests/snapshots/test_always_failing.py \
+		--ignore=tests/snapshots/test_combinators.py \
+		--ignore=tests/snapshots/test_explain.py \
+		--ignore=tests/snapshots/test_shrinking.py
+
+		# Requires python3-libcst
+		# - tests/codemods/test_codemods.py
+		# - tests/codemods/test_codemod_cli.py
+		# - tests/patching/test_patching.py
+
+		# Requires python3-crosshair
+		# - tests/crosshair/test_conformance.py
+		# - tests/crosshair/test_crosshair.py
+
+		# Requires black (or python3-black)
+		# - tests/ghostwriter/test_expected_output.py
+		# - tests/ghostwriter/test_ghostwriter.py
+		# - tests/ghostwriter/test_ghostwriter_cli.py
+
+		# Requires python3-lark
+		# - tests/lark/test_grammar.py
+
+		# Requires python3-fakeredis
+                # - tests/redis/test_redis_exampledatabase.py
+
+		# Requires dpcontracts
+		# - tests/dpcontracts/test_contracts.py
+
+		# Requires watchdog
+		# - tests/watchdog/test_database.py
+		# - tests/watchdog/test_database_cover.py
+		# - tests/cover/test_custom_reprs.py
+
+		# Requires python3-snapshot and old version of python3-pytest 7.x
+		# - tests/snapshots/test_always_failing.py
+		# - tests/snapshots/test_combinators.py
+		# - tests/snapshots/test_explain.py
+		# - tests/snapshots/test_shrinking.py
+}
+
+package() {
+	python3 -m installer -d "$pkgdir" .dist/*.whl
+}
+
+
+sha512sums="
+19a25fa5386d63dda0ec0f5387febf7d57e0077d7ee7e00dedb3f34b5cd0f470967b137e55c92fc8d0103849a24b3bb5c285d2663afeb84b81466728789649fa  python3-hypothesis-6.170.17.tar.gz
+8d542abd3b4a2ad323554c4d9c8fdd9e178e09af085bf35e4adbd325805af688f0bb6add30fa34ca7b62866bb07412a798c113b41fd6f93cb187abc0795c8379  config.toml
+bdb1e9b8b3e00ddd1656b28c5978253ffad4536ac02eaa9993d814afc414f57ea8ebf1f2a4698134c8487bc497dcfe1ee9a252277e3bd5a509f4c2f2c414c894  001-cargo_toml.patch
+eb386f427d95f68eb4475fb987ed599d80770a223a367beadcac5ce05a8b79aa3c9d250fc568fea180e16928ba515aae0129e4cdbc400b27bde301c26985fb71  002-test_database_py.patch
+d5076f6ae5454741b5fa401da4daef48da25c44d566ad4057bfab0b03a30693bfafb24cb797da0f41dd3fc5ac117ed92430714af01cdd45d222c82e2fa3cc8d6  003-test_zoneinfo_timezone_py.patch
+142a4c4998f8b404d1311aebd326d6c2cd34e8e21626993d820ed377541b1387491e7e9f247b6dc45c4c0837e2370eb1e8500e39f8babbca881bed06410556d4  004-scrutineer_py.patch
+"

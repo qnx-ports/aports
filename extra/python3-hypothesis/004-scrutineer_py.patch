@@ -1,0 +1,14 @@
+--- a/src/hypothesis/internal/scrutineer.py
++++ b/src/hypothesis/internal/scrutineer.py
+@@ -251,6 +251,11 @@
+ SITE_PACKAGES_DIRS = {
+     Path(sysconfig.get_path("purelib")).resolve(),
+     Path(sysconfig.get_path("platlib")).resolve(),
++    *(
++        Path(p).resolve()
++        for p in sys.path
++        if "site-packages" in Path(p).parts
++    ),
+ }
+ 
+ EXPLANATION_STUB = (

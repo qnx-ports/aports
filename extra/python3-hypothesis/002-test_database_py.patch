@@ -1,0 +1,11 @@
+--- a/tests/watchdog/test_database.py
++++ a/tests/watchdog/test_database.py
+@@ -164,7 +164,7 @@
+             ("delete", (b"k2", None)),
+             ("save", (b"k1", b"v3")),
+         ], str(events[3:])
+-    elif sys.platform.startswith("linux"):
++    elif sys.platform.startswith(("linux", "qnx")):
+         # move #1
+         assert ("save", (b"k2", b"v3")) in events
+         # sometimes watchdog fires a move event (= save + delete with value),
