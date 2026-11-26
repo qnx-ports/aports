@@ -2,7 +2,7 @@
 pkgname=linux-headers-input-codes
 pkgdesc="Provides input-event-codes for packages from kernel uapi"
 pkgver=7.2.9
-pkgrel=0
+pkgrel=1
 arch="noarch"
 url="https://github.com/torvalds/linux"
 vcs_url="https://git.kernel.org/"
@@ -34,5 +34,5 @@ package(){
 
 sha512sums="
 45db368b0cb1a099dd8ee49621dc286398a92df7ef6af4970bde5542637826de3e554113e9a142c7f7775c4021bc774a5ff801e7546e5f9edf18c7a23136abea  linux-7.2.9.tar.xz
-81ddb81b2d71c3d3a021e2a1c547062614cdd0d4bebfdf25a7f98c28c2f4c66d36d5a9f000c524f35b17b2cf0ab28d2dcc74eb2942521fe56ed4c5002c837f7d  input.h
+09e49c1e4616faba77478bc0f4960c6c50d79f8534270c61b61c53c84e870d045db0d8d2c1fdb1de92fbf6473b893f160f432c82593b1fd978a77e972198e223  input.h
 "
