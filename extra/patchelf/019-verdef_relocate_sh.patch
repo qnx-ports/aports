@@ -1,0 +1,22 @@
+--- a/tests/verdef-relocate.sh
++++ b/tests/verdef-relocate.sh
+@@ -44,9 +44,11 @@
+ # "[ 5]" index splits into two fields while "[12]" does not, so the name is
+ # located by scanning rather than by a fixed column.
+ verdef_tag() {  # -> DT_VERDEF value, empty if absent
++    sleep 1
+     ${READELF} -dW "$1" | awk '$2 == "(VERDEF)" { print $3 }'
+ }
+ verdef_addr() { # -> .gnu.version_d sh_addr, empty if absent
++    sleep 1
+     ${READELF} -SW "$1" | awk '
+         { for (i = 1; i < NF; i++) if ($i == ".gnu.version_d") { print "0x"$(i+2); exit } }'
+ }
+@@ -72,6 +74,7 @@
+     [ -n "$before" ] || continue
+     [ "$(./"$exe")" = 42 ] || continue
+ 
++    sleep 1
+     ${PATCHELF} --set-rpath "/lib/$LONG" "$exe"
+ 
+     after=$(verdef_addr "$exe")

@@ -1,0 +1,102 @@
+--- a/tests/Makefile.am
++++ b/tests/Makefile.am
+@@ -118,7 +118,13 @@
+ main_no_pie_CFLAGS = -fno-pie
+ main_no_pie_LDADD = -lfoo $(AM_LDADD)
+ main_no_pie_DEPENDENCIES = libfoo.so
++UNAME_S := $(shell uname -s)
++
++ifeq ($(UNAME_S),QNX)
++main_no_pie_LDFLAGS = $(LDFLAGS_local) -Wl,-no-pie
++else
+ main_no_pie_LDFLAGS = $(LDFLAGS_local) -no-pie
++endif
+ 
+ # With an rpath already present, --set-rpath moves .dynstr but not .dynamic;
+ # see strip-gap-rewrite.sh.
+@@ -126,14 +132,22 @@
+ main_no_pie_rpath_CFLAGS = -fno-pie
+ main_no_pie_rpath_LDADD = -lfoo $(AM_LDADD)
+ main_no_pie_rpath_DEPENDENCIES = libfoo.so
++ifeq ($(UNAME_S),QNX)
++main_no_pie_rpath_LDFLAGS = $(LDFLAGS_local) -Wl,-no-pie -Wl,-rpath,/nonexistent
++else
+ main_no_pie_rpath_LDFLAGS = $(LDFLAGS_local) -no-pie -Wl,-rpath,/nonexistent
++endif
+ 
+ # Non-PIE binary with a max-page-size larger than the runtime page size. On
+ # 32-bit targets this makes patchelf relocate .dynamic into the read-only first
+ # segment; see large-page-dynamic.sh.
+ large_page_SOURCES = simple.c
+ large_page_CFLAGS = -fno-pie
++ifeq ($(UNAME_S),QNX)
++large_page_LDFLAGS = $(LDFLAGS_local) -Wl,-no-pie -Wl,-z,max-page-size=0x200000
++else
+ large_page_LDFLAGS = $(LDFLAGS_local) -no-pie -Wl,-z,max-page-size=0x200000
++endif
+ 
+ # Variant of main that retains named SECTION symbols in .symtab (via
+ # --emit-relocs), so the symbol-table rewrite can be checked for corruption.
+@@ -223,7 +237,11 @@
+ many_syms_main_CFLAGS = -pie -fPIE
+ many_syms_no_pie_SOURCES = many-syms-main.c
+ many_syms_no_pie_CFLAGS = -fno-pie
++ifeq ($(UNAME_S),QNX)
++many_syms_no_pie_LDFLAGS = $(LDFLAGS_local) -Wl,-no-pie -Wl,-z,noseparate-code -Wl,--hash-style=both -Wl,-rpath,/nonexistent
++else
+ many_syms_no_pie_LDFLAGS = $(LDFLAGS_local) -no-pie -Wl,-z,noseparate-code -Wl,--hash-style=both -Wl,-rpath,/nonexistent
++endif
+ many_syms_no_pie_LDADD = -lmany-syms $(AM_LDADD)
+ many_syms_no_pie_DEPENDENCIES = libmany-syms.so
+ notes_after_interp_SOURCES = notes-after-interp.c notes-after-interp.ld
+--- a/tests/Makefile.in
++++ b/tests/Makefile.in
+@@ -783,7 +783,13 @@
+ main_no_pie_CFLAGS = -fno-pie
+ main_no_pie_LDADD = -lfoo $(AM_LDADD)
+ main_no_pie_DEPENDENCIES = libfoo.so
++UNAME_S := $(shell uname -s)
++
++ifeq ($(UNAME_S),QNX)
++main_no_pie_LDFLAGS = $(LDFLAGS_local) -Wl,-no-pie
++else
+ main_no_pie_LDFLAGS = $(LDFLAGS_local) -no-pie
++endif
+ 
+ # With an rpath already present, --set-rpath moves .dynstr but not .dynamic;
+ # see strip-gap-rewrite.sh.
+@@ -791,14 +797,22 @@
+ main_no_pie_rpath_CFLAGS = -fno-pie
+ main_no_pie_rpath_LDADD = -lfoo $(AM_LDADD)
+ main_no_pie_rpath_DEPENDENCIES = libfoo.so
++ifeq ($(UNAME_S),QNX)
++main_no_pie_rpath_LDFLAGS = $(LDFLAGS_local) -Wl,-no-pie -Wl,-rpath,/nonexistent
++else
+ main_no_pie_rpath_LDFLAGS = $(LDFLAGS_local) -no-pie -Wl,-rpath,/nonexistent
++endif
+ 
+ # Non-PIE binary with a max-page-size larger than the runtime page size. On
+ # 32-bit targets this makes patchelf relocate .dynamic into the read-only first
+ # segment; see large-page-dynamic.sh.
+ large_page_SOURCES = simple.c
+ large_page_CFLAGS = -fno-pie
++ifeq ($(UNAME_S),QNX)
++large_page_LDFLAGS = $(LDFLAGS_local) -Wl,-no-pie -Wl,-z,max-page-size=0x200000
++else
+ large_page_LDFLAGS = $(LDFLAGS_local) -no-pie -Wl,-z,max-page-size=0x200000
++endif
+ 
+ # Variant of main that retains named SECTION symbols in .symtab (via
+ # --emit-relocs), so the symbol-table rewrite can be checked for corruption.
+@@ -854,7 +868,11 @@
+ many_syms_main_CFLAGS = -pie -fPIE
+ many_syms_no_pie_SOURCES = many-syms-main.c
+ many_syms_no_pie_CFLAGS = -fno-pie
++ifeq ($(UNAME_S),QNX)
++many_syms_no_pie_LDFLAGS = $(LDFLAGS_local) -Wl,-no-pie -Wl,-z,noseparate-code -Wl,--hash-style=both -Wl,-rpath,/nonexistent
++else
+ many_syms_no_pie_LDFLAGS = $(LDFLAGS_local) -no-pie -Wl,-z,noseparate-code -Wl,--hash-style=both -Wl,-rpath,/nonexistent
++endif
+ many_syms_no_pie_LDADD = -lmany-syms $(AM_LDADD)
+ many_syms_no_pie_DEPENDENCIES = libmany-syms.so
+ notes_after_interp_SOURCES = notes-after-interp.c notes-after-interp.ld

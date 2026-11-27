@@ -1,0 +1,18 @@
+--- a/tests/property-rewrite.sh
++++ b/tests/property-rewrite.sh
+@@ -134,6 +134,7 @@
+         skipped=$((skipped + 1)); continue
+     fi
+ 
++    sleep 1
+     # Self-extracting archives and signatures append data past the ELF.
+     # patchelf relocates sections to EOF, so this is a distinct path.
+     # The payload need not stay at EOF, but its bytes must survive.
+@@ -167,6 +168,7 @@
+             ln -sf libdep.so.0 "$d/$new"
+             set -- --replace-needed "$dep" "$new"; dep="$new" ;;
+         esac
++        sleep 1
+         echo "$*" >> "$log"
+         if ! $PATCHELF "$@" "$d/app" 2>>"$log"; then
+             broke="patchelf failed: $*"; break
