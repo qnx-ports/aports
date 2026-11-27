@@ -1,0 +1,11 @@
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -372,7 +372,7 @@
+ 	ARCHIVE DESTINATION lib
+ 	RUNTIME DESTINATION bin)
+ 
+-install(EXPORT hpipmConfig DESTINATION cmake)
++install(EXPORT hpipmConfig DESTINATION lib/cmake/hpipm)
+ 
+ file(GLOB_RECURSE HPIPM_HEADERS "include/*.h")
+ install(FILES ${HPIPM_HEADERS} DESTINATION ${HPIPM_HEADERS_INSTALLATION_DIRECTORY})
