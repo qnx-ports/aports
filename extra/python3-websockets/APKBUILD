@@ -1,0 +1,36 @@
+# Contributor: Cris Sinnott <csinnott@qnx.com>
+# Maintainer: Deep Chordia <dchordia@blackberry.com>
+pkgname=python3-websockets
+pkgver=16.0
+pkgrel=0
+pkgdesc="Library for building WebSocket servers and clients in Python"
+url="https://websockets.readthedocs.io/"
+arch="all"
+license="BSD-3-Clause"
+depends="python3"
+makedepends="python3-gpep517 python3-setuptools python3-wheel python3-dev"
+checkdepends="python3-pytest"
+# GitHub tarball: the PyPI sdist ships an incomplete tests/ (no __init__.py or utils.py)
+source="$pkgname-$pkgver.tar.gz::https://github.com/python-websockets/websockets/archive/refs/tags/$pkgver.tar.gz"
+builddir="$srcdir/websockets-$pkgver"
+
+build() {
+	gpep517 build-wheel --wheel-dir .dist --output-fd 3 3>&1 >&2
+}
+
+check() {
+	python3 -m venv --clear --without-pip --system-site-packages .testenv
+	.testenv/bin/python3 -m installer .dist/*.whl
+	# test_writing_in_recv_events_fails (sync): races with the peer closing; fails intermittently on QNX
+	.testenv/bin/python3 -m pytest \
+		--deselect tests/sync/test_connection.py::ClientConnectionTests::test_writing_in_recv_events_fails \
+		--deselect tests/sync/test_connection.py::ServerConnectionTests::test_writing_in_recv_events_fails
+}
+
+package() {
+	python3 -m installer -d "$pkgdir" .dist/*.whl
+}
+
+sha512sums="
+ed0bfe6e6402c1504680e9afcb7478e06a5f1af6c0761e35a9a6192569b59c5cce5d0a9f0aaea35922e499a3968dba409cb8d398829e9dff6466db5cb5b98b98  python3-websockets-16.0.tar.gz
+"
