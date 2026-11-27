@@ -1,7 +1,7 @@
 # Maintainer: jscaffidi <jscaffidi@qnx.com>
 pkgname=glfw
 pkgver=3.4
-pkgrel=0
+pkgrel=1
 pkgdesc="A multi-platform library for OpenGL, OpenGL ES, Vulkan, window and input"
 url="https://github.com/glfw/glfw"
 arch="all"

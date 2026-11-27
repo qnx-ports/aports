@@ -2,7 +2,7 @@
 # Maintainer: Marcin Sochacki <msochacki@qnx.com>
 pkgname=ncnn
 pkgver=20260526
-pkgrel=0
+pkgrel=1
 pkgdesc="High-performance neural network inference framework optimized for mobile/embedded platforms"
 url="https://github.com/Tencent/ncnn"
 arch="all"

@@ -4,7 +4,7 @@
 # Maintainer: Deep Chordia <dchordia@blackberry.com>
 pkgname=mimalloc
 pkgver=3.2.8
-pkgrel=0
+pkgrel=1
 pkgdesc="mimalloc is a compact general purpose allocator with excellent performance."
 url="https://github.com/microsoft/mimalloc"
 arch="all"

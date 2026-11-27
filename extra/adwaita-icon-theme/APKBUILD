@@ -3,7 +3,7 @@
 # Maintainer: Elliott Mazzuca <emazzuca@qnx.com>
 pkgname=adwaita-icon-theme
 pkgver=50.0
-pkgrel=0
+pkgrel=1
 pkgdesc="Adwaita icon theme"
 url="https://gitlab.gnome.org/GNOME/adwaita-icon-theme"
 arch="noarch"

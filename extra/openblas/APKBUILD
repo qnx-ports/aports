@@ -3,7 +3,7 @@
 # Maintainer: Deep Chordia <dchordia@blackberry.com>
 pkgname=openblas
 pkgver=0.3.31
-pkgrel=1
+pkgrel=2
 pkgdesc="OpenBLAS is an optimized BLAS library based on GotoBLAS2 1.13 BSD version."
 url="http://www.openmathlib.org/OpenBLAS/"
 arch="all"

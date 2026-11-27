@@ -3,7 +3,7 @@
 # Maintainer: jscaffidi <jscaffidi@qnx.com>
 pkgname=libmd
 pkgver=1.1.0
-pkgrel=0
+pkgrel=1
 pkgdesc="Message Digest functions from BSD systems"
 url="https://www.hadrons.org/software/libmd/"
 arch="all"

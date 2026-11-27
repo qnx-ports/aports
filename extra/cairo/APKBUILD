@@ -1,7 +1,7 @@
 # Maintainer: Felix Lionardo <flionardo@qnx.com>
 pkgname=cairo
 pkgver=1.18.4
-pkgrel=1
+pkgrel=2
 pkgdesc="A vector graphics library"
 url="https://cairographics.org/"
 arch="all"

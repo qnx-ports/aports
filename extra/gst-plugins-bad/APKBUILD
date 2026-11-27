@@ -2,11 +2,11 @@
 # Maintainer: Felix Xing <fxing@qnx.com>
 pkgname=gst-plugins-bad
 pkgver=1.26.8
-pkgrel=1
+pkgrel=2
 pkgdesc="GStreamer streaming media framework bad plug-ins"
 url="https://gstreamer.freedesktop.org/"
 arch="all"
-license="GPL-2.0-or-later LGPL-2.0-or-later"
+license="GPL-2.0-or-later AND LGPL-2.0-or-later"
 options="!check"
 depends="
     aom-libs
@@ -34,6 +34,7 @@ depends="
     qnx-io-sock
     qnx-vulkan
     wayland
+    qnx-hid
     "
 depends_dev="
     gstreamer-dev
