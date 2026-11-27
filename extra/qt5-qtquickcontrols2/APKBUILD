@@ -11,12 +11,11 @@ _fullname=$_module-$_pkgver
 pkgdesc="Qt5 - module with set of QtQuick controls for embedded"
 url="https://www.qt.io/developers/"
 arch="all"
-license="LGPL-2.1-only AND LGPL-3.0-only AND GPL-3.0-only AND Qt-GPL-exception-1.0"
+license="LGPL-2.1-only AND LGPL-3.0-only AND GPL-3.0-only WITH Qt-GPL-exception-1.0"
 depends="qt5-qtgraphicaleffects"
 makedepends="
 	qt5-qtbase-dev
 	qt5-qtdeclarative-dev
-	gles-headers
 	"
 subpackages="$pkgname-dev"
 options="!check" # No tests
