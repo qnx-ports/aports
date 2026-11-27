@@ -2,10 +2,10 @@
 pkgname=stable-diffusion.cpp
 pkgver=0_git20260602
 pkgrel=3
-_sdcommit=1649238c80a8ca20fd832c37bda991c240c7927a
+_sdtag=qnx-master-666-7948df8-r0
 _ggmltag=qnx-0.14.0-r1
-# ggml is built from the qnx-ports/ggml tag above (QNX Vulkan and CPU
-# fixes) and kept private to this package in /usr/lib/stable-diffusion.cpp,
+# Both sources are qnx-ports fork tags, which carry the QNX changes.
+# ggml is kept private to this package in /usr/lib/stable-diffusion.cpp,
 # leaving the system paths free for a future ggml package.
 # All CPU variants are built as loadable modules; ggml loads the best one
 # for the CPU at run time.
@@ -18,10 +18,10 @@ depends="libc++ qnx-io-sock qnx-vulkan"
 makedepends="cmake ninja clang libc++-dev qnx-microkernel-dev qnx-io-sock-dev shaderc-dev glslang-dev spirv-tools-dev vulkan-headers"
 subpackages="$pkgname-dev $pkgname-dbg"
 source="
-	stable-diffusion.cpp-$_sdcommit.tar.gz::https://github.com/qnx-ports/stable-diffusion.cpp/archive/$_sdcommit.tar.gz
+	stable-diffusion.cpp-$_sdtag.tar.gz::https://github.com/qnx-ports/stable-diffusion.cpp/archive/refs/tags/$_sdtag.tar.gz
 	ggml-$_ggmltag.tar.gz::https://github.com/qnx-ports/ggml/archive/refs/tags/$_ggmltag.tar.gz
 	"
-builddir="$srcdir/stable-diffusion.cpp-$_sdcommit"
+builddir="$srcdir/stable-diffusion.cpp-$_sdtag"
 _privlib="/usr/lib/$pkgname"
 
 prepare() {
@@ -102,6 +102,6 @@ package() {
 }
 
 sha512sums="
-258339424523d7fc2ba5da8e9ae66cc2beca2dceae37dc86c73b84b0fb20f6367d70b395ca97c433c426934c719e194b728a5a39d6a9b40dc1b81bbd588a11ba  stable-diffusion.cpp-1649238c80a8ca20fd832c37bda991c240c7927a.tar.gz
+2245ce58b474879d12f858505bd6561218efca8cab9d14085ef3dd13bdf12e20e6f4743a8fa7ffcdd284b4dd2c9367a97267b1cb85711f2352ad799a64deef2c  stable-diffusion.cpp-qnx-master-666-7948df8-r0.tar.gz
 7d2e17a9dfb38f358641644243efa0e7635bffea665f7d013ff9195c563c210661e577406bf0c2677741d4a5baae8117f8a68435accc3780e9107263b5b23569  ggml-qnx-0.14.0-r1.tar.gz
 "
