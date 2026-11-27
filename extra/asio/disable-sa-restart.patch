@@ -1,0 +1,11 @@
+--- a/include/asio/detail/socket_types.hpp	2025-08-04 22:08:39.000000000 +0000
++++ b/include/asio/detail/socket_types.hpp	2026-11-24 20:57:03.000000000 +0000
+@@ -411,7 +411,7 @@
+ // POSIX platforms are not required to define IOV_MAX.
+ const int max_iov_len = 16;
+ # endif
+-# define ASIO_OS_DEF_SA_RESTART SA_RESTART
++# define ASIO_OS_DEF_SA_RESTART 0
+ # define ASIO_OS_DEF_SA_NOCLDSTOP SA_NOCLDSTOP
+ # if defined(SA_NOCLDWAIT)
+ #  define ASIO_OS_DEF_SA_NOCLDWAIT SA_NOCLDWAIT
