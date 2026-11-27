@@ -1,0 +1,51 @@
+# Alpine-Contributor: Francesco Colista <fcolista@alpinelinux.org>
+# Alpine-Maintainer: Francesco Colista <fcolista@alpinelinux.org>
+# Maintainer: Felix Lionardo <flionardo@qnx.com>
+pkgname=python3-qt5
+pkgver=5.15.11
+pkgrel=0
+pkgdesc="A set of Python 3 bindings for the Qt toolkit"
+url="https://www.riverbankcomputing.com/software/pyqt/"
+arch="all"
+license="GPL-3.0-only"
+depends="
+	python3-pyqt5-sip
+	python3
+	"
+makedepends="
+	python3-pyqt-builder
+	python3-pyqt5-sip
+	python3-sip
+	python3-dev
+	qt5-qtbase-dev
+	qt5-qtdeclarative-dev
+	"
+subpackages="$pkgname-dbg"
+source="https://pypi.python.org/packages/source/P/PyQt5/PyQt5-$pkgver.tar.gz"
+builddir="$srcdir/PyQt5-$pkgver"
+
+build() {
+	export CFLAGS="$CFLAGS -O2 -flto=auto"
+	export CXXFLAGS="$CXXFLAGS -O2 -flto=auto"
+	sip-build \
+		--confirm-license \
+		--qmake /usr/lib/qt5/bin/qmake \
+		--api-dir /usr/share/qt5/qsci/api/python \
+		--pep484-pyi \
+		--no-make
+	make -C build
+}
+
+check() {
+	make -C build check
+}
+
+package() {
+	make DESTDIR="$pkgdir" INSTALL_ROOT="$pkgdir" -C build install -j1
+	python3 -m compileall -j 0 "$pkgdir"/usr/lib/python3*
+}
+
+sha512sums="
+e52ca215f65dbb035deff042112e26be38b77405a45caebdae3e626ffe6487c88c97c54bfa33cc83d96537daa82b67b7a1c621696538e154e5996714fc063a92  PyQt5-5.15.11.tar.gz
+"
+
