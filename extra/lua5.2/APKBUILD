@@ -3,12 +3,13 @@
 pkgname=lua5.2
 pkgver=5.2.4
 _luaver=${pkgname#lua}
-pkgrel=0
+pkgrel=1
 pkgdesc="Powerful light-weight programming language"
 url="https://www.lua.org/"
 arch="all"
 license="MIT"
 ldpath="/usr/lib/$pkgname"
+depends="$pkgname-libs"
 makedepends="libtool autoconf automake readline-dev"
 provides="lua"
 provider_priority=200
