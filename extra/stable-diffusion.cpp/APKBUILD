@@ -2,8 +2,8 @@
 pkgname=stable-diffusion.cpp
 pkgver=0_git20260602
 pkgrel=3
-_sdcommit=a51021b190b3aac1684c22a03fb0607f144ab6ce
-_ggmltag=qnx-0.14.0-r0
+_sdcommit=1649238c80a8ca20fd832c37bda991c240c7927a
+_ggmltag=qnx-0.14.0-r1
 # ggml is built from the qnx-ports/ggml tag above (QNX Vulkan and CPU
 # fixes) and kept private to this package in /usr/lib/stable-diffusion.cpp,
 # leaving the system paths free for a future ggml package.
@@ -18,9 +18,6 @@ depends="libc++ qnx-io-sock qnx-vulkan"
 makedepends="cmake ninja clang libc++-dev qnx-microkernel-dev qnx-io-sock-dev shaderc-dev glslang-dev spirv-tools-dev vulkan-headers"
 subpackages="$pkgname-dev $pkgname-dbg"
 source="
-	0003-vk-scratch-workspace-hint-caller.patch
-	0007-vk-fence-hang-graceful.patch
-	0010-cmake-skip-qnx-whole-archive-with-backend-dl.patch
 	stable-diffusion.cpp-$_sdcommit.tar.gz::https://github.com/qnx-ports/stable-diffusion.cpp/archive/$_sdcommit.tar.gz
 	ggml-$_ggmltag.tar.gz::https://github.com/qnx-ports/ggml/archive/refs/tags/$_ggmltag.tar.gz
 	"
@@ -30,10 +27,6 @@ _privlib="/usr/lib/$pkgname"
 prepare() {
 	rm -rf "$builddir/ggml"
 	mv "$srcdir/ggml-$_ggmltag" "$builddir/ggml"
-
-	patch -p1 -d "$builddir" < "$srcdir/0003-vk-scratch-workspace-hint-caller.patch"
-	patch -p1 -d "$builddir/ggml" < "$srcdir/0007-vk-fence-hang-graceful.patch"
-	patch -p1 -d "$builddir" < "$srcdir/0010-cmake-skip-qnx-whole-archive-with-backend-dl.patch"
 }
 
 build() {
@@ -109,9 +102,6 @@ package() {
 }
 
 sha512sums="
-b2c6f174a3b2096e98860e06acd5b04bd84a93211f55e292a1b4a62d825afdc43cc506de7a966cb62715564fff83759fd4f49d306103ecd4d678abf248067da8  0003-vk-scratch-workspace-hint-caller.patch
-b49edf080383cbbb9c1b12879c80140f08f03a25f82408ad29255862b67a514294547754403542c341d9230bc20caf5356d61db31072d46dfe61d1c54a8b826a  0007-vk-fence-hang-graceful.patch
-7181be108ff6009140f10d8ab0ac6d9132d5d98b3bc2449fe691d184d3566d9845de2348d2be689d95da121d925f394ad5c50f87271b1280f8c551ecb2ce05e0  0010-cmake-skip-qnx-whole-archive-with-backend-dl.patch
-7b4e19a95c4038eb08158395849ce93dfabefdbc7e7a398e4080484f34a7a0d69ad069bc2b6960d5d9a03f9de23286a682eca81128d052dbe3ac0e7a7b2bd098  stable-diffusion.cpp-a51021b190b3aac1684c22a03fb0607f144ab6ce.tar.gz
-73308f1bd0b29ab8fbb67a58dce4f7a30bdfb9d25ad613f7fa2f137f3a6053ce7fdf0cc205b47892206747caae6d15af817f0027f6841eee5a4ce61c0a3229b5  ggml-qnx-0.14.0-r0.tar.gz
+258339424523d7fc2ba5da8e9ae66cc2beca2dceae37dc86c73b84b0fb20f6367d70b395ca97c433c426934c719e194b728a5a39d6a9b40dc1b81bbd588a11ba  stable-diffusion.cpp-1649238c80a8ca20fd832c37bda991c240c7927a.tar.gz
+7d2e17a9dfb38f358641644243efa0e7635bffea665f7d013ff9195c563c210661e577406bf0c2677741d4a5baae8117f8a68435accc3780e9107263b5b23569  ggml-qnx-0.14.0-r1.tar.gz
 "
