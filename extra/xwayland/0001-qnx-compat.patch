@@ -8,4 +8,4 @@
 +#if defined(SYSV) || defined(SVR4) || defined(WIN32) || defined(__CYGWIN__) || defined(__QNX__)
              {
                  static char buf[BUFSIZ];
-
+ 
