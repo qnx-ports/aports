@@ -1,0 +1,44 @@
+# Alpine-Contributor: Leo <thinkabit.ukim@gmail.com>
+# Maintainer: jscaffidi <jscaffidi@qnx.com>
+pkgname=range-v3
+pkgver=0.12.0
+pkgrel=0
+pkgdesc="Experimental range library for C++11/14/17"
+options="!check"
+url="https://github.com/ericniebler/range-v3"
+arch="noarch"
+license="BSL-1.0"
+makedepends="clang cmake ninja"
+subpackages="$pkgname-dev"
+source="$pkgname-$pkgver.tar.gz::https://github.com/ericniebler/range-v3/archive/$pkgver.tar.gz"
+
+build() {
+	if [ "$CBUILD" != "$CHOST" ]; then
+		CMAKE_CROSSOPTS="-DCMAKE_SYSTEM_NAME=Linux -DCMAKE_HOST_SYSTEM_NAME=Linux"
+	fi
+
+	export CC=clang
+	export CXX=clang++
+
+	cmake -B build -G Ninja \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DBUILD_SHARED_LIBS=True \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DRANGE_V3_EXAMPLES=OFF \
+		-DRANGE_V3_PERF=OFF \
+		-DRANGE_V3_TESTS=OFF \
+		-DRANGE_V3_HEADER_CHECKS=ON \
+		-DRANGES_ENABLE_WERROR=OFF \
+		-DRANGES_NATIVE=OFF \
+		-DRANGES_DEBUG_INFO=OFF \
+		$CMAKE_CROSSOPTS
+	ninja -C build
+}
+
+package() {
+	DESTDIR="$pkgdir" ninja -C build install
+}
+
+sha512sums="
+b8b632b8e0f2a3234ef61813212c237f648cd741e816ca57bd86f82f6459f7d755e2b70361d2aa43847874fb546a31a792ab1c3ba90292818ae7313438dc62d0  range-v3-0.12.0.tar.gz
+"
