@@ -1,8 +1,8 @@
 # Maintainer: Cris Sinnott <csinnott@qnx.com>
 pkgname=whisper.cpp
 pkgver=0_git20260729
-pkgrel=2
-_whispercommit=dbc719d50ab5b0068ac338f843c28b470dcfc243
+pkgrel=3
+_whispercommit=b01eb0bd4292dd29676348724aae493173920b32
 # pkgrel 1: enable Vulkan GPU backend.  Both prior blockers resolved:
 #   - drm-virtio deadlock: fixed in qnx-ports/whisper.cpp's embedded ggml via
 #     RAII guard on compile_count (same fix that unblocked stable-diffusion.cpp).
@@ -13,6 +13,8 @@ _whispercommit=dbc719d50ab5b0068ac338f843c28b470dcfc243
 #   All other tests require a Vulkan ICD; the standard build VM has
 #   Vulkan headers/libs for compilation but no GPU ICD config.  GPU inference
 #   validated on a Vulkan-capable host (see check() comment).
+# pkgrel 3: CPU variants as run-time modules (ggml picks the best one for the
+#   CPU), plus the qnx-ports/ggml QNX fixes, now commits on the fork.
 pkgdesc="Automatic speech recognition using OpenAI's Whisper model, in pure C/C++"
 url="https://github.com/ggml-org/whisper.cpp"
 arch="aarch64 x86_64"
@@ -24,6 +26,9 @@ source="
 	whisper.cpp-$_whispercommit.tar.gz::https://github.com/qnx-ports/whisper.cpp/archive/$_whispercommit.tar.gz
 	"
 builddir="$srcdir/whisper.cpp-$_whispercommit"
+# ggml backend modules (CPU variants, Vulkan). ggml's core libraries and
+# headers stay in the system paths for now: whisper.h includes ggml.h.
+_backenddir="/usr/lib/$pkgname"
 
 build() {
 	# Stale cmake cache from a prior partial build (e.g. a failed shader
@@ -41,6 +46,11 @@ build() {
 		-DCMAKE_INSTALL_PREFIX=/usr \
 		-DBUILD_SHARED_LIBS=ON \
 		-DGGML_VULKAN=ON \
+		-DGGML_BACKEND_DL=ON \
+		-DGGML_BACKEND_DIR="$_backenddir" \
+		-DGGML_CPU_ALL_VARIANTS=ON \
+		-DGGML_NATIVE=OFF \
+		-DGGML_OPENMP=OFF \
 		-DWHISPER_SDL2=OFF
 	# Shader codegen writes into one shared ggml-vulkan-shaders.hpp; parallel
 	# ninja jobs racing on that target corrupt it. Build serially first.
@@ -61,6 +71,33 @@ check() {
 		--output-junit "$builddir/test-results.xml" \
 		--output-on-failure \
 		--tests-regex "test-common-utf8"
+
+	# The CPU variant modules load: whisper-cli loads all backends before
+	# parsing arguments.  Copy only the CPU modules, so the Vulkan module (and
+	# loader) stays out of it.  Installed modules would shadow the build tree.
+	if ls "$_backenddir"/libggml-*.so >/dev/null 2>&1; then
+		warning "skipping CPU module check: $_backenddir has installed ggml modules"
+		return 0
+	fi
+	local t="$builddir/check-cpu" log="$builddir/check-cpu.log"
+	rm -rf "$t"
+	mkdir -p "$t"
+	cp -P build/bin/whisper-cli $(find build -name 'libggml-cpu-*.so' \
+		-o -name 'libwhisper.so*' -o -name 'libggml.so*' \
+		-o -name 'libggml-base.so*') "$t"/
+	(cd "$t" && LD_LIBRARY_PATH="$t" ./whisper-cli --help) > "$log" 2>&1 || {
+		tail -n 40 "$log"
+		return 1
+	}
+	grep -E "load_backend" "$log"
+	if grep -q "failed to load" "$log"; then
+		error "a CPU variant module failed to load"
+		return 1
+	fi
+	if ! grep -q "loaded CPU backend from $t/" "$log"; then
+		error "whisper-cli did not load a CPU backend from the build tree"
+		return 1
+	fi
 }
 
 package() {
@@ -68,5 +105,5 @@ package() {
 }
 
 sha512sums="
-477b4d4d7cc602fcfe8479789b662f2a70fa90a93abb8246e80be4a359be51a41c94791205a37b58d7bf672bfae0b02e37e03f10c181bbac202048677dcdcbd6  whisper.cpp-dbc719d50ab5b0068ac338f843c28b470dcfc243.tar.gz
+ba5b8bb1f7e58f78cf8a151c1d33cd6d22e0488664f61ef9dbf0b8c4fbb59059437f8ab95956833918c60ff836a69c2b216d0262c789aca5702f1d0d97664288  whisper.cpp-b01eb0bd4292dd29676348724aae493173920b32.tar.gz
 "
