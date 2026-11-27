@@ -1,0 +1,52 @@
+# Alpine-Contributor: Patrycja Rosa <alpine@ptrcnull.me>
+# Alpine-Maintainer: Patrycja Rosa <alpine@ptrcnull.me>
+# Maintainer: Terence Ang <taang@qnx.com>
+pkgname=python3-markdown-it-py
+pkgver=4.3.0
+pkgrel=0
+pkgdesc="Markdown parser, done right"
+url="https://markdown-it-py.readthedocs.io/"
+arch="noarch"
+license="MIT"
+depends="
+	python3
+	python3-attrs
+	python3-mdurl
+"
+makedepends="
+	python3-gpep517
+	python3-flit-core
+"
+checkdepends="
+	python3-pytest
+	python3-pytest-benchmark
+	python3-pytest-regressions
+	python3-pytest-datadir
+	python3-yaml
+	python3-pytest-timeout
+"
+source="https://github.com/executablebooks/markdown-it-py/archive/v$pkgver/python3-markdown-it-py-$pkgver.tar.gz"
+builddir="$srcdir/markdown-it-py-$pkgver"
+
+build() {
+	gpep517 build-wheel \
+		--wheel-dir .dist \
+		--output-fd 3 3>&1 >&2
+}
+
+check() {
+	python3 -m venv --clear --without-pip --system-site-packages .testenv
+	.testenv/bin/python3 -m installer .dist/*.whl
+	.testenv/bin/python3 -m pytest -k 'not test_linkify'
+}
+
+package() {
+	python3 -m installer -d "$pkgdir" \
+		.dist/markdown_it_py-$pkgver-py3-none-any.whl
+}
+
+
+
+sha512sums="
+af62aa19c8fe8aa116feffd4d65132bcceb7c1e50125677a84df55a16b600d26307621ce28c7b57ba444122fa778b141f8ec37ae6bec9a870f46ed0df28a8b4a  python3-markdown-it-py-4.3.0.tar.gz
+"
