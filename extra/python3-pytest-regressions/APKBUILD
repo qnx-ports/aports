@@ -18,10 +18,15 @@ makedepends="
 "
 checkdepends="
 	 python3-pytest
+	 python3-numpy
+	 python3-pillow
+	 python3-yaml
+	 python3-pandas
+	 python3-pytest-datadir
+	 python3-matplotlib
 "
 source="$pkgname-$pkgver.tar.gz::https://github.com/ESSS/pytest-regressions/archive/refs/tags/v$pkgver.tar.gz"
 builddir="$srcdir/$_pyname-$pkgver"
-options="!check"
 
 build() {
 	export SETUPTOOLS_SCM_PRETEND_VERSION="$pkgver"
@@ -33,7 +38,14 @@ build() {
 check() {
 	python3 -m venv --clear --without-pip --system-site-packages .testenv
 	.testenv/bin/python3 -m installer .dist/*.whl
-	.testenv/bin/python3 -m pytest
+	.testenv/bin/python3 -m pytest -v \
+		--deselect=tests/test_image_regression.py::test_image_regression[pil] \
+		--deselect=tests/test_image_regression.py::test_image_regression[bytes]
+
+	# python3-matplotlib needs update to avoid use of deprecated API "oneOf"
+	# Newer one is using "one_off"
+	# - tests/test_image_regression.py::test_image_regression[pil]
+	# - tests/test_image_regression.py::test_image_regression[bytes]
 }
 
 package() {
