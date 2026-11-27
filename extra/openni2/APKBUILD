@@ -2,6 +2,7 @@
 pkgname=openni2
 pkgver=2.2.0.33
 pkgrel=0
+_tag=qnx-2.2.0_p1
 pkgdesc="OpenNI2 framework for depth sensors (PrimeSense/Structure)"
 url="https://github.com/structureio/OpenNI2"
 arch="aarch64 x86_64"
@@ -11,12 +12,12 @@ depends_dev="libusb-dev libjpeg-turbo-dev qnx-io-sock-dev libc++-dev"
 makedepends="$depends_dev"
 subpackages="$pkgname-dev $pkgname-tools $pkgname-samples"
 options="!check" # upstream ships no test suite
-source="$pkgname-$pkgver.tar.gz::https://github.com/structureio/OpenNI2/archive/refs/tags/v2.2.0-debian.tar.gz
-	001-qnx-build-system.patch
-	002-use-system-libjpeg.patch
-	003-qnx-platform-support.patch
+# qnx-ports fork of structureio/OpenNI2 v2.2.0-debian, carrying the QNX build
+# system and platform support changes and the DummyDevice shutdown crash fix.
+source="$pkgname-$_tag.tar.gz::https://github.com/qnx-ports/OpenNI2/archive/refs/tags/$_tag.tar.gz
+	use-system-libjpeg.patch
 	"
-builddir="$srcdir/OpenNI2-2.2.0-debian"
+builddir="$srcdir/OpenNI2-$_tag"
 
 # The upstream platform name is derived from "uname -m", which is "x86pc" or the
 # board name on QNX, so the build is told the architecture explicitly.
@@ -59,7 +60,7 @@ package() {
 
 	install -d "$pkgdir"/usr/include/openni2
 	cp -r Include/. "$pkgdir"/usr/include/openni2/
-	# QNX uses the Linux-x86 platform header on both architectures (see 003).
+	# QNX uses the Linux-x86 platform header on both architectures.
 	rm -rf "$pkgdir"/usr/include/openni2/Android-Arm "$pkgdir"/usr/include/openni2/MacOSX \
 		"$pkgdir"/usr/include/openni2/Win32 "$pkgdir"/usr/include/openni2/Linux-Arm
 	install -d "$pkgdir"/usr/lib/pkgconfig
@@ -104,8 +105,6 @@ samples() {
 	amove usr/lib/OpenNI2/Samples usr/lib/libMWClosestPoint.so
 }
 sha512sums="
-1354e6032a324a80df3a0137e0e09ba9ba0e570f6f5dc91626453ed17cd739793a9cbcbcb36826beb4f36e63cd889c2e9a07ddc973fe98dfa4b1e2941b9c455d  openni2-2.2.0.33.tar.gz
-31cb06b7116b7899875a41c1747dc9e2ad1804e9159e52c4201e9a703c7073f4a1ad920c3a92ab958eb223e8add0fcb6ee2909c20792bc459f8d132cbb04c0e0  001-qnx-build-system.patch
-e07ff468bd7fca04397ed6760e9db272ab96119bbefd81fbf2119443b937f811ea651b1100d64d783f1c91b767d3b0832670343d543376e9fb29224d3ec440ec  002-use-system-libjpeg.patch
-0b49e1ed41ca5e34ad49f95b74588a95f80082e752bfe23f8370454156c0ae7ac48d568b612ddbc9878ed2be4480b8aab56e92f404064841f1c98a395627e724  003-qnx-platform-support.patch
+a05ca387c1361530f847819091af7f0f17a016ddbbdc89cd884e493e552bf56ff4903e84897ec0df37b5a7dd5f65088613995b7fd703cec33ebf17acf9705b89  openni2-qnx-2.2.0_p1.tar.gz
+e07ff468bd7fca04397ed6760e9db272ab96119bbefd81fbf2119443b937f811ea651b1100d64d783f1c91b767d3b0832670343d543376e9fb29224d3ec440ec  use-system-libjpeg.patch
 "
