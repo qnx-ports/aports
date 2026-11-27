@@ -1,0 +1,73 @@
+# Alpine-Contributor: Bart Ribbers <bribbers@disroot.org>
+# Alpine-Maintainer: Bart Ribbers <bribbers@disroot.org>
+# Maintainer: Felix Lionardo <flionardo@qnx.com>
+pkgname=qt5-qtwayland
+pkgver=5.15.18_git20230714
+pkgrel=0
+_module="${pkgname#qt5-}"
+_pkgver=3a8613b91d2239aebc73b43562f929aa71af0de5
+_fullname=$_module-$_pkgver
+arch="all !armhf" # armhf blocked by qt5-qtdeclarative
+url="https://www.qt.io/developers/"
+license="LGPL-2.1-only AND LGPL-3.0-only AND GPL-3.0-only WITH Qt-GPL-exception-1.0"
+pkgdesc="Provides APIs for Wayland"
+depends_dev="
+	libxkbcommon-dev
+	qt5-qtquickcontrols2-dev
+	wayland-dev
+
+	"
+makedepends="$depends_dev
+	qt5-qtbase-dev
+	qt5-qtdeclarative-dev
+	vulkan-headers
+	"
+subpackages="$pkgname-dev"
+
+source="https://dev.alpinelinux.org/archive/qt/$_fullname.tar.xz"
+builddir="$srcdir/$_fullname"
+
+_disturl="dev.alpinelinux.org:/archive/qt/"
+snapshot() {
+	clean
+	makedepends="git xz rsync tar" deps
+	mkdir -p "$srcdir" && cd "$srcdir"
+	git clone --filter=tree:0 https://invent.kde.org/qt/qt/$_module.git .
+	git archive --format tar --prefix=$_fullname/ $_pkgver > "$SRCDEST"/$_fullname.tar
+	xz -vv -T0 -9 -e "$SRCDEST"/$_fullname.tar
+	rsync --progress -La "$SRCDEST"/$_fullname.tar.xz $_disturl
+}
+
+# Make sure this package is installed when a Qt application is installed and a
+# Wayland session is available on the system
+install_if="wayland-libs-server qt5-qtbase-x11"
+
+prepare() {
+	default_prepare
+
+	# We need to make the build system think we're running in a git repository
+	# so it correctly symlinks during the build
+	mkdir .git
+}
+
+build() {
+	qmake-qt5
+	make
+}
+
+check() {
+	make check
+}
+
+package() {
+	make INSTALL_ROOT="$pkgdir" install
+
+	# Drop QMAKE_PRL_BUILD_DIR because reference the build dir
+	find "$pkgdir/usr/lib" -type f -name '*.prl' \
+		-exec sed -i -e '/^QMAKE_PRL_BUILD_DIR/d' {} \;
+}
+
+
+sha512sums="
+7714e624912ae9998f7eb7a375401eaa89e4ca82f4c2d4c8f624495ad59cf67b38980b136b41d9010604eeb2cc3de7ac3bd3c6ff0441454b4d23130a5b1ba4ac  qtwayland-3a8613b91d2239aebc73b43562f929aa71af0de5.tar.xz
+"
