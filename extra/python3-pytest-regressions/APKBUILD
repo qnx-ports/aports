@@ -1,0 +1,58 @@
+# Maintainer: Terence Ang <taang@qnx.com>
+pkgname=python3-pytest-regressions
+_pyname=pytest-regressions
+pkgver=2.11.0
+pkgrel=0
+pkgdesc="Easy to use fixtures to write regression tests"
+url="https://pytest-regressions.readthedocs.io/en/latest/"
+arch="noarch"
+license="MIT"
+depends="
+	 python3-pytest
+"
+makedepends="
+	 python3-gpep517
+	 python3-setuptools
+	 python3-wheel
+	 python3-setuptools_scm
+"
+checkdepends="
+	 python3-pytest
+	 python3-numpy
+	 python3-pillow
+	 python3-yaml
+	 python3-pandas
+	 python3-pytest-datadir
+	 python3-matplotlib
+"
+source="$pkgname-$pkgver.tar.gz::https://github.com/ESSS/pytest-regressions/archive/refs/tags/v$pkgver.tar.gz"
+builddir="$srcdir/$_pyname-$pkgver"
+
+build() {
+	export SETUPTOOLS_SCM_PRETEND_VERSION="$pkgver"
+	gpep517 build-wheel \
+		--wheel-dir .dist \
+		--output-fd 3 3>&1 >&2
+}
+
+check() {
+	python3 -m venv --clear --without-pip --system-site-packages .testenv
+	.testenv/bin/python3 -m installer .dist/*.whl
+	.testenv/bin/python3 -m pytest -v \
+		--deselect=tests/test_image_regression.py::test_image_regression[pil] \
+		--deselect=tests/test_image_regression.py::test_image_regression[bytes]
+
+	# python3-matplotlib needs update to avoid use of deprecated API "oneOf"
+	# Newer one is using "one_off"
+	# - tests/test_image_regression.py::test_image_regression[pil]
+	# - tests/test_image_regression.py::test_image_regression[bytes]
+}
+
+package() {
+	python3 -m installer -d "$pkgdir" \
+		.dist/${_pyname//-/_}-$pkgver-py3-none-any.whl
+}
+
+sha512sums="
+da1b8e8eb99abb7d895662a4d4ba95a3320e3dd9fc19c2ec8de28dd55adc7923b5b2593483e66a776e958cf89e35c61e631fdde58e27059531ce0b3d6481645d  python3-pytest-regressions-2.11.0.tar.gz
+"
