@@ -1,0 +1,93 @@
+# Maintainer: Marcin Sochacki <msochacki@qnx.com>
+pkgname=sophus
+pkgver=1.24.6
+pkgrel=0
+pkgdesc="C++ implementation of Lie groups (SO2, SE2, SO3, SE3, Sim3) using Eigen"
+url="https://github.com/strasdat/Sophus"
+# the library is header-only, but the Python module is compiled; package()
+# turns the base package (headers and CMake config) back into noarch
+arch="all"
+license="MIT"
+# header-only library: the headers ship in the main package, and using them
+# needs the Eigen headers
+depends="eigen-dev"
+makedepends="
+	cmake
+	eigen-dev
+	fmt-dev
+	ninja
+	python3-dev
+	python3-gpep517
+	python3-installer
+	python3-pybind11-dev
+	python3-setuptools
+	python3-wheel
+	"
+checkdepends="ceres-solver-dev python3-numpy"
+subpackages="python3-$pkgname:py3:all"
+source="$pkgname-$pkgver.tar.gz::https://github.com/strasdat/Sophus/archive/refs/tags/$pkgver.tar.gz
+	001-eigen5-version-range.patch
+	002-use-system-pybind11.patch
+	"
+builddir="$srcdir/Sophus-$pkgver"
+# Limit build and test parallelism to 2 jobs to reduce memory consumption:
+# compiling the Eigen/Ceres template code in parallel used most of the RAM of
+# an 8 GB target (free memory fell to about 350 MB at 4 jobs on a Raspberry Pi).
+# abuild derives these variables from JOBS before it reads the APKBUILD, so all
+# four have to be set here.
+JOBS=2
+MAKEFLAGS=-j2
+CMAKE_BUILD_PARALLEL_LEVEL=2
+CTEST_PARALLEL_LEVEL=2
+
+build() {
+	cmake -B build -G Ninja \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DBUILD_SOPHUS_TESTS=ON \
+		-DBUILD_PYTHON_BINDINGS=OFF
+	cmake --build build
+
+	# setup.py runs its own CMake build of the Python module
+	CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release" gpep517 build-wheel \
+		--wheel-dir .dist \
+		--output-fd 3 3>&1 >&2
+}
+
+# OpenBLAS (pulled in through Ceres, which every test links) maps 128 MB per
+# thread and defaults to 32 threads on QNX, about 4 GB per test process, which
+# exhausts RAM on an 8 GB target when tests run in parallel. Limit it to 2.
+check() {
+	export OPENBLAS_NUM_THREADS=2
+	ctest --test-dir build --output-on-failure
+
+	python3 -m venv --clear --without-pip --system-site-packages testenv
+	testenv/bin/python3 -m installer .dist/*.whl
+	# the test file has no unittest.main(), so it has to be run through unittest
+	cd sophus_pybind/tests
+	"$builddir"/testenv/bin/python3 -m unittest -v sophusPybindTests
+}
+
+package() {
+	pkgarch="noarch"
+	DESTDIR="$pkgdir" cmake --install build
+	python3 -m installer -d "$pkgdir" .dist/*.whl
+	# setup.py puts a py.typed marker at the top level of site-packages, where it
+	# does not belong to this module and could collide with other packages
+	rm "$pkgdir"/usr/lib/python3*/site-packages/py.typed
+}
+
+py3() {
+	pkgdesc="$pkgname Python bindings"
+	# the bindings were contributed upstream under Apache-2.0 (see setup.py),
+	# the Sophus library they are built from is MIT
+	license="MIT AND Apache-2.0"
+	# abuild only warns about the shared library dependencies, so list them here
+	depends="python3-numpy fmt libc++"
+	amove usr/lib/python3*
+}
+sha512sums="
+cbc01e92c8361937194bed320ac84a7cfd8b71ecc3a842d3d3c9796ff52a08d13aa0b4f30184c4c7ddc223da0141a80176382c8b25a328e53fa00c4627511ec3  sophus-1.24.6.tar.gz
+b38e39dd6eee38e6fb4a89f1afa23544b0bb9b68ac43d39768e1c86cc766abfd7ace63982324149a15eb99299f458e0b028a0a5f8ba074b6d51ec9da2c33a1af  001-eigen5-version-range.patch
+c6e3329116b281d5051a092003f5febcf538499a4b237ae08a52ce380a538aa0729c317925588c4c0c5229c3cd6d56aef506bb27eb8e13382071f362b4a5e538  002-use-system-pybind11.patch
+"
